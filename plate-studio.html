@@ -5983,6 +5983,7 @@ async function loadCloudData() {
     if(!Array.isArray(operations.qualityIssues)) operations.qualityIssues=[];
     if(!Array.isArray(operations.deliveries)) operations.deliveries=[];
     if(!Array.isArray(operations.deliveryBatches)) operations.deliveryBatches=[];
+    normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();
     kiotViet=remote.settings.find(x=>x.id==='kiotviet')?.values || {catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     if(!kiotViet || typeof kiotViet!=='object') kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     ['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(k=>{if(!Array.isArray(kiotViet[k]))kiotViet[k]=[];});
@@ -15057,6 +15058,7 @@ function normalizeOperations(){
   if(!operations || typeof operations!=='object') operations={};
   ['qualityIssues','deliveries','deliveryBatches','non3dCatalog','openingStock','stockMovements','printPlans','events','auditLog'].forEach(key=>{if(!Array.isArray(operations[key]))operations[key]=[];});
   if(!operations.dashboardPins || typeof operations.dashboardPins!=='object'||Array.isArray(operations.dashboardPins))operations.dashboardPins={};
+  if(!operations.deliveryCartDrafts || typeof operations.deliveryCartDrafts!=='object'||Array.isArray(operations.deliveryCartDrafts))operations.deliveryCartDrafts={};
   if(!operations.externalWorkshopHandovers || typeof operations.externalWorkshopHandovers!=='object'||Array.isArray(operations.externalWorkshopHandovers))operations.externalWorkshopHandovers={};
   if(!operations.assemblyWaitStatuses || typeof operations.assemblyWaitStatuses!=='object'||Array.isArray(operations.assemblyWaitStatuses))operations.assemblyWaitStatuses={};
   if(!operations.packagingTasks || typeof operations.packagingTasks!=='object'||Array.isArray(operations.packagingTasks))operations.packagingTasks={};
@@ -15865,9 +15867,21 @@ function normalizeDeliveryWorkspaceDraft(draft){
   if(!draft||typeof draft!=='object')return null;const base=emptyDeliveryWorkspaceState();
   return {...base,...draft,step:['products','info','photos'].includes(draft.step)?draft.step:'products',selected:{...(draft.selected||{})},non3dSelected:{...(draft.non3dSelected||{})},unreconciledSelected:{...(draft.unreconciledSelected||{})},unreconciledVariants:{...(draft.unreconciledVariants||{})},unreconciledVariantSelected:{...(draft.unreconciledVariantSelected||{})},pendingKiot:Array.isArray(draft.pendingKiot)?draft.pendingKiot:[],openingSelected:{...(draft.openingSelected||{})},form:{...(draft.form||{})}};
 }
-function loadDeliveryWorkspaceDraft(){try{return normalizeDeliveryWorkspaceDraft(JSON.parse(localStorage.getItem(DELIVERY_CART_DRAFT_KEY)||'null'));}catch(_){return null;}}
-function persistDeliveryWorkspaceDraft(){try{localStorage.setItem(DELIVERY_CART_DRAFT_KEY,JSON.stringify(deliveryWorkspaceState));}catch(_){}}
-function clearDeliveryWorkspaceDraft(){try{localStorage.removeItem(DELIVERY_CART_DRAFT_KEY);}catch(_){}}
+function deliveryWorkspaceLocalKey(){return `${DELIVERY_CART_DRAFT_KEY}:${currentUser?.id||'local'}`;}
+function loadDeliveryWorkspaceDraft(){try{const raw=localStorage.getItem(deliveryWorkspaceLocalKey())||localStorage.getItem(DELIVERY_CART_DRAFT_KEY)||'null',draft=normalizeDeliveryWorkspaceDraft(JSON.parse(raw));if(draft?.accountId&&currentUser?.id&&draft.accountId!==currentUser.id)return null;return draft;}catch(_){return null;}}
+let deliveryDraftCloudTimer=0;
+function deliveryDraftAccountKey(){return currentUser?.id||'';}
+function queueDeliveryWorkspaceCloudSave(){
+  if(!cloudReady||loadingCloud||!currentUser||!deliveryDraftAccountKey())return;clearTimeout(deliveryDraftCloudTimer);
+  deliveryDraftCloudTimer=setTimeout(()=>{try{normalizeOperations();operations.deliveryCartDrafts[deliveryDraftAccountKey()]={state:deliveryWorkspaceState,updatedAt:deliveryWorkspaceState.updatedAt||new Date().toISOString(),userId:deliveryDraftAccountKey()};saveLocalValue(K.operations,operations);scheduleCloudSync();}catch(error){console.warn('Không thể xếp hàng đồng bộ giỏ giao',error);}},450);
+}
+function persistDeliveryWorkspaceDraft(){deliveryWorkspaceState.updatedAt=new Date().toISOString();if(currentUser?.id)deliveryWorkspaceState.accountId=currentUser.id;try{localStorage.setItem(deliveryWorkspaceLocalKey(),JSON.stringify(deliveryWorkspaceState));}catch(_){}queueDeliveryWorkspaceCloudSave();}
+function clearDeliveryWorkspaceDraft(){try{localStorage.removeItem(deliveryWorkspaceLocalKey());}catch(_){}if(cloudReady&&!loadingCloud&&deliveryDraftAccountKey()){clearTimeout(deliveryDraftCloudTimer);normalizeOperations();delete operations.deliveryCartDrafts[deliveryDraftAccountKey()];saveLocalValue(K.operations,operations);scheduleCloudSync();}}
+function restoreDeliveryWorkspaceDraftFromCloud(){
+  const accountKey=deliveryDraftAccountKey(),remote=normalizeDeliveryWorkspaceDraft(operations.deliveryCartDrafts?.[accountKey]?.state),local=loadDeliveryWorkspaceDraft();if(!remote||!deliveryDraftHasItems(remote))return false;
+  const remoteAt=Date.parse(operations.deliveryCartDrafts?.[accountKey]?.updatedAt||remote.updatedAt||0)||0,localAt=Date.parse(local?.updatedAt||0)||0;if(local&&localAt>remoteAt)return false;
+  deliveryWorkspaceState=remote;deliveryWorkspaceState.accountId=accountKey;try{localStorage.setItem(deliveryWorkspaceLocalKey(),JSON.stringify(remote));}catch(_){}return true;
+}
 function deliveryDraftHasItems(draft){return !!(draft&&(Object.keys(draft.selected||{}).length||Object.keys(draft.non3dSelected||{}).length||Object.keys(draft.unreconciledSelected||{}).length||Object.keys(draft.unreconciledVariantSelected||{}).length||(draft.pendingKiot||[]).length||Object.keys(draft.openingSelected||{}).length));}
 let deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
 let receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
