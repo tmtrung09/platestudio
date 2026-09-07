@@ -411,6 +411,9 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 /* Chỉ vành đèn sân khấu điều hướng mắt; không đặt thêm viền trực tiếp
    lên khối nội dung, tránh viền kéo dài theo cả trang/lưới. */
 .guide-tour-target{outline:0!important;box-shadow:none!important;scroll-margin:22px}.guide-tour-target::after{display:none!important}.guide-tour-ov.no-target .guide-stage-mask,.guide-tour-ov.no-target .guide-stage-halo{display:none!important}
+/* Trạng thái upload ảnh phải còn hiện sau khi đóng dialog: người dùng biết
+   ảnh chưa an toàn trên cloud và không rời trang giữa lúc upload. */
+.media-upload-guard{position:fixed;z-index:2400;left:50%;bottom:22px;width:min(420px,calc(100vw - 28px));display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--ac) 58%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--s) 94%,transparent);box-shadow:0 18px 46px rgba(0,0,0,.34),0 0 30px color-mix(in srgb,var(--ac) 18%,transparent);backdrop-filter:blur(18px);transform:translate(-50%,calc(100% + 44px));opacity:0;pointer-events:none;transition:transform .28s var(--sp),opacity .2s ease}.media-upload-guard.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}.media-upload-guard.is-success{border-color:color-mix(in srgb,var(--gr) 60%,var(--b));box-shadow:0 18px 46px rgba(0,0,0,.3),0 0 30px color-mix(in srgb,var(--gr) 18%,transparent)}.media-upload-guard.is-error{border-color:color-mix(in srgb,var(--rd) 65%,var(--b))}.media-upload-guard-spinner{width:28px;height:28px;flex:0 0 28px;border:3px solid color-mix(in srgb,var(--ac) 22%,transparent);border-top-color:var(--ac);border-radius:50%;animation:media-upload-spin .8s linear infinite}.media-upload-guard.is-success .media-upload-guard-spinner{display:grid;place-items:center;border-color:var(--gr);animation:none}.media-upload-guard.is-success .media-upload-guard-spinner::after{content:'✓';color:#fff;font-size:16px;font-weight:900}.media-upload-guard.is-error .media-upload-guard-spinner{display:grid;place-items:center;border-color:var(--rd);animation:none}.media-upload-guard.is-error .media-upload-guard-spinner::after{content:'!';color:var(--rd);font-size:17px;font-weight:900}.media-upload-guard-copy{min-width:0;flex:1}.media-upload-guard-copy b,.media-upload-guard-copy span{display:block}.media-upload-guard-copy b{font-size:13px;line-height:1.25}.media-upload-guard-copy span{margin-top:2px;color:var(--t3);font-size:11px;line-height:1.35}@keyframes media-upload-spin{to{transform:rotate(360deg)}}@media(max-width:860px){.media-upload-guard{bottom:calc(94px + env(safe-area-inset-bottom));padding:10px 12px}.media-upload-guard-copy b{font-size:12px}}
 .dlg.xwide { max-width:1180px; width:96vw }
 @keyframes dlgIn { from{transform:scale(.94) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
 .dlg-title { font-size:15px; font-weight:600; margin-bottom:1.1rem; display:flex; align-items:center; gap:8px }
@@ -4684,6 +4687,9 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 <button id="guide-reopen-btn" class="guide-reopen-btn" type="button" onclick="openPageGuide()" aria-label="Mở lại hướng dẫn trang này">
   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9a2.5 2.5 0 0 1 4.75 1.1c0 1.7-2.35 2-2.35 3.75"></path><path d="M12 17.3h.01"></path></svg><span>Hướng dẫn</span>
 </button>
+<div id="media-upload-guard" class="media-upload-guard" role="status" aria-live="assertive" aria-atomic="true">
+  <i class="media-upload-guard-spinner" aria-hidden="true"></i><div class="media-upload-guard-copy"><b>Đang lưu ảnh</b><span>Đừng đóng trang cho đến khi có xác nhận.</span></div>
+</div>
 
 <!-- SPOTLIGHT — Ctrl + Space: tìm nhanh trên toàn bộ dữ liệu xưởng -->
 <div id="spotlight-ov" class="spotlight-ov" role="dialog" aria-modal="true" aria-label="Tìm kiếm toàn hệ thống" onclick="if(event.target===this)closeSpotlight()">
@@ -5582,16 +5588,39 @@ function saveLocalCollections() {
     .forEach(([k,v]) => saveLocalValue(k,v));
   saveLocalValue(K.batchReports, batchReports);
 }
+let mediaUploadSequence=0,mediaUploadNoticeTimer=0,mediaUploadsCompletedSinceIdle=0;
+const activeMediaUploads=new Map();
+function renderMediaUploadGuard(result=null){
+  const guard=document.getElementById('media-upload-guard');if(!guard)return;
+  clearTimeout(mediaUploadNoticeTimer);
+  const copy=guard.querySelector('.media-upload-guard-copy'),active=[...activeMediaUploads.values()];
+  guard.classList.remove('is-success','is-error');
+  if(active.length){
+    const current=active.at(-1),plural=active.length>1?` · còn ${active.length} ảnh`:'',stage=current.stage||'Đang tải ảnh lên cloud…';
+    copy.innerHTML=`<b>${esc(stage)}</b><span>Đừng đóng trang${plural}. Hệ thống đang lưu ảnh an toàn.</span>`;
+    guard.classList.add('show');return;
+  }
+  if(!result){guard.classList.remove('show');return;}
+  guard.classList.add('show',result.ok?'is-success':'is-error');
+  copy.innerHTML=result.ok?`<b>✓ ${result.count||1} ảnh đã lưu an toàn</b><span>Bây giờ có thể tiếp tục hoặc rời trang.</span>`:`<b>Ảnh chưa được lưu</b><span>Kiểm tra mạng rồi thử lại, đừng đóng trang nếu cần giữ thao tác.</span>`;
+  mediaUploadNoticeTimer=setTimeout(()=>guard.classList.remove('show'),result.ok?2400:5000);
+}
+function beginMediaUpload(stage='Đang chuẩn bị ảnh…'){if(!activeMediaUploads.size)mediaUploadsCompletedSinceIdle=0;const id=++mediaUploadSequence;activeMediaUploads.set(id,{stage});renderMediaUploadGuard();return id;}
+function updateMediaUploadStage(id,stage){const task=activeMediaUploads.get(id);if(!task)return;task.stage=stage;renderMediaUploadGuard();}
+function finishMediaUpload(id,{ok=true,count=1}={}){activeMediaUploads.delete(id);if(ok)mediaUploadsCompletedSinceIdle+=count;renderMediaUploadGuard({ok,count:activeMediaUploads.size?count:(ok?mediaUploadsCompletedSinceIdle:count)});}
+window.addEventListener('beforeunload',event=>{if(!activeMediaUploads.size)return;event.preventDefault();event.returnValue='Ảnh vẫn đang được lưu. Hãy chờ thông báo hoàn tất.';return event.returnValue;});
 async function uploadInlineImage(dataUrl, folder) {
   if(!isInlineImage(dataUrl)) return dataUrl;
   if(!sb || !currentUser) throw new Error('Cần đăng nhập để lưu ảnh');
-  const blob = await (await fetch(dataUrl)).blob();
-  const ext = (blob.type.split('/')[1]||'jpg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
-  const path = `${currentUser.id}/${folder}/${uid()}.${ext||'jpg'}`;
-  const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, blob, {contentType:blob.type||'image/jpeg', upsert:false});
-  if(error) throw error;
-  const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  const uploadId=beginMediaUpload('Đang lưu ảnh lên cloud…');
+  try{
+    const blob = await (await fetch(dataUrl)).blob();
+    const ext = (blob.type.split('/')[1]||'jpg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
+    const path = `${currentUser.id}/${folder}/${uid()}.${ext||'jpg'}`;
+    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, blob, {contentType:blob.type||'image/jpeg', upsert:false});
+    if(error) throw error;
+    const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);finishMediaUpload(uploadId);return data.publicUrl;
+  }catch(error){finishMediaUpload(uploadId,{ok:false});throw error;}
 }
 async function compressPhotoForStorage(file, maxSide=1920, quality=.78){
   /* Ảnh báo cáo là ảnh tham chiếu, không cần giữ nguyên file camera 8–20 MB. */
@@ -5609,11 +5638,15 @@ async function compressPhotoForStorage(file, maxSide=1920, quality=.78){
 }
 async function uploadBatchReportMedia(file, reportId){
   if(!sb || !currentUser) throw new Error('Cần đăng nhập để lưu ảnh');
-  const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
-  const base=`${currentUser.id}/batch-reports/${reportId}`;
-  const upload=async(blob,path)=>{const {error}=await sb.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;};
-  const [image,thumbnail]=await Promise.all([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
-  return {image,thumb:thumbnail};
+  const uploadId=beginMediaUpload('Đang nén ảnh…');
+  try{
+    const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
+    updateMediaUploadStage(uploadId,'Đang tải ảnh lên cloud…');
+    const base=`${currentUser.id}/batch-reports/${reportId}`;
+    const upload=async(blob,path)=>{const {error}=await sb.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;};
+    const [image,thumbnail]=await Promise.all([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
+    finishMediaUpload(uploadId);return {image,thumb:thumbnail};
+  }catch(error){finishMediaUpload(uploadId,{ok:false});throw error;}
 }
 /* ── Ảnh chuyển từ điện thoại về bàn nhận hàng ───────────────────────────
    Đây là một “hộp ảnh chờ” độc lập với biên lai.  Vì vậy điện thoại có thể
@@ -5648,11 +5681,15 @@ async function saveDeliveryPhotoHubCloud(){
 }
 async function uploadDeliveryRelayMedia(file, photoId){
   if(!sb||!currentUser)throw new Error('Cần đăng nhập để tải ảnh');
-  const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1600,.8),compressPhotoForStorage(file,460,.64)]);
-  const base=`${currentUser.id}/delivery-relay/${photoId}`;
-  const upload=async(blob,path)=>{const {error}=await sb.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;};
-  const [image,thumbnail]=await Promise.all([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
-  return {image,thumb:thumbnail};
+  const uploadId=beginMediaUpload('Đang nén ảnh gửi về bàn nhận…');
+  try{
+    const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1600,.8),compressPhotoForStorage(file,460,.64)]);
+    updateMediaUploadStage(uploadId,'Đang gửi ảnh về cloud…');
+    const base=`${currentUser.id}/delivery-relay/${photoId}`;
+    const upload=async(blob,path)=>{const {error}=await sb.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;};
+    const [image,thumbnail]=await Promise.all([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
+    finishMediaUpload(uploadId);return {image,thumb:thumbnail};
+  }catch(error){finishMediaUpload(uploadId,{ok:false});throw error;}
 }
 function captureReceivingWorkspaceForm(){
   const form=receivingWorkspaceState.form||{};
@@ -11238,40 +11275,45 @@ async function createStaffBatchReportFromFile(file){
     return {duplicate:true};
   }
   if(imageHash) brImageHashUploads.add(imageHash);
+  const mediaUploadId=beginMediaUpload('Đang chuẩn bị ảnh mẻ in…');
   const uploadId=uid();
   brUploadStatus.unshift({id:uploadId,name:file.name||'Ảnh mẻ in',preview:URL.createObjectURL(file),state:'uploading',message:'Đang gửi…'});
   setBatchUploadStatus(uploadId,{});
   const actor=ensureBatchActor();
-  const timing=await batchReportTimingForFile(file);
-  const form=new FormData();
-  let uploadFile=file, thumbnailFile=null;
   try {
-    const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
-    uploadFile=new File([full],'batch.jpg',{type:'image/jpeg'});
-    thumbnailFile=new File([thumb],'batch-thumb.jpg',{type:'image/jpeg'});
-  } catch(error) { console.warn('Không nén được ảnh nhân viên, dùng ảnh gốc',error); }
-  form.append('token',STAFF_ACCESS_TOKEN);
-  form.append('actor',JSON.stringify(actor));
-  if(timing.photoTakenAt) form.append('photoTakenAt',timing.photoTakenAt);
-  form.append('photoTakenAtSource',timing.photoTakenAtSource);
-  form.append('image',uploadFile,'batch.jpg');
-  if(imageHash) form.append('imageHash',imageHash);
-  if(thumbnailFile) form.append('thumbnail',thumbnailFile,'batch-thumb.jpg');
-  try {
+    const timing=await batchReportTimingForFile(file),form=new FormData();
+    let uploadFile=file, thumbnailFile=null;
+    try {
+      updateMediaUploadStage(mediaUploadId,'Đang nén ảnh mẻ in…');
+      const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
+      uploadFile=new File([full],'batch.jpg',{type:'image/jpeg'});
+      thumbnailFile=new File([thumb],'batch-thumb.jpg',{type:'image/jpeg'});
+    } catch(error) { console.warn('Không nén được ảnh nhân viên, dùng ảnh gốc',error); }
+    form.append('token',STAFF_ACCESS_TOKEN);
+    form.append('actor',JSON.stringify(actor));
+    if(timing.photoTakenAt) form.append('photoTakenAt',timing.photoTakenAt);
+    form.append('photoTakenAtSource',timing.photoTakenAtSource);
+    form.append('image',uploadFile,'batch.jpg');
+    if(imageHash) form.append('imageHash',imageHash);
+    if(thumbnailFile) form.append('thumbnail',thumbnailFile,'batch-thumb.jpg');
+    updateMediaUploadStage(mediaUploadId,'Đang gửi ảnh mẻ in lên cloud…');
     toast('Đang gửi ảnh mẻ in...');
     const {data,error}=await sb.functions.invoke('staff-batch-report',{body:form});
     if(error) throw error;
     if(data?.duplicate) {
       setBatchUploadStatus(uploadId,{state:'success',message:'Ảnh trùng — đã có trên hệ thống'});
+      finishMediaUpload(mediaUploadId);
       toast('Ảnh này đã có trên hệ thống, không tải lại.');
       return {...(data.report||{}),duplicate:true};
     }
     setBatchUploadStatus(uploadId,{state:'success',message:'Đã gửi thành công'});
+    finishMediaUpload(mediaUploadId);
     toast('✓ Đã gửi báo cáo về xưởng. Cảm ơn bạn!');
     return data?.report || null;
   } catch(error) {
     const message=error.message||'Lỗi kết nối';
     setBatchUploadStatus(uploadId,{state:'error',message:'Gửi thất bại'});
+    finishMediaUpload(mediaUploadId,{ok:false});
     toast('Không thể gửi ảnh: '+message,5000);
   } finally { if(imageHash) brImageHashUploads.delete(imageHash); }
 }
