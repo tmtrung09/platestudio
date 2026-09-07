@@ -4907,7 +4907,7 @@ const DEF_BRANDS = ['Bambu Lab','eSUN','Sunlu','Polymaker','Creality','Overture'
    LOAD / SAVE
 ═══════════════════════════════════════ */
 let sb = null, currentUser = null, cloudReady = false, loadingCloud = false;
-let cloudSyncTimer = null, cloudRetryTimer = null, cloudChannel = null, cloudSyncing = false, cloudRefreshTimer = null, lastCloudWriteAt = 0, remoteDataRefreshPending = false;
+let cloudSyncTimer = null, cloudRetryTimer = null, cloudChannel = null, cloudSyncing = false, cloudRefreshTimer = null, remoteRefreshWatchTimer = null, remoteRefreshApplying = false, lastCloudWriteAt = 0, remoteDataRefreshPending = false;
 let cloudSyncedSnapshot = null;
 let needsCloudBatchSeed = false;
 /* Undo chỉ ở bộ nhớ phiên hiện tại: tránh ghi một lịch sử nặng vào cloud, nhưng
@@ -5840,31 +5840,60 @@ async function migrateInlineMedia() {
   }
 }
 function showRemoteDataRefreshNotice(){
-  if(!remoteDataRefreshPending)return;
-  let notice=document.getElementById('remote-data-refresh-notice');
-  if(!notice){notice=document.createElement('button');notice.id='remote-data-refresh-notice';notice.type='button';notice.className='btn btn-ac btn-sm';notice.style.cssText='position:fixed;z-index:3600;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);box-shadow:0 12px 28px rgba(44,36,116,.28);white-space:nowrap';notice.onclick=applyRemoteDataRefresh;document.body.append(notice);}
-  notice.textContent='↻ Có dữ liệu mới · Cập nhật';notice.hidden=false;
-}
-function applyRemoteDataRefresh(){
-  if(!remoteDataRefreshPending)return;
-  const scrollTop=window.scrollY||0;remoteDataRefreshPending=false;
+  /* Đồng bộ không được biến thành một việc người dùng phải nhớ bấm. Nếu đang
+     nhập liệu, trạng thái nhỏ này chỉ giải thích việc hệ thống đang tự chờ. */
   document.getElementById('remote-data-refresh-notice')?.remove();
-  renderPage(curPage);renderSb();updateCamBadge();
-  requestAnimationFrame(()=>window.scrollTo({top:scrollTop,left:0,behavior:'instant'}));
-  setSyncState('Đã đồng bộ','ok');
+  if(remoteDataRefreshPending)setSyncState('Sẽ tự đồng bộ sau khi hoàn tất thao tác','ok');
 }
-/* Dữ liệu từ thiết bị khác tự hiện ngay khi chỉ đang xem. Nếu người dùng đang
-   nhập biểu mẫu hoặc mở thao tác dở, giữ nút Cập nhật để không làm mất nội dung
-   chưa lưu / đóng modal giữa chừng. */
+async function applyRemoteDataRefresh(){
+  if(!remoteDataRefreshPending||remoteRefreshApplying)return;
+  if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
+  remoteRefreshApplying=true;loadingCloud=true;
+  const scrollTop=window.scrollY||0;
+  try{
+    /* Chỉ lấy dữ liệu cloud khi vùng nhập đã an toàn. Trước đây dữ liệu global
+       được thay ngay cả khi form vẫn đang gõ, khiến lần Lưu sau có thể dùng
+       nhầm snapshot mới. */
+    invalidateFulfillmentCloudManualReports();await loadCloudData();updateCamBadge();
+    if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
+    remoteDataRefreshPending=false;
+    document.getElementById('remote-data-refresh-notice')?.remove();
+    renderPage(curPage);renderSb();
+    requestAnimationFrame(()=>window.scrollTo({top:scrollTop,left:0,behavior:'instant'}));
+    setSyncState('Đã đồng bộ','ok');
+  }catch(error){
+    console.error('Realtime refresh failed',error);setSyncState('Lỗi đồng bộ','err');
+  }finally{remoteRefreshApplying=false;loadingCloud=false;}
+}
+/* Dữ liệu từ thiết bị khác tự hiện ngay khi chỉ đang xem. Lúc đang gõ, mở form
+   hay modal, hệ thống giữ nguyên snapshot hiện tại và tự nạp lại khi thao tác
+   kết thúc — không có nút “Cập nhật” bắt người dùng tự xử lý. */
 function canAutoApplyRemoteRefresh(){
   const active=document.activeElement;
   const isTyping=active?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable="true"]');
   if(isTyping)return false;
-  const protectedOverlays=['ov-batch-report','ov-order-form','ov-print-progress','dlg-mv','action-dialog-ov'];
+  const protectedOverlays=['ov-batch-report','ov-order-form','ov-print-progress','ov-project-detail','dlg-model','dlg-project','dlg-order-edit','dlg-plate','dlg-fil','dlg-mv','dlg-model-history','dlg-category-assign','dlg-maker','dlg-action','confirm-ov','more-sheet-ov','spotlight-ov'];
   return !protectedOverlays.some(id=>{
     const element=document.getElementById(id);
-    return element&&getComputedStyle(element).display!=='none';
+    /* Một số form được gắn sẵn bên trong page để dùng lại layout nên CSS của
+       chúng có thể là display:flex dù page cha đang ẩn. Chỉ chặn khi overlay
+       thực sự có khung hiển thị trên màn hình. */
+    return element&&!element.hidden&&getComputedStyle(element).display!=='none'&&element.getClientRects().length>0;
   });
+}
+function scheduleDeferredRemoteRefresh(delay=350){
+  if(!remoteDataRefreshPending)return;
+  clearTimeout(remoteRefreshWatchTimer);
+  remoteRefreshWatchTimer=setTimeout(()=>{
+    if(!remoteDataRefreshPending||remoteRefreshApplying)return;
+    if(canAutoApplyRemoteRefresh())applyRemoteDataRefresh();
+    else scheduleDeferredRemoteRefresh(350);
+  },delay);
+}
+function queueRemoteDataRefresh(){
+  remoteDataRefreshPending=true;
+  if(canAutoApplyRemoteRefresh())applyRemoteDataRefresh();
+  else{showRemoteDataRefreshNotice();scheduleDeferredRemoteRefresh();}
 }
 function scheduleCloudRefresh() {
   // Không nạp dữ liệu từ Realtime đè lên thay đổi còn trong outbox.
@@ -5872,19 +5901,7 @@ function scheduleCloudRefresh() {
   clearTimeout(cloudRefreshTimer);
   cloudRefreshTimer=setTimeout(async()=>{
     if(!currentUser || loadingCloud) return;
-    loadingCloud=true;
-    try {
-      invalidateFulfillmentCloudManualReports();await loadCloudData();updateCamBadge();
-      if(canAutoApplyRemoteRefresh()){
-        remoteDataRefreshPending=true;
-        applyRemoteDataRefresh();
-      }else{
-        /* Chỉ xin xác nhận khi render có thể làm mất form/modal đang thao tác. */
-        remoteDataRefreshPending=true;showRemoteDataRefreshNotice();setSyncState('Có dữ liệu mới','ok');
-      }
-    }
-    catch(error) { console.error('Realtime refresh failed',error); setSyncState('Lỗi đồng bộ','err'); }
-    finally { loadingCloud=false; }
+    queueRemoteDataRefresh();
   },500);
 }
 function setupCloudRealtime() {
