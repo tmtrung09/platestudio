@@ -2759,6 +2759,7 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
 .batch-report-media.is-missing{background:linear-gradient(145deg,var(--s2),rgba(114,102,230,.12));color:var(--t3)}
 .batch-report-media.is-missing::before{content:'📷';font-size:22px;opacity:.75}
 .batch-report-media.is-missing::after{content:'Ảnh chưa khả dụng';position:absolute;left:0;right:0;bottom:13px;text-align:center;font-size:11px;font-weight:650;color:var(--t3)}
+.batch-report-media.is-missing .batch-report-missing-action{position:absolute;z-index:5;left:12px;right:12px;bottom:38px;display:flex;justify-content:center}.batch-report-media.is-missing .batch-report-missing-action .btn{box-shadow:0 6px 16px rgba(0,0,0,.24)}
 .batch-report-media.is-panning-preview{cursor:grabbing}.batch-report-media.is-panning-preview .batch-report-overlay,.batch-report-media.is-panning-preview .batch-report-status-chip{opacity:0!important;pointer-events:none!important;transition:none}.batch-report-image-stage.is-image-panning .batch-report-image-meta,.batch-report-image-stage.is-image-panning .batch-report-ai-action{opacity:0;pointer-events:none;transition:none}
 .batch-report-detail-media{width:100%;min-height:220px;max-height:330px;display:grid;place-items:center;position:relative;overflow:hidden;background:var(--s2);border-radius:var(--r)}
 .batch-report-detail-media>img{width:100%;max-height:330px;object-fit:contain;display:block}
@@ -5178,6 +5179,10 @@ const MEDIA_BUCKET = 'plate-media';
 /* Lịch sử báo cáo có thể lên tới hàng nghìn ảnh. Không tải hết JSON của chúng
    ngay lúc mở app; chỉ lấy từng trang theo cursor updated_at + id ổn định. */
 const BATCH_CLOUD_PAGE_SIZE = 24;
+/* Bản ghi giữ chỗ được tạo trước khi Storage nhận ảnh để chống gửi trùng.
+   Sau thời gian này, một bản vẫn không có cả ảnh lớn lẫn thumbnail chắc chắn
+   là upload đã đứt quãng, không phải báo cáo nghiệp vụ hợp lệ. */
+const BATCH_STALE_UPLOAD_MS = 30*60*1000;
 let batchCloudCursor = null;
 let batchCloudHasMore = true;
 let batchCloudTotal = 0;
@@ -5437,6 +5442,13 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
       if(response.error) throw response.error;
       rows=response.data||[]; count=response.count; batchCloudServerPaged=false;
     }
+    /* Xoá riêng các phiếu giữ chỗ upload đã treo. Trước đây chúng hiện như
+       “Chưa xử lý” không ảnh, làm người dùng tưởng ảnh báo cáo bị mất. */
+    const staleIds=await clearStaleBatchUploadReservations(rows);
+    if(staleIds.size){
+      rows=rows.filter(row=>!staleIds.has(row?.id||row?.data?.id));
+      if(typeof count==='number')count=Math.max(0,count-staleIds.size);
+    }
     rememberBatchCloudDisplayOrder(rows,{reset:true});
     batchReports=rows.map(row=>row.data).filter(Boolean);
     rememberBatchReportCloudSnapshot(batchReports);
@@ -5446,6 +5458,27 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
     saveLocalValue(K.batchReports,batchReports);
     return batchReports;
   } finally { batchCloudLoading=false; }
+}
+
+function batchReportHasMedia(report){return Boolean(String(report?.thumb||'').trim()||String(report?.image||'').trim());}
+function staleBatchUploadReservation(row,now=Date.now()){
+  const report=row?.data||row;
+  if(!report?.id||report.status!=='uploading'||batchReportHasMedia(report))return false;
+  const stamp=Date.parse(report.updatedAt||report.createdAt||row?.updated_at||'');
+  return Number.isFinite(stamp)&&now-stamp>BATCH_STALE_UPLOAD_MS;
+}
+async function clearStaleBatchUploadReservations(rows){
+  if(!sb||!currentUser)return new Set();
+  const stale=(rows||[]).filter(row=>staleBatchUploadReservation(row));
+  if(!stale.length)return new Set();
+  const ids=stale.map(row=>row?.id||row?.data?.id).filter(Boolean);
+  if(!ids.length)return new Set();
+  const {error}=await sb.from(CLOUD_TABLES.batchReports).delete().eq('workspace_id',cloudWorkspaceId()).in('id',ids);
+  if(error){console.warn('Chưa dọn được phiếu upload ảnh bị treo',error);return new Set();}
+  ids.forEach(id=>{batchReportCloudSnapshot.delete(id);batchReportCloudSaveQueue.delete(id);batchReportCloudDeletePending.delete(id);});
+  invalidateBatchReportTimeline();invalidateFulfillmentCloudManualReports();
+  console.info(`Đã dọn ${ids.length} phiếu tải ảnh bị treo.`);
+  return new Set(ids);
 }
 
 let cloudActivityForced=false;
@@ -12733,7 +12766,7 @@ function renderBatchReportPage(){
   const pageStart=(batchReportCurrentPage-1)*batchReportPageSize;
   const visible=serverPaged ? matched : matched.slice(pageStart,pageStart+batchReportPageSize);
   batchReportVisibleIds=visible.map(report=>report.id);
-  const reportCard=r=>{
+  const reportCard=(r,index=0)=>{
     const fil=r.filamentId?getFil(r.filamentId):null;
     const applied=(r.appliedItems||[]).reduce((sum,x)=>sum+(x.qty||0),0);
     const done=r.status==='done',isSkipped=r.status==='skipped';
@@ -12746,20 +12779,26 @@ function renderBatchReportPage(){
     const aiBadge=aiAssisted?'<span class="batch-report-ai-mark">✦ AI đã duyệt</span>':aiAnalyzed?'<span class="batch-report-ai-mark">✦ AI đã phân tích</span>':'';
     const thumb=String(r.thumb||'').trim();
     const fullImage=String(r.image||'').trim();
+    const hasMedia=Boolean(thumb||fullImage),uploading=r.status==='uploading';
     const selected=batchReportSelectedIds.has(r.id);
-    const media=thumb||fullImage
-      ? `<img src="${esc(thumb||fullImage)}" data-full-src="${esc(fullImage)}" loading="eager" decoding="async" fetchpriority="high" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`
+    /* Chỉ ưu tiên hai ảnh đầu trang. Ép cả thư viện eager/high từng làm bộ
+       nhớ và băng thông tăng theo số thẻ đang hiện, nhất là trên điện thoại. */
+    const media=hasMedia
+      ? `<img src="${esc(thumb||fullImage)}" data-full-src="${esc(fullImage)}" loading="${index<2?'eager':'lazy'}" decoding="async" fetchpriority="${index<2?'high':'low'}" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`
       : '';
     const selectionControl=batchReportMultiSelect?`<button type="button" class="batch-report-select-box ${selected?'is-selected':''}" aria-label="${selected?'Bỏ chọn':'Chọn'} ảnh báo cáo" onclick="toggleBatchReportSelection('${r.id}',event)">${selected?'✓':''}</button>`:'';
     const cardAction=batchReportMultiSelect?`toggleBatchReportSelection('${r.id}',event)`:`viewBatchReport('${r.id}')`;
     const overlayActions=batchReportMultiSelect?'':`<div class="batch-report-overlay-actions" onclick="event.stopPropagation()">${canEdit?`<button class="btn btn-xs" onclick="${done?`viewBatchReport('${r.id}')`:`resumeBatchReport('${r.id}')`}">${done?'Xem chi tiết':isSkipped?'Xử lý lại':'Tiếp tục xử lý'}</button>${!done&&!isSkipped?`<button class="btn btn-ghost btn-xs" onclick="skipBatchReport('${r.id}')">Bỏ qua</button>`:''}<button class="btn btn-danger btn-xs" onclick="deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá</button>`:canDescribe&&!done&&!isSkipped?`<button class="btn btn-xs" onclick="declareBatchReportContents('${r.id}')">Khai báo đã in</button>`:`<button class="btn btn-xs" onclick="viewBatchReport('${r.id}')">Xem chi tiết</button>`}</div>`;
+    const missingMediaAction=!hasMedia&&canEdit&&!uploading?`<div class="batch-report-missing-action"><button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá bản ghi thiếu ảnh</button></div>`:'';
+    const stateLabel=uploading?'Đang tải ảnh':done?'Đã xử lý':isSkipped?'Bỏ qua':hasMedia?'Chưa xử lý':'Thiếu ảnh';
+    const stateMeta=uploading?'Đang tải ảnh lên cloud':!hasMedia?'Bản ghi không còn nguồn ảnh':done?`Đã cập nhật ${applied} part`:isSkipped?'Đã bỏ qua, chưa đối chiếu':'Chưa đối chiếu tiến độ';
     return `<div class="card batch-report-card ${done?'batch-done':isSkipped?'batch-skipped':'batch-pending'} ${aiAssisted?'ai-assisted':''} ${selected?'is-selected':''}" data-batch-report-id="${esc(r.id)}" style="padding:0;overflow:hidden;cursor:pointer" onclick="${cardAction}">
       <div class="batch-report-media${media?'':' is-missing'}">${media}
         ${selectionControl}
-        <span class="batch-report-status-chip ${done?'is-done':isSkipped?'is-skipped':'is-pending'}">${done?'Đã xử lý':isSkipped?'Bỏ qua':'Chưa xử lý'}</span>
+        <span class="batch-report-status-chip ${done?'is-done':isSkipped?'is-skipped':'is-pending'}">${stateLabel}</span>${missingMediaAction}
         <div class="batch-report-overlay">
           <div class="batch-report-overlay-head"><div class="batch-report-overlay-badges">${queueBadge?`<span class="badge" style="background:var(--s);color:var(--ac)">${queueBadge}</span>`:''}</div>${aiBadge}</div>
-          <div class="batch-report-overlay-copy"><div class="batch-report-overlay-title"><i style="background:${fil?.hex||'#aaa'}"></i>${esc(fil?fil.brand+' '+fil.name:'Chưa chọn màu')}</div><div class="batch-report-overlay-meta">${fmtDate(r.createdAt)} · ${done?`Đã cập nhật ${applied} part`:isSkipped?'Đã bỏ qua, chưa đối chiếu':'Chưa đối chiếu tiến độ'}<br/>📷 ${esc(capturedBy)}${done?`<br/>🧹 Gỡ / xác nhận: ${esc(removedBy)}`:''}</div>${overlayActions}</div>
+          <div class="batch-report-overlay-copy"><div class="batch-report-overlay-title"><i style="background:${fil?.hex||'#aaa'}"></i>${esc(fil?fil.brand+' '+fil.name:'Chưa chọn màu')}</div><div class="batch-report-overlay-meta">${fmtDate(r.createdAt)} · ${stateMeta}<br/>📷 ${esc(capturedBy)}${done?`<br/>🧹 Gỡ / xác nhận: ${esc(removedBy)}`:''}</div>${overlayActions}</div>
         </div>
       </div></div>`;
   };
