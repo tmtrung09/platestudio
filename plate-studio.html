@@ -6299,13 +6299,14 @@ let spotlightResults=[];
 let spotlightActiveIndex=0;
 const SPOTLIGHT_TABS=[
   ['all','Tất cả'],['models','Model'],['parts','Part'],['orders','Đơn'],
-  ['plates','Plate'],['filaments','Màu nhựa'],['batches','Báo cáo'],['projects','Dự án'],['devices','Thiết bị']
+  ['plates','Plate'],['filaments','Màu nhựa'],['batches','Báo cáo'],['delivery','Giao hàng'],
+  ['sales','Bán hàng'],['inventory','Cần in lại'],['projects','Dự án'],['devices','Thiết bị'],['system','Hệ thống']
 ];
 function spotlightResult(type,title,meta,opts={}){ return {type,title,meta,img:opts.img||'',color:opts.color||'',icon:opts.icon||'⌁',action:opts.action||(()=>{})}; }
-function spotlightTypeLabel(type){return ({models:'Model',parts:'Part',orders:'Đơn hàng',plates:'Plate',filaments:'Màu nhựa',batches:'Báo cáo',projects:'Dự án',devices:'Thiết bị',actions:'Thao tác'})[type]||type;}
+function spotlightTypeLabel(type){return ({models:'Model',parts:'Part',orders:'Đơn hàng',plates:'Plate',filaments:'Màu nhựa',batches:'Báo cáo',delivery:'Giao hàng',sales:'Bán hàng',inventory:'Cần in lại',projects:'Dự án',devices:'Thiết bị',system:'Hệ thống',actions:'Thao tác'})[type]||type;}
 function getSpotlightResults(query){
   const q=String(query||'').trim();
-  const buckets={models:[],parts:[],orders:[],plates:[],filaments:[],batches:[],projects:[],devices:[],actions:[]};
+  const buckets={models:[],parts:[],orders:[],plates:[],filaments:[],batches:[],delivery:[],sales:[],inventory:[],projects:[],devices:[],system:[],actions:[]};
   const add=(type,title,meta,opts,searchText='')=>{
     if(!q || fuzzyTextMatch(`${title} ${meta} ${searchText}`,q)) buckets[type].push(spotlightResult(type,title,meta,opts));
   };
@@ -6335,6 +6336,14 @@ function getSpotlightResults(query){
     const actor=[r.capturedBy?.name,r.capturedBy?.deviceLabel,r.removedBy?.name,r.completedBy?.name].filter(Boolean).join(' ');
     add('batches',`${r.status==='done'?'Đã xử lý':'Chờ xử lý'} · ${f?`${f.brand} ${f.name}`:'Mẻ chưa chọn màu'}`,`${fmtDate(r.completedAt||r.createdAt)} · ${reported||'Chưa gắn model/part'}`,{img:r.thumb||r.image,color:f?.hex,icon:'📷',action:()=>{goPage('batches');setTimeout(()=>viewBatchReport(r.id),40);}},`${f?.brand||''} ${f?.name||''} ${f?.hex||''} ${actor} ${reported}`);
   });
+  (operations?.deliveryBatches||[]).forEach(batch=>{
+    const items=batch.items||[],qty=items.reduce((sum,item)=>sum+(Number(item.sentQty??item.qty)||0),0),itemText=items.map(item=>`${item.modelName||''} ${item.variantName||''} ${item.sku||''}`).join(' '),received=['received','confirmed','completed'].includes(batch.status)?'Đã nhận':'Chờ kiểm hàng';
+    add('delivery',batch.code||'Đợt giao hàng',`${batch.destination||'Cửa hàng'} · ${qty} cái · ${received}`,{img:batch.images?.[0]||items.find(item=>item.image)?.image||'',icon:'🚚',action:()=>goPage(batch.status==='in_transit'?'delivery-receive':'fulfillment')},`${batch.deliveredBy||''} ${batch.note||''} ${itemText}`);
+  });
+  const salesImports=kiotViet.salesImports||[];
+  salesImports.slice(0,18).forEach(entry=>{const period=entry.period||{},label=period.from===period.to?fmtDate(period.from):`${fmtDate(period.from)} – ${fmtDate(period.to)}`,qty=Number(entry.summary?.totalQty??entry.totalQty??0)||0;add('sales',`Báo cáo bán · ${label}`,`${qty?`${qty} sản phẩm · `:''}${entry.source||'KiotViet'}`,{icon:'▥',action:()=>goPage('sales')},`${entry.note||''} ${entry.fileName||''}`);});
+  const restock=getQcReprintNeeds?.()||[];
+  restock.slice(0,18).forEach(row=>add('inventory',row.modelName||row.name||'Cần in lại',`${Number(row.qty||row.needQty||0)||0} cái cần bù`,{img:row.image||'',icon:'↻',action:()=>goPage('inventory')},`${row.reason||''} ${row.variantName||''}`));
   projects.forEach(p=>add('projects',p.name,`${p.status||'Đang hoạt động'} · ${orders.filter(o=>o.projectId===p.id).length} đơn`,{icon:'▱',action:()=>goPage('projects')},`${p.note||''}`));
   const deviceMap=new Map();
   operationalBatchReportSource().forEach(r=>[r.capturedBy,r.removedBy,r.completedBy].filter(Boolean).forEach(actor=>{
@@ -6342,16 +6351,22 @@ function getSpotlightResults(query){
     deviceMap.set(id,actor);
   }));
   deviceMap.forEach(actor=>add('devices',actor.deviceLabel||actor.name||'Thiết bị chưa đặt tên',`${actor.deviceKind||'Thiết bị'} · ${actor.name||'Chưa gán người dùng'}`,{icon:'▣',action:()=>goPage('devices')},`${actor.deviceId||''} ${actor.name||''}`));
-  if(!q){
-    buckets.actions.push(
-      spotlightResult('actions','Tạo đơn hàng','Bắt đầu chọn model và phân bổ plate',{icon:'＋',action:()=>openOrderForm()}),
-      spotlightResult('actions','Thêm Model 3D','Lưu model, part, màu và phiên bản mới',{icon:'◇',action:()=>openAddModel()}),
-      spotlightResult('actions','Báo cáo mẻ in','Chụp hoặc tải ảnh mẻ in mới',{icon:'📷',action:()=>openBatchReportHub()}),
-      spotlightResult('actions','Nhắc part còn thiếu',`${getIncompleteModelReminders().length} model cần kiểm tra`,{icon:'◷',action:()=>goPage('reminders')})
-    );
-  }
-  const order=['actions','models','parts','orders','plates','filaments','batches','projects','devices'];
-  return order.flatMap(type=>buckets[type].slice(0,q?12:6));
+  add('system','Dữ liệu & sao lưu','Kiểm tra trạng thái dữ liệu và đồng bộ workspace',{icon:'◫',action:()=>goPage('data')},'backup đồng bộ cloud');
+  if(isWorkspaceOwner())add('system','Phân quyền','Quản lý thành viên và quyền thao tác',{icon:'⚿',action:()=>openAccessManagement()},'quyền người dùng thành viên');
+  const quickActions=[
+    ['Tạo đợt giao cửa hàng','Chọn hàng, ghi thông tin giao và chụp ảnh bàn giao','🚚',()=>openDeliveryBatchBuilder(),'giao hàng tạo biên lai cửa hàng'],
+    ['Kiểm hàng cửa hàng','Mở các phiếu giao đang chờ xác nhận','✓',()=>openReceivingHub(),'nhận hàng kiểm phiếu giao'],
+    ['Tạo đơn hàng','Bắt đầu chọn model và phân bổ plate','＋',()=>openOrderForm(),'đơn mới'],
+    ['Báo cáo mẻ in','Chụp hoặc tải ảnh mẻ in mới','📷',()=>openBatchReportHub(),'chụp ảnh báo cáo in'],
+    ['Báo cáo bán hàng','Xem hàng đã bán và lịch sử nhập KiotViet','▥',()=>goPage('sales'),'doanh thu bán kiot'],
+    ['Cần in lại','Xem hàng cần bù do bán hàng hoặc QC không đạt','↻',()=>goPage('inventory'),'in bù hàng lỗi qc'],
+    ['Đồng bộ KiotViet','Nhập hoặc quản lý dữ liệu KiotViet','⇅',()=>goPage('kiotviet'),'sku danh mục kiot'],
+    ['Nhắc part còn thiếu',`${getIncompleteModelReminders().length} model cần kiểm tra`,'◷',()=>goPage('reminders'),'thiếu part']
+  ];
+  if(isWorkspaceOwner())quickActions.push(['Phân quyền','Thêm người dùng và cấp quyền thao tác','⚿',()=>openAccessManagement(),'quản lý quyền thành viên']);
+  quickActions.forEach(([title,meta,icon,action,searchText])=>add('actions',title,meta,{icon,action},searchText));
+  const order=['actions','models','parts','orders','plates','filaments','batches','delivery','sales','inventory','projects','devices','system'];
+  return order.flatMap(type=>buckets[type].slice(0,q?12:8));
 }
 function renderSpotlight(){
   const tabs=document.getElementById('spotlight-tabs'), host=document.getElementById('spotlight-results'); if(!tabs||!host)return;
@@ -7572,6 +7587,7 @@ function renderSb() {
       `<button class="sb-nav-item" type="button" data-sidebar-permission="trash.manage" onclick="openTrash()">${sidebarIcon('trash')}<span class="sb-nav-label">Thùng rác</span>${trashItems.length?`<span class="sb-nav-count">${trashItems.length}</span>`:''}</button>`+
       `<button class="sb-nav-item" type="button" data-sidebar-permission="activity.view" onclick="openActivityLog()">${sidebarIcon('progress')}<span class="sb-nav-label">Nhật ký hoạt động</span></button>`+
       item('devices','Thiết bị','device')+
+      `<button class="sb-nav-item" type="button" data-sidebar-page="access" data-owner-only onclick="openAccessManagement()">${sidebarIcon('device')}<span class="sb-nav-label">Phân quyền</span></button>`+
       item('data','Dữ liệu','data')
     ,{forceOpen:['devices','data','access'].includes(curPage)})}
     <div class="sb-account" title="${esc(accountEmail)}"><span class="sb-account-avatar">${esc(accountInitial)}</span><span class="sb-account-copy"><b>${esc(accountName)}</b><small>${esc(accountEmail)}</small></span></div>
