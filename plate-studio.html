@@ -253,6 +253,7 @@ mark { background:rgba(200,80,26,.15); color:var(--ac); border-radius:2px; paddi
 .sb-nav-group { margin:13px 0 4px }
 .sb-nav-caption { padding:0 8px 6px; color:var(--t3); font-size:9.5px; font-weight:750; letter-spacing:.09em; text-transform:uppercase }
 .sb-nav-group-toggle{display:flex;align-items:center;gap:7px;width:100%;min-height:32px;padding:0 8px 7px;border:0;background:transparent;color:var(--t3);font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;text-align:left;cursor:pointer}.sb-nav-group-toggle:hover{color:var(--t2)}.sb-nav-group-toggle i{margin-left:auto;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .16s ease}.sb-nav-group.is-collapsed .sb-nav-group-toggle i{transform:rotate(-45deg) translate(-2px,2px)}.sb-nav-group.is-collapsed .sb-nav-group-body{display:none}.sb-quick-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 2px}.sb-quick-row .sb-quick{min-height:36px;padding:7px 8px;justify-content:center;gap:6px}.sb-quick-row .sb-quick .sb-nav-label{font-size:11px}.sb-quick-row .sb-quick svg{width:15px;height:15px}
+.sb-quick-row .sb-quick-delivery{grid-column:1/-1;justify-content:flex-start;padding-inline:10px;background:linear-gradient(135deg,color-mix(in srgb,#55cfa6 18%,var(--s)),var(--s))!important}
 .sb-nav-item { position:relative; display:flex; align-items:center; gap:10px; width:100%; min-height:38px; padding:8px 9px; border:0; border-radius:10px; background:transparent; color:var(--t2); text-align:left; cursor:pointer; transition:background var(--dur),color var(--dur),transform var(--dur) }
 .sb-nav-item:hover { background:var(--s2); color:var(--t); transform:translateX(1px) }
 .sb-nav-item.active { color:var(--ac); background:var(--acb); font-weight:700 }
@@ -3528,7 +3529,8 @@ html:not([data-theme="light"]) .sb-nav-item[data-sidebar-page="devices"]{--sideb
 html:not([data-theme="light"]) .sb-nav-item[data-sidebar-page="access"]{--sidebar-icon:#90eddb}
 html:not([data-theme="light"]) .sb-nav-item[data-sidebar-page="trash"]{--sidebar-icon:#ff8989}
 html:not([data-theme="light"]) .sb-quick:first-child{--sidebar-icon:#74d9ff}
-html:not([data-theme="light"]) .sb-quick:last-child{--sidebar-icon:#c0a5ff}
+html:not([data-theme="light"]) .sb-quick:nth-child(2){--sidebar-icon:#c0a5ff}
+html:not([data-theme="light"]) .sb-quick-delivery{--sidebar-icon:#69e3ae}
 
 /* Refined dark mode: neutral charcoal canvas and compact multi-colour light. */
 html:not([data-theme="light"]) body{
@@ -3897,6 +3899,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
         <div class="more-group-title">Hoàn thiện & bán hàng</div>
         <div class="more-group-grid">
           <button class="more-item" data-more-tone="mint" onclick="closeMoreSheet();goPage('fulfillment')"><svg viewBox="0 0 24 24"><path d="M3 7h12v10H3z"/><path d="M15 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>Gia công & giao hàng</button>
+          <button class="more-item" data-more-tone="aqua" data-sidebar-page="delivery-builder" onclick="closeMoreSheet();openDeliveryBatchBuilder()"><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Tạo đợt giao</button>
           <button class="more-item" data-more-tone="pink" data-sidebar-page="packaging" onclick="closeMoreSheet();goPage('packaging')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Bao bì & nhãn giá</button>
           <button class="more-item" data-more-tone="indigo" onclick="closeMoreSheet();goPage('kiotviet')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Đồng bộ KiotViet</button>
           <button class="more-item" data-more-tone="green" onclick="closeMoreSheet();goPage('sales')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 12h8M8 16h5"/></svg>Bán hàng</button>
@@ -7434,6 +7437,7 @@ function sidebarIcon(kind) {
     dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
     model:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
     order:'<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>',
+    delivery:'<path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
     plate:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
     progress:'<path d="M12 20V10M18 20V4M6 20v-4"/>',
     project:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
@@ -7492,7 +7496,7 @@ function renderSb() {
       <input id="sb-search-input" placeholder="Tìm trong xưởng..." autocomplete="off" oninput="onSearch(this.value,'sb-search-input','sb-s-drop','sb-s-clear')" onfocus="showSearch('sb-search-input','sb-s-drop')" onblur="setTimeout(()=>hideSearch('sb-s-drop'),180)">
       <div id="sb-s-drop" class="s-drop"></div>
     </div>
-    <section class="sb-nav-group"><div class="sb-nav-caption">Tạo mới</div><div class="sb-quick-row"><button class="sb-nav-item sb-quick" onclick="openOrderForm()">${sidebarIcon('plus')}<span class="sb-nav-label">Đơn hàng</span></button><button class="sb-nav-item sb-quick" onclick="openAddModel()">${sidebarIcon('model')}<span class="sb-nav-label">Model</span></button></div></section>
+    <section class="sb-nav-group"><div class="sb-nav-caption">Tạo mới</div><div class="sb-quick-row"><button class="sb-nav-item sb-quick" onclick="openOrderForm()">${sidebarIcon('plus')}<span class="sb-nav-label">Đơn hàng</span></button><button class="sb-nav-item sb-quick" onclick="openAddModel()">${sidebarIcon('model')}<span class="sb-nav-label">Model</span></button><button class="sb-nav-item sb-quick sb-quick-delivery" data-sidebar-page="delivery-builder" onclick="openDeliveryBatchBuilder()">${sidebarIcon('delivery')}<span class="sb-nav-label">Tạo đợt giao</span></button></div></section>
     ${sidebarNavGroup('work','Vận hành',
       item('dashboard','Tổng quan','dashboard')+
       item('orders','Đơn hàng','order',orders.length)+
@@ -17622,6 +17626,7 @@ function applyWorkspaceNavigationPermissions(){
   });
   document.querySelectorAll('.sb-quick[onclick*="openAddModel"]').forEach(button=>button.style.display=canAccess('models.manage')?'':'none');
   document.querySelectorAll('.sb-quick[onclick*="openOrderForm"]').forEach(button=>button.style.display=canAccess('orders.manage')?'':'none');
+  document.querySelectorAll('.sb-quick[onclick*="openDeliveryBatchBuilder"]').forEach(button=>button.style.display=canAccess('delivery.create')?'':'none');
   const denied=requiredWorkspacePermission(curPage);
   if(denied&&!canAccess(denied)&&curPage!=='dashboard')setTimeout(()=>goPage('dashboard'),0);
 }
