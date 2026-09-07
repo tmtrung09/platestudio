@@ -1,0 +1,8 @@
+node_modules/
+supabase/
+tools/
+*.mhtml
+*.sql
+package.json
+package-lock.json
+PUSH_NOTIFICATIONS.md

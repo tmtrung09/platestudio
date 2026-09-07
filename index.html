@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5A4BB5">
+  <title>Plate Studio</title>
+  <script>
+    // Giữ nguyên query và #ps_page khi mọi người mở link gốc của GitHub Pages.
+    (() => {
+      const app = new URL('./plate-studio.html', window.location.href);
+      app.search = window.location.search;
+      app.hash = window.location.hash;
+      window.location.replace(app.href);
+    })();
+  </script>
+</head>
+<body>
+  <p>Đang mở Plate Studio… <a href="./plate-studio.html">Mở thủ công</a></p>
+</body>
+</html>

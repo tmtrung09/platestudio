@@ -1,0 +1,10 @@
+# Không đưa dữ liệu cục bộ, file thử nghiệm và thư viện cài trên máy lên GitHub.
+node_modules/
+qa-results/
+.tools/
+supabase/.temp/
+*.mhtml
+*.log
+pass this.html
+.DS_Store
+Thumbs.db

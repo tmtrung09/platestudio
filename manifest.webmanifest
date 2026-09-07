@@ -1,0 +1,10 @@
+{
+  "name": "Plate Studio",
+  "short_name": "Plate Studio",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F3EE",
+  "theme_color": "#5A4BB5",
+  "icons": [{"src":"plate-studio-mark.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

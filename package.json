@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "qa:mobile": "node tools/mobile-qa.mjs",
+    "qa:desktop": "node tools/desktop-qa.mjs",
+    "qa:workflow": "node tools/workflow-qa.mjs",
+    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "supabase": "^2.115.0"
+  }
+}

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Plate Studio</title>
+  <desc id="desc">Khối 3D màu đỏ trên các lớp plate in</desc>
+  <defs>
+    <linearGradient id="bg" x1="12" y1="8" x2="118" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF765F"/>
+      <stop offset=".46" stop-color="#E43D49"/>
+      <stop offset="1" stop-color="#8F1632"/>
+    </linearGradient>
+    <linearGradient id="top" x1="40" y1="25" x2="94" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF2E9" stop-opacity=".98"/>
+      <stop offset=".62" stop-color="#FFD5C7" stop-opacity=".94"/>
+      <stop offset="1" stop-color="#FFAD96" stop-opacity=".9"/>
+    </linearGradient>
+    <linearGradient id="left" x1="34" y1="52" x2="66" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB19A"/>
+      <stop offset="1" stop-color="#E94850"/>
+    </linearGradient>
+    <linearGradient id="right" x1="66" y1="52" x2="98" y2="93" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7394A"/>
+      <stop offset="1" stop-color="#9C1435"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#5D1026" flood-opacity=".35"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="35" fill="url(#bg)"/>
+  <path d="M20 88.5c0-5.8 4.7-10.5 10.5-10.5h67c5.8 0 10.5 4.7 10.5 10.5S103.3 99 97.5 99h-67C24.7 99 20 94.3 20 88.5Z" fill="#7E1630" fill-opacity=".52"/>
+  <path d="M26 82.5h76c3.3 0 6 2.7 6 6s-2.7 6-6 6H26c-3.3 0-6-2.7-6-6s2.7-6 6-6Z" fill="#FFF3EA" fill-opacity=".78"/>
+  <path d="M30 86h68" stroke="#BD2742" stroke-opacity=".85" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M32 75.5h64c3.3 0 6 2.7 6 6s-2.7 6-6 6H32c-3.3 0-6-2.7-6-6s2.7-6 6-6Z" fill="#A71937" fill-opacity=".86"/>
+  <path d="M37 79h54" stroke="#FFB4A3" stroke-opacity=".78" stroke-width="3.5" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="m64 21 33 18.4v36.1L64 94 31 75.5V39.4L64 21Z" fill="#C92743"/>
+    <path d="m64 21 33 18.4L64 58 31 39.4 64 21Z" fill="url(#top)"/>
+    <path d="M31 39.4 64 58v36L31 75.5V39.4Z" fill="url(#left)"/>
+    <path d="M64 58 97 39.4v36.1L64 94V58Z" fill="url(#right)"/>
+    <path d="m41 39.5 23-12.8 22.8 12.7L64 52.1 41 39.5Z" fill="#FFF9F4" fill-opacity=".75"/>
+    <path d="M42.5 48.6 58.8 57v18.5L42.5 66.4V48.6Z" fill="#FFDED2" fill-opacity=".42"/>
+    <path d="M86 48.6 69.2 57v18.5L86 66.4V48.6Z" fill="#6F102C" fill-opacity=".22"/>
+  </g>
+  <circle cx="99" cy="30" r="5" fill="#FFF5ED" fill-opacity=".72"/>
+</svg>

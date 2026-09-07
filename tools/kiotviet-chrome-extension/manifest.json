@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Plate Studio · KiotViet Sync",
+  "version": "1.2.0",
+  "description": "Tự xuất báo cáo KiotViet Hôm qua trong chính profile Chrome đang dùng.",
+  "permissions": ["tabs", "scripting", "alarms", "debugger"],
+  "host_permissions": ["https://banhmi19.kiotviet.vn/*", "http://127.0.0.1:41761/*"],
+  "background": {"service_worker": "service-worker.js"},
+  "action": {"default_title": "Plate Studio · Ghi thao tác KiotViet", "default_popup": "recorder.html"},
+  "content_scripts": [{"matches": ["https://banhmi19.kiotviet.vn/*"], "js": ["content.js"], "run_at": "document_idle"}]
+}

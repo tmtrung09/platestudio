@@ -1,0 +1,47 @@
+-- Thư viện báo cáo phải phân trang sau khi đã lọc trên server. Nếu lọc sau khi
+-- tải 24 bản ghi ở browser, chọn "Chưa xử lý" rồi tăng lên 60/mỗi trang chỉ
+-- hiện các bản ghi khớp trong 24 bản ghi đầu, tạo cảm giác bị thiếu dữ liệu.
+
+create index if not exists batch_reports_workspace_status_updated_idx
+  on public.batch_reports (workspace_id, (coalesce(data->>'status', 'pending')), updated_at desc, id desc);
+
+create or replace function public.get_batch_reports_page(
+  p_workspace_id uuid,
+  p_query text default null,
+  p_status text default 'all',
+  p_recorded_day date default null,
+  p_sort text default 'recorded_desc',
+  p_page integer default 1,
+  p_page_size integer default 24
+)
+returns table(id text, data jsonb, updated_at timestamptz, total_count bigint)
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with base as (
+    select br.id::text as id, br.data::jsonb as data, br.updated_at
+    from public.batch_reports br
+    where br.workspace_id = p_workspace_id
+      and (coalesce(btrim(p_query), '') = '' or lower(br.data::text) like '%' || lower(btrim(p_query)) || '%')
+      and (p_recorded_day is null or left(coalesce(br.data->>'createdAt', ''), 10) = p_recorded_day::text)
+  ), filtered as (
+    select * from base
+    where p_status = 'all'
+       or (p_status = 'done' and coalesce(data->>'status', 'pending') = 'done')
+       or (p_status = 'pending' and coalesce(data->>'status', 'pending') <> 'done')
+  )
+  select f.id, f.data, f.updated_at, count(*) over()::bigint as total_count
+  from filtered f
+  order by
+    case when p_sort = 'pending_first' then case when coalesce(f.data->>'status', 'pending') = 'done' then 1 else 0 end else 0 end asc,
+    case when p_sort = 'done_first' then case when coalesce(f.data->>'status', 'pending') = 'done' then 0 else 1 end else 0 end asc,
+    case when p_sort = 'recorded_asc' then coalesce(f.data->>'createdAt', '') end asc,
+    case when p_sort = 'recorded_desc' then coalesce(f.data->>'createdAt', '') end desc,
+    f.updated_at desc, f.id desc
+  offset (greatest(1, coalesce(p_page, 1)) - 1) * greatest(1, least(coalesce(p_page_size, 24), 100))
+  limit greatest(1, least(coalesce(p_page_size, 24), 100));
+$$;
+
+grant execute on function public.get_batch_reports_page(uuid, text, text, date, text, integer, integer) to authenticated;

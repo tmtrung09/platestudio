@@ -1,0 +1,14 @@
+[functions.staff-batch-report]
+verify_jwt = true
+
+[functions.staff-delivery-receive]
+verify_jwt = true
+
+[functions.analyze-batch-report]
+verify_jwt = true
+
+[functions.makerworld-model-metadata]
+verify_jwt = false
+
+[functions.send-device-push]
+verify_jwt = true
