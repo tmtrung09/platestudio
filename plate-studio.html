@@ -9,7 +9,8 @@
 <meta name="theme-color" content="#5A4BB5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <script>try{if(localStorage.getItem('ps_theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <style>
 /* ═══════════════════════════════
@@ -4690,9 +4691,8 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 </div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Đọc file .xlsx/.xls xuất từ KiotViet ngay trên trình duyệt; file gốc không cần tải lên server. -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Supabase bắt đầu tải song song với mã ứng dụng, không chặn việc dựng khung đầu trang. -->
+<script>window.__psSupabaseReady=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('Không tải được thư viện kết nối.'));document.head.appendChild(s);});</script>
 <script>
 /* ═══════════════════════════════════════
    STORAGE KEYS
@@ -4706,6 +4706,18 @@ const K = {
 /* Phải có trước lần lưu dữ liệu đầu tiên của profile mới, vì sv() có thể tạo
    bản sao ngay trong lúc khởi tạo localStorage. */
 const BACKUP_INTERVAL_MS=24*60*60*1000,BACKUP_LIMIT=7;
+const XLSX_LIBRARY_URL='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+let xlsxLibraryPromise=null;
+async function ensureXlsxLibrary(){
+  if(globalThis.XLSX)return globalThis.XLSX;
+  if(!xlsxLibraryPromise)xlsxLibraryPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');script.src=XLSX_LIBRARY_URL;script.async=true;
+    script.onload=()=>globalThis.XLSX?resolve(globalThis.XLSX):reject(new Error('Không khởi tạo được bộ đọc Excel.'));
+    script.onerror=()=>reject(new Error('Không tải được bộ đọc Excel. Kiểm tra mạng rồi thử lại.'));
+    document.head.appendChild(script);
+  });
+  try{return await xlsxLibraryPromise;}catch(error){xlsxLibraryPromise=null;throw error;}
+}
 
 /* ═══════════════════════════════════════
    DEFAULT FILAMENTS
@@ -4924,6 +4936,7 @@ const DEF_BRANDS = ['Bambu Lab','eSUN','Sunlu','Polymaker','Creality','Overture'
 ═══════════════════════════════════════ */
 let sb = null, currentUser = null, cloudReady = false, loadingCloud = false;
 let cloudSyncTimer = null, cloudRetryTimer = null, cloudChannel = null, cloudSyncing = false, cloudRefreshTimer = null, remoteRefreshWatchTimer = null, remoteRefreshApplying = false, lastCloudWriteAt = 0, remoteDataRefreshPending = false;
+const remoteRefreshTables=new Set();
 let cloudSyncedSnapshot = null;
 let needsCloudBatchSeed = false;
 /* Undo chỉ ở bộ nhớ phiên hiện tại: tránh ghi một lịch sử nặng vào cloud, nhưng
@@ -4991,6 +5004,10 @@ function systemUndoSnapshot(){
 }
 function prepareSystemUndoCheckpoint(){
   if(!systemUndoReady||systemUndoRestoring)return;
+  /* Một chuỗi thao tác thường phát ra pointerdown rồi change/keydown liên tiếp.
+     Chỉ cần một mốc trước chuỗi đó; stringify toàn bộ xưởng ở mọi event sẽ làm
+     máy yếu khựng rõ khi dữ liệu đã lớn. */
+  if(systemUndoPending&&Date.now()-systemUndoPending.at<1800)return;
   const snapshot=systemUndoSnapshot();if(snapshot)systemUndoPending={snapshot,at:Date.now()};
 }
 function commitSystemUndoCheckpoint(){
@@ -5861,6 +5878,33 @@ function showRemoteDataRefreshNotice(){
   document.getElementById('remote-data-refresh-notice')?.remove();
   if(remoteDataRefreshPending)setSyncState('Sẽ tự đồng bộ sau khi hoàn tất thao tác','ok');
 }
+async function refreshRemoteCloudTable(key){
+  if(key==='batchReports'){
+    invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true});
+    if(cloudSyncedSnapshot)cloudSyncedSnapshot.batchReports=[...batchReports];
+    return;
+  }
+  const table=CLOUD_TABLES[key];if(!table)return;
+  const {data,error}=await sb.from(table).select('data').eq('workspace_id',cloudWorkspaceId()).order('updated_at',{ascending:true});
+  if(error)throw error;const rows=(data||[]).map(row=>row.data);
+  if(key==='models'){models=rows;migrateModelsSchema();saveLocalValue(K.models,models);}
+  else if(key==='fils'){fils=rows;saveLocalValue(K.fils,fils);}
+  else if(key==='projects'){projects=rows;saveLocalValue(K.projects,projects);}
+  else if(key==='orders'){orders=rows;saveLocalValue(K.orders,orders);}
+  else if(key==='plates'){plates=rows;saveLocalValue(K.plates,plates);}
+  else if(key==='pitems'){pitems=rows;saveLocalValue(K.pitems,pitems);}
+  else if(key==='settings'){
+    brands=rows.find(row=>row.id==='brands')?.values||[];
+    operations=rows.find(row=>row.id==='operations')?.values||{qualityIssues:[],deliveries:[],deliveryBatches:[]};normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();
+    kiotViet=rows.find(row=>row.id==='kiotviet')?.values||{catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
+    if(!kiotViet||typeof kiotViet!=='object')kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
+    ['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(name=>{if(!Array.isArray(kiotViet[name]))kiotViet[name]=[];});
+    trashItems=Array.isArray(rows.find(row=>row.id==='trash')?.values)?rows.find(row=>row.id==='trash').values:[];
+    deliveryPhotoHub=rows.find(row=>row.id==='delivery_photo_hub')?.values||{requests:[],photos:[]};normalizeDeliveryPhotoHub();
+    [[K.brands,brands],[K.operations,operations],[K.kiotViet,kiotViet],[K.trash,trashItems],[K.deliveryPhotoHub,deliveryPhotoHub]].forEach(([storage,value])=>saveLocalValue(storage,value));
+  }
+  if(cloudSyncedSnapshot)cloudSyncedSnapshot[key]=key==='settings'?getCloudCollections().settings:rows;
+}
 async function applyRemoteDataRefresh(){
   if(!remoteDataRefreshPending||remoteRefreshApplying)return;
   if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
@@ -5870,7 +5914,12 @@ async function applyRemoteDataRefresh(){
     /* Chỉ lấy dữ liệu cloud khi vùng nhập đã an toàn. Trước đây dữ liệu global
        được thay ngay cả khi form vẫn đang gõ, khiến lần Lưu sau có thể dùng
        nhầm snapshot mới. */
-    invalidateFulfillmentCloudManualReports();await loadCloudData();updateCamBadge();
+    /* Một thay đổi từ thiết bị khác thường chỉ chạm một bảng. Trước đây lần
+       nào cũng tải lại mọi bảng + lịch sử mẻ, gây khựng rõ khi xưởng có dữ liệu lớn. */
+    const tables=[...remoteRefreshTables];remoteRefreshTables.clear();
+    if(tables.length===1)await refreshRemoteCloudTable(tables[0]);
+    else {invalidateFulfillmentCloudManualReports();await loadCloudData();}
+    updateCamBadge();
     if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
     remoteDataRefreshPending=false;
     document.getElementById('remote-data-refresh-notice')?.remove();
@@ -5879,7 +5928,12 @@ async function applyRemoteDataRefresh(){
     setSyncState('Đã đồng bộ','ok');
   }catch(error){
     console.error('Realtime refresh failed',error);setSyncState('Lỗi đồng bộ','err');
-  }finally{remoteRefreshApplying=false;loadingCloud=false;}
+  }finally{
+    remoteRefreshApplying=false;loadingCloud=false;
+    /* Nếu có thông báo Realtime tới trong lúc đang nạp snapshot này, nó vẫn
+       phải được xử lý ở lượt sau — không để debounce làm rơi thay đổi mới. */
+    if(remoteRefreshTables.size&&!remoteDataRefreshPending)queueRemoteDataRefresh();
+  }
 }
 /* Dữ liệu từ thiết bị khác tự hiện ngay khi chỉ đang xem. Lúc đang gõ, mở form
    hay modal, hệ thống giữ nguyên snapshot hiện tại và tự nạp lại khi thao tác
@@ -5911,9 +5965,10 @@ function queueRemoteDataRefresh(){
   if(canAutoApplyRemoteRefresh())applyRemoteDataRefresh();
   else{showRemoteDataRefreshNotice();scheduleDeferredRemoteRefresh();}
 }
-function scheduleCloudRefresh() {
+function scheduleCloudRefresh(key='') {
   // Không nạp dữ liệu từ Realtime đè lên thay đổi còn trong outbox.
   if(Date.now()-lastCloudWriteAt < 1200 || cloudSyncing || cloudOutbox.length) return;
+  if(key)remoteRefreshTables.add(key);
   clearTimeout(cloudRefreshTimer);
   cloudRefreshTimer=setTimeout(async()=>{
     if(!currentUser || loadingCloud) return;
@@ -5923,10 +5978,10 @@ function scheduleCloudRefresh() {
 function setupCloudRealtime() {
   if(cloudChannel) sb.removeChannel(cloudChannel);
   cloudChannel=sb.channel('plate-sync-'+cloudWorkspaceId());
-  Object.values(CLOUD_TABLES).forEach(table=>{
+  Object.entries(CLOUD_TABLES).forEach(([key,table])=>{
     cloudChannel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{
       const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
-      if(workspace===cloudWorkspaceId()) scheduleCloudRefresh();
+      if(workspace===cloudWorkspaceId()) scheduleCloudRefresh(key);
     });
   });
   cloudChannel.subscribe();
@@ -13573,7 +13628,9 @@ applyAllFilterVisibility();
 /* Kiểm tra phiên Supabase trước khi quyết định hiện đăng nhập. Nếu gọi
    showAuth() ngay tại đây, tài khoản đã lưu phiên sẽ thấy form đăng nhập
    chớp lên rồi mới vào ứng dụng sau khi getSession() hoàn tất. */
-setTimeout(()=>{initCloudApp();},0);
+/* Thư viện kết nối đã được tải song song lúc parser còn đọc app. Chỉ bắt đầu
+   phiên cloud khi nó sẵn sàng, thay vì giữ parser đứng tại thẻ script ngoài. */
+setTimeout(()=>{(window.__psSupabaseReady||Promise.resolve()).then(()=>initCloudApp(),()=>initCloudApp());},0);
 setTimeout(()=>document.getElementById('dash-search')?.focus(), 200);
 
 
@@ -16701,10 +16758,10 @@ function kvNorm(value){return String(value??'').normalize('NFD').replace(/[\u030
 function kvNum(value){const n=Number(String(value??'').replace(/[^0-9,.-]/g,'').replace(/,/g,''));return Number.isFinite(n)?n:0;}
 function kvField(row,aliases){const keys=Object.keys(row||{}), names=aliases.map(kvNorm);const found=keys.find(k=>names.includes(kvNorm(k)))||keys.find(k=>names.some(n=>kvNorm(k).includes(n)));return found===undefined?'':row[found];}
 async function kvReadRows(file){
-  if(!globalThis.XLSX) throw new Error('Chưa tải được bộ đọc Excel. Kiểm tra mạng rồi thử lại.');
-  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  const xlsx=await ensureXlsxLibrary();
+  const wb=xlsx.read(await file.arrayBuffer(),{type:'array',cellDates:true});
   return wb.SheetNames.flatMap(sheet=>{
-    const matrix=XLSX.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:'',raw:true});
+    const matrix=xlsx.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:'',raw:true});
     // File báo cáo KiotViet thường có tiêu đề lớn ở đầu sheet; tìm hàng chứa cột dữ liệu thật.
     const headerAt=matrix.findIndex(row=>row.some(cell=>['ma hang','sku','ma san pham','ten hang','ten san pham'].includes(kvNorm(cell))));
     if(headerAt<0)return [];
@@ -16716,8 +16773,8 @@ async function kvReadRows(file){
 function kvDateFromText(value){const match=String(value||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);return match?`${match[3]}-${String(match[2]).padStart(2,'0')}-${String(match[1]).padStart(2,'0')}`:'';}
 async function kvReadSalesReportPeriod(file){
   try{
-    if(!globalThis.XLSX)return null;
-    const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true}),text=wb.SheetNames.flatMap(sheet=>XLSX.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:'',raw:false}).flat()).map(value=>String(value||'')).join(' ');
+    const xlsx=await ensureXlsxLibrary();
+    const wb=xlsx.read(await file.arrayBuffer(),{type:'array',cellDates:true}),text=wb.SheetNames.flatMap(sheet=>xlsx.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:'',raw:false}).flat()).map(value=>String(value||'')).join(' ');
     const match=text.match(/từ\s*ngày\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*đến\s*ngày\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
     return match?{from:kvDateFromText(match[1]),to:kvDateFromText(match[2])}:null;
   }catch(_){return null;}
@@ -16940,22 +16997,22 @@ function kiotImportRowsForDelivery(batch){
     return {item,qty,sku,product};
   }).filter(Boolean);
 }
-function downloadKiotImportForDelivery(batchId){
+async function downloadKiotImportForDelivery(batchId){
   const batch=operations.deliveryBatches.find(row=>row.id===batchId);
   if(!batch || !['received','partial_received'].includes(batch.status)){toast('Chỉ tạo file nhập hàng sau khi cửa hàng đã xác nhận nhận hàng.');return;}
-  if(!globalThis.XLSX){toast('Chưa tải được bộ tạo Excel. Kiểm tra mạng rồi thử lại.');return;}
+  let xlsx;try{xlsx=await ensureXlsxLibrary();}catch(error){toast(error.message||'Chưa tải được bộ tạo Excel.',5000);return;}
   const rows=kiotImportRowsForDelivery(batch);
   if(!rows.length){toast('Phiếu này chưa có số lượng thực nhận để nhập KiotViet.');return;}
   const missing=rows.filter(row=>!row.sku);
   if(missing.length){showActionDialog({title:'Chưa thể tạo file KiotViet',icon:'⚠️',message:`Còn ${missing.length} dòng chưa ghép SKU KiotViet: <b>${esc(missing.map(row=>row.item.modelName||'Model').join(', '))}</b>. Hãy ghép SKU trước để không nhập nhầm tồn kho.`,primaryLabel:'Đã hiểu'});return;}
   const headers=['Mã hàng','Tên hàng','Đơn vị tính','Đơn giá','Giảm giá','Giảm giá (%)','Số lượng'];
   const data=rows.map(row=>[row.sku,row.product?.name||row.item.modelName||row.sku,row.product?.unit||'Cái',Number(row.product?.price)||0,0,'',row.qty]);
-  const sheet=XLSX.utils.aoa_to_sheet([headers,...data]);
+  const sheet=xlsx.utils.aoa_to_sheet([headers,...data]);
   data.forEach((_,index)=>{const cell=sheet[`A${index+2}`];if(cell){cell.t='s';cell.z='@';}});
   sheet['!cols']=[{wch:18},{wch:36},{wch:14},{wch:15},{wch:13},{wch:16},{wch:13}];
-  const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,sheet,'PurchaseOrderTemplate');
+  const workbook=xlsx.utils.book_new();xlsx.utils.book_append_sheet(workbook,sheet,'PurchaseOrderTemplate');
   const day=String(batch.receivedAt||batch.deliveredAt||new Date().toISOString()).slice(0,10).replaceAll('-','');
-  XLSX.writeFile(workbook,`Nhap-hang-KiotViet-${batch.code||day}.xlsx`,{compression:true});
+  xlsx.writeFile(workbook,`Nhap-hang-KiotViet-${batch.code||day}.xlsx`,{compression:true});
   batch.kiotImportExportedAt=new Date().toISOString();batch.kiotImportExportedBy=currentUser?.email||'';saveOperations();
   toast(`✓ Đã tạo file KiotViet gồm ${rows.length} dòng theo số thực nhận.`);
 }
