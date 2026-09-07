@@ -1346,18 +1346,21 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
 }
 
 .more-sheet-ov {
-  display:none; position:fixed; inset:0; z-index:1400; background:rgba(8,9,15,.64);
+  /* Giữ lớp fixed sẵn sàng để mở menu không buộc trình duyệt tính lại layout cả trang. */
+  display:flex; visibility:hidden; position:fixed; inset:0; z-index:1400; background:rgba(8,9,15,.64);
   align-items:flex-end; justify-content:center; padding-top:max(12px,env(safe-area-inset-top));
-  opacity:0; pointer-events:none; transition:opacity .2s; backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+  opacity:0; pointer-events:none; transition:opacity .2s; contain:layout paint style; will-change:opacity;
+  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
 }
-.more-sheet-ov.show { opacity:1; pointer-events:auto; display:flex }
-body.more-sheet-open{overflow:hidden}
+.more-sheet-ov.show { visibility:visible; opacity:1; pointer-events:auto }
+/* Lớp phủ fixed đã chặn chạm phía sau; không khóa overflow body để tránh reflow toàn trang. */
+body.more-sheet-open{overscroll-behavior:none}
 .more-sheet {
   width:100%; max-width:560px; height:min(720px,calc(100dvh - 12px)); max-height:calc(100dvh - 12px);
   display:flex; flex-direction:column; min-height:0; overflow:hidden;
   background:var(--s); border-radius:24px 24px 0 0;
   padding:0; box-shadow:0 -18px 54px rgba(0,0,0,.34);
-  transform:translateY(100%); transition:transform .28s var(--sp);
+  transform:translateY(100%); transition:transform .28s var(--sp); will-change:transform;
 }
 .more-sheet-ov.show .more-sheet { transform:translateY(0) }
 .more-sheet-head{flex:0 0 auto;padding:9px 14px 10px;border-bottom:1px solid var(--b);background:color-mix(in srgb,var(--s) 94%,transparent);touch-action:pan-y}
@@ -1405,6 +1408,8 @@ body.more-sheet-open{overflow:hidden}
   .more-item.is-pointer-glowing::after{opacity:1}
 }
 @media (prefers-reduced-motion:reduce){.more-item{animation:none}}
+/* Blur toàn màn hình ngốn texture GPU/RAM trên mobile; lớp nền tối vẫn đủ tách sheet. */
+@media(max-width:860px){.more-sheet-ov{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,9,15,.72)}}
 @media(max-width:360px){.more-group-grid{grid-template-columns:1fr}.more-sheet{height:calc(100dvh - 8px)}.more-sheet-scroll{padding-inline:10px}.more-sheet-head,.more-sheet-footer{padding-inline:10px}}
 
 /* ═══════════════════════════════════════
@@ -4942,7 +4947,7 @@ let needsCloudBatchSeed = false;
 /* Undo chỉ ở bộ nhớ phiên hiện tại: tránh ghi một lịch sử nặng vào cloud, nhưng
    mọi lần hoàn tác/làm lại vẫn được đồng bộ như một thay đổi dữ liệu bình thường. */
 var systemUndoStack=[],systemRedoStack=[],systemUndoPending=null,systemUndoRestoring=false,systemUndoReady=false;
-const SYSTEM_UNDO_LIMIT=30;
+const SYSTEM_UNDO_LIMIT=12,SYSTEM_UNDO_MAX_BYTES=6*1024*1024;
 
 function ld(k, def) {
   try { const s = localStorage.getItem(k); if (s) return JSON.parse(s); } catch(e) {}
@@ -4972,7 +4977,9 @@ let draggingModelIds = [];
 let cloudOutbox = ld(K.syncOutbox, []);
 let batchReports = ld(K.batchReports, []); // ảnh báo cáo mẻ in — [{id, image, filamentId, createdAt, status, appliedItems}]
 let trashItems = ld(K.trash, []); // thùng rác dùng chung, hiện lưu báo cáo mẻ và ảnh liên quan
-let backups = ld(K.backups, []); // bản sao tự động cục bộ, tối đa 7 bản gần nhất
+/* Chỉ giữ ảnh chụp mới nhất trong RAM. Những bản cũ vẫn được lưu đầy đủ trong
+   localStorage nhưng giao diện chỉ cần khôi phục bản gần nhất. */
+let backups = loadBackupIndex();
 /* Nhật ký vận hành không nằm trong tiến độ in thô: kiểm định part, gia công
    và các chuyến giao thành phẩm. Tách thành một object nhỏ để cloud đồng bộ
    cùng Settings, không cần thêm bảng Supabase mới. */
@@ -5002,6 +5009,10 @@ if(!kiotViet.inventoryInsight || typeof kiotViet.inventoryInsight!=='object') ki
 function systemUndoSnapshot(){
   try{return JSON.stringify({models,fils,projects,orders,plates,pitems,brands,modelCategoriesPinned,batchReports,trashItems,operations,kiotViet});}catch(error){console.warn('Không thể tạo mốc hoàn tác',error);return '';}
 }
+function trimSystemUndoHistory(stack){
+  let bytes=stack.reduce((total,snapshot)=>total+String(snapshot||'').length,0);
+  while(stack.length>SYSTEM_UNDO_LIMIT||(stack.length>1&&bytes>SYSTEM_UNDO_MAX_BYTES))bytes-=String(stack.shift()||'').length;
+}
 function prepareSystemUndoCheckpoint(){
   if(!systemUndoReady||systemUndoRestoring)return;
   /* Một chuỗi thao tác thường phát ra pointerdown rồi change/keydown liên tiếp.
@@ -5017,7 +5028,7 @@ function commitSystemUndoCheckpoint(){
   // lần lưu đầu tiên và bỏ qua checkpoint cũ do thao tác mở giao diện.
   if(Date.now()-pending.at>8000)return;
   const current=systemUndoSnapshot();if(!current||current===pending.snapshot)return;
-  systemUndoStack.push(pending.snapshot);if(systemUndoStack.length>SYSTEM_UNDO_LIMIT)systemUndoStack.shift();systemRedoStack=[];
+  systemUndoStack.push(pending.snapshot);trimSystemUndoHistory(systemUndoStack);systemRedoStack=[];
 }
 function applySystemUndoSnapshot(serialized){
   let state;try{state=JSON.parse(serialized);}catch(_){toast('Không đọc được mốc hoàn tác.');return false;}
@@ -5031,12 +5042,12 @@ function applySystemUndoSnapshot(serialized){
 }
 function undoSystemAction(){
   if(!systemUndoStack.length){toast('Không còn thao tác nào để hoàn tác.');return;}
-  const current=systemUndoSnapshot(),previous=systemUndoStack.pop();if(current)systemRedoStack.push(current);
+  const current=systemUndoSnapshot(),previous=systemUndoStack.pop();if(current){systemRedoStack.push(current);trimSystemUndoHistory(systemRedoStack);}
   if(applySystemUndoSnapshot(previous))toast('↶ Đã hoàn tác thay đổi gần nhất.');
 }
 function redoSystemAction(){
   if(!systemRedoStack.length){toast('Không còn thao tác nào để làm lại.');return;}
-  const current=systemUndoSnapshot(),next=systemRedoStack.pop();if(current)systemUndoStack.push(current);
+  const current=systemUndoSnapshot(),next=systemRedoStack.pop();if(current){systemUndoStack.push(current);trimSystemUndoHistory(systemUndoStack);}
   if(applySystemUndoSnapshot(next))toast('↷ Đã làm lại thay đổi.');
 }
 function undoTypingTarget(target){return Boolean(target?.matches?.('input,textarea,[contenteditable="true"]'));}
@@ -5881,7 +5892,7 @@ function showRemoteDataRefreshNotice(){
 async function refreshRemoteCloudTable(key){
   if(key==='batchReports'){
     invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true});
-    if(cloudSyncedSnapshot)cloudSyncedSnapshot.batchReports=[...batchReports];
+    refreshCloudSnapshotFingerprint('batchReports');
     return;
   }
   const table=CLOUD_TABLES[key];if(!table)return;
@@ -5903,7 +5914,7 @@ async function refreshRemoteCloudTable(key){
     deliveryPhotoHub=rows.find(row=>row.id==='delivery_photo_hub')?.values||{requests:[],photos:[]};normalizeDeliveryPhotoHub();
     [[K.brands,brands],[K.operations,operations],[K.kiotViet,kiotViet],[K.trash,trashItems],[K.deliveryPhotoHub,deliveryPhotoHub]].forEach(([storage,value])=>saveLocalValue(storage,value));
   }
-  if(cloudSyncedSnapshot)cloudSyncedSnapshot[key]=key==='settings'?getCloudCollections().settings:rows;
+  refreshCloudSnapshotFingerprint(key);
 }
 async function applyRemoteDataRefresh(){
   if(!remoteDataRefreshPending||remoteRefreshApplying)return;
@@ -6011,7 +6022,7 @@ async function loadCloudData() {
   if(cloudOutbox.length) {
     migrateModelsSchema();
     saveLocalCollections();
-    if(!cloudOutbox.length) cloudSyncedSnapshot=cloudSnapshot();
+    if(!cloudOutbox.length) cloudSyncedSnapshot=cloudSnapshotFingerprints();
     return;
   }
   if(remoteEmpty) {
@@ -6022,7 +6033,7 @@ async function loadCloudData() {
     operations={qualityIssues:[],deliveries:[],deliveryBatches:[],events:[]};
     kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     saveLocalCollections();
-    cloudSyncedSnapshot=cloudSnapshot();
+    cloudSyncedSnapshot=cloudSnapshotFingerprints();
   } else {
     models=remote.models; fils=remote.fils; projects=remote.projects;
     orders=remote.orders; plates=remote.plates; pitems=remote.pitems;
@@ -6052,7 +6063,7 @@ async function loadCloudData() {
     normalizeDeliveryPhotoHub();
     migrateModelsSchema();
     saveLocalCollections();
-    if(!cloudOutbox.length) cloudSyncedSnapshot=cloudSnapshot();
+    if(!cloudOutbox.length) cloudSyncedSnapshot=cloudSnapshotFingerprints();
   }
   if(cloudReady&&typeof announceUnseenSystemEvents==='function')announceUnseenSystemEvents();
   if(cloudReady&&typeof announceDeliveryPhotoRequests==='function')announceDeliveryPhotoRequests();
@@ -6102,6 +6113,21 @@ function cloudSnapshot() {
   // Không giữ reference tới state đang hiển thị: thao tác tiếp theo sẽ vào lượt outbox mới.
   return JSON.parse(JSON.stringify(getCloudCollections()));
 }
+function cloudRecordFingerprint(record){
+  const text=JSON.stringify(record);let first=2166136261,second=0x9e3779b9;
+  for(let index=0;index<text.length;index++){
+    const code=text.charCodeAt(index);first=Math.imul(first^code,16777619);second=Math.imul(second^(code+index),2246822519);
+  }
+  return `${text.length}:${(first>>>0).toString(36)}:${(second>>>0).toString(36)}`;
+}
+function cloudSnapshotFingerprints(collections=getCloudCollections()){
+  return Object.fromEntries(Object.entries(collections).map(([key,records])=>[key,(records||[]).map(record=>({id:record.id,fingerprint:cloudRecordFingerprint(record)}))]));
+}
+function refreshCloudSnapshotFingerprint(key){
+  if(!cloudSyncedSnapshot)return;
+  const records=getCloudCollections()[key]||[];
+  cloudSyncedSnapshot[key]=records.map(record=>({id:record.id,fingerprint:cloudRecordFingerprint(record)}));
+}
 function saveCloudOutbox() { saveLocalValue(K.syncOutbox, cloudOutbox); }
 async function legacyWriteCloudSnapshot(snapshot) {
   cloudSyncing = true;
@@ -6128,7 +6154,6 @@ async function legacyWriteCloudSnapshot(snapshot) {
     cloudSyncing = false;
   }
 }
-function sameCloudRecord(a,b) { return JSON.stringify(a) === JSON.stringify(b); }
 async function writeCloudSnapshot(snapshot) {
   cloudSyncing = true;
   setSyncState('Đang đồng bộ...');
@@ -6139,9 +6164,9 @@ async function writeCloudSnapshot(snapshot) {
       if(key==='batchReports') continue;
       const values=snapshot[key]||[];
       const previous=cloudSyncedSnapshot?.[key]||[];
-      const before=new Map(previous.map(x=>[x.id,x]));
+      const before=new Map(previous.map(x=>[x.id,x.fingerprint]));
       const now=new Map(values.map(x=>[x.id,x]));
-      const changed=values.filter(x=>!before.has(x.id)||!sameCloudRecord(before.get(x.id),x));
+      const changed=values.filter(x=>before.get(x.id)!==cloudRecordFingerprint(x));
       const deleted=previous.filter(x=>!now.has(x.id)).map(x=>x.id);
       if(changed.length) {
         const stamp=new Date().toISOString();
@@ -6153,7 +6178,8 @@ async function writeCloudSnapshot(snapshot) {
         if(error) throw error;
       }
     }
-    cloudSyncedSnapshot=JSON.parse(JSON.stringify(snapshot));
+    /* ID + dấu vân tay đủ để biết bản ghi thay đổi, không cần giữ thêm cả workspace trong RAM. */
+    cloudSyncedSnapshot=cloudSnapshotFingerprints(snapshot);
     lastCloudWriteAt=Date.now();
   } finally { cloudSyncing=false; }
 }
@@ -7095,7 +7121,7 @@ function toggleMoreSheet() {
   const ov = document.getElementById('more-sheet-ov');
   const open = ov.classList.toggle('show');
   document.body.classList.toggle('more-sheet-open', open);
-  if(open) ov.querySelector('.more-sheet-scroll')?.scrollTo({top:0,behavior:'instant'});
+  if(open)requestAnimationFrame(()=>{const scroll=ov.querySelector('.more-sheet-scroll');if(scroll)scroll.scrollTop=0;});
 }
 function closeMoreSheet() {
   const ov=document.getElementById('more-sheet-ov'),sheet=ov?.querySelector('.more-sheet');
@@ -13447,11 +13473,17 @@ function importSelectedMakerWorld() {
 /* ═══════════════════════════════════════
    EXPORT / IMPORT / MIGRATE  (bước 8)
 ═══════════════════════════════════════ */
+function loadBackupIndex(){
+  const stored=ld(K.backups,[]);if(!Array.isArray(stored))return [];
+  return stored.map((backup,index)=>index?{id:backup.id,createdAt:backup.createdAt,manual:Boolean(backup.manual)}:backup);
+}
 function backupSnapshot(){return {version:2,createdAt:new Date().toISOString(),models,fils,projects,orders,plates,pitems,brands,operations,kiotViet,batchReports,trashItems};}
 function saveBackup(snapshot,{manual=false}={}){
-  backups=Array.isArray(backups)?backups:[];
-  backups.unshift({id:uid(),createdAt:snapshot.createdAt,manual,snapshot});
-  backups=backups.slice(0,BACKUP_LIMIT);saveLocalValue(K.backups,backups);renderBackupStatus();
+  const stored=ld(K.backups,[]);const next=Array.isArray(stored)?stored:[];
+  next.unshift({id:uid(),createdAt:snapshot.createdAt,manual,snapshot});
+  const retained=next.slice(0,BACKUP_LIMIT);saveLocalValue(K.backups,retained);
+  backups=retained.map((backup,index)=>index?{id:backup.id,createdAt:backup.createdAt,manual:Boolean(backup.manual)}:backup);
+  renderBackupStatus();
 }
 function scheduleAutomaticBackup(){
   const latest=(Array.isArray(backups)?backups:[])[0],last=Date.parse(latest?.createdAt||'');
