@@ -3886,32 +3886,43 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
     </header>
     <div class="more-sheet-scroll">
       <section class="more-group">
-        <div class="more-group-title">Sản xuất</div>
+        <div class="more-group-title">Vận hành & sản xuất</div>
         <div class="more-group-grid">
-          <button class="more-item" data-more-tone="cyan" onclick="closeMoreSheet();goPage('plates')"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Plate in</button>
-          <button class="more-item" data-more-tone="violet" onclick="closeMoreSheet();goPage('projects')"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Project</button>
-          <button class="more-item" data-more-tone="blue" onclick="closeMoreSheet();goPage('progress')"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Tiến độ in</button>
-          <button class="more-item" data-more-tone="amber" onclick="closeMoreSheet();goPage('filaments')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Màu nhựa</button>
-          <button class="more-item" data-more-tone="rose" onclick="closeMoreSheet();goPage('reminders')"><svg viewBox="0 0 24 24"><path d="M12 9v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg>Nhắc part còn thiếu</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-permission="orders.manage" onclick="closeMoreSheet();openOrderForm()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo đơn hàng</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-permission="models.manage" onclick="closeMoreSheet();openAddModel()"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Thêm Model</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-page="orders" onclick="closeMoreSheet();goPage('orders')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>Đơn hàng</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-page="models" onclick="closeMoreSheet();goPage('models')"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Model 3D</button>
+          <button class="more-item" data-more-tone="blue" data-sidebar-page="progress" onclick="closeMoreSheet();goPage('progress')"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Tiến độ in</button>
+          <button class="more-item" data-more-tone="pink" data-sidebar-page="batches" onclick="closeMoreSheet();goPage('batches')"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Báo cáo mẻ in</button>
+          <button class="more-item" data-more-tone="cyan" data-sidebar-page="print-plans" onclick="closeMoreSheet();goPage('print-plans')"><svg viewBox="0 0 24 24"><path d="M4 19V5M10 19V9M16 19V3M22 19V12"/></svg>Kế hoạch in</button>
+          <button class="more-item" data-more-tone="cyan" data-sidebar-page="plates" onclick="closeMoreSheet();goPage('plates')"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Plate in</button>
+          <button class="more-item" data-more-tone="amber" data-sidebar-page="machine-setup" onclick="closeMoreSheet();goPage('machine-setup')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Khay nhựa & máy</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-page="projects" onclick="closeMoreSheet();goPage('projects')"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Dự án</button>
+          <button class="more-item" data-more-tone="amber" data-sidebar-page="filaments" onclick="closeMoreSheet();goPage('filaments')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Màu nhựa</button>
+          <button class="more-item" data-more-tone="rose" data-sidebar-page="reminders" onclick="closeMoreSheet();goPage('reminders')"><svg viewBox="0 0 24 24"><path d="M12 9v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg>Nhắc part còn thiếu</button>
         </div>
       </section>
       <section class="more-group">
         <div class="more-group-title">Hoàn thiện & bán hàng</div>
         <div class="more-group-grid">
-          <button class="more-item" data-more-tone="mint" onclick="closeMoreSheet();goPage('fulfillment')"><svg viewBox="0 0 24 24"><path d="M3 7h12v10H3z"/><path d="M15 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>Gia công & giao hàng</button>
+          <button class="more-item" data-more-tone="mint" data-sidebar-page="fulfillment" onclick="closeMoreSheet();goPage('fulfillment')"><svg viewBox="0 0 24 24"><path d="M3 7h12v10H3z"/><path d="M15 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>Gia công & giao hàng</button>
           <button class="more-item" data-more-tone="aqua" data-sidebar-page="delivery-builder" onclick="closeMoreSheet();openDeliveryBatchBuilder()"><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Tạo đợt giao</button>
+          <button class="more-item" data-more-tone="aqua" data-sidebar-page="delivery-receive" onclick="closeMoreSheet();goPage('delivery-receive')"><svg viewBox="0 0 24 24"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/></svg>Tiếp nhận hàng</button>
           <button class="more-item" data-more-tone="pink" data-sidebar-page="packaging" onclick="closeMoreSheet();goPage('packaging')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Bao bì & nhãn giá</button>
-          <button class="more-item" data-more-tone="indigo" onclick="closeMoreSheet();goPage('kiotviet')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Đồng bộ KiotViet</button>
-          <button class="more-item" data-more-tone="green" onclick="closeMoreSheet();goPage('sales')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 12h8M8 16h5"/></svg>Bán hàng</button>
-          <button class="more-item" data-more-tone="orange" onclick="closeMoreSheet();goPage('inventory')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Cần in lại</button>
+          <button class="more-item" data-more-tone="indigo" data-sidebar-page="kiotviet" onclick="closeMoreSheet();goPage('kiotviet')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Đồng bộ KiotViet</button>
+          <button class="more-item" data-more-tone="green" data-sidebar-page="sales" onclick="closeMoreSheet();goPage('sales')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 12h8M8 16h5"/></svg>Bán hàng</button>
+          <button class="more-item" data-more-tone="orange" data-sidebar-page="inventory" onclick="closeMoreSheet();goPage('inventory')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Cần in lại</button>
         </div>
       </section>
       <section class="more-group">
         <div class="more-group-title">Hệ thống</div>
         <div class="more-group-grid">
-          <button class="more-item" data-more-tone="sky" onclick="closeMoreSheet();goPage('devices')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị</button>
+          <button class="more-item" data-more-tone="violet" data-sidebar-page="access" data-owner-only="true" onclick="closeMoreSheet();openAccessManagement()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21v-2a7 7 0 0 1 14 0v2M19 8h3M20.5 6.5v3"/></svg>Phân quyền</button>
+          <button class="more-item" data-more-tone="sky" data-sidebar-page="devices" onclick="closeMoreSheet();goPage('devices')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị</button>
+          <button class="more-item" data-more-tone="aqua" data-sidebar-permission="activity.view" onclick="closeMoreSheet();openActivityLog()"><svg viewBox="0 0 24 24"><path d="M4 19V5M10 19V9M16 19V3M22 19V12"/></svg>Nhật ký hoạt động</button>
+          <button class="more-item" data-more-tone="danger" data-sidebar-permission="trash.manage" onclick="closeMoreSheet();openTrash()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v5M14 11v5M9 6V3h6v3"/></svg>Thùng rác</button>
           <button class="more-item" data-more-tone="sun" onclick="toggleAppTheme()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>Đổi sáng / tối</button>
-          <button class="more-item" data-more-tone="aqua" onclick="closeMoreSheet();goPage('data')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Dữ liệu</button>
+          <button class="more-item" data-more-tone="aqua" data-sidebar-page="data" onclick="closeMoreSheet();goPage('data')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Dữ liệu</button>
         </div>
       </section>
     </div>
@@ -17624,9 +17635,16 @@ function applyWorkspaceNavigationPermissions(){
     const permission=button.dataset.sidebarPermission;
     button.style.display=permission&&!canAccess(permission)?'none':'';
   });
+  document.querySelectorAll('[data-owner-only]').forEach(button=>{
+    button.style.display=isWorkspaceOwner()?'':'none';
+  });
   document.querySelectorAll('.sb-quick[onclick*="openAddModel"]').forEach(button=>button.style.display=canAccess('models.manage')?'':'none');
   document.querySelectorAll('.sb-quick[onclick*="openOrderForm"]').forEach(button=>button.style.display=canAccess('orders.manage')?'':'none');
   document.querySelectorAll('.sb-quick[onclick*="openDeliveryBatchBuilder"]').forEach(button=>button.style.display=canAccess('delivery.create')?'':'none');
+  document.querySelectorAll('.more-group').forEach(group=>{
+    const actions=[...group.querySelectorAll('.more-item')];
+    if(actions.length)group.hidden=!actions.some(button=>button.style.display!=='none');
+  });
   const denied=requiredWorkspacePermission(curPage);
   if(denied&&!canAccess(denied)&&curPage!=='dashboard')setTimeout(()=>goPage('dashboard'),0);
 }
