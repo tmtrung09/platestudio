@@ -15906,6 +15906,7 @@ function restoreDeliveryWorkspaceDraftFromCloud(){
 }
 function deliveryDraftHasItems(draft){return !!(draft&&(Object.keys(draft.selected||{}).length||Object.keys(draft.non3dSelected||{}).length||Object.keys(draft.unreconciledSelected||{}).length||Object.keys(draft.unreconciledVariantSelected||{}).length||(draft.pendingKiot||[]).length||Object.keys(draft.openingSelected||{}).length));}
 let deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
+let deliverySearchRenderTimer=0,deliverySearchPersistTimer=0;
 let receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
 let unreconciledVariantMenuId='';
 function openingStockEntries(){
@@ -16101,7 +16102,19 @@ function addPendingKiotDeliveryItem(){
 }
 function removePendingKiotDeliveryItem(id){captureDeliveryWorkspaceForm();deliveryWorkspaceState.pendingKiot=(deliveryWorkspaceState.pendingKiot||[]).filter(item=>item.id!==id);renderDeliveryBuilderPage();}
 function adjustPendingKiotDeliveryQty(id,delta){captureDeliveryWorkspaceForm();const item=(deliveryWorkspaceState.pendingKiot||[]).find(row=>row.id===id);if(!item)return;item.qty=Math.max(1,Math.min(99999,(Number(item.qty)||1)+delta));renderDeliveryBuilderPage();}
-function setDeliveryWorkspaceSearch(value){captureDeliveryWorkspaceForm();deliveryWorkspaceState.query=value;rerenderKeepingTextInputFocus('delivery-workspace-search',renderDeliveryBuilderPage);}
+function setDeliveryWorkspaceSearch(value){
+  deliveryWorkspaceState.query=String(value||'');
+  clearTimeout(deliverySearchRenderTimer);clearTimeout(deliverySearchPersistTimer);
+  /* Lọc danh sách có thể phải dựng lại nhiều thẻ ảnh. Đợi một nhịp rất ngắn
+     sau khi người dùng ngừng gõ để bàn phím vẫn phản hồi tức thì. */
+  deliverySearchRenderTimer=setTimeout(()=>{
+    deliverySearchRenderTimer=0;
+    if(curPage==='delivery-builder')rerenderKeepingTextInputFocus('delivery-workspace-search',()=>renderDeliveryBuilderPage({persist:false}));
+  },85);
+  /* Từ khoá cũng được lưu vào nháp cloud, nhưng không ghi localStorage / cloud
+     ở từng phím bấm. */
+  deliverySearchPersistTimer=setTimeout(()=>{deliverySearchPersistTimer=0;persistDeliveryWorkspaceDraft();},500);
+}
 function toggleDeliveryWorkspaceItem(index){
   captureDeliveryWorkspaceForm();const lines=deliveryReadyLines(deliveryWorkspaceState.sourceOrderId),line=lines[index];if(!line)return;
   const added=!deliveryWorkspaceState.selected[index];if(deliveryWorkspaceState.selected[index])delete deliveryWorkspaceState.selected[index];else deliveryWorkspaceState.selected[index]=line.available;
@@ -16160,9 +16173,9 @@ function deliveryCategoryVisual(images=[],fallback='📦'){
   const unique=[...new Set(images.filter(Boolean))].slice(0,3);
   return `<div class="delivery-category-visual ${unique.length?'has-images':''}">${unique.length?unique.map((src,index)=>`<img src="${esc(src)}" alt="" loading="lazy" style="--preview:${index}">`).join(''):`<span>${fallback}</span>`}</div>`;
 }
-function renderDeliveryBuilderPage(){
+function renderDeliveryBuilderPage({persist=true}={}){
   const host=document.getElementById('delivery-builder-page');if(!host)return;
-  persistDeliveryWorkspaceDraft();
+  if(persist)persistDeliveryWorkspaceDraft();
   const state=deliveryWorkspaceState,lines=deliveryReadyLines(state.sourceOrderId),shown=lines.filter(line=>deliveryLineMatches(line,state.query)),non3d=non3dCatalogProducts().filter(item=>!state.query||fuzzyTextMatch(`${item.sku} ${item.name} ${item.category||''}`,state.query)),unreconciled=unreconciledLegacyModels(state.query);
   const selected=lines.map((line,index)=>({line,index,qty:Number(state.selected[index]||0)})).filter(row=>row.qty>0),selectedNon3d=non3dCatalogProducts().map(item=>({item,qty:Number(state.non3dSelected?.[item.id]||0)})).filter(row=>row.qty>0);
   const selectedUnreconciled=unreconciledLegacySelectionRows(),selectedPending=(state.pendingKiot||[]).filter(item=>Number(item.qty)>0).map(item=>({item,qty:Number(item.qty)}));
