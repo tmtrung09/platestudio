@@ -15859,7 +15859,17 @@ function saveNon3dCatalogItem(id){const item=operations.non3dCatalog.find(row=>r
 function removeNon3dCatalogItem(id){if(!confirm('Xoá sản phẩm này khỏi danh mục hàng ngoài 3D? Các phiếu giao cũ vẫn được giữ nguyên.'))return;const item=operations.non3dCatalog.find(row=>row.id===id);if(item)item.active=false;closeDialog('dlg-mv');saveOperations();toast('Đã xoá khỏi danh mục.');}
 
 let non3dDeliveryCollapsed=(()=>{try{return localStorage.getItem('plate-studio:non3d-delivery-collapsed')==='1';}catch(_){return false;}})();
-let deliveryWorkspaceState={sourceOrderId:'',query:'',step:'products',selected:{},non3dSelected:{},unreconciledSelected:{},unreconciledVariants:{},unreconciledVariantSelected:{},pendingKiot:[],openingSelected:{},form:{}};
+const DELIVERY_CART_DRAFT_KEY='plate-studio:delivery-cart-draft:v1';
+function emptyDeliveryWorkspaceState(){return {sourceOrderId:'',query:'',step:'products',selected:{},non3dSelected:{},unreconciledSelected:{},unreconciledVariants:{},unreconciledVariantSelected:{},pendingKiot:[],openingSelected:{},form:{}};}
+function normalizeDeliveryWorkspaceDraft(draft){
+  if(!draft||typeof draft!=='object')return null;const base=emptyDeliveryWorkspaceState();
+  return {...base,...draft,step:['products','info','photos'].includes(draft.step)?draft.step:'products',selected:{...(draft.selected||{})},non3dSelected:{...(draft.non3dSelected||{})},unreconciledSelected:{...(draft.unreconciledSelected||{})},unreconciledVariants:{...(draft.unreconciledVariants||{})},unreconciledVariantSelected:{...(draft.unreconciledVariantSelected||{})},pendingKiot:Array.isArray(draft.pendingKiot)?draft.pendingKiot:[],openingSelected:{...(draft.openingSelected||{})},form:{...(draft.form||{})}};
+}
+function loadDeliveryWorkspaceDraft(){try{return normalizeDeliveryWorkspaceDraft(JSON.parse(localStorage.getItem(DELIVERY_CART_DRAFT_KEY)||'null'));}catch(_){return null;}}
+function persistDeliveryWorkspaceDraft(){try{localStorage.setItem(DELIVERY_CART_DRAFT_KEY,JSON.stringify(deliveryWorkspaceState));}catch(_){}}
+function clearDeliveryWorkspaceDraft(){try{localStorage.removeItem(DELIVERY_CART_DRAFT_KEY);}catch(_){}}
+function deliveryDraftHasItems(draft){return !!(draft&&(Object.keys(draft.selected||{}).length||Object.keys(draft.non3dSelected||{}).length||Object.keys(draft.unreconciledSelected||{}).length||Object.keys(draft.unreconciledVariantSelected||{}).length||(draft.pendingKiot||[]).length||Object.keys(draft.openingSelected||{}).length));}
+let deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
 let receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
 let unreconciledVariantMenuId='';
 function openingStockEntries(){
@@ -15952,14 +15962,18 @@ function generateDeliveryCode(day=new Date().toISOString().slice(0,10)){
 function openDeliveryBatchBuilder(filterOrderId=''){
   const lines=deliveryReadyLines(filterOrderId);
   if(!lines.length&&!non3dCatalogProducts().length&&!openingStockEntries().length){showActionDialog({title:'Chưa có sản phẩm để giao',icon:'🚚',message:'Chưa có thành phẩm 3D sẵn giao, hàng ngoài 3D hoặc tồn đầu kỳ để tạo phiếu giao.',primaryLabel:'Đã hiểu'});return;}
+  const savedDraft=loadDeliveryWorkspaceDraft();
+  if(!filterOrderId&&deliveryDraftHasItems(savedDraft)){deliveryWorkspaceState=savedDraft;unreconciledVariantMenuId='';goPage('delivery-builder');toast('↻ Đã khôi phục giỏ giao hàng đang làm dở.');return;}
   const day=new Date().toISOString().slice(0,10);
   unreconciledVariantMenuId='';
   deliveryWorkspaceState={sourceOrderId:filterOrderId,query:'',step:'products',selected:{},non3dSelected:{},unreconciledSelected:{},unreconciledVariants:{},unreconciledVariantSelected:{},pendingKiot:[],openingSelected:{},form:{by:currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'Hệ thống',destination:'Bánh mì Stationery',customDestination:'',date:day,code:generateDeliveryCode(day),note:'',legacyConfirmedBy:'',legacyReason:''}};
+  persistDeliveryWorkspaceDraft();
   goPage('delivery-builder');
 }
 function captureDeliveryWorkspaceForm(){
   const fields={by:'delivery-workspace-by',destination:'delivery-workspace-destination',customDestination:'delivery-workspace-custom-destination',date:'delivery-workspace-date',note:'delivery-workspace-note',legacyConfirmedBy:'delivery-legacy-confirmed-by',legacyReason:'delivery-legacy-reason'};
   Object.entries(fields).forEach(([key,id])=>{const el=document.getElementById(id);if(el)deliveryWorkspaceState.form[key]=el.value;});
+  persistDeliveryWorkspaceDraft();
 }
 function deliveryDestinationLabel(form=deliveryWorkspaceState.form||{}){return form.destination==='Địa điểm khác'?(form.customDestination||'').trim():form.destination||'Bánh mì Stationery';}
 function deliveryWorkspaceSelectionSummary(){
@@ -15995,6 +16009,8 @@ function setDeliveryWorkspaceStep(step){
   deliveryWorkspaceState.step=step;renderDeliveryBuilderPage();document.querySelector('.pg-content')?.scrollTo({top:0,behavior:'smooth'});
 }
 function deliveryWorkspacePhotoLabel(input){const label=document.getElementById('delivery-workspace-photo-label');if(label)label.textContent=input.files?.length?`📷 Đã chọn ${input.files.length} ảnh bàn giao`:'📷 Chụp / chọn ảnh bàn giao';}
+document.addEventListener('input',event=>{if(/^delivery-(workspace|legacy)-/.test(event.target?.id||''))captureDeliveryWorkspaceForm();});
+document.addEventListener('change',event=>{if(/^delivery-(workspace|legacy)-/.test(event.target?.id||''))captureDeliveryWorkspaceForm();});
 function setDeliveryWorkspaceDate(value){
   captureDeliveryWorkspaceForm();
   deliveryWorkspaceState.form.date=value||new Date().toISOString().slice(0,10);
@@ -16072,6 +16088,7 @@ function deliveryCategoryVisual(images=[],fallback='📦'){
 }
 function renderDeliveryBuilderPage(){
   const host=document.getElementById('delivery-builder-page');if(!host)return;
+  persistDeliveryWorkspaceDraft();
   const state=deliveryWorkspaceState,lines=deliveryReadyLines(state.sourceOrderId),shown=lines.filter(line=>deliveryLineMatches(line,state.query)),non3d=non3dCatalogProducts().filter(item=>!state.query||fuzzyTextMatch(`${item.sku} ${item.name} ${item.category||''}`,state.query)),unreconciled=unreconciledLegacyModels(state.query);
   const selected=lines.map((line,index)=>({line,index,qty:Number(state.selected[index]||0)})).filter(row=>row.qty>0),selectedNon3d=non3dCatalogProducts().map(item=>({item,qty:Number(state.non3dSelected?.[item.id]||0)})).filter(row=>row.qty>0);
   const selectedUnreconciled=unreconciledLegacySelectionRows(),selectedPending=(state.pendingKiot||[]).filter(item=>Number(item.qty)>0).map(item=>({item,qty:Number(item.qty)}));
@@ -16125,7 +16142,7 @@ async function saveDeliveryBatchFromWorkspace(){
   for(const item of itemsUnreconciled){operations.stockMovements.unshift({id:uid(),type:'legacy_unreconciled_dispatch',batchId:batch.id,modelId:item.modelId,qty:item.sentQty,at:batch.createdAt,actor:batch.deliveredBy||systemUserName?.()||'',confirmedBy:f.legacyConfirmedBy,note:f.legacyReason});}
   operations.deliveryBatches.unshift(batch);if(typeof recordSystemEvent==='function')recordSystemEvent({type:'delivery_created',actor:batch.deliveredBy,title:`${batch.deliveredBy||'Xưởng'} đã tạo đợt giao hàng`,detail:`${batch.code} · ${items.reduce((sum,item)=>sum+(Number(item.sentQty??item.qty)||0),0)} sản phẩm · cần kiểm đếm khi nhận`,permissions:['delivery.receive'],metadata:{batchId:batch.id}});recordAudit('create','Đợt giao hàng',`${batch.code} · ${items.length} dòng${itemsUnreconciled.length?` · ${itemsUnreconciled.length} dòng chưa đối soát`:''}${itemsPendingKiot.length?` · ${itemsPendingKiot.length} dòng chờ Kiot`:''}`,{batchId:batch.id,unreconciledItems:itemsUnreconciled.length,pendingKiotItems:itemsPendingKiot.length});saveOperations();
   if(files.length&&sb&&currentUser){try{batch.images=await Promise.all(files.map((file,index)=>uploadBatchReportMedia(file,'delivery-batch-'+batch.id+'-'+index).then(media=>media.image)));saveOperations();}catch(error){toast('Biên lai đã tạo nhưng chưa tải được một số ảnh: '+error.message,5000);}}
-  playDeliveryDispatchAnimation(()=>{printDeliveryReceipt(batch.id);receivingWorkspaceState={batchId:batch.id,query:'',quantities:{},form:{}};toast(`✓ Đã tạo ${batch.code}. Hãy để cửa hàng kiểm đếm khi nhận.`);goPage('fulfillment');});
+  clearDeliveryWorkspaceDraft();playDeliveryDispatchAnimation(()=>{printDeliveryReceipt(batch.id);receivingWorkspaceState={batchId:batch.id,query:'',quantities:{},form:{}};toast(`✓ Đã tạo ${batch.code}. Hãy để cửa hàng kiểm đếm khi nhận.`);goPage('fulfillment');});
 }
 function openReceivingHub(){normalizeOperations();receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};goPage('delivery-receive');}
 function openReceivingDialog(id){normalizeOperations();const batch=operations.deliveryBatches.find(row=>row.id===id);if(batch&&deliveryReceiptStatus(batch).confirmed){openCompletedDeliveryReview(batch);return;}receivingWorkspaceState={batchId:id,query:'',quantities:{},form:{},step:'count'};goPage('delivery-receive');}
