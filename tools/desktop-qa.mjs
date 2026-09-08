@@ -29,11 +29,13 @@ const routes = ['dashboard', 'models', 'orders', 'plates', 'batches', 'print-pla
 const profiles = [
   { id: 'wide', label: 'Desktop rộng 1440×900', width: 1440, height: 900 },
   { id: 'laptop', label: 'Laptop 1024×768', width: 1024, height: 768 },
+  { id: 'narrow', label: 'Cửa sổ desktop hẹp 640×900', width: 640, height: 900 },
 ];
 /* Laptop checks the routes with the densest layouts. The wide profile still
    checks every primary page, so the audit stays rigorous without becoming too
    slow for a local pre-deploy run. */
 const laptopRoutes = new Set(['dashboard', 'models', 'orders', 'batches', 'print-plans', 'fulfillment', 'sales', 'inventory', 'kiotviet']);
+const narrowRoutes = new Set(['sales']);
 const axeSampleRoutes = new Set(['models', 'orders', 'batches', 'fulfillment', 'sales', 'inventory', 'kiotviet']);
 const requestedRoutes = new Set((process.env.QA_ROUTES || '').split(',').map(value => value.trim()).filter(Boolean));
 
@@ -59,7 +61,7 @@ for (const profile of profiles) {
     hasTouch: false,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
   });
-for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRoutes.has(route)) && (!requestedRoutes.size || requestedRoutes.has(route)))) {
+for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRoutes.has(route)) && (profile.id !== 'narrow' || narrowRoutes.has(route)) && (!requestedRoutes.size || requestedRoutes.has(route)))) {
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('pageerror', error => consoleErrors.push(`pageerror: ${error.message}`));
@@ -156,6 +158,20 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       .slice(0, 8);
     const headings = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(visible).map(element => Number(element.tagName.slice(1)));
     const rectOf = element => element ? (() => { const rect = element.getBoundingClientRect(); return { top: Math.round(rect.top), bottom: Math.round(rect.bottom), height: Math.round(rect.height) }; })() : null;
+    /* Regression guard for the chart-tooltip family: the value of a maximum
+       height column must fit inside the scrollable chart viewport. */
+    const chartTooltip = (() => {
+      const probe = document.createElement('section');
+      probe.className = 'sales-panel sales-daily-chart';
+      probe.style.cssText = 'position:fixed;left:-2000px;top:0;width:360px;opacity:0;pointer-events:none';
+      probe.innerHTML = '<div class="sales-chart-bars"><button class="sales-chart-bar active" style="--bar-height:100%;--bar-color:#66cfff"><span class="sales-chart-value">999.999 đ</span><i></i><small>06/09</small></button></div>';
+      document.body.append(probe);
+      const viewport = probe.querySelector('.sales-chart-bars').getBoundingClientRect();
+      const label = probe.querySelector('.sales-chart-value').getBoundingClientRect();
+      const visible = getComputedStyle(probe.querySelector('.sales-chart-value')).display !== 'none';
+      probe.remove();
+      return { inside: visible && label.top >= viewport.top - 1 && label.bottom <= viewport.bottom + 1, visible, labelTop: Math.round(label.top - viewport.top), viewportHeight: Math.round(viewport.height) };
+    })();
     return {
       title: document.title,
       ready: document.readyState,
@@ -172,6 +188,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       longLines,
       headingLevels: headings,
       sidebar: { scroll: rectOf(document.querySelector('.sb-scroll')), bottom: rectOf(document.querySelector('.sb-bottom')), notifications: rectOf(document.querySelector('#system-notification-button')), system: rectOf([...document.querySelectorAll('.sb-nav-group-toggle')].find(element => element.textContent.trim() === 'Hệ thống')) },
+      chartTooltip,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   let axe = { violations: [], incomplete: [] };
@@ -197,6 +214,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.actualActive !== `page-${route}` ? [`Sai trang đang mở: ${checks.actualActive || 'không có trang active'}`] : []),
     ...(!checks.activeHasContent ? ['Trang active không có nội dung hiển thị'] : []),
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
+    ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),
     ...checks.undersizedTargets.map(item => `Vùng bấm dưới chuẩn WCAG 24px: ${item.label} (${item.width}×${item.height})`),
