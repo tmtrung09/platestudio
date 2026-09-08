@@ -5995,7 +5995,7 @@ async function refreshRemoteCloudTable(key){
   else if(key==='pitems'){pitems=rows;saveLocalValue(K.pitems,pitems);}
   else if(key==='settings'){
     brands=rows.find(row=>row.id==='brands')?.values||[];
-    operations=rows.find(row=>row.id==='operations')?.values||{qualityIssues:[],deliveries:[],deliveryBatches:[]};normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();
+    operations=rows.find(row=>row.id==='operations')?.values||{qualityIssues:[],deliveries:[],deliveryBatches:[]};normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();restoreOrderDraftFromCloud?.();
     kiotViet=rows.find(row=>row.id==='kiotviet')?.values||{catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     if(!kiotViet||typeof kiotViet!=='object')kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     ['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(name=>{if(!Array.isArray(kiotViet[name]))kiotViet[name]=[];});
@@ -6142,7 +6142,7 @@ async function loadCloudData() {
     if(!Array.isArray(operations.qualityIssues)) operations.qualityIssues=[];
     if(!Array.isArray(operations.deliveries)) operations.deliveries=[];
     if(!Array.isArray(operations.deliveryBatches)) operations.deliveryBatches=[];
-    normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();
+    normalizeOperations();restoreDeliveryWorkspaceDraftFromCloud?.();restoreOrderDraftFromCloud?.();
     kiotViet=remote.settings.find(x=>x.id==='kiotviet')?.values || {catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     if(!kiotViet || typeof kiotViet!=='object') kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};
     ['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(k=>{if(!Array.isArray(kiotViet[k]))kiotViet[k]=[];});
@@ -14054,6 +14054,62 @@ let activeCat = '';
 /* cart = danh sách dòng đơn hàng: mỗi dòng là 1 model (partId:null = cả model,
    mọi part) HOẶC 1 part riêng lẻ của model đó (partId:<id>). Mỗi dòng có ghi chú riêng. */
 let cart = []; // [{id, modelId, partId, qty, note}]
+const ORDER_DRAFT_LOCAL_PREFIX='ps_order_draft_v1';
+let orderDraftCloudTimer=0,orderDraftInputTimer=0,orderDraftIsFinalized=false;
+function orderDraftAccountKey(){return currentUser?.id||'';}
+function orderDraftLocalKey(){return `${ORDER_DRAFT_LOCAL_PREFIX}:${orderDraftAccountKey()||'local'}`;}
+function normalizeOrderDraft(raw){
+  if(!raw||typeof raw!=='object')return null;
+  const lines=Array.isArray(raw.cart)?raw.cart.map(line=>({id:String(line?.id||uid()),modelId:String(line?.modelId||''),partId:line?.partId||null,qty:Math.max(1,Number(line?.qty)||1),note:String(line?.note||'').slice(0,500),colorChoices:line?.colorChoices&&typeof line.colorChoices==='object'?{...line.colorChoices}:{},variantId:line?.variantId||null})).filter(line=>line.modelId):[];
+  const form=raw.form&&typeof raw.form==='object'?raw.form:{};
+  return {cart:lines,form:{projectId:String(form.projectId||''),note:String(form.note||'').slice(0,500),date:String(form.date||'').slice(0,10),delivery:String(form.delivery||'').slice(0,10)},orderer:String(raw.orderer||''),accountId:String(raw.accountId||''),updatedAt:String(raw.updatedAt||'')};
+}
+function orderDraftHasContent(draft){return Boolean(draft?.cart?.length||draft?.form?.note||draft?.form?.projectId||draft?.form?.delivery);}
+function captureOrderDraft(){
+  const form={projectId:document.getElementById('of-o-proj')?.value||'',note:document.getElementById('of-o-note')?.value||'',date:document.getElementById('of-o-date')?.value||'',delivery:document.getElementById('of-o-delivery')?.value||''};
+  return normalizeOrderDraft({cart,form,orderer:curOrderer||currentOrderCreator(),accountId:orderDraftAccountKey(),updatedAt:new Date().toISOString()});
+}
+function loadLocalOrderDraft(){try{const draft=normalizeOrderDraft(JSON.parse(localStorage.getItem(orderDraftLocalKey())||'null'));if(draft?.accountId&&(!currentUser?.id||draft.accountId!==currentUser.id))return null;return draft;}catch(_){return null;}}
+function orderDraftFromCloud(){return normalizeOrderDraft(operations?.orderDrafts?.[orderDraftAccountKey()]?.state);}
+function preferredOrderDraft(){
+  const local=loadLocalOrderDraft(),remote=orderDraftFromCloud();
+  if(!remote)return local;
+  const remoteAt=Date.parse(operations?.orderDrafts?.[orderDraftAccountKey()]?.updatedAt||remote.updatedAt||0)||0,localAt=Date.parse(local?.updatedAt||0)||0;
+  return localAt>remoteAt?local:remote;
+}
+function applyOrderDraft(draft){
+  const clean=normalizeOrderDraft(draft);if(!clean)return false;
+  cart=clean.cart.filter(line=>models.some(model=>model.id===line.modelId));
+  curOrderer=clean.orderer||currentOrderCreator();
+  const fields={projectId:'of-o-proj',note:'of-o-note',date:'of-o-date',delivery:'of-o-delivery'};
+  Object.entries(fields).forEach(([key,id])=>{const input=document.getElementById(id);if(input)input.value=clean.form[key]||'';});
+  return true;
+}
+function queueOrderDraftCloudSave(draft){
+  if(!cloudReady||loadingCloud||!currentUser||!orderDraftAccountKey())return;
+  clearTimeout(orderDraftCloudTimer);orderDraftCloudTimer=setTimeout(()=>{try{
+    normalizeOperations();operations.orderDrafts[orderDraftAccountKey()]={state:draft,updatedAt:draft.updatedAt,userId:orderDraftAccountKey()};saveLocalValue(K.operations,operations);scheduleCloudSync();
+  }catch(error){console.warn('Không thể xếp hàng đồng bộ bản nháp order',error);}},420);
+}
+function persistOrderDraft(){
+  if(orderDraftIsFinalized)return;
+  const draft=captureOrderDraft();if(!draft)return;
+  if(!orderDraftHasContent(draft)){clearOrderDraft();return;}
+  try{localStorage.setItem(orderDraftLocalKey(),JSON.stringify(draft));}catch(_){}
+  queueOrderDraftCloudSave(draft);
+}
+function queueOrderDraftSave(){clearTimeout(orderDraftInputTimer);orderDraftInputTimer=setTimeout(persistOrderDraft,260);}
+function clearOrderDraft(){
+  clearTimeout(orderDraftInputTimer);clearTimeout(orderDraftCloudTimer);try{localStorage.removeItem(orderDraftLocalKey());}catch(_){}
+  if(cloudReady&&!loadingCloud&&orderDraftAccountKey()){normalizeOperations();delete operations.orderDrafts[orderDraftAccountKey()];saveLocalValue(K.operations,operations);scheduleCloudSync();}
+}
+function restoreOrderDraftFromCloud(){
+  const remote=orderDraftFromCloud(),local=loadLocalOrderDraft();if(!remote||!orderDraftHasContent(remote))return false;
+  const remoteAt=Date.parse(operations?.orderDrafts?.[orderDraftAccountKey()]?.updatedAt||remote.updatedAt||0)||0,localAt=Date.parse(local?.updatedAt||0)||0;if(local&&localAt>remoteAt)return false;
+  try{localStorage.setItem(orderDraftLocalKey(),JSON.stringify(remote));}catch(_){}
+  if(document.getElementById('ov-order-form')?.style.display==='flex'){applyOrderDraft(remote);renderCart();renderGrid();}
+  return true;
+}
 
 function cats(){
   const set = new Set(models.flatMap(m=>m.cats||[]).filter(Boolean));
@@ -14197,6 +14253,7 @@ function changeLinePart(lineId, val){
 function updateLineNote(lineId, val){
   const line = cart.find(c=>c.id===lineId); if(!line) return;
   line.note = val; // không render lại để giữ focus khi đang gõ
+  queueOrderDraftSave();
 }
 
 /* ═══════════ RENDER: CART ═══════════ */
@@ -14355,6 +14412,7 @@ function renderCart(){
   document.getElementById('of-mob-bubble').textContent = totalQty;
   document.getElementById('of-mob-count').textContent = cart.length ? `${cart.length} dòng` : 'Chưa có sản phẩm';
   document.getElementById('of-mob-total').textContent = cart.length ? `${totalQty} cái` : '';
+  if(document.getElementById('ov-order-form')?.style.display==='flex')queueOrderDraftSave();
 }
 
 function renderPreview(){
@@ -14517,6 +14575,9 @@ function submitOrder(){
   if (typeof renderOrders==='function') renderOrders();
   if (typeof renderPlates==='function') renderPlates();
 
+  /* Đơn đã thành bản ghi chính thức; không được để bản nháp cũ hồi sinh khi
+     người dùng đóng màn hình thành công hoặc mở lại ở thiết bị khác. */
+  orderDraftIsFinalized=true;clearOrderDraft();
   lastCreatedOrderId = orderId;
   document.getElementById('of-done-msg').textContent =
     `${valid.length} sản phẩm — người đặt: ${curOrderer}.`;
@@ -14533,6 +14594,7 @@ function viewJustCreatedOrder(){
 function closeDone(again){
   document.getElementById('of-done-ov').classList.remove('of-show');
   if (again){
+    orderDraftIsFinalized=false;clearOrderDraft();
     cart = [];
     document.getElementById('of-o-note').value = '';
     document.getElementById('of-o-delivery').value = '';
@@ -14591,7 +14653,10 @@ document.addEventListener('keydown', e=>{
     closeOrderForm('orders');
   }
 });
-document.getElementById('of-o-proj').addEventListener('change', renderPreview);
+document.getElementById('of-o-proj').addEventListener('change', ()=>{renderPreview();queueOrderDraftSave();});
+['of-o-note','of-o-date','of-o-delivery'].forEach(id=>{
+  const input=document.getElementById(id);input?.addEventListener('input',queueOrderDraftSave);input?.addEventListener('change',queueOrderDraftSave);
+});
 
 /* ═══════════ ACTION SHEET (giữ lâu trên 1 sản phẩm để order riêng 1 part) ═══════════ */
 let __asheetOptions = [];
@@ -14724,26 +14789,37 @@ function mountOrderFormPage(){
 }
 function openOrderForm(preModelId, preProjectId){
   if (!mountOrderFormPage()) return;
-  cart = preModelId ? [{id:uid(), modelId:preModelId, partId:null, qty:1, note:'', colorChoices:{}, variantId:null}] : [];
-  searchQ = ''; activeCat = ''; curOrderer = currentOrderCreator();
+  orderDraftIsFinalized=false;
+  const savedDraft=preferredOrderDraft(),restoring=orderDraftHasContent(savedDraft);
+  cart=[];searchQ = ''; activeCat = ''; curOrderer = currentOrderCreator();
   document.getElementById('ov-order-form').style.display = 'flex';
   goPage('order-form');
   document.getElementById('of-p-search').value = '';
-  document.getElementById('of-o-note').value = '';
-  document.getElementById('of-o-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('of-o-delivery').value = '';
   document.getElementById('of-adv-toggle').classList.remove('of-open');
   document.getElementById('of-adv-body').classList.remove('of-open');
+  renderProjOpts();
+  if(restoring)applyOrderDraft(savedDraft);
+  else {
+    document.getElementById('of-o-proj').value = '';
+    document.getElementById('of-o-note').value = '';
+    document.getElementById('of-o-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('of-o-delivery').value = '';
+  }
+  if(preModelId&&models.some(model=>model.id===preModelId)){
+    let line=defaultLine(preModelId);if(!line){line={id:uid(),modelId:preModelId,partId:null,qty:0,note:'',colorChoices:{},variantId:null};cart.push(line);}line.qty++;
+  }
+  if(preProjectId)document.getElementById('of-o-proj').value=preProjectId;
+  if(document.getElementById('of-o-delivery').value){document.getElementById('of-adv-toggle').classList.add('of-open');document.getElementById('of-adv-body').classList.add('of-open');}
   renderChips();
   renderGrid();
-  renderProjOpts();
   renderOrdererChips();
-  if (preProjectId) document.getElementById('of-o-proj').value = preProjectId;
   renderCart();
   closeSheet();
+  if(restoring)setTimeout(()=>toast('↻ Đã khôi phục bản nháp đơn hàng.'),80);
   setTimeout(()=>document.getElementById('of-p-search')?.focus(), 60);
 }
 function closeOrderForm(destination){
+  if(!orderDraftIsFinalized)persistOrderDraft();
   document.getElementById('ov-order-form').style.display = 'none';
   if (destination && curPage === 'order-form') goPage(destination);
 }
@@ -15369,6 +15445,7 @@ function normalizeOperations(){
   ['qualityIssues','deliveries','deliveryBatches','non3dCatalog','openingStock','stockMovements','printPlans','events','auditLog'].forEach(key=>{if(!Array.isArray(operations[key]))operations[key]=[];});
   if(!operations.dashboardPins || typeof operations.dashboardPins!=='object'||Array.isArray(operations.dashboardPins))operations.dashboardPins={};
   if(!operations.deliveryCartDrafts || typeof operations.deliveryCartDrafts!=='object'||Array.isArray(operations.deliveryCartDrafts))operations.deliveryCartDrafts={};
+  if(!operations.orderDrafts || typeof operations.orderDrafts!=='object'||Array.isArray(operations.orderDrafts))operations.orderDrafts={};
   if(!operations.externalWorkshopHandovers || typeof operations.externalWorkshopHandovers!=='object'||Array.isArray(operations.externalWorkshopHandovers))operations.externalWorkshopHandovers={};
   if(!operations.assemblyWaitStatuses || typeof operations.assemblyWaitStatuses!=='object'||Array.isArray(operations.assemblyWaitStatuses))operations.assemblyWaitStatuses={};
   if(!operations.packagingTasks || typeof operations.packagingTasks!=='object'||Array.isArray(operations.packagingTasks))operations.packagingTasks={};
