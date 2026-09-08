@@ -11757,6 +11757,7 @@ async function deleteBatchReport(id,skipConfirm=false){
    do lỗi đồng bộ cũ. Chỉ chủ xưởng gọi được RPC; ảnh trong thùng rác bị loại
    khỏi kết quả để thao tác xoá vẫn được tôn trọng. */
 let batchMediaRecoveryCandidates=[];
+let batchMediaRecoveryState={from:'',to:'',selected:new Set()};
 function batchMediaPublicUrl(path){
   return path ? sb?.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl||'' : '';
 }
@@ -11801,32 +11802,46 @@ function queueMissingBatchReportMediaRepair(reports){
     setTimeout(()=>recoverMissingBatchReportMedia(report.id,{quiet:true}).then(restored=>{if(restored&&curPage==='batches')renderBatchReportPage();}).catch(error=>console.warn('Chưa nối lại được ảnh báo cáo',report.id,error)),0);
   });
 }
+function batchMediaRecoveryDay(candidate){return String(candidate?.recorded_at||'').slice(0,10);}
+function filteredBatchMediaRecoveryCandidates(){
+  const {from,to}=batchMediaRecoveryState;
+  return batchMediaRecoveryCandidates.filter(candidate=>{const day=batchMediaRecoveryDay(candidate);return (!from||day>=from)&&(!to||day<=to);});
+}
+function setBatchMediaRecoveryDate(key,value){batchMediaRecoveryState[key]=String(value||'');renderBatchMediaRecoveryDialog();}
+function toggleBatchMediaRecoveryCandidate(id){const selected=batchMediaRecoveryState.selected;selected.has(id)?selected.delete(id):selected.add(id);renderBatchMediaRecoveryDialog();}
+function selectAllFilteredBatchMediaRecoveryCandidates(){filteredBatchMediaRecoveryCandidates().forEach(candidate=>batchMediaRecoveryState.selected.add(candidate.report_id));renderBatchMediaRecoveryDialog();}
+function clearBatchMediaRecoverySelection(){batchMediaRecoveryState.selected.clear();renderBatchMediaRecoveryDialog();}
+function renderBatchMediaRecoveryDialog(){
+  const ov=document.getElementById('dlg-mv');if(!ov)return;
+  const rows=filteredBatchMediaRecoveryCandidates(),selected=batchMediaRecoveryState.selected;
+  /* Nếu người dùng thu hẹp ngày, các tick nằm ngoài vùng lọc không được phép
+     đi theo lần khôi phục này. */
+  const visibleIds=new Set(rows.map(row=>row.report_id));[...selected].forEach(id=>{if(!visibleIds.has(id))selected.delete(id);});
+  const cards=rows.slice(0,80).map(row=>{const checked=selected.has(row.report_id),day=batchMediaRecoveryDay(row)||'Không rõ ngày';return `<button type="button" onclick="toggleBatchMediaRecoveryCandidate('${esc(row.report_id)}')" style="position:relative;display:grid;grid-template-columns:62px minmax(0,1fr);gap:9px;align-items:center;width:100%;padding:7px;text-align:left;border:1px solid ${checked?'var(--ac)':'var(--line)'};border-radius:10px;background:${checked?'color-mix(in srgb,var(--ac) 12%,var(--s))':'var(--s2)'};color:var(--t)"><img src="${esc(batchMediaPublicUrl(row.thumb_path||row.image_path))}" alt="Ảnh ${esc(day)}" loading="lazy" style="width:62px;height:52px;object-fit:cover;border-radius:7px;background:var(--s)"/><span style="min-width:0"><b style="display:block;font-size:12px">${checked?'✓ Đã chọn':'Chọn ảnh này'}</b><small style="display:block;margin-top:3px;color:var(--t3)">${esc(day)} · ${esc(row.media_source||'Storage')}</small></span></button>`;}).join('');
+  const selectedCount=selected.size,hidden=rows.length-80;
+  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><p style="margin:-3px 0 12px;color:var(--t3);font-size:13px;line-height:1.5">Chỉ ảnh được tick mới được khôi phục. Mặc định chỉ hiện 7 ngày gần đây để tránh tạo lại ảnh cũ.</p><div class="form-grid" style="margin-bottom:10px"><div class="field"><label>Từ ngày</label><input type="date" value="${esc(batchMediaRecoveryState.from)}" onchange="setBatchMediaRecoveryDate('from',this.value)"/></div><div class="field"><label>Đến ngày</label><input type="date" value="${esc(batchMediaRecoveryState.to)}" onchange="setBatchMediaRecoveryDate('to',this.value)"/></div></div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px"><small style="color:var(--t3)">${rows.length}/${batchMediaRecoveryCandidates.length} ảnh trong khoảng ngày · ${selectedCount} đã chọn</small><span style="display:flex;gap:6px"><button class="btn btn-ghost btn-xs" onclick="clearBatchMediaRecoverySelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" onclick="selectAllFilteredBatchMediaRecoveryCandidates()">Chọn kết quả</button></span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px;max-height:380px;overflow:auto;padding:2px">${cards||'<div class="empty" style="grid-column:1/-1;padding:18px">Không có ảnh trong khoảng ngày này.</div>'}</div>${hidden>0?`<div style="font-size:12px;color:var(--t3);margin-top:8px">Hiện 80 ảnh đầu; hãy thu hẹp khoảng ngày để chọn chính xác hơn.</div>`:''}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button class="btn btn-ac" id="restore-orphan-batch-media" ${selectedCount?'':'disabled'} onclick="recoverOrphanedBatchReports()">Khôi phục ${selectedCount} ảnh</button></div></div>`;
+}
 async function openBatchMediaRecovery(){
   if(!isWorkspaceOwner()){toast('Chỉ chủ xưởng được khôi phục ảnh từ Storage.');return;}
   if(!sb||!currentUser){toast('Cần kết nối cloud để quét ảnh.');return;}
   const ov=document.getElementById('dlg-mv');
-  ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Đang quét ảnh còn trên server…</div></div>`;
-  ov.style.display='flex';
+  ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Đang quét ảnh còn trên server…</div></div>`;ov.style.display='flex';
   try{
-    const {data,error}=await sb.rpc('list_orphaned_batch_report_media',{p_workspace_id:cloudWorkspaceId(),p_limit:500});
-    if(error)throw error;
+    const {data,error}=await sb.rpc('list_orphaned_batch_report_media',{p_workspace_id:cloudWorkspaceId(),p_limit:500});if(error)throw error;
     batchMediaRecoveryCandidates=(data||[]).filter(row=>row?.report_id&&row?.image_path);
-    if(!batchMediaRecoveryCandidates.length){
-      ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Không có ảnh nào bị thiếu báo cáo.</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;
-      return;
-    }
-    const previews=batchMediaRecoveryCandidates.slice(0,12).map(row=>`<img src="${esc(batchMediaPublicUrl(row.thumb_path||row.image_path))}" alt="Ảnh cần khôi phục" style="width:58px;height:58px;object-fit:cover;border-radius:9px;border:1px solid var(--line)"/>`).join('');
-    ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><p style="margin:-3px 0 12px;color:var(--t3);font-size:13px;line-height:1.5">Tìm thấy <b>${batchMediaRecoveryCandidates.length}</b> ảnh còn trên Storage nhưng không có báo cáo tương ứng. Ảnh khôi phục sẽ ở trạng thái <b>chờ xử lý</b>; Model/Part cũ cần đối chiếu lại.</p><div style="display:flex;flex-wrap:wrap;gap:7px;max-height:140px;overflow:auto;padding:2px">${previews}</div>${batchMediaRecoveryCandidates.length>12?`<div style="font-size:12px;color:var(--t3);margin-top:8px">và ${batchMediaRecoveryCandidates.length-12} ảnh khác.</div>`:''}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" id="restore-orphan-batch-media" onclick="recoverOrphanedBatchReports()">Khôi phục ${batchMediaRecoveryCandidates.length} ảnh</button></div></div>`;
-  }catch(error){
-    console.error('Không quét được ảnh thất lạc',error);
-    ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Không quét được ảnh: ${esc(error.message||'Lỗi không xác định')}</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;
-  }
+    if(!batchMediaRecoveryCandidates.length){ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Không có ảnh nào bị thiếu báo cáo.</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;return;}
+    const today=localBatchDate(),fromDate=new Date(`${today}T12:00:00`);fromDate.setDate(fromDate.getDate()-6);
+    batchMediaRecoveryState={from:fromDate.toISOString().slice(0,10),to:today,selected:new Set()};renderBatchMediaRecoveryDialog();
+  }catch(error){console.error('Không quét được ảnh thất lạc',error);ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Khôi phục ảnh báo cáo</div><div class="empty" style="padding:18px">Không quét được ảnh: ${esc(error.message||'Lỗi không xác định')}</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;}
 }
 async function recoverOrphanedBatchReports(){
-  const candidates=[...batchMediaRecoveryCandidates]; if(!candidates.length)return;
+  const candidates=batchMediaRecoveryCandidates.filter(candidate=>batchMediaRecoveryState.selected.has(candidate.report_id)); if(!candidates.length)return;
   const button=document.getElementById('restore-orphan-batch-media'); if(button)button.disabled=true;
   let restored=0,failed=0;
   for(const candidate of candidates){
+    const {data:alreadyRestored,error:existenceError}=await sb.from(CLOUD_TABLES.batchReports).select('id').eq('workspace_id',cloudWorkspaceId()).eq('id',candidate.report_id).maybeSingle();
+    if(existenceError){failed++;console.warn('Không kiểm tra được báo cáo trước khi khôi phục',candidate.report_id,existenceError);continue;}
+    if(alreadyRestored)continue;
     const recordedAt=candidate.recorded_at||new Date().toISOString();
     const report={
       id:String(candidate.report_id),
