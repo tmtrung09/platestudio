@@ -74,13 +74,32 @@ const results = await page.evaluate(async () => {
   normalizeOperations();
   goPage('fulfillment', { historyMode: 'none' });
 
+  const guide = document.getElementById('fulfillment-flow-guide');
+  const flowFloat = document.getElementById('fulfillment-flow-float');
+  const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
+  check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
+  /* jsdom-like file layouts may not allocate a scroll range in headless mode;
+     simulate the post-scroll guide position and test the same visibility rule. */
+  const originalGuideRect = guide?.getBoundingClientRect.bind(guide);
+  if (guide) guide.getBoundingClientRect = () => ({ ...originalGuideRect(), bottom: -1 });
+  syncFulfillmentFlowFloat();
+  check('Cuộn qua hướng dẫn thì hiện thanh quy trình nổi', flowFloat?.classList.contains('is-visible'));
+  if (guide) guide.getBoundingClientRect = originalGuideRect;
+  const flowOriginalScrollIntoView = Element.prototype.scrollIntoView;
+  let flowTarget = '';
+  Element.prototype.scrollIntoView = function(...args) { flowTarget = this.id; return flowOriginalScrollIntoView?.apply(this, args); };
+  jumpToFulfillmentFlow('qc');
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  Element.prototype.scrollIntoView = flowOriginalScrollIntoView;
+  check('Bước QC trên thanh nổi dẫn đến đúng nhóm', flowTarget === 'fulfillment-stage-part-qc', flowTarget || 'không có nhóm QC');
+
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
 
   /* QC is a repeat action on mobile. Rendering the destination group must not
      steal the operator away from the remaining cards in the current group. */
-  window.scrollTo(0, 180);
-  const scrollBeforeQc = window.scrollY;
+  fulfillmentScrollHost.scrollTop = 180;
+  const scrollBeforeQc = fulfillmentScrollHost.scrollTop;
   const originalScrollIntoView = Element.prototype.scrollIntoView;
   let requestedAutoFocus = false;
   Element.prototype.scrollIntoView = function(...args) {
@@ -92,7 +111,7 @@ const results = await page.evaluate(async () => {
   savePartQcAccepted('qa-order', 'qa-item');
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   Element.prototype.scrollIntoView = originalScrollIntoView;
-  check('QC part giữ nguyên vị trí thao tác', !requestedAutoFocus && Math.abs(window.scrollY - scrollBeforeQc) <= 2, `trước ${scrollBeforeQc}px · sau ${window.scrollY}px · tự focus ${requestedAutoFocus}`);
+  check('QC part giữ nguyên vị trí thao tác', !requestedAutoFocus && Math.abs(fulfillmentScrollHost.scrollTop - scrollBeforeQc) <= 2, `trước ${scrollBeforeQc}px · sau ${fulfillmentScrollHost.scrollTop}px · tự focus ${requestedAutoFocus}`);
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('QC đủ part chuyển sang sẵn gia công', workshopAssemblyStage(row) === 'ready', workshopAssemblyStage(row));
 

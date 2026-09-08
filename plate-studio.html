@@ -3875,6 +3875,21 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
   </div>
 </header>
 
+<style>
+/* Thanh quy trình nổi: thay thế vai trò định hướng của guide khi người dùng
+   đã cuộn khỏi đầu trang, nhưng không chiếm vùng thao tác chính. */
+.fulfillment-flow-float{position:fixed;z-index:1110;top:50%;right:18px;display:flex;flex-direction:column;gap:5px;width:194px;padding:7px;border:1px solid color-mix(in srgb,var(--pu) 34%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--s) 96%,var(--pu) 4%);box-shadow:0 14px 34px rgba(20,22,43,.25),inset 0 1px color-mix(in srgb,#fff 52%,transparent);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transform:translateY(calc(-50% + 12px)) scale(.96);transition:opacity .18s ease,transform .22s cubic-bezier(.2,.9,.25,1)}
+.fulfillment-flow-float.is-visible{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
+.fulfillment-flow-float-label{padding:2px 5px 4px;color:var(--t3);font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+.fulfillment-flow-float button{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:7px;width:100%;min-height:33px;padding:4px 6px;border:0;border-radius:11px;background:color-mix(in srgb,var(--s2) 62%,transparent);color:var(--t);font:800 11px 'Be Vietnam Pro',sans-serif;text-align:left;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
+.fulfillment-flow-float button:hover,.fulfillment-flow-float button:focus-visible,.fulfillment-flow-float button[aria-current="step"]{background:color-mix(in srgb,var(--pu) 16%,var(--s2));color:var(--t);outline:0}
+.fulfillment-flow-float button:active{transform:scale(.97)}
+.fulfillment-flow-float button i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--pu) 17%,var(--s2));color:var(--pu);font-style:normal;font-size:10px;font-weight:900}
+.fulfillment-flow-float button[aria-current="step"] i{background:var(--pu);color:#fff;box-shadow:0 4px 10px color-mix(in srgb,var(--pu) 40%,transparent)}
+@media(max-width:860px){.fulfillment-flow-float{top:auto;right:auto;bottom:calc(154px + env(safe-area-inset-bottom));left:50%;flex-direction:row;align-items:center;width:min(348px,calc(100vw - 28px));padding:6px 7px;border-radius:17px;transform:translate(-50%,12px) scale(.96)}.fulfillment-flow-float.is-visible{transform:translate(-50%,0) scale(1)}.fulfillment-flow-float-label{display:none}.fulfillment-flow-float button{display:grid;flex:1;grid-template-columns:1fr;justify-items:center;gap:1px;min-width:0;min-height:42px;padding:3px 2px;text-align:center;font-size:9px;line-height:1.1}.fulfillment-flow-float button i{width:20px;height:20px;font-size:9px}.fulfillment-flow-float button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){.fulfillment-flow-float{transition:none}.fulfillment-flow-float button{transition:none}}
+</style>
+
 <!-- MOBILE BOTTOM NAV (chỉ hiện trên màn hình nhỏ) -->
 <nav class="mnav" id="mobile-nav">
   <button class="mnav-btn active" id="mnav-dashboard" onclick="goPage('dashboard')">
@@ -15694,19 +15709,58 @@ function saveOperations(){
   if(curPage==='progress'){renderQueue();if(typeof renderPrintProgressPage==='function')renderPrintProgressPage();}
   if(curPage==='orders')renderOrders();if(typeof renderDashboard==='function')renderDashboard();
 }
+const FULFILLMENT_FLOW_TARGETS={
+  print:['fulfillment-missing-parts','fulfillment-stage-reprint','fulfillment-workshop-zone'],
+  workshop:['fulfillment-stage-handover','fulfillment-workshop-flow'],
+  qc:['fulfillment-stage-part-qc','fulfillment-workshop-flow'],
+  delivery:['fulfillment-ready-delivery','fulfillment-workshop-flow'],
+  receive:['fulfillment-receipts','fulfillment-receive','fulfillment-workshop-zone']
+};
+const FULFILLMENT_FLOW_STAGE={workshop:'handover',qc:'part-qc'};
+let fulfillmentFlowFloatListenersBound=false,fulfillmentFlowScrollHost=null;
+function syncFulfillmentFlowFloat(){
+  const floating=document.getElementById('fulfillment-flow-float'),guide=document.getElementById('fulfillment-flow-guide');
+  if(!floating)return;
+  const show=curPage==='fulfillment'&&Boolean(guide)&&guide.getBoundingClientRect().bottom<12;
+  floating.classList.toggle('is-visible',show);
+  if(!show)return;
+  const current=Object.entries(FULFILLMENT_FLOW_TARGETS).find(([,ids])=>ids.some(id=>{
+    const rect=document.getElementById(id)?.getBoundingClientRect();return rect&&rect.top>=0&&rect.top<innerHeight*.62;
+  }))?.[0]||'workshop';
+  floating.querySelectorAll('button[data-flow]').forEach(button=>{
+    if(button.dataset.flow===current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+  });
+}
+function bindFulfillmentFlowFloat(){
+  const scrollHost=fulfillmentScrollHost();
+  if(fulfillmentFlowScrollHost!==scrollHost){
+    fulfillmentFlowScrollHost?.removeEventListener('scroll',syncFulfillmentFlowFloat);
+    fulfillmentFlowScrollHost=scrollHost;scrollHost.addEventListener('scroll',syncFulfillmentFlowFloat,{passive:true});
+  }
+  if(fulfillmentFlowFloatListenersBound)return;
+  fulfillmentFlowFloatListenersBound=true;window.addEventListener('resize',syncFulfillmentFlowFloat,{passive:true});
+}
+function jumpToFulfillmentFlow(flow){
+  if(curPage!=='fulfillment')return;
+  const stage=FULFILLMENT_FLOW_STAGE[flow];
+  if(stage){revealFulfillmentStage(stage,{focus:true});return;}
+  const target=(FULFILLMENT_FLOW_TARGETS[flow]||[]).map(id=>document.getElementById(id)).find(Boolean);
+  target?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function fulfillmentScrollHost(){return document.querySelector('.pg-content')||document.scrollingElement||document.documentElement;}
 /* Sau khi tick một bước, mở chính xác nhóm đích nếu nhóm đó đang thu gọn.
    Việc mở nhóm tuyệt đối không được cướp vị trí đọc: người QC thường cần bấm
    liên tiếp các thẻ trong cùng nhóm, nên tự cuộn sang nhóm đích sẽ làm đứt nhịp. */
 function revealFulfillmentStage(stageId,{focus=false}={}){
   if(curPage!=='fulfillment')return;
-  const scrollX=window.scrollX,scrollY=window.scrollY;
+  const scrollHost=fulfillmentScrollHost(),scrollLeft=scrollHost.scrollLeft,scrollTop=scrollHost.scrollTop;
   const collapsed=fulfillmentCollapsedStages();
   if(stageId&&collapsed.delete(stageId)){
     try{localStorage.setItem(FULFILLMENT_STAGE_COLLAPSE_KEY,JSON.stringify([...collapsed]));}catch(_){ }
   }
   renderFulfillmentPage();
   requestAnimationFrame(()=>{
-    window.scrollTo(scrollX,scrollY);
+    scrollHost.scrollTo?.(scrollLeft,scrollTop);if(!scrollHost.scrollTo){scrollHost.scrollLeft=scrollLeft;scrollHost.scrollTop=scrollTop;}
     if(focus){
       const target=document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`);
       target?.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -16119,15 +16173,16 @@ function renderFulfillmentPage(){
   const workshopRowsHtml=[
     reprintRows.length?fulfillmentStageHtml('reprint','0. Hàng lỗi · chờ in lại',`${reprintRows.length} model cần in bù trước khi gia công tiếp.`,reprintRows,'Không có sản phẩm lỗi cần in lại.',fulfillmentReprintCard):'',
     qcReadyRows.length?`<div id="fulfillment-ready-delivery" class="fulfillment-workshop-subhead">Hoàn tất gia công · sẵn sàng giao hàng <small>${qcReadyRows.length}</small></div>${qcReadyHtml}`:'',
-    workshopFlowCount?`<div class="fulfillment-workshop-subhead">Chờ gia công <small>${workshopFlowCount}</small></div>${readyWorkshopHtml}${waitingWorkshopHtml}`:'',
-    incompleteRows.length?`<div class="fulfillment-workshop-subhead">Thiếu part <small>${incompleteRows.length}</small></div>${incompleteWorkshopHtml}`:''
+    workshopFlowCount?`<div id="fulfillment-workshop-flow" class="fulfillment-workshop-subhead">Chờ gia công <small>${workshopFlowCount}</small></div>${readyWorkshopHtml}${waitingWorkshopHtml}`:'',
+    incompleteRows.length?`<div id="fulfillment-missing-parts" class="fulfillment-workshop-subhead">Thiếu part <small>${incompleteRows.length}</small></div>${incompleteWorkshopHtml}`:''
   ].join('');
-  const workshop=`<section class="fulfillment-workshop-zone"><div class="fulfillment-workshop-head"><b>Gia công</b><div class="fulfillment-workshop-counts"><span class="fulfillment-workshop-count"><b>${readyNotHanded.length}</b> chờ giao xưởng</span><span class="fulfillment-workshop-count"><b>${qcReadyRows.length}</b> sẵn sàng giao hàng</span></div></div>${workshopRowsHtml||'<div class="empty">Chưa có việc gia công.</div>'}</section>`;
-  const pendingHtml=pending.length?`<section><div class="card-title">Cần xử lý <span class="sect-count">${pending.length}</span></div><div class="fulfillment-grid">${pending.map(card).join('')}</div></section>`:'';
+  const workshop=`<section id="fulfillment-workshop-zone" class="fulfillment-workshop-zone"><div class="fulfillment-workshop-head"><b>Gia công</b><div class="fulfillment-workshop-counts"><span class="fulfillment-workshop-count"><b>${readyNotHanded.length}</b> chờ giao xưởng</span><span class="fulfillment-workshop-count"><b>${qcReadyRows.length}</b> sẵn sàng giao hàng</span></div></div>${workshopRowsHtml||'<div class="empty">Chưa có việc gia công.</div>'}</section>`;
+  const pendingHtml=pending.length?`<section id="fulfillment-receive"><div class="card-title">Cần xử lý <span class="sect-count">${pending.length}</span></div><div class="fulfillment-grid">${pending.map(card).join('')}</div></section>`:'';
   const doneHtml=done.length?`<section style="margin-top:22px"><div class="card-title">Đã nhận đủ <span class="sect-count">${done.length}</span></div><div class="fulfillment-grid">${done.map(card).join('')}</div></section>`:'';
-  const receiptHtml=receipts.length?`<section style="margin-top:22px"><div class="card-title">Biên lai gần đây</div><div class="fulfillment-grid">${receipts.map(d=>{const receiptState=deliveryReceiptStatus(d),photo=d.receiveImages?.[0]||d.images?.[0]||'';return `<article class="card fulfillment-card"><div class="fulfillment-card-top">${photo?`<img class="fulfillment-thumb" src="${esc(photo)}" alt="Ảnh biên lai ${esc(d.code||'')}">`:'<div class="fulfillment-thumb" style="display:grid;place-items:center">🚚</div>'}<div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.code||'Phiếu giao hàng')}</b><div style="font-size:12px;color:var(--t3);margin-top:5px">${fmtDate(d.deliveredAt||d.createdAt)} · ${esc(d.destination||'Cửa hàng')} · ${(d.items||[]).reduce((n,x)=>n+(Number(x.sentQty??x.qty)||0),0)} sản phẩm</div><span class="fulfillment-stage"><i style="background:${receiptState.color}"></i>${receiptState.label}</span></div></div><div class="fulfillment-actions"><button class="btn btn-ghost btn-sm" onclick="openCompletedDeliveryReview(operations.deliveryBatches.find(row=>row.id==='${d.id}'))">${receiptState.confirmed?'Xem xác nhận':'Xem biên lai'}</button><button class="btn btn-ghost btn-sm" onclick="printDeliveryReceipt('${d.id}')">In</button><button class="btn btn-danger btn-sm" onclick="confirmDeleteDeliveryBatch('${d.id}')">Xóa</button></div></article>`;}).join('')}</div></section>`:'';
+  const receiptHtml=receipts.length?`<section id="fulfillment-receipts" style="margin-top:22px"><div class="card-title">Biên lai gần đây</div><div class="fulfillment-grid">${receipts.map(d=>{const receiptState=deliveryReceiptStatus(d),photo=d.receiveImages?.[0]||d.images?.[0]||'';return `<article class="card fulfillment-card"><div class="fulfillment-card-top">${photo?`<img class="fulfillment-thumb" src="${esc(photo)}" alt="Ảnh biên lai ${esc(d.code||'')}">`:'<div class="fulfillment-thumb" style="display:grid;place-items:center">🚚</div>'}<div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.code||'Phiếu giao hàng')}</b><div style="font-size:12px;color:var(--t3);margin-top:5px">${fmtDate(d.deliveredAt||d.createdAt)} · ${esc(d.destination||'Cửa hàng')} · ${(d.items||[]).reduce((n,x)=>n+(Number(x.sentQty??x.qty)||0),0)} sản phẩm</div><span class="fulfillment-stage"><i style="background:${receiptState.color}"></i>${receiptState.label}</span></div></div><div class="fulfillment-actions"><button class="btn btn-ghost btn-sm" onclick="openCompletedDeliveryReview(operations.deliveryBatches.find(row=>row.id==='${d.id}'))">${receiptState.confirmed?'Xem xác nhận':'Xem biên lai'}</button><button class="btn btn-ghost btn-sm" onclick="printDeliveryReceipt('${d.id}')">In</button><button class="btn btn-danger btn-sm" onclick="confirmDeleteDeliveryBatch('${d.id}')">Xóa</button></div></article>`;}).join('')}</div></section>`:'';
   const flowGuide=`<section id="fulfillment-flow-guide" class="fulfillment-flow-guide"><header><h3>Luồng xử lý</h3></header><div class="fulfillment-flow-steps"><div class="fulfillment-flow-step" data-fulfillment-flow="print"><span>1</span><b>In đủ part</b></div><div class="fulfillment-flow-step" data-fulfillment-flow="workshop"><span>2</span><b>Giao xưởng</b></div><div class="fulfillment-flow-step" data-fulfillment-flow="qc"><span>3</span><b>Gia công & QC</b></div><div class="fulfillment-flow-step" data-fulfillment-flow="delivery"><span>4</span><b>Tạo đợt giao</b></div><div class="fulfillment-flow-step" data-fulfillment-flow="receive"><span>5</span><b>Cửa hàng nhận</b></div></div></section>`;
-  host.innerHTML=`<section class="fulfillment-command card"><div class="fulfillment-command-main"><div><b>Giao hàng</b>${waiting.length?` <span class="sect-count">${waiting.length} chờ nhận</span>`:''}</div><div class="page-smart-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="fulfillment-search" value="${esc(fulfillmentSearch)}" autocomplete="off" placeholder="Tìm sản phẩm, đơn, phiếu giao..." oninput="setFulfillmentSearch(this.value)" aria-label="Tìm trong gia công và giao hàng"></div></div><div class="gap-row"><button class="btn btn-ghost btn-sm" onclick="openReceivingHub()">📥 Nhận hàng${waiting.length?` (${waiting.length})`:''}</button><button class="btn btn-ac btn-sm" onclick="openDeliveryBatchBuilder()">+ Tạo đợt giao</button></div></section>${flowGuide}${workshop}${pendingHtml||(!done.length&&!receipts.length?`<div class="empty">${fulfillmentSearch.trim()?'Không tìm thấy việc hoặc phiếu giao phù hợp.':'Không có việc cần xử lý.'}</div>`:'')}${doneHtml}${receiptHtml}`;
+  const floatingFlow=`<nav id="fulfillment-flow-float" class="fulfillment-flow-float" aria-label="Đi nhanh trong luồng gia công"><span class="fulfillment-flow-float-label">Đi nhanh</span><button type="button" data-flow="print" onclick="jumpToFulfillmentFlow('print')" aria-label="Bước 1: In đủ part" title="Bước 1: In đủ part"><i>1</i><span>In</span></button><button type="button" data-flow="workshop" onclick="jumpToFulfillmentFlow('workshop')" aria-label="Bước 2: Giao xưởng" title="Bước 2: Giao xưởng"><i>2</i><span>Xưởng</span></button><button type="button" data-flow="qc" onclick="jumpToFulfillmentFlow('qc')" aria-label="Bước 3: QC part" title="Bước 3: QC part"><i>3</i><span>QC</span></button><button type="button" data-flow="delivery" onclick="jumpToFulfillmentFlow('delivery')" aria-label="Bước 4: Tạo đợt giao" title="Bước 4: Tạo đợt giao"><i>4</i><span>Giao</span></button><button type="button" data-flow="receive" onclick="jumpToFulfillmentFlow('receive')" aria-label="Bước 5: Cửa hàng nhận" title="Bước 5: Cửa hàng nhận"><i>5</i><span>Nhận</span></button></nav>`;
+  host.innerHTML=`<section class="fulfillment-command card"><div class="fulfillment-command-main"><div><b>Giao hàng</b>${waiting.length?` <span class="sect-count">${waiting.length} chờ nhận</span>`:''}</div><div class="page-smart-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="fulfillment-search" value="${esc(fulfillmentSearch)}" autocomplete="off" placeholder="Tìm sản phẩm, đơn, phiếu giao..." oninput="setFulfillmentSearch(this.value)" aria-label="Tìm trong gia công và giao hàng"></div></div><div class="gap-row"><button class="btn btn-ghost btn-sm" onclick="openReceivingHub()">📥 Nhận hàng${waiting.length?` (${waiting.length})`:''}</button><button class="btn btn-ac btn-sm" onclick="openDeliveryBatchBuilder()">+ Tạo đợt giao</button></div></section>${flowGuide}${workshop}${pendingHtml||(!done.length&&!receipts.length?`<div class="empty">${fulfillmentSearch.trim()?'Không tìm thấy việc hoặc phiếu giao phù hợp.':'Không có việc cần xử lý.'}</div>`:'')}${doneHtml}${receiptHtml}${floatingFlow}`;
   const receiptCards=host.querySelectorAll('section:last-of-type .fulfillment-card');
   receipts.forEach((batch,index)=>{
     if(!['received','partial_received'].includes(batch.status))return;
@@ -16135,6 +16190,7 @@ function renderFulfillmentPage(){
     button.onclick=()=>downloadKiotImportForDelivery(batch.id);
     receiptCards[index]?.querySelector('.fulfillment-actions')?.insertBefore(button,receiptCards[index].querySelector('.fulfillment-actions')?.children[1]||null);
   });
+  bindFulfillmentFlowFloat();requestAnimationFrame(syncFulfillmentFlowFloat);
   document.getElementById('cnt-fulfillment')?.replaceChildren(document.createTextNode(String(pending.length)));
   if(typeof renderDeliveryReceiptOverview==='function')renderDeliveryReceiptOverview();
 }
