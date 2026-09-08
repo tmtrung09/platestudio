@@ -2644,22 +2644,24 @@ html[data-theme="light"] .card,html[data-theme="light"] .order-card,html[data-th
 #ov-order-form .of-cr-stepper button{width:28px!important;height:28px!important;font-size:16px!important}
 /* Quantity controls must follow the active colour scheme.  The dark glass version
    above is intentional for dark mode, but was being carried into the light sheet. */
-html[data-theme="light"] #ov-order-form .of-cr-stepper,
-html.theme-light #ov-order-form .of-cr-stepper{
+html[data-theme="light"] #ov-order-form :is(.of-p-stepper,.of-cr-stepper),
+html.theme-light #ov-order-form :is(.of-p-stepper,.of-cr-stepper){
   background:color-mix(in srgb,var(--s) 92%,var(--ac) 8%)!important;
   border:1px solid color-mix(in srgb,var(--ac) 26%,var(--b))!important;
   box-shadow:0 3px 10px rgba(35,38,60,.09)!important;
 }
-html[data-theme="light"] #ov-order-form .of-cr-stepper button,
-html.theme-light #ov-order-form .of-cr-stepper button{
+html[data-theme="light"] #ov-order-form :is(.of-p-stepper,.of-cr-stepper) button,
+html.theme-light #ov-order-form :is(.of-p-stepper,.of-cr-stepper) button{
   background:color-mix(in srgb,var(--s2) 86%,var(--ac) 7%)!important;
   color:var(--t)!important;
 }
-html[data-theme="light"] #ov-order-form .of-cr-stepper button:last-child,
-html.theme-light #ov-order-form .of-cr-stepper button:last-child{
+html[data-theme="light"] #ov-order-form :is(.of-p-stepper,.of-cr-stepper) button:last-child,
+html.theme-light #ov-order-form :is(.of-p-stepper,.of-cr-stepper) button:last-child{
   background:var(--ac)!important;
   color:#fff!important;
 }
+html[data-theme="light"] #ov-order-form .of-p-stepper .of-qv,
+html.theme-light #ov-order-form .of-p-stepper .of-qv,
 html[data-theme="light"] #ov-order-form .of-cr-stepper .of-cr-qv,
 html.theme-light #ov-order-form .of-cr-stepper .of-cr-qv{
   background:var(--s)!important;

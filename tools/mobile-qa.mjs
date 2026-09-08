@@ -44,6 +44,52 @@ const context = await browser.newContext({
 });
 
 const report = { createdAt: now.toISOString(), mode: 'isolated visual audit (không đăng nhập, không ghi dữ liệu)', viewport: 'iPhone 390×844', executablePath, routes: [], summary: { passed: 0, warnings: 0, failed: 0 } };
+/* A regression guard for a frequent class of defects: a control styled for the
+   dark sheet accidentally survives when the user switches to light mode.
+   Keep the probes in the real form scope so we test the cascade, not a copy of it. */
+async function auditQuantityControlThemes(page) {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const oldTheme = root.getAttribute('data-theme');
+    const form = document.querySelector('#ov-order-form') || document.body;
+    const probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none';
+    probe.innerHTML = `
+      <div class="of-p-stepper"><button class="of-minus">−</button><span class="of-qv">1</span><button>+</button></div>
+      <div class="of-cr-stepper"><button>−</button><span class="of-cr-qv">1</span><button>+</button></div>`;
+    form.append(probe);
+    const luminance = color => {
+      const isModernSrgb = /^color\(srgb\s/i.test(color);
+      const values = (color.match(/\d+(?:\.\d+)?/g) || []).slice(0, 3).map(Number);
+      if (values.length !== 3) return null;
+      const linear = values.map(value => {
+        const channel = isModernSrgb ? value : value / 255;
+        return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+    };
+    const read = selector => {
+      const style = getComputedStyle(probe.querySelector(selector));
+      return { background: style.backgroundColor, color: style.color, luminance: luminance(style.backgroundColor) };
+    };
+    root.setAttribute('data-theme', 'light');
+    const light = {
+      catalog: read('.of-p-stepper'),
+      cart: read('.of-cr-stepper'),
+      catalogValue: read('.of-p-stepper .of-qv'),
+      cartValue: read('.of-cr-stepper .of-cr-qv'),
+    };
+    root.removeAttribute('data-theme');
+    const dark = { catalog: read('.of-p-stepper'), cart: read('.of-cr-stepper') };
+    if (oldTheme !== null) root.setAttribute('data-theme', oldTheme);
+    probe.remove();
+    const failures = Object.entries(light)
+      .filter(([, item]) => item.luminance === null || item.luminance < .38)
+      .map(([name, item]) => `${name} vẫn có nền quá tối ở light mode (${item.background})`);
+    return { light, dark, failures };
+  });
+}
 for (const route of routes) {
   const page = await context.newPage();
   const consoleErrors = [];
@@ -108,6 +154,9 @@ for (const route of routes) {
       tinyTargets,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
+  if (route === routes[0]) {
+    report.themeAudit = await auditQuantityControlThemes(page).catch(error => ({ failures: [`Không kiểm tra theme control: ${error.message}`] }));
+  }
   const screenshot = join(outputDir, `${stamp}-${route}.png`);
   await page.screenshot({ path: screenshot, fullPage: true }).catch(() => {});
   const errors = [
@@ -116,6 +165,7 @@ for (const route of routes) {
     ...(checks.actualActive !== `page-${route}` ? [`Sai trang đang mở: ${checks.actualActive || 'không có trang active'}`] : []),
     ...(!checks.activeHasContent ? ['Trang active không có nội dung hiển thị'] : []),
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
+    ...(route === routes[0] ? (report.themeAudit?.failures || []) : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),
   ];
