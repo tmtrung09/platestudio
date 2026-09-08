@@ -44,7 +44,7 @@ page.on('console', message => { if (message.type() === 'error') consoleErrors.pu
 
 await page.goto(pathToFileURL(appFile).href, { waitUntil: 'domcontentloaded', timeout: 20000 });
 await page.waitForFunction(() => typeof window.goPage === 'function', { timeout: 8000 });
-const results = await page.evaluate(() => {
+const results = await page.evaluate(async () => {
   const rows = [];
   const check = (name, passed, detail = '') => rows.push({ name, passed: Boolean(passed), detail });
   const stamp = new Date().toISOString();
@@ -77,9 +77,22 @@ const results = await page.evaluate(() => {
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
 
+  /* QC is a repeat action on mobile. Rendering the destination group must not
+     steal the operator away from the remaining cards in the current group. */
+  window.scrollTo(0, 180);
+  const scrollBeforeQc = window.scrollY;
+  const originalScrollIntoView = Element.prototype.scrollIntoView;
+  let requestedAutoFocus = false;
+  Element.prototype.scrollIntoView = function(...args) {
+    requestedAutoFocus = true;
+    return originalScrollIntoView?.apply(this, args);
+  };
   openPartQcDialog('qa-order', 'qa-item');
   document.getElementById('part-qc-by').value = 'QA';
   savePartQcAccepted('qa-order', 'qa-item');
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  Element.prototype.scrollIntoView = originalScrollIntoView;
+  check('QC part giữ nguyên vị trí thao tác', !requestedAutoFocus && Math.abs(window.scrollY - scrollBeforeQc) <= 2, `trước ${scrollBeforeQc}px · sau ${window.scrollY}px · tự focus ${requestedAutoFocus}`);
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('QC đủ part chuyển sang sẵn gia công', workshopAssemblyStage(row) === 'ready', workshopAssemblyStage(row));
 

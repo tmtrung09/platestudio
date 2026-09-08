@@ -15694,18 +15694,23 @@ function saveOperations(){
   if(curPage==='progress'){renderQueue();if(typeof renderPrintProgressPage==='function')renderPrintProgressPage();}
   if(curPage==='orders')renderOrders();if(typeof renderDashboard==='function')renderDashboard();
 }
-/* Sau khi tick một bước, mở chính xác cột đích. Trước đây thẻ được render
-   lại vào một cột đang thu gọn nên nhìn như bị mất hoặc không nhảy bước. */
-function revealFulfillmentStage(stageId){
+/* Sau khi tick một bước, mở chính xác nhóm đích nếu nhóm đó đang thu gọn.
+   Việc mở nhóm tuyệt đối không được cướp vị trí đọc: người QC thường cần bấm
+   liên tiếp các thẻ trong cùng nhóm, nên tự cuộn sang nhóm đích sẽ làm đứt nhịp. */
+function revealFulfillmentStage(stageId,{focus=false}={}){
   if(curPage!=='fulfillment')return;
+  const scrollX=window.scrollX,scrollY=window.scrollY;
   const collapsed=fulfillmentCollapsedStages();
   if(stageId&&collapsed.delete(stageId)){
     try{localStorage.setItem(FULFILLMENT_STAGE_COLLAPSE_KEY,JSON.stringify([...collapsed]));}catch(_){ }
   }
   renderFulfillmentPage();
   requestAnimationFrame(()=>{
-    const target=document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`);
-    target?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    window.scrollTo(scrollX,scrollY);
+    if(focus){
+      const target=document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`);
+      target?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
   });
 }
 function fulfillmentActionHTML(order,stage){
