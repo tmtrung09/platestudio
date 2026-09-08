@@ -113,8 +113,10 @@ Deno.serve(async (req) => {
       const { error: thumbError } = await admin.storage.from('plate-media').upload(thumbPath, thumbnail, {
         contentType: 'image/jpeg', upsert: false,
       })
-      if (thumbError) throw thumbError
-      thumbUrl = admin.storage.from('plate-media').getPublicUrl(thumbPath).data.publicUrl
+      /* Ảnh gốc đã an toàn trên Storage. Thumbnail chỉ để tải nhanh ở thư viện,
+         không được khiến cả báo cáo biến mất nếu lần upload phụ này chập chờn. */
+      if (thumbError) console.warn('Thumbnail báo cáo chưa tải được, dùng ảnh gốc', thumbError)
+      else thumbUrl = admin.storage.from('plate-media').getPublicUrl(thumbPath).data.publicUrl
     }
     const now = new Date().toISOString()
     /* Client đọc EXIF của file gốc trước khi nén. Chỉ nhận mốc hợp lệ để

@@ -5465,6 +5465,7 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
     batchCloudTotal=typeof count==='number'?count:batchReports.length;
     batchCloudHasMore=safePage*Math.max(1,safeSize)<batchCloudTotal;
     saveLocalValue(K.batchReports,batchReports);
+    queueMissingBatchReportMediaRepair(batchReports);
     return batchReports;
   } finally { batchCloudLoading=false; }
 }
@@ -5856,11 +5857,25 @@ async function finalizeReservedBatchReport(report){
   invalidateBatchReportTimeline();
   invalidateFulfillmentCloudManualReports();
 }
+/* Một thiết bị cũ có thể còn giữ bản ghi “đang tải” trong cache, rồi lưu đè
+   lên ảnh đã được thiết bị khác hoàn tất. Không bao giờ cho một lần lưu thiếu
+   media xoá URL media vốn đã có trên cloud. */
+async function preserveBatchReportMediaBeforeSave(report){
+  if(!report?.id||batchReportHasMedia(report)||!sb||!currentUser)return report;
+  const {data,error}=await sb.from(CLOUD_TABLES.batchReports).select('data').eq('workspace_id',cloudWorkspaceId()).eq('id',report.id).maybeSingle();
+  if(error)throw error;
+  const remote=data?.data;
+  if(!batchReportHasMedia(remote))return report;
+  ['image','thumb','imageHash','imageHashAlg','imageSize','source'].forEach(key=>{if(!report[key]&&remote[key])report[key]=remote[key];});
+  if(report.status==='uploading')report.status=remote.status||'pending';
+  return report;
+}
 async function persistBatchReportCloud(report){
   if(!report || !sb || !currentUser) return;
   if(batchReportCloudDeletePending.has(report.id)) return false;
   batchReportCloudSaveRunning.add(report.id);
   try {
+  await preserveBatchReportMediaBeforeSave(report);
   const row={id:report.id,user_id:cloudWorkspaceOwnerId(),workspace_id:cloudWorkspaceId(),data:report,updated_at:new Date().toISOString()};
   /* Some earlier projects were created without a unique constraint on `id`.
      Do an update-first save so ordinary edits (including AI suggestions) do
@@ -11745,6 +11760,47 @@ let batchMediaRecoveryCandidates=[];
 function batchMediaPublicUrl(path){
   return path ? sb?.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl||'' : '';
 }
+const batchMissingMediaRepairAttempts=new Set();
+function expectedBatchReportMediaUrls(report){
+  if(!report?.id)return [];
+  const staffSource=String(report.source||'').startsWith('staff-link');
+  const ownerId=cloudWorkspaceOwnerId(),uploaderId=staffSource?ownerId:(report.capturedBy?.userId||ownerId);
+  if(!uploaderId)return [];
+  const folder=staffSource?'staff-batch-reports':'batch-reports';
+  const base=`${uploaderId}/${folder}/${report.id}`;
+  return [{image:batchMediaPublicUrl(`${base}.jpg`),thumb:batchMediaPublicUrl(`${base}-thumb.jpg`)}];
+}
+async function batchMediaUrlExists(url){
+  if(!url)return false;
+  try{const response=await fetch(url,{method:'HEAD',cache:'no-store'});return response.ok;}
+  catch(_){return false;}
+}
+/* Ảnh đã lên Storage nhưng request bị ngắt giữa upload và metadata không còn
+   cần chụp lại. Với URL có quy ước theo report id, tự nối lại an toàn trước. */
+async function recoverMissingBatchReportMedia(id,{quiet=false}={}){
+  const report=findOperationalBatchReport(id);if(!report||batchReportHasMedia(report)||!sb||!currentUser)return false;
+  const urls=expectedBatchReportMediaUrls(report);
+  for(const candidate of urls){
+    const [hasImage,hasThumb]=await Promise.all([batchMediaUrlExists(candidate.image),batchMediaUrlExists(candidate.thumb)]);
+    if(!hasImage)continue;
+    report.image=candidate.image;report.thumb=hasThumb?candidate.thumb:candidate.image;
+    if(report.status==='uploading')report.status='pending';
+    report.mediaRecoveredAt=new Date().toISOString();report.mediaRecoveredFrom='storage-path';
+    await persistBatchReportCloud(report);saveLocalValue(K.batchReports,batchReports);updateCamBadge();
+    if(!quiet){renderBatchReportPage();toast('✓ Đã nối lại ảnh từ cloud.');}
+    return true;
+  }
+  if(!quiet){toast('Chưa tìm được ảnh theo mã báo cáo. Hãy dùng “Khôi phục ảnh” để quét Storage.',5000);}
+  return false;
+}
+function queueMissingBatchReportMediaRepair(reports){
+  if(!isWorkspaceOwner()||!sb||!currentUser)return;
+  (reports||[]).filter(report=>report?.id&&!batchReportHasMedia(report)&&report.status!=='uploading').slice(0,8).forEach(report=>{
+    if(batchMissingMediaRepairAttempts.has(report.id))return;
+    batchMissingMediaRepairAttempts.add(report.id);
+    setTimeout(()=>recoverMissingBatchReportMedia(report.id,{quiet:true}).then(restored=>{if(restored&&curPage==='batches')renderBatchReportPage();}).catch(error=>console.warn('Chưa nối lại được ảnh báo cáo',report.id,error)),0);
+  });
+}
 async function openBatchMediaRecovery(){
   if(!isWorkspaceOwner()){toast('Chỉ chủ xưởng được khôi phục ảnh từ Storage.');return;}
   if(!sb||!currentUser){toast('Cần kết nối cloud để quét ảnh.');return;}
@@ -12854,7 +12910,7 @@ function renderBatchReportPage(){
     const selectionControl=batchReportMultiSelect?`<button type="button" class="batch-report-select-box ${selected?'is-selected':''}" aria-label="${selected?'Bỏ chọn':'Chọn'} ảnh báo cáo" onclick="toggleBatchReportSelection('${r.id}',event)">${selected?'✓':''}</button>`:'';
     const cardAction=batchReportMultiSelect?`toggleBatchReportSelection('${r.id}',event)`:`viewBatchReport('${r.id}')`;
     const overlayActions=batchReportMultiSelect?'':`<div class="batch-report-overlay-actions" onclick="event.stopPropagation()">${canEdit?`<button class="btn btn-xs" onclick="${done?`viewBatchReport('${r.id}')`:`resumeBatchReport('${r.id}')`}">${done?'Xem chi tiết':isSkipped?'Xử lý lại':'Tiếp tục xử lý'}</button>${!done&&!isSkipped?`<button class="btn btn-ghost btn-xs" onclick="skipBatchReport('${r.id}')">Bỏ qua</button>`:''}<button class="btn btn-danger btn-xs" onclick="deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá</button>`:canDescribe&&!done&&!isSkipped?`<button class="btn btn-xs" onclick="declareBatchReportContents('${r.id}')">Khai báo đã in</button>`:`<button class="btn btn-xs" onclick="viewBatchReport('${r.id}')">Xem chi tiết</button>`}</div>`;
-    const missingMediaAction=!hasMedia&&canEdit&&!uploading?`<div class="batch-report-missing-action"><button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá bản ghi thiếu ảnh</button></div>`:'';
+    const missingMediaAction=!hasMedia&&canEdit&&!uploading?`<div class="batch-report-missing-action"><button class="btn btn-ac btn-xs" onclick="event.stopPropagation();recoverMissingBatchReportMedia('${r.id}')">Tìm ảnh trên cloud</button></div>`:'';
     const stateLabel=uploading?'Đang tải ảnh':done?'Đã xử lý':isSkipped?'Bỏ qua':hasMedia?'Chưa xử lý':'Thiếu ảnh';
     const stateMeta=uploading?'Đang tải ảnh lên cloud':!hasMedia?'Bản ghi không còn nguồn ảnh':done?`Đã cập nhật ${applied} part`:isSkipped?'Đã bỏ qua, chưa đối chiếu':'Chưa đối chiếu tiến độ';
     return `<div class="card batch-report-card ${done?'batch-done':isSkipped?'batch-skipped':'batch-pending'} ${aiAssisted?'ai-assisted':''} ${selected?'is-selected':''}" data-batch-report-id="${esc(r.id)}" style="padding:0;overflow:hidden;cursor:pointer" onclick="${cardAction}">
