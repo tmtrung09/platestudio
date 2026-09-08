@@ -74,6 +74,10 @@ const results = await page.evaluate(async () => {
   normalizeOperations();
   goPage('fulfillment', { historyMode: 'none' });
 
+  const fulfillmentHeader = document.querySelector('#page-fulfillment .sect-hd');
+  check('Thanh tìm kiếm gia công tách khỏi cụm giao hàng', Boolean(document.querySelector('.fulfillment-search-row .page-smart-search')) && !document.querySelector('.fulfillment-command'));
+  const fulfillmentHeaderActions = ['refreshFulfillmentPage()', 'openReceivingHub()', 'openDeliveryBatchBuilder()'];
+  check('Thao tác giao hàng nằm cùng hàng Làm mới', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
   const guide = document.getElementById('fulfillment-flow-guide');
   const flowFloat = document.getElementById('fulfillment-flow-float');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
