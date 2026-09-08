@@ -162,6 +162,9 @@ const results = await page.evaluate(async () => {
   const configuredColorPart = newManualEntry({ modelId: 'qa-model', partId: 'qa-locked', qty: 1 });
   const configuredPartSource = models[0].parts.find(part => part.id === 'qa-locked');
   check('Part có màu quy định không bắt buộc khai báo lại', !manualItemRequiresActualColor(models[0], configuredColorPart, configuredPartSource) && hasDeclaredManualItemFilament(configuredColorPart), String(configuredColorPart.filamentId));
+  brUnifiedSearch = 'QA';
+  quickSelectBatchModel('qa-model');
+  check('Chọn Model từ tìm kiếm chuyển sang bước khai báo', brView === 'manual' && Boolean(document.querySelector('#br-content .br-manual-layout')), brView);
 
   /* Reload phải giữ đúng vị trí thư viện báo cáo và toàn bộ điều kiện lọc. */
   const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status, day: batchTimelineDay };

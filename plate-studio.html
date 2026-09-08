@@ -12431,6 +12431,7 @@ function renderBatchManual(){
     if(!variants.some(v=>v.id===item.variantId)) item.variantId=variants[0]?.id||null;
     const variant=variants.find(v=>v.id===item.variantId)||null,parts=partsForVariant(model,variant);
     if(!parts.some(p=>p.id===item.partId)) item.partId=getManualPreferredPartId(model,getManualFilamentForItem(index),variant) || (parts.length===1 ? parts[0].id : null);
+    const part=parts.find(row=>row.id===item.partId)||null;
     const matchingFilamentId=getManualFilamentForItem(index);
     const matchingParts=getManualMatchingParts(model,matchingFilamentId,variant);
     const matchingFilament=getFil(matchingFilamentId);
