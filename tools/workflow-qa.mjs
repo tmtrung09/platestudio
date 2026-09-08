@@ -159,6 +159,19 @@ const results = await page.evaluate(async () => {
   freeColorPart.filamentId = fils[0]?.id || null;
   check('Màu thực tế được lưu theo từng Part', hasDeclaredManualItemFilament(freeColorPart), String(freeColorPart.filamentId));
 
+  /* Reload phải giữ đúng vị trí thư viện báo cáo và toàn bộ điều kiện lọc. */
+  const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status, day: batchTimelineDay };
+  Object.assign(FILTERS.batches, { search: 'qa giữ bộ lọc', sort: 'pending_first', status: 'pending' });
+  batchReportCurrentPage = 4; batchReportPageSize = 36; batchTimelineDay = '2026-09-08';
+  persistBatchLibraryView();
+  Object.assign(FILTERS.batches, { search: '', sort: 'recorded_desc', status: 'all' });
+  batchReportCurrentPage = 1; batchReportPageSize = 24; batchTimelineDay = ''; batchLibraryViewRestoredKey = '';
+  restoreBatchLibraryView();
+  check('Tải lại giữ trang đang xem của báo cáo mẻ', batchReportCurrentPage === 4 && batchReportPageSize === 36, `${batchReportCurrentPage} · ${batchReportPageSize}/trang`);
+  check('Tải lại giữ đủ bộ lọc báo cáo mẻ', FILTERS.batches.search === 'qa giữ bộ lọc' && FILTERS.batches.sort === 'pending_first' && FILTERS.batches.status === 'pending' && batchTimelineDay === '2026-09-08', JSON.stringify({...FILTERS.batches, day:batchTimelineDay}));
+  Object.assign(FILTERS.batches, { search: previousBatchView.search, sort: previousBatchView.sort, status: previousBatchView.status });
+  batchReportCurrentPage = previousBatchView.page; batchReportPageSize = previousBatchView.pageSize; batchTimelineDay = previousBatchView.day;
+
   /* A confirmed receipt is included to exercise the populated mobile section,
      not just the empty-state layout. */
   operations.deliveryBatches.push({

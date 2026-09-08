@@ -6033,7 +6033,7 @@ function showRemoteDataRefreshNotice(){
 }
 async function refreshRemoteCloudTable(key){
   if(key==='batchReports'){
-    invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true});
+    invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize});
     refreshCloudSnapshotFingerprint('batchReports');
     return;
   }
@@ -6180,7 +6180,7 @@ async function loadCloudData() {
     models=remote.models; fils=remote.fils; projects=remote.projects;
     orders=remote.orders; plates=remote.plates; pitems=remote.pitems;
     try {
-      const firstPage=await loadBatchReportsFromCloud({reset:true});
+      const firstPage=await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize});
       if(!firstPage.length && localBatchBackup.length) {
         batchReports=localBatchBackup;
         needsCloudBatchSeed=true;
@@ -6397,6 +6397,7 @@ async function startCloudSession(session) {
     }
     await ensureCloudWorkspace();
     await registerWorkspaceProfile();
+    restoreBatchLibraryView();
     await loadCloudData();
     cloudReady = true;
     announceDeliveryPhotoRequests?.();
@@ -11909,7 +11910,7 @@ async function recoverOrphanedBatchReports(){
     try{await persistBatchReportCloud(report);restored++;}
     catch(error){failed++;console.warn('Không khôi phục được ảnh báo cáo',candidate.report_id,error);}
   }
-  batchMediaRecoveryCandidates=[];invalidateBatchReportTimeline();batchTimelineDay='';batchReportCurrentPage=1;
+  batchMediaRecoveryCandidates=[];invalidateBatchReportTimeline();batchTimelineDay='';batchReportCurrentPage=1;persistBatchLibraryView();
   try{await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:1,pageSize:batchReportPageSize});}catch(error){console.warn('Không tải lại thư viện sau khi khôi phục',error);}
   closeDialog('dlg-mv');renderBatchReportPage();updateCamBadge();
   if(restored)recordAudit('restore','Báo cáo mẻ',`Khôi phục ${restored} ảnh từ Storage`,{restored,failed});
@@ -12644,6 +12645,30 @@ let batchReportSelectedIds = new Set();
 let batchReportVisibleIds = [];
 /* Mốc ngày đang xem trên timeline. Rỗng = toàn bộ lịch sử. */
 let batchTimelineDay = '';
+const BATCH_LIBRARY_VIEW_STATE_VERSION = 1;
+let batchLibraryViewRestoredKey = '';
+function batchLibraryViewStorageKey(){ return `ps_batch_library_view:${cloudWorkspaceId()||currentUser?.id||'local'}`; }
+function persistBatchLibraryView(){
+  try{
+    const state={version:BATCH_LIBRARY_VIEW_STATE_VERSION,page:Math.max(1,Number(batchReportCurrentPage)||1),pageSize:Math.max(1,Number(batchReportPageSize)||24),search:String(FILTERS.batches.search||''),sort:String(FILTERS.batches.sort||'recorded_desc'),status:String(FILTERS.batches.status||'all'),day:String(batchTimelineDay||'')};
+    localStorage.setItem(batchLibraryViewStorageKey(),JSON.stringify(state));
+  }catch(error){ console.debug('Không lưu được vị trí thư viện báo cáo',error); }
+}
+function restoreBatchLibraryView(){
+  const key=batchLibraryViewStorageKey(); if(batchLibraryViewRestoredKey===key)return;
+  batchLibraryViewRestoredKey=key;
+  try{
+    const state=JSON.parse(localStorage.getItem(key)||'{}');
+    if(Number(state?.version)!==BATCH_LIBRARY_VIEW_STATE_VERSION)return;
+    const allowedSort=new Set(['updated_desc','recorded_desc','recorded_asc','pending_first','done_first']),allowedStatus=new Set(['all','pending','done','skipped']),allowedSizes=new Set([12,24,36,48,60]);
+    batchReportPageSize=allowedSizes.has(Number(state.pageSize))?Number(state.pageSize):24;
+    batchReportCurrentPage=Math.max(1,Number.parseInt(state.page,10)||1);
+    FILTERS.batches.search=String(state.search||'');
+    FILTERS.batches.sort=allowedSort.has(state.sort)?state.sort:'recorded_desc';
+    FILTERS.batches.status=allowedStatus.has(state.status)?state.status:'all';
+    batchTimelineDay=/^\d{4}-\d{2}-\d{2}$/.test(String(state.day||''))?state.day:'';
+  }catch(error){ console.debug('Không khôi phục được vị trí thư viện báo cáo',error); }
+}
 function batchReportDayKey(value){
   const date=new Date(value);
   if(Number.isNaN(date.getTime())) return '';
@@ -12665,11 +12690,13 @@ function setBatchTimelineDayByOffset(offset,minDay){
 function setBatchTimelineDay(day){
   batchTimelineDay=day||'';
   batchReportCurrentPage=1;
+  persistBatchLibraryView();
   refreshBatchReportServerPage();
 }
 function clearBatchTimelineDay(){
   batchTimelineDay='';
   batchReportCurrentPage=1;
+  persistBatchLibraryView();
   refreshBatchReportServerPage();
 }
 function toggleBatchReportMultiSelect(){
@@ -12736,6 +12763,7 @@ function batchReportPagerHTML(position='bottom'){
 function setBatchReportPageSize(value){
   batchReportPageSize=Math.max(1,Number(value)||24);
   batchReportCurrentPage=1;
+  persistBatchLibraryView();
   refreshBatchReportServerPage();
 }
 function scrollBatchReportsToTop(){
@@ -12777,6 +12805,7 @@ async function goBatchReportPage(page){
   try{
     batchReportSelectedIds.clear();
     batchReportCurrentPage=wanted;
+    persistBatchLibraryView();
     if(currentUser && sb) {
       setSyncState('Đang tải trang báo cáo...');
       await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:wanted,pageSize:batchReportPageSize});
@@ -12970,6 +12999,7 @@ function renderBatchReportPage(){
   const totalPages=serverPaged ? Math.max(1,Math.ceil(batchCloudTotal/batchReportPageSize)) : Math.max(1,Math.ceil(matched.length/batchReportPageSize));
   batchReportCurrentPage=Math.min(Math.max(1,batchReportCurrentPage),totalPages);
   batchReportPaginationMeta={matched:serverPaged?batchCloudTotal:matched.length,totalPages};
+  persistBatchLibraryView();
   const pageStart=(batchReportCurrentPage-1)*batchReportPageSize;
   const visible=serverPaged ? matched : matched.slice(pageStart,pageStart+batchReportPageSize);
   batchReportVisibleIds=visible.map(report=>report.id);
@@ -13098,6 +13128,7 @@ function setBatchReportSort(value){
   /* Đổi sắp xếp là một thao tác chủ động, nên quay về đầu thư viện để người
      dùng thấy đúng mốc đầu tiên của thứ tự mới. */
   batchReportCurrentPage=1;
+  persistBatchLibraryView();
   const scrollRoot=document.querySelector('.pg-content');
   if(scrollRoot) scrollRoot.scrollTop=0;
   refreshBatchReportServerPage();
@@ -13108,6 +13139,7 @@ function setBatchReportStatusFilter(value){
   /* Mỗi trạng thái có thể có số thẻ khác nhau; trở lại đầu thư viện để người
      dùng không bị đứng ở một vị trí trống sau khi lọc. */
   batchReportCurrentPage=1;
+  persistBatchLibraryView();
   const scrollRoot=document.querySelector('.pg-content');
   if(scrollRoot) scrollRoot.scrollTop=0;
   refreshBatchReportServerPage();
@@ -13118,6 +13150,7 @@ function setBatchSmartSearch(value) {
     const generation=++batchSearchGeneration;
     FILTERS.batches.search=value;
     batchReportCurrentPage=1;
+    persistBatchLibraryView();
     (async()=>{
       if(currentUser && sb && batchServerSearchAvailable) {
         try {
