@@ -3804,6 +3804,9 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 /* The value label sits above a bar. Keep dedicated headroom so a 100% bar is never clipped by the scrollable chart viewport. */
 .sales-chart-bars{min-height:242px;padding:54px 4px 0}
 @media(max-width:700px){.sales-chart-bars{min-height:188px;padding:19px 4px 0}}
+/* A narrow desktop window still has mouse hover. Do not suppress its chart value
+   labels just because the viewport is narrow; touch devices keep the compact view. */
+@media(max-width:700px) and (hover:hover) and (pointer:fine){.sales-chart-bars{min-height:242px;padding:54px 4px 0}.sales-chart-value{display:block}}
 @media(max-width:370px){.page-heading h1{font-size:27px!important}.page.active{padding-left:6px!important;padding-right:6px!important}.page-heading,.page-smart-search,#page-models .model-category-wrap,#page-models .model-grid{margin-left:6px!important;margin-right:6px!important}}
 </style>
 </head>
@@ -3888,15 +3891,15 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 @media(max-width:370px){.fulfillment-ready-shelf{grid-template-columns:1fr}}
 /* Thanh quy trình nổi: thay thế vai trò định hướng của guide khi người dùng
    đã cuộn khỏi đầu trang, nhưng không chiếm vùng thao tác chính. */
-.fulfillment-flow-float{position:fixed;z-index:1110;top:50%;right:18px;display:flex;flex-direction:column;gap:5px;width:194px;padding:7px;border:1px solid color-mix(in srgb,var(--pu) 34%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--s) 96%,var(--pu) 4%);box-shadow:0 14px 34px rgba(20,22,43,.25),inset 0 1px color-mix(in srgb,#fff 52%,transparent);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transform:translateY(calc(-50% + 12px)) scale(.96);transition:opacity .18s ease,transform .22s cubic-bezier(.2,.9,.25,1)}
-.fulfillment-flow-float.is-visible{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
-.fulfillment-flow-float-label{padding:2px 5px 4px;color:var(--t3);font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
-.fulfillment-flow-float button{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:7px;width:100%;min-height:33px;padding:4px 6px;border:0;border-radius:11px;background:color-mix(in srgb,var(--s2) 62%,transparent);color:var(--t);font:800 11px 'Be Vietnam Pro',sans-serif;text-align:left;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
+.fulfillment-flow-float{position:fixed;z-index:1110;top:calc(14px + env(safe-area-inset-top));left:50%;right:auto;display:flex;align-items:center;gap:5px;width:min(550px,calc(100vw - 390px));padding:7px;border:1px solid color-mix(in srgb,var(--pu) 34%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--s) 96%,var(--pu) 4%);box-shadow:0 14px 34px rgba(20,22,43,.25),inset 0 1px color-mix(in srgb,#fff 52%,transparent);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transform:translate(-50%,-12px) scale(.96);transition:opacity .18s ease,transform .22s cubic-bezier(.2,.9,.25,1)}
+.fulfillment-flow-float.is-visible{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+.fulfillment-flow-float-label{padding:0 3px;color:var(--t3);font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.fulfillment-flow-float button{display:grid;flex:1;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:5px;min-width:0;min-height:33px;padding:4px 6px;border:0;border-radius:11px;background:color-mix(in srgb,var(--s2) 62%,transparent);color:var(--t);font:800 11px 'Be Vietnam Pro',sans-serif;text-align:left;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
 .fulfillment-flow-float button:hover,.fulfillment-flow-float button:focus-visible,.fulfillment-flow-float button[aria-current="step"]{background:color-mix(in srgb,var(--pu) 16%,var(--s2));color:var(--t);outline:0}
 .fulfillment-flow-float button:active{transform:scale(.97)}
 .fulfillment-flow-float button i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--pu) 17%,var(--s2));color:var(--pu);font-style:normal;font-size:10px;font-weight:900}
 .fulfillment-flow-float button[aria-current="step"] i{background:var(--pu);color:#fff;box-shadow:0 4px 10px color-mix(in srgb,var(--pu) 40%,transparent)}
-@media(max-width:860px){.fulfillment-flow-float{top:calc(12px + env(safe-area-inset-top));right:auto;bottom:auto;left:50%;flex-direction:row;align-items:center;width:min(348px,calc(100vw - 28px));padding:6px 7px;border-radius:17px;transform:translate(-50%,-12px) scale(.96)}.fulfillment-flow-float.is-visible{transform:translate(-50%,0) scale(1)}.fulfillment-flow-float-label{display:none}.fulfillment-flow-float button{display:grid;flex:1;grid-template-columns:1fr;justify-items:center;gap:1px;min-width:0;min-height:42px;padding:3px 2px;text-align:center;font-size:9px;line-height:1.1}.fulfillment-flow-float button i{width:20px;height:20px;font-size:9px}.fulfillment-flow-float button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(max-width:860px){.fulfillment-flow-float{top:calc(12px + env(safe-area-inset-top));width:min(348px,calc(100vw - 28px));padding:6px 7px;border-radius:17px}.fulfillment-flow-float-label{display:none}.fulfillment-flow-float button{grid-template-columns:1fr;justify-items:center;gap:1px;min-height:42px;padding:3px 2px;text-align:center;font-size:9px;line-height:1.1}.fulfillment-flow-float button i{width:20px;height:20px;font-size:9px}.fulfillment-flow-float button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.fulfillment-flow-float{transition:none}.fulfillment-flow-float button{transition:none}}
 </style>
 

@@ -85,6 +85,7 @@ const results = await page.evaluate(async () => {
   const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
   check('Thanh quy trình nổi ở phía trên trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.top) <= 24), flowStyle ? `top ${flowStyle.top}` : 'không có thanh');
+  check('Thanh quy trình nổi dàn ngang ở giữa', Boolean(flowStyle && flowStyle.flexDirection === 'row' && flowStyle.left !== 'auto'), flowStyle ? `${flowStyle.flexDirection} · trái ${flowStyle.left}` : 'không có thanh');
   check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
   /* jsdom-like file layouts may not allocate a scroll range in headless mode;
      simulate the post-scroll guide position and test the same visibility rule. */
