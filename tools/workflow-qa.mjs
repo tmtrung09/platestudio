@@ -150,6 +150,15 @@ const results = await page.evaluate(async () => {
   check('Mẻ ngoài đơn chỉ gia công số QC đạt', workshopAssemblyTargetQty(externalPending) === 2, workshopAssemblyTargetQty(externalPending));
   check('Hoàn tất mẻ ngoài đơn chỉ sẵn giao số QC đạt', workshopReadyDeliveryQty(externalDone) === 2, workshopReadyDeliveryQty(externalDone));
 
+  /* Part không khóa màu vẫn phải ghi nhận màu thực tế trong từng dòng mẻ.
+     Đây là dữ liệu lịch sử, không phải một quy tắc màu của Model. */
+  batchReports.push({ id: 'qa-color-declaration', createdAt: stamp, status: 'pending', filamentId: null, manualItems: [] });
+  brCurrentId = 'qa-color-declaration'; brManualItems = [];
+  const freeColorPart = newManualEntry({ modelId: 'qa-model', partId: 'qa-body', qty: 1 });
+  check('Part không khóa màu không được coi là đã khai báo', !hasDeclaredManualItemFilament(freeColorPart), String(freeColorPart.filamentId));
+  freeColorPart.filamentId = fils[0]?.id || null;
+  check('Màu thực tế được lưu theo từng Part', hasDeclaredManualItemFilament(freeColorPart), String(freeColorPart.filamentId));
+
   /* A confirmed receipt is included to exercise the populated mobile section,
      not just the empty-state layout. */
   operations.deliveryBatches.push({

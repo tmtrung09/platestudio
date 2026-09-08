@@ -24,7 +24,7 @@
   --gr:#2A7A52; --grb:#E8F5EE;
   --pu:#5A4BB5; --pub:#EEEDFB;
   --am:#8A6000; --amb:#FEF3D6;
-  --re:#C0392B; --reb:#FDECEA;
+  --re:#C0392B; --red:var(--re); --reb:#FDECEA;
   --bl:#185FA5; --blb:#E8F0FB;
   --r:10px; --rl:16px; --rx:22px;
   --ss:0 1px 2px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.04);
@@ -8646,7 +8646,7 @@ function deleteSelectedModels() {
 }
 function getModelPrintHistory(modelId) {
   return operationalBatchReportSource().filter(isOperationalBatchReport).flatMap(r=>{
-    const manual=(r.manualItems||[]).filter(x=>x.modelId===modelId).map(x=>({report:r,partId:x.partId,partName:x.partName,variantId:x.variantId,variantName:x.variantName,qty:x.qty,external:true}));
+    const manual=(r.manualItems||[]).filter(x=>x.modelId===modelId).map(x=>({report:r,partId:x.partId,partName:x.partName,variantId:x.variantId,variantName:x.variantName,filamentId:x.filamentId||r.filamentId||null,qty:x.qty,external:true}));
     const planned=(r.appliedItems||[]).map(x=>{
       const pi=pitems.find(p=>p.id===x.pitemId);
       return pi?.modelId===modelId ? {report:r,partId:pi.partId,partName:pi.partName,variantId:pi.variantId,variantName:pi.variantName,qty:x.qty,external:false} : null;
@@ -12127,7 +12127,9 @@ function pickBatchColor(filamentId){
   const r = batchReports.find(x=>x.id===brCurrentId); if(!r) return;
   r.filamentId = filamentId;
   sv(K.batchReports, batchReports);
-  brManualItems=(r.manualItems?.length?r.manualItems:[newManualEntry()]).map(newManualEntry);
+  /* Màu mẻ là lối tắt cho một plate đơn màu. Vẫn sao chép nó xuống từng Part
+     để lịch sử luôn có màu thực tế, kể cả Part vốn không bị khóa màu. */
+  brManualItems=(r.manualItems?.length?r.manualItems:[newManualEntry()]).map(item=>newManualEntry({...item,filamentId}));
   brView = 'manual'; brMatchQty = {};
   renderBatchReport();
 }
@@ -12279,12 +12281,14 @@ function getManualPreferredPartId(model,filamentId,variant=null){
 }
 function getManualFilamentForItem(index){
   const report=batchReports.find(x=>x.id===brCurrentId);
-  if(report?.filamentId && getFil(report.filamentId)) return report.filamentId;
   const item=brManualItems[index];
+  if(item?.filamentId && getFil(item.filamentId)) return item.filamentId;
+  if(report?.filamentId && getFil(report.filamentId)) return report.filamentId;
   const model=models.find(m=>m.id===item?.modelId);
   const part=model?.parts?.find(p=>p.id===item?.partId);
   return manualPartColorIds(model,item,part).find(id=>getFil(id)) || getManualPreferredFilamentId(index);
 }
+function hasDeclaredManualItemFilament(item){ return Boolean(getFil(item?.filamentId)); }
 function getManualMatchingParts(model,filamentId,variant=null){
   if(!filamentId) return [];
   return partsForVariant(model,variant).filter(part=>manualPartFilamentIds(part).some(id=>sameManualFilament(id,filamentId)));
@@ -12305,6 +12309,11 @@ function toggleBatchManualPartPicker(index){
   const picker=document.getElementById(`br-part-picker-${index}`);if(!picker)return;const open=picker.classList.toggle('open');picker.querySelector('.br-part-picker-toggle')?.setAttribute('aria-expanded',String(open));
 }
 function pickBatchManualPart(index,partId){setBatchManualItemPart(index,partId);renderBatchManual();}
+function setBatchManualItemFilament(index,filamentId){
+  const item=brManualItems[index]; if(!item)return;
+  item.filamentId=getFil(filamentId)?.id||null;
+  renderBatchManual();
+}
 document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('.br-part-picker'))document.querySelectorAll('.br-part-picker.open').forEach(node=>node.classList.remove('open'));},true);
 function newManualEntry(source={}) {
   /* Một dòng mới phải trống cho tới khi người dùng/AI chọn rõ model.
@@ -12319,7 +12328,9 @@ function newManualEntry(source={}) {
   const partId=eligibleParts.some(p=>p.id===source.partId)
     ? source.partId
     : (getManualPreferredPartId(model,preferredFilamentId,variant) || (eligibleParts.length===1 ? eligibleParts[0].id : null));
-  return {modelId,variantId,partId,qty:Math.max(1,parseInt(source.qty)||1)};
+  const part=eligibleParts.find(row=>row.id===partId)||null;
+  const filamentId=getFil(source.filamentId)?.id || preferredFilamentId || manualPartColorIds(model,{variantId},part).find(id=>getFil(id)) || null;
+  return {modelId,variantId,partId,filamentId,qty:Math.max(1,parseInt(source.qty)||1)};
 }
 function openBatchManualForm(){
   const r=batchReports.find(x=>x.id===brCurrentId); if(!r) return;
@@ -12427,10 +12438,12 @@ function renderBatchManual(){
       : `<button type="button" class="btn btn-ghost btn-xs" style="width:100%;justify-content:center" onclick="showBatchMissingPartAction([{index:${index},modelId:'${model?.id||''}'}])">+ Thiết lập Part</button>`;
     const isFirstColorGroup=!brManualItems.slice(0,index).some((row,rowIndex)=>row.modelId===item.modelId&&row.variantId===item.variantId&&getManualFilamentForItem(rowIndex)===matchingFilamentId);
     const fullSetButton=matchingParts.length>1&&isFirstColorGroup ? `<button type="button" class="btn btn-ghost btn-xs" style="width:100%;justify-content:center;margin:6px 0 0;font-size:11px" onclick="addBatchManualMatchingParts(${index})">⊞ Thêm đủ ${matchingParts.length} part màu ${esc(matchingFilament?.name||'này')}</button>` : '';
-    return `<div style="margin-bottom:8px"><div class="br-match-row" style="align-items:end"><div class="field" style="flex:1;margin:0;position:relative"><label>Model</label><input value="${esc(model?.name||'')}" placeholder="Tìm tên model..." autocomplete="new-password" autocapitalize="off" spellcheck="false" onfocus="filterBatchManualModels(${index},this.value)" oninput="filterBatchManualModels(${index},this.value)" onblur="setTimeout(()=>{const e=document.getElementById('br-model-results-${index}');if(e)e.innerHTML=''},160)"/><div id="br-model-results-${index}" class="br-model-search-results"></div></div><div class="field" style="flex:1;margin:0"><label>Biến thể</label><select onchange="setBatchManualItemVariant(${index},this.value)" ${variants.length?'':'disabled'}>${variants.length?variants.map(v=>`<option value="${esc(v.id)}" ${v.id===item.variantId?'selected':''}>${esc(v.name)}</option>`).join(''):'<option>Không có biến thể</option>'}</select></div><div class="field" style="flex:1;margin:0"><label>Part</label>${partControl}</div><div class="field" style="width:74px;margin:0"><label>SL</label><input type="number" min="1" value="${item.qty}" oninput="brManualItems[${index}].qty=Math.max(1,parseInt(this.value)||1)"/></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" title="Nhân bản dòng này" onclick="duplicateBatchManualItem(${index})">⧉</button><button class="btn btn-danger btn-xs" onclick="removeBatchManualItem(${index})">Bỏ</button></div></div>${fullSetButton}</div>`;
+    const actualFilamentId=getFil(item.filamentId)?.id||'';
+    const colorControl=`<select aria-label="Màu đã in cho dòng ${index+1}" onchange="setBatchManualItemFilament(${index},this.value)"><option value="">— Chọn màu đã in —</option>${fils.map(fil=>`<option value="${esc(fil.id)}" ${fil.id===actualFilamentId?'selected':''}>${esc(fil.brand?fil.brand+' · ':'')}${esc(fil.name)}</option>`).join('')}</select>`;
+    return `<div style="margin-bottom:8px"><div class="br-match-row" style="align-items:end"><div class="field" style="flex:1;margin:0;position:relative"><label>Model</label><input value="${esc(model?.name||'')}" placeholder="Tìm tên model..." autocomplete="new-password" autocapitalize="off" spellcheck="false" onfocus="filterBatchManualModels(${index},this.value)" oninput="filterBatchManualModels(${index},this.value)" onblur="setTimeout(()=>{const e=document.getElementById('br-model-results-${index}');if(e)e.innerHTML=''},160)"/><div id="br-model-results-${index}" class="br-model-search-results"></div></div><div class="field" style="flex:1;margin:0"><label>Biến thể</label><select onchange="setBatchManualItemVariant(${index},this.value)" ${variants.length?'':'disabled'}>${variants.length?variants.map(v=>`<option value="${esc(v.id)}" ${v.id===item.variantId?'selected':''}>${esc(v.name)}</option>`).join(''):'<option>Không có biến thể</option>'}</select></div><div class="field" style="flex:1;margin:0"><label>Part</label>${partControl}</div><div class="field" style="flex:1;margin:0"><label>Màu đã in <b style="color:var(--red)">*</b></label>${colorControl}</div><div class="field" style="width:74px;margin:0"><label>SL</label><input type="number" min="1" value="${item.qty}" oninput="brManualItems[${index}].qty=Math.max(1,parseInt(this.value)||1)"/></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" title="Nhân bản dòng này" onclick="duplicateBatchManualItem(${index})">⧉</button><button class="btn btn-danger btn-xs" onclick="removeBatchManualItem(${index})">Bỏ</button></div></div>${fullSetButton}</div>`;
   }).join('');
   const colorLabel=f?`${f.brand} · ${f.name}`:'Chưa chọn màu';
-  const compactTools=canManage?`<div class="br-manual-tools"><div class="br-manual-tool"><span class="br-dot" style="background:${f?.hex||'#ccc'}"></span><div class="br-manual-tool-copy"><b>${esc(colorLabel)}</b><small>Màu mẻ in</small></div><button class="btn btn-ghost btn-xs br-manual-color-change" onclick="brView='color';renderBatchReport()">Đổi</button></div>${renderBatchMachinePlanPanel(r,{compact:true})}${renderBatchAiCard(r,{compact:true})}</div>`:`<div class="access-note" style="margin:0 0 12px">📋 Bạn chỉ có thể khai báo Model, Part, số lượng và giao xưởng. Quản lý sẽ xử lý màu và tiến độ.</div>`;
+  const compactTools=canManage?`<div class="br-manual-tools"><div class="br-manual-tool"><span class="br-dot" style="background:${f?.hex||'#ccc'}"></span><div class="br-manual-tool-copy"><b>${esc(colorLabel)}</b><small>Màu chung · từng Part vẫn phải khai báo</small></div><button class="btn btn-ghost btn-xs br-manual-color-change" onclick="brView='color';renderBatchReport()">Áp dụng chung</button></div>${renderBatchMachinePlanPanel(r,{compact:true})}${renderBatchAiCard(r,{compact:true})}</div>`:`<div class="access-note" style="margin:0 0 12px">📋 Khai báo đúng Model, Part, màu thực tế và số lượng. Quản lý sẽ đối chiếu tiến độ.</div>`;
   const handoverControl=`<label class="br-workshop-handover" title="Đưa mẻ đã gỡ sang luồng gia công"><input id="br-handover-now" type="checkbox" ${r.handoverAfterPrint?'checked':''} onchange="setBatchWorkshopHandoverIntent(this.checked)"/><span><b>Plate này đã được mang qua xưởng gỡ / gia công?</b><small>Chọn để mẻ này xuất hiện ngay trong luồng Gia công.</small></span></label>`;
   document.getElementById('br-content').innerHTML=`<div class="br-manual-layout"><div class="br-manual-visual"><img src="${esc(r.image)}" alt="Ảnh mẻ in"/></div><div class="br-manual-detail">${compactTools}<div class="field" style="margin:0 0 12px;position:relative"><label>Thêm nhanh model / part</label><input id="br-manual-quick-search" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="Tìm tên model, part hoặc màu để thêm tiếp..." oninput="searchManualBatchSources(this.value)"/><div id="br-manual-quick-results"></div></div><div class="br-section-title">Model và part trong mẻ này</div>${rows}${handoverControl}<div class="br-actions">${canManage?`<button class="btn btn-danger" onclick="deleteCurrentBatchManualReport()">🗑 Xoá báo cáo</button>`:''}<button class="btn btn-ghost" onclick="deferBatchReport()">Lưu, điền sau</button><button class="btn btn-ac" onclick="saveBatchManualReport()">✓ Lưu báo cáo mẻ in (${brManualItems.length})</button></div></div></div>`;
 }
@@ -12453,7 +12466,9 @@ function saveBatchManualReport(){
   const items=brManualItems.map((item,index)=>{
     const model=models.find(m=>m.id===item.modelId); const variant=model?.variants?.find(v=>v.id===item.variantId)||null,part=partsForVariant(model,variant).find(p=>p.id===item.partId);
     if(!model || !part) { incomplete.push({index,modelId:item.modelId,hasParts:!!model?.parts?.length}); return null; }
-    return {modelId:model.id,modelName:model.name,variantId:variant?.id||null,variantName:variant?.name||null,partId:part.id,partName:part.name,qty:Math.max(1,parseInt(item.qty)||1)};
+    const filamentId=hasDeclaredManualItemFilament(item)?item.filamentId:null;
+    if(!filamentId){ incomplete.push({index,modelId:model.id,hasParts:true,missingColor:true}); return null; }
+    return {modelId:model.id,modelName:model.name,variantId:variant?.id||null,variantName:variant?.name||null,partId:part.id,partName:part.name,filamentId,qty:Math.max(1,parseInt(item.qty)||1)};
   }).filter(Boolean);
   if(incomplete.length){
     const missingModels=incomplete.filter(row=>!row.modelId);
@@ -12468,6 +12483,7 @@ function saveBatchManualReport(){
     }
     const missingParts=incomplete.filter(row=>!row.hasParts);
     if(missingParts.length) { showBatchMissingPartAction(missingParts); return; }
+    if(incomplete.some(row=>row.missingColor)) { showActionDialog({title:'Chưa khai báo màu đã in',icon:'🎨',message:'Mỗi Part trong báo cáo phải có màu thực tế đã in, kể cả Part không bị khóa màu trong Model.',primaryLabel:'Quay lại chọn màu'}); return; }
     showActionDialog({title:'Chưa chọn Part để báo cáo',icon:'📋',message:'Một hoặc nhiều dòng đã có Model nhưng chưa chọn Part. Hãy chọn Part trong danh sách rồi lưu lại.',primaryLabel:'Quay lại chọn Part'});
     return;
   }
@@ -12526,6 +12542,7 @@ function setBatchMatchQty(pitemId, val, remain){
 
 function applyBatchReport(){
   const r = batchReports.find(x=>x.id===brCurrentId); if(!r) return;
+  if(!getFil(r.filamentId)){ brView='color'; renderBatchReport(); toast('Hãy khai báo màu thực tế của mẻ trước khi cập nhật tiến độ.'); return; }
   const applied = [];
   Object.entries(brMatchQty).forEach(([pitemId, qty])=>{
     const pi = pitems.find(x=>x.id===pitemId); if(!pi) return;
@@ -13148,7 +13165,7 @@ async function saveBatchReportRecordedDate(id){
   viewBatchReport(id);
 }
 function batchReportDetailItems(report){
-  const manual=(report.manualItems||[]).map(item=>({modelId:item.modelId,modelName:item.modelName||'Model',variantId:item.variantId||null,variantName:item.variantName||'',partId:item.partId,partName:item.partName||'Part',qty:Number(item.qty)||0,filamentId:report.filamentId||null,source:'Ngoài kế hoạch'}));
+  const manual=(report.manualItems||[]).map(item=>({modelId:item.modelId,modelName:item.modelName||'Model',variantId:item.variantId||null,variantName:item.variantName||'',partId:item.partId,partName:item.partName||'Part',qty:Number(item.qty)||0,filamentId:item.filamentId||report.filamentId||null,source:'Ngoài kế hoạch'}));
   const planned=(report.appliedItems||[]).map(item=>{
     const part=pitems.find(row=>row.id===item.pitemId); if(!part) return null;
     return {modelId:part.modelId,modelName:part.modelName||'Model',variantId:part.variantId||null,variantName:part.variantName||'',partId:part.partId,partName:part.partName||'Part',qty:Number(item.qty)||0,filamentId:part.filamentId||report.filamentId||null,source:'Đã cập nhật Order'};
@@ -13169,7 +13186,7 @@ function batchReportModelProgressHTML(report){
     group.entries.forEach(item=>currentByPart.set(item.partId||item.partName,(currentByPart.get(item.partId||item.partName)||0)+item.qty));
     const history=group.model?getModelPrintHistory(group.model.id).filter(item=>item.report.id!==report.id):[];
     const coverage=group.model?getExternalModelMissingPartInfo(group.model,getModelPrintHistory(group.model.id).map(item=>({partId:item.partId,partName:item.partName,qty:item.qty}))):null;
-    const currentRows=group.entries.map(item=>{const color=getFil(item.filamentId);return `<div class="batch-report-model-part"><span class="part-dot" style="background:${color?.hex||'#aaa'}"></span><div class="batch-report-model-part-copy"><b>${esc(item.partName)}</b><small>${esc(item.source)}${item.variantName?` · ${esc(item.variantName)}`:''}</small></div><strong>× ${item.qty}</strong></div>`;}).join('');
+    const currentRows=group.entries.map(item=>{const color=getFil(item.filamentId),colorLabel=color?`${color.brand?color.brand+' · ':''}${color.name}`:'Chưa khai báo màu';return `<div class="batch-report-model-part"><span class="part-dot" style="background:${color?.hex||'#aaa'}"></span><div class="batch-report-model-part-copy"><b>${esc(item.partName)}</b><small>${esc(item.source)}${item.variantName?` · ${esc(item.variantName)}`:''} · ${esc(colorLabel)}</small></div><strong>× ${item.qty}</strong></div>`;}).join('');
     const relatedRows=(group.model?.parts||[]).filter(part=>!currentByPart.has(part.id)).map(part=>{
       const reported=history.filter(item=>item.partId===part.id || (!item.partId&&searchFold(item.partName)===searchFold(part.name)));
       const report=reported[0]?.report;
