@@ -58,6 +58,7 @@ const results = await page.evaluate(async () => {
     parts: [
       { id: 'qa-body', name: 'Thân', qtyPerModel: 1, filamentIds: [] },
       { id: 'qa-base', name: 'Đế', qtyPerModel: 1, filamentIds: [] },
+      { id: 'qa-locked', name: 'Chi tiết có màu quy định', qtyPerModel: 1, filamentIds: [fils[0]?.id].filter(Boolean) },
     ],
   }];
   orders = [{
@@ -158,6 +159,9 @@ const results = await page.evaluate(async () => {
   check('Part không khóa màu không được coi là đã khai báo', !hasDeclaredManualItemFilament(freeColorPart), String(freeColorPart.filamentId));
   freeColorPart.filamentId = fils[0]?.id || null;
   check('Màu thực tế được lưu theo từng Part', hasDeclaredManualItemFilament(freeColorPart), String(freeColorPart.filamentId));
+  const configuredColorPart = newManualEntry({ modelId: 'qa-model', partId: 'qa-locked', qty: 1 });
+  const configuredPartSource = models[0].parts.find(part => part.id === 'qa-locked');
+  check('Part có màu quy định không bắt buộc khai báo lại', !manualItemRequiresActualColor(models[0], configuredColorPart, configuredPartSource) && hasDeclaredManualItemFilament(configuredColorPart), String(configuredColorPart.filamentId));
 
   /* Reload phải giữ đúng vị trí thư viện báo cáo và toàn bộ điều kiện lọc. */
   const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status, day: batchTimelineDay };
