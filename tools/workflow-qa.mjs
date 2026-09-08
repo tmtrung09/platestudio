@@ -78,6 +78,10 @@ const results = await page.evaluate(async () => {
   const flowFloat = document.getElementById('fulfillment-flow-float');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
   check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
+  const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
+  const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
+  check('Thanh quy trình nổi ở phía trên trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.top) <= 24), flowStyle ? `top ${flowStyle.top}` : 'không có thanh');
+  check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
   /* jsdom-like file layouts may not allocate a scroll range in headless mode;
      simulate the post-scroll guide position and test the same visibility rule. */
   const originalGuideRect = guide?.getBoundingClientRect.bind(guide);
