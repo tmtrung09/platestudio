@@ -1658,7 +1658,8 @@ body.more-sheet-open{overscroll-behavior:none}
 #ov-order-form .of-cr-variant-box label{font-size:11.5px;font-weight:700;color:var(--t2);display:flex;align-items:center;gap:6px}
 #ov-order-form .of-cr-vwarn{color:var(--re);font-weight:700}
 #ov-order-form .of-cr-vok{color:var(--gr);font-weight:700}
-#ov-order-form .of-cr-variant-box .of-chips{margin-top:4px!important}
+#ov-order-form .of-cr-variant-box .of-chips{margin-top:4px!important;touch-action:pan-x;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+#ov-order-form .of-cr-variant-box .of-variant-chip{scroll-snap-align:start}
 #ov-order-form .of-variant-chip.of-active{background:var(--gr)!important;border-color:var(--gr)!important}
 #ov-order-form .of-cr-color-override{margin-top:2px;padding:.55rem .65rem;border-radius:var(--r);background:var(--s2);color:var(--t2)}
 #ov-order-form .of-cr-color-override summary{cursor:pointer;font-size:11.5px;font-weight:700;color:var(--t);list-style:none}
@@ -14654,7 +14655,9 @@ function openPartActionSheet(modelId){
   }
   list.addEventListener('touchstart', e=>{
     const wrap = e.target.closest('.of-cr-wrap'); if (!wrap) return;
-    if (e.target.closest('.of-cr-stepper') || e.target.closest('.of-cr-del') || e.target.closest('select') || e.target.closest('input')) return;
+    /* Dải phiên bản là vùng cuộn ngang độc lập. Không để thao tác lướt chip
+       bị cha hiểu là vuốt xoá dòng sản phẩm. */
+    if (e.target.closest('.of-cr-stepper,.of-cr-del,select,input,.of-cr-variant-box,.of-cr-color-override,button')) return;
     if (openWrap && openWrap!==wrap) closeOpen();
     curWrap = wrap; curRow = wrap.querySelector('.of-cart-row');
     startX = e.touches[0].clientX; dx = 0; dragging = true;
