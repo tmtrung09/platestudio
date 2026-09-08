@@ -127,7 +127,9 @@ const results = await page.evaluate(async () => {
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   const reprintNeeds = getQcReprintNeeds();
   const qaNeed = reprintNeeds.find(item => item.model.id === 'qa-model');
+  const readyShelf = document.querySelector('.fulfillment-ready-shelf');
   check('Chỉ 2 sản phẩm đạt được mở giao', workshopReadyDeliveryQty(row) === 2, workshopReadyDeliveryQty(row));
+  check('Kệ thành phẩm sẵn giao có vùng cuộn riêng', Boolean(readyShelf && getComputedStyle(readyShelf).overflowY === 'auto' && readyShelf.getBoundingClientRect().height <= innerHeight * .4 + 2), readyShelf ? `${Math.round(readyShelf.getBoundingClientRect().height)}px` : 'không có kệ');
   check('2 sản phẩm lỗi được trả về hàng in lại', workshopReprintQty(row) === 2, workshopReprintQty(row));
   check('Part còn lại không bị xoá toàn bộ', pitems.every(item => Number(item.qtyDone) === 2), pitems.map(item => item.qtyDone).join(', '));
   check('Trang Cần in lại nhóm đúng 2 sản phẩm QC lỗi', qaNeed?.productQty === 2, qaNeed?.productQty ?? 'không có nhóm');

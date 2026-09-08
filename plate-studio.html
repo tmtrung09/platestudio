@@ -3876,6 +3876,13 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 </header>
 
 <style>
+/* Kệ thành phẩm sẵn giao có vùng cuộn riêng: số model tăng không được kéo dài
+   toàn bộ trang Gia công. Mỗi thẻ vẫn giữ ảnh, số lượng và hai thao tác chính. */
+.fulfillment-ready-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px;max-height:min(39vh,350px);overflow-y:auto;overscroll-behavior:contain;padding:3px 3px 5px;scrollbar-gutter:stable}
+.fulfillment-ready-shelf::-webkit-scrollbar{width:7px}.fulfillment-ready-shelf::-webkit-scrollbar-thumb{border-radius:99px;background:color-mix(in srgb,var(--pu) 35%,var(--b))}
+.fulfillment-ready-shelf .workshop-item-completed{min-height:0;padding:10px;grid-template-columns:44px minmax(0,1fr);gap:9px;border-radius:16px}.fulfillment-ready-shelf .workshop-item-completed .workshop-item-img{width:44px;height:44px;border-radius:12px}.fulfillment-ready-shelf .workshop-item-ready{margin-top:3px}.fulfillment-ready-shelf .workshop-item-ready b{font-size:16px}.fulfillment-ready-shelf .workshop-completed-evidence{margin-top:3px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fulfillment-ready-shelf .workshop-item-actions{gap:6px;margin-top:1px}.fulfillment-ready-shelf .workshop-item-actions .btn{min-height:30px;padding:5px 8px;font-size:10.5px}
+@media(max-width:640px){.fulfillment-ready-shelf{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px}.fulfillment-ready-shelf .workshop-item-completed{padding:9px;grid-template-columns:40px minmax(0,1fr);gap:8px}.fulfillment-ready-shelf .workshop-item-completed .workshop-item-img{width:40px;height:40px;border-radius:11px}.fulfillment-ready-shelf .workshop-item-title{font-size:12px}.fulfillment-ready-shelf .workshop-item-actions .btn{min-height:29px;padding:4px 6px;font-size:10px}}
+@media(max-width:370px){.fulfillment-ready-shelf{grid-template-columns:1fr}}
 /* Thanh quy trình nổi: thay thế vai trò định hướng của guide khi người dùng
    đã cuộn khỏi đầu trang, nhưng không chiếm vùng thao tác chính. */
 .fulfillment-flow-float{position:fixed;z-index:1110;top:50%;right:18px;display:flex;flex-direction:column;gap:5px;width:194px;padding:7px;border:1px solid color-mix(in srgb,var(--pu) 34%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--s) 96%,var(--pu) 4%);box-shadow:0 14px 34px rgba(20,22,43,.25),inset 0 1px color-mix(in srgb,#fff 52%,transparent);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transform:translateY(calc(-50% + 12px)) scale(.96);transition:opacity .18s ease,transform .22s cubic-bezier(.2,.9,.25,1)}
@@ -16167,12 +16174,12 @@ function renderFulfillmentPage(){
     ? `<div class="fulfillment-workshop-grid">${incompleteRows.map(fulfillmentWorkshopCard).join('')}</div>`
     : `<div class="empty">Không có model thiếu part.</div>`;
   const qcReadyHtml=qcReadyRows.length
-    ? `<div class="fulfillment-workshop-grid">${qcReadyRows.map(fulfillmentWorkshopCard).join('')}</div>`
+    ? `<div class="fulfillment-ready-shelf" role="list" aria-label="Thành phẩm sẵn sàng giao hàng">${qcReadyRows.map(fulfillmentWorkshopCard).join('')}</div>`
     : `<div class="empty">Chưa có thành phẩm hoàn tất gia công.</div>`;
   const externalRows=workshopRows.filter(row=>row.source==='external');
   const workshopRowsHtml=[
     reprintRows.length?fulfillmentStageHtml('reprint','0. Hàng lỗi · chờ in lại',`${reprintRows.length} model cần in bù trước khi gia công tiếp.`,reprintRows,'Không có sản phẩm lỗi cần in lại.',fulfillmentReprintCard):'',
-    qcReadyRows.length?`<div id="fulfillment-ready-delivery" class="fulfillment-workshop-subhead">Hoàn tất gia công · sẵn sàng giao hàng <small>${qcReadyRows.length}</small></div>${qcReadyHtml}`:'',
+    qcReadyRows.length?`<div id="fulfillment-ready-delivery" class="fulfillment-workshop-subhead">Hoàn tất gia công · sẵn sàng giao hàng <small>${qcReadyRows.length} model · cuộn để xem thêm</small></div>${qcReadyHtml}`:'',
     workshopFlowCount?`<div id="fulfillment-workshop-flow" class="fulfillment-workshop-subhead">Chờ gia công <small>${workshopFlowCount}</small></div>${readyWorkshopHtml}${waitingWorkshopHtml}`:'',
     incompleteRows.length?`<div id="fulfillment-missing-parts" class="fulfillment-workshop-subhead">Thiếu part <small>${incompleteRows.length}</small></div>${incompleteWorkshopHtml}`:''
   ].join('');
