@@ -26,7 +26,7 @@ const chromeCandidates = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
 ].filter(Boolean);
 const executablePath = chromeCandidates.find(path => existsSync(path));
-const routes = ['dashboard', 'models', 'orders', 'plates', 'batches', 'fulfillment', 'sales', 'inventory'];
+const routes = ['dashboard', 'models', 'orders', 'plates', 'batches', 'fulfillment', 'sales', 'inventory', 'delivery-builder'];
 
 if (!existsSync(appFile)) throw new Error(`Không tìm thấy ứng dụng: ${appFile}`);
 if (!executablePath) throw new Error('Không tìm thấy Chrome hoặc Edge. Đặt CHROME_PATH rồi chạy lại.');
@@ -142,6 +142,12 @@ for (const route of routes) {
       const rect = element.getBoundingClientRect();
       return rect.width < 32 && rect.height < 32;
     }).slice(0, 12).map(element => ({ label: (element.getAttribute('aria-label') || element.textContent || element.placeholder || element.id).trim().slice(0, 80), width: Math.round(element.getBoundingClientRect().width), height: Math.round(element.getBoundingClientRect().height) }));
+    const wizard = expectedRoute === 'delivery-builder' ? (() => {
+      const hero = document.querySelector('.delivery-wizard-hero');
+      const stage = document.querySelector('.delivery-wizard-stage');
+      const toolbar = document.querySelector('.delivery-product-toolbar');
+      return { heroText: hero?.innerText?.trim() || '', stageTop: Math.round(stage?.getBoundingClientRect().top || 0), toolbar: Boolean(toolbar) };
+    })() : null;
     return {
       title: document.title,
       ready: document.readyState,
@@ -152,6 +158,7 @@ for (const route of routes) {
       clipped,
       blocked,
       tinyTargets,
+      wizard,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   if (route === routes[0]) {
@@ -166,6 +173,7 @@ for (const route of routes) {
     ...(!checks.activeHasContent ? ['Trang active không có nội dung hiển thị'] : []),
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
     ...(route === routes[0] ? (report.themeAudit?.failures || []) : []),
+    ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),
   ];
