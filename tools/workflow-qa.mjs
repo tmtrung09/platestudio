@@ -159,6 +159,34 @@ const results = await page.evaluate(async () => {
   check('Nhóm QC hiển thị riêng trong trang tồn', inventoryQcReprintPanel(reprintNeeds).includes('QC → CẦN IN LẠI'));
   check('Luồng giao chỉ lấy 2 sản phẩm đã đạt', deliveryReadyLines('qa-order')[0]?.available === 2, deliveryReadyLines('qa-order')[0]?.available ?? 'không có dòng');
 
+  /* Cập nhật nhanh phải có xác nhận trách nhiệm, đổi trạng thái tại chỗ và
+     lưu vết người thao tác; không cần cuộn sang nhóm kế tiếp để tìm lại thẻ. */
+  const quickRowKey = encodeURIComponent('order:qa-order:qa-item');
+  openWorkshopQuickStatus(quickRowKey);
+  document.getElementById('workshop-quick-status').value = 'in_progress';
+  document.getElementById('workshop-quick-confirm').checked = true;
+  document.getElementById('workshop-quick-note').value = 'QA xác nhận đã bắt đầu';
+  saveWorkshopQuickStatus(quickRowKey);
+  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
+  check('Cập nhật nhanh đưa model sang đang gia công', workshopAssemblyStage(row) === 'in_progress', workshopAssemblyStage(row));
+  check('Cập nhật nhanh có lưu vết trách nhiệm', Boolean(operations.auditLog?.[0]?.metadata?.quickStatus && operations.auditLog[0]?.metadata?.to === 'in_progress'), JSON.stringify(operations.auditLog?.[0]?.metadata || {}));
+  openWorkshopQuickStatus(quickRowKey);
+  document.getElementById('workshop-quick-status').value = 'completed';
+  document.getElementById('workshop-quick-confirm').checked = true;
+  saveWorkshopQuickStatus(quickRowKey);
+  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
+  check('Cập nhật nhanh có thể chốt hoàn tất trực tiếp', workshopAssemblyStage(row) === 'completed' && workshopReadyDeliveryQty(row) === 4, `${workshopAssemblyStage(row)} · ${workshopReadyDeliveryQty(row)}`);
+  openWorkshopQuickStatus(quickRowKey);
+  document.getElementById('workshop-quick-status').value = 'ready';
+  document.getElementById('workshop-quick-confirm').checked = true;
+  saveWorkshopQuickStatus(quickRowKey);
+  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
+  check('Đổi ngược trạng thái gỡ đúng số khỏi kệ sẵn giao', workshopAssemblyStage(row) === 'ready' && workshopReadyDeliveryQty(row) === 0, `${workshopAssemblyStage(row)} · ${workshopReadyDeliveryQty(row)}`);
+  openWorkshopQuickStatus(quickRowKey);
+  document.getElementById('workshop-quick-status').value = 'completed';
+  document.getElementById('workshop-quick-confirm').checked = true;
+  saveWorkshopQuickStatus(quickRowKey);
+
   const externalPending = { source: 'external', externalKey: 'qa-external', it: { qty: 4 }, handover: { qcStatus: 'rejected', qcAcceptedQty: 2, reprintQty: 2, assemblyStatus: 'in_progress', assemblyQty: 0 } };
   const externalDone = { ...externalPending, handover: { ...externalPending.handover, assemblyStatus: 'completed', assemblyQty: 2, readyQty: 2 } };
   check('Mẻ ngoài đơn chỉ gia công số QC đạt', workshopAssemblyTargetQty(externalPending) === 2, workshopAssemblyTargetQty(externalPending));
