@@ -15866,6 +15866,16 @@ const FULFILLMENT_FLOW_TARGETS={
   delivery:['fulfillment-ready-delivery','fulfillment-workshop-flow'],
   receive:['fulfillment-receipts','fulfillment-receive','fulfillment-workshop-zone']
 };
+/* Chỉ dùng các mốc thực sự của từng bước để tô sáng thanh nổi. Các fallback
+   (như cả cụm Gia công) chỉ dành cho thao tác đi tới; dùng chúng để nhận diện
+   sẽ khiến bước 1 sáng nhầm khi người dùng đang xem một nhóm phía sau. */
+const FULFILLMENT_FLOW_ACTIVE_TARGETS={
+  print:['fulfillment-missing-parts'],
+  workshop:['fulfillment-stage-handover'],
+  qc:['fulfillment-stage-part-qc'],
+  delivery:['fulfillment-ready-delivery'],
+  receive:['fulfillment-receipts','fulfillment-receive']
+};
 const FULFILLMENT_FLOW_STAGE={workshop:'handover',qc:'part-qc'};
 let fulfillmentFlowFloatListenersBound=false,fulfillmentFlowScrollHost=null;
 function syncFulfillmentFlowFloat(){
@@ -15874,9 +15884,14 @@ function syncFulfillmentFlowFloat(){
   const show=curPage==='fulfillment'&&Boolean(guide)&&guide.getBoundingClientRect().bottom<12;
   floating.classList.toggle('is-visible',show);
   if(!show)return;
-  const current=Object.entries(FULFILLMENT_FLOW_TARGETS).find(([,ids])=>ids.some(id=>{
-    const rect=document.getElementById(id)?.getBoundingClientRect();return rect&&rect.top>=0&&rect.top<innerHeight*.62;
-  }))?.[0]||'workshop';
+  const anchor=floating.getBoundingClientRect().bottom+18;
+  const stages=Object.entries(FULFILLMENT_FLOW_ACTIVE_TARGETS).map(([flow,ids])=>{
+    const target=ids.map(id=>document.getElementById(id)).find(Boolean);
+    return target?{flow,top:target.getBoundingClientRect().top}:null;
+  }).filter(Boolean).sort((a,b)=>a.top-b.top);
+  /* Lấy mốc cuối cùng đã đi qua thanh nổi. Nhờ thế bước được tô luôn khớp
+     với vị trí đọc, kể cả khi một nhóm không có sản phẩm nên không được render. */
+  const current=stages.filter(stage=>stage.top<=anchor).at(-1)?.flow||stages[0]?.flow||'print';
   floating.querySelectorAll('button[data-flow]').forEach(button=>{
     if(button.dataset.flow===current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
   });
@@ -16325,9 +16340,11 @@ function renderFulfillmentPage(){
   const externalRows=workshopRows.filter(row=>row.source==='external');
   const workshopRowsHtml=[
     reprintRows.length?fulfillmentStageHtml('reprint','0. Hàng lỗi · chờ in lại',`${reprintRows.length} model cần in bù trước khi gia công tiếp.`,reprintRows,'Không có sản phẩm lỗi cần in lại.',fulfillmentReprintCard):'',
-    qcReadyRows.length?`<div id="fulfillment-ready-delivery" class="fulfillment-workshop-subhead">Hoàn tất gia công · sẵn sàng giao hàng <small>${qcReadyRows.length} model · cuộn để xem thêm</small></div>${qcReadyHtml}`:'',
+    /* Luồng chính luôn đi từ part → giao xưởng/QC/gia công → sẵn sàng giao.
+       Không đặt "sẵn sàng giao" lên đầu chỉ vì nó là kết quả đã hoàn tất. */
+    incompleteRows.length?`<div id="fulfillment-missing-parts" class="fulfillment-workshop-subhead">Thiếu part <small>${incompleteRows.length}</small></div>${incompleteWorkshopHtml}`:'',
     workshopFlowCount?`<div id="fulfillment-workshop-flow" class="fulfillment-workshop-subhead">Chờ gia công <small>${workshopFlowCount}</small></div>${readyWorkshopHtml}${waitingWorkshopHtml}`:'',
-    incompleteRows.length?`<div id="fulfillment-missing-parts" class="fulfillment-workshop-subhead">Thiếu part <small>${incompleteRows.length}</small></div>${incompleteWorkshopHtml}`:''
+    qcReadyRows.length?`<div id="fulfillment-ready-delivery" class="fulfillment-workshop-subhead">Hoàn tất gia công · sẵn sàng giao hàng <small>${qcReadyRows.length} model · cuộn để xem thêm</small></div>${qcReadyHtml}`:''
   ].join('');
   const workshop=`<section id="fulfillment-workshop-zone" class="fulfillment-workshop-zone"><div class="fulfillment-workshop-head"><b>Gia công</b><div class="fulfillment-workshop-counts"><span class="fulfillment-workshop-count"><b>${readyNotHanded.length}</b> chờ giao xưởng</span><span class="fulfillment-workshop-count"><b>${qcReadyRows.length}</b> sẵn sàng giao hàng</span></div></div>${workshopRowsHtml||'<div class="empty">Chưa có việc gia công.</div>'}</section>`;
   const pendingHtml=pending.length?`<section id="fulfillment-receive"><div class="card-title">Cần xử lý <span class="sect-count">${pending.length}</span></div><div class="fulfillment-grid">${pending.map(card).join('')}</div></section>`:'';

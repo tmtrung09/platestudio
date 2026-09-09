@@ -79,6 +79,11 @@ const results = await page.evaluate(async () => {
   check('Thanh tìm kiếm gia công tách khỏi cụm giao hàng', Boolean(document.querySelector('.fulfillment-search-row .page-smart-search')) && !document.querySelector('.fulfillment-command'));
   const fulfillmentHeaderActions = ['refreshFulfillmentPage()', 'openReceivingHub()', 'openDeliveryBatchBuilder()'];
   check('Thao tác giao hàng nằm cùng hàng Làm mới', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
+  const fulfillmentRendererSource = renderFulfillmentPage.toString();
+  const missingPartsIndex = fulfillmentRendererSource.indexOf('id="fulfillment-missing-parts"');
+  const workshopFlowIndex = fulfillmentRendererSource.indexOf('id="fulfillment-workshop-flow"');
+  const deliveryReadyIndex = fulfillmentRendererSource.indexOf('id="fulfillment-ready-delivery"');
+  check('Nhóm gia công luôn theo thứ tự part → xưởng → giao', missingPartsIndex >= 0 && missingPartsIndex < workshopFlowIndex && workshopFlowIndex < deliveryReadyIndex, `${missingPartsIndex} → ${workshopFlowIndex} → ${deliveryReadyIndex}`);
   const guide = document.getElementById('fulfillment-flow-guide');
   const flowFloat = document.getElementById('fulfillment-flow-float');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
