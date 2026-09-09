@@ -9794,11 +9794,18 @@ function getIncompleteModelReminders(){
   });
   return [...orderReminders,...historyReminders];
 }
+/* `reconciledAt` hỗ trợ các báo cáo ngoài kế hoạch đã được đối chiếu trước
+   khi có cờ externalOrigin: vẫn phải mở lại được để sửa sai số liệu cũ. */
+function isExternalBatchReport(report){ return Boolean(report?.external||report?.externalOrigin||report?.reconciledAt); }
+function batchReportVariantKey(item){ return String(item?.variantId||item?.variantName||''); }
 function getBatchReportReconciliationCandidates(report){
-  if(!report?.external || report.status!=='done') return [];
+  if(!isExternalBatchReport(report) || report.status!=='done') return [];
   const manualItems=Array.isArray(report.manualItems)?report.manualItems:[];
   return manualItems.flatMap((item,manualIndex)=>pitems
-    .filter(pi=>pi.orderId && pi.modelId===item.modelId && pi.partId===item.partId && pi.qtyDone<pi.qty)
+    /* Một Part cùng tên có thể thuộc nhiều phiên bản của cùng Model. Không
+       được đối chiếu chéo biến thể, nếu không một mẻ Size 10cm sẽ làm tăng
+       cả Size 3,5cm và 5cm trong Order. */
+    .filter(pi=>pi.orderId && pi.modelId===item.modelId && pi.partId===item.partId && batchReportVariantKey(pi)===batchReportVariantKey(item) && pi.qtyDone<pi.qty)
     .map(pi=>({report,manualIndex,item,pitem:pi,available:Math.min(item.qty||0,pi.qty-pi.qtyDone)}))
   ).filter(x=>x.available>0);
 }
@@ -9809,7 +9816,7 @@ function openBatchReconciliation(reportId){
   if(!matches.length){ toast('Báo cáo này không còn part nào có thể đối chiếu vào Order'); return; }
   const ov=document.getElementById('dlg-mv');
   const reportImage=report.image?`<img src="${esc(report.thumb||report.image)}" loading="lazy" decoding="async" alt="Ảnh báo cáo mẻ in" style="width:112px;height:112px;object-fit:cover;border-radius:12px;background:var(--s2);flex:0 0 112px"/>`:'';
-  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Đối chiếu vào Order <span class="sect-count">${matches.length}</span></div><div style="display:flex;gap:13px;align-items:center;margin:-.35rem 0 12px;padding:10px;background:var(--s2);border-radius:13px">${reportImage}<div style="font-size:13px;color:var(--t2);line-height:1.55">Ảnh mẻ in này từng được ghi là <b>ngoài kế hoạch</b>, nhưng các part bên dưới đang còn thiếu trong Order.<br/><b>Chọn một lượt</b>, rồi bấm xác nhận: hệ thống cập nhật tất cả phần đã chọn cùng lúc và tự gỡ phần ghi ngoài kế hoạch để không bị đếm hai lần.</div></div><div style="display:flex;align-items:center;gap:8px;margin:0 0 7px"><b style="font-size:12px;color:var(--t3)">PART CÓ THỂ ĐỐI CHIẾU</b><button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="setAllBatchReconciliation(true)">Chọn tất cả</button><button class="btn btn-ghost btn-xs" onclick="setAllBatchReconciliation(false)">Bỏ chọn</button></div><div class="part-list">${matches.map((x,i)=>{const o=orders.find(z=>z.id===x.pitem.orderId),f=getFil(x.pitem.filamentId),m=models.find(z=>z.id===x.pitem.modelId);return `<label class="part-row" style="gap:9px;align-items:center"><input type="checkbox" class="br-rec-check" id="br-rec-check-${i}" checked style="accent-color:var(--ac)"/><div class="part-dot" style="background:${f?.hex||'#aaa'}"></div>${modelThumbSm(m)}<div class="part-name" style="min-width:0"><b>${esc(x.item.modelName)} — ${esc(x.item.partName)}</b><div style="font-size:11px;color:var(--t3);margin-top:3px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${f?.hex||'#aaa'}"></span> ${esc(f?.brand||'')} ${esc(f?.name||'')} · ${esc(o?.note||'Đơn không tên')} · còn thiếu ${x.pitem.qty-x.pitem.qtyDone}</div></div><input id="br-rec-qty-${i}" type="number" min="1" max="${x.available}" value="${x.available}" style="width:66px;flex:0 0 66px"/></label>`;}).join('')}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" onclick="applyBatchReconciliation('${reportId}')">✓ Chuyển ${matches.length} mục vào Order</button></div></div>`;
+  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Đối chiếu vào Order <span class="sect-count">${matches.length}</span></div><div style="display:flex;gap:13px;align-items:center;margin:-.35rem 0 12px;padding:10px;background:var(--s2);border-radius:13px">${reportImage}<div style="font-size:13px;color:var(--t2);line-height:1.55">Ảnh mẻ in này từng được ghi là <b>ngoài kế hoạch</b>, nhưng các part bên dưới đang còn thiếu trong Order.<br/><b>Chọn một lượt</b>, rồi bấm xác nhận: hệ thống cập nhật tất cả phần đã chọn cùng lúc và tự gỡ phần ghi ngoài kế hoạch để không bị đếm hai lần.</div></div><div style="display:flex;align-items:center;gap:8px;margin:0 0 7px"><b style="font-size:12px;color:var(--t3)">PART CÓ THỂ ĐỐI CHIẾU</b><button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="setAllBatchReconciliation(true)">Chọn tất cả</button><button class="btn btn-ghost btn-xs" onclick="setAllBatchReconciliation(false)">Bỏ chọn</button></div><div class="part-list">${matches.map((x,i)=>{const o=orders.find(z=>z.id===x.pitem.orderId),f=getFil(x.pitem.filamentId),m=models.find(z=>z.id===x.pitem.modelId),variant=x.item.variantName||x.pitem.variantName||'';return `<label class="part-row" style="gap:9px;align-items:center"><input type="checkbox" class="br-rec-check" id="br-rec-check-${i}" checked style="accent-color:var(--ac)"/><div class="part-dot" style="background:${f?.hex||'#aaa'}"></div>${modelThumbSm(m)}<div class="part-name" style="min-width:0"><b>${esc(x.item.modelName)}${variant?` · ${esc(variant)}`:''} — ${esc(x.item.partName)}</b><div style="font-size:11px;color:var(--t3);margin-top:3px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${f?.hex||'#aaa'}"></span> ${esc(f?.brand||'')} ${esc(f?.name||'')} · ${esc(o?.note||'Đơn không tên')} · còn thiếu ${x.pitem.qty-x.pitem.qtyDone}</div></div><input id="br-rec-qty-${i}" type="number" min="1" max="${x.available}" value="${x.available}" style="width:66px;flex:0 0 66px"/></label>`;}).join('')}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" onclick="applyBatchReconciliation('${reportId}')">✓ Chuyển ${matches.length} mục vào Order</button></div></div>`;
   const reconciliationIntro=ov.querySelector('.dlg > div[style*="display:flex"] > div:last-child');
   if(reconciliationIntro) reconciliationIntro.innerHTML='Part này còn thiếu trong Order. Chọn để cập nhật.';
   ov.style.display='flex'; ov.onclick=e=>{if(e.target===ov)closeDialog('dlg-mv');};
@@ -9819,6 +9826,15 @@ function applyBatchReconciliation(reportId){
   if(!canEditBatchReports()){toast('Bạn chưa được cấp quyền chỉnh sửa thông tin ảnh báo cáo mẻ.');return;}
   const report=findOperationalBatchReport(reportId); if(!report) return;
   const matches=getBatchReportReconciliationCandidates(report); let moved=0;
+  /* Lưu điểm khôi phục trước lần đối chiếu đầu tiên. Khi phát hiện khai báo
+     nhầm, quản lý có thể sửa báo cáo mà chỉ hoàn tác số do chính báo cáo này
+     đã cộng vào Order. */
+  if(!report.reconciliationBackup) report.reconciliationBackup={
+    manualItems:JSON.parse(JSON.stringify(report.manualItems||[])),
+    appliedItems:JSON.parse(JSON.stringify(report.appliedItems||[])),
+    capturedAt:new Date().toISOString()
+  };
+  report.reconciliationDeltas=report.reconciliationDeltas||[];
   matches.forEach((x,i)=>{
     if(!document.getElementById(`br-rec-check-${i}`)?.checked) return;
     const qty=Math.min(x.available,Math.max(1,parseInt(document.getElementById(`br-rec-qty-${i}`)?.value)||1));
@@ -9826,11 +9842,13 @@ function applyBatchReconciliation(reportId){
     report.appliedItems=report.appliedItems||[];
     const prior=report.appliedItems.find(a=>a.pitemId===x.pitem.id);
     if(prior) prior.qty+=qty; else report.appliedItems.push({pitemId:x.pitem.id,qty});
+    report.reconciliationDeltas.push({pitemId:x.pitem.id,qty});
     const manual=report.manualItems[x.manualIndex]; manual.qty-=qty;
     moved+=qty;
   });
   report.manualItems=(report.manualItems||[]).filter(x=>x.qty>0);
   report.external=report.manualItems.length>0;
+  report.externalOrigin=true;
   report.reconciledAt=new Date().toISOString();
   /* Nếu người dùng đã xác nhận cả plate được giao xưởng ngay lúc báo cáo,
      áp dụng mốc đó cho các dòng Order vừa đối chiếu — nhưng chỉ khi model
@@ -9843,13 +9861,45 @@ function applyBatchReconciliation(reportId){
   renderSb(); renderDashboard(); if(curPage==='batches')renderBatchReportPage(); if(curPage==='reminders')renderRemindersPage();
   closeDialog('dlg-mv'); toast(`✓ Đã chuyển ${moved} part vào tiến độ Order${handed?` · giao xưởng ${handed} model`:''}`);
 }
+function restoreBatchReportBeforeEditing(report){
+  if(!report) return false;
+  const backup=report.reconciliationBackup||null;
+  const deltas=Array.isArray(report.reconciliationDeltas)&&report.reconciliationDeltas.length
+    ? report.reconciliationDeltas
+    : (report.appliedItems||[]).map(item=>({pitemId:item.pitemId,qty:item.qty}));
+  deltas.forEach(delta=>{
+    const pi=pitems.find(item=>item.id===delta.pitemId);
+    if(pi) pi.qtyDone=Math.max(0,Number(pi.qtyDone||0)-Math.max(0,Number(delta.qty)||0));
+  });
+  const legacyItems=(report.appliedItems||[]).map(applied=>{
+    const pi=pitems.find(item=>item.id===applied.pitemId);
+    return pi?{modelId:pi.modelId,modelName:pi.modelName,variantId:pi.variantId||null,variantName:pi.variantName||null,partId:pi.partId,partName:pi.partName,filamentId:pi.filamentId||report.filamentId||null,qty:Math.max(1,Number(applied.qty)||1)}:null;
+  }).filter(Boolean);
+  report.manualItems=JSON.parse(JSON.stringify(backup?.manualItems?.length?backup.manualItems:((report.manualItems||[]).length?report.manualItems:legacyItems)));
+  report.appliedItems=JSON.parse(JSON.stringify(backup?.appliedItems||[]));
+  report.external=report.manualItems.length>0;
+  report.externalOrigin=true;
+  delete report.reconciliationBackup;
+  delete report.reconciliationDeltas;
+  delete report.reconciledAt;
+  return true;
+}
 function editCompletedManualBatchReport(reportId){
   if(!canEditBatchReports()){toast('Bạn chưa được cấp quyền chỉnh sửa thông tin ảnh báo cáo mẻ.');return;}
-  const report=stageBatchReportForEditing(reportId); if(!report?.external) { toast('Chỉ có thể sửa trực tiếp phần ghi nhận ngoài kế hoạch'); return; }
+  const report=stageBatchReportForEditing(reportId); if(!isExternalBatchReport(report)) { toast('Chỉ có thể sửa trực tiếp phần ghi nhận ngoài kế hoạch'); return; }
+  const hasReconciliation=(report.reconciliationDeltas||[]).length || (!(report.manualItems||[]).length && (report.appliedItems||[]).length);
+  if(hasReconciliation){
+    if(!confirm('Báo cáo này đã được đối chiếu vào Order. Hệ thống sẽ hoàn tác riêng số lượng do báo cáo này đã cộng, rồi mở báo cáo để chỉnh. Tiếp tục?')) return;
+    restoreBatchReportBeforeEditing(report);
+    sv(K.pitems,pitems); sv(K.batchReports,batchReports);
+    persistBatchReportCloud(report).catch(error=>console.warn('Chưa lưu được việc hoàn tác đối chiếu lên cloud',error));
+    renderSb(); renderDashboard(); if(curPage==='batches')renderBatchReportPage(); if(curPage==='reminders')renderRemindersPage();
+  }
   brCurrentId=reportId;
   brManualItems=(report.manualItems||[]).map(newManualEntry);
   brView='manual'; closeDialog('dlg-mv');
   document.getElementById('ov-batch-report').style.display='flex'; renderBatchReport();
+  if(hasReconciliation) toast('Đã hoàn tác đối chiếu của mẻ này. Kiểm tra đúng biến thể rồi lưu lại.',5000);
 }
 function renderRemindersPage(){
   const el=document.getElementById('reminders-page'); if(!el) return;
@@ -10922,6 +10972,7 @@ async function applyAiBatchDraft(){
   report.appliedItems=[...(report.appliedItems||[]),...planned];
   report.manualItems=[...(report.manualItems||[]),...manual];
   report.external=(report.manualItems||[]).length>0;
+  if(manual.length) report.externalOrigin=true;
   report.status='done'; report.completedAt=new Date().toISOString(); report.completedBy=ensureBatchActor(); report.removedBy=report.completedBy;
   report.aiAssisted={provider:'Gemini',reviewedAt:report.completedAt,appliedCount:planned.length+manual.length};
   sv(K.pitems,pitems); sv(K.batchReports,batchReports); brAiDraft=null;
@@ -12238,7 +12289,7 @@ function legacySaveBatchManualReport(){
   const qty=Math.max(1,parseInt(document.getElementById('br-manual-qty')?.value)||1);
   if(!r || !model || !part){ toast('Hãy chọn đầy đủ Model và Part đã in'); return; }
   r.manualItems=[{modelId:model.id,modelName:model.name,partId:part.id,partName:part.name,qty}];
-  r.appliedItems=[]; r.status='done'; r.completedAt=new Date().toISOString(); r.external=true;
+  r.appliedItems=[]; r.status='done'; r.completedAt=new Date().toISOString(); r.external=true; r.externalOrigin=true;
   sv(K.batchReports,batchReports);
   updateCamBadge(); renderSb();
   if(curPage==='batches') renderBatchReportPage();
@@ -12504,7 +12555,7 @@ function saveBatchManualReport(){
     r.contentsDeclaredAt=completedAt;r.contentsDeclaredBy=ensureBatchActor();
     const handedToWorkshop=!!r.handoverAfterPrint;
     r.status=handedToWorkshop?'done':'pending';r.completedAt=handedToWorkshop?completedAt:null;
-    r.completedBy=handedToWorkshop?r.contentsDeclaredBy:null;r.external=handedToWorkshop&&items.length>0;
+    r.completedBy=handedToWorkshop?r.contentsDeclaredBy:null;r.external=handedToWorkshop&&items.length>0;if(items.length)r.externalOrigin=true;
     r.workshopHandover=handedToWorkshop?{status:'handed',at:completedAt,by:r.contentsDeclaredBy,scope:'whole_plate',count:items.length}:null;
     const handedExternal=handedToWorkshop?handoverExternalItemsFromBatch(items,r):0;
     sv(K.batchReports,batchReports);updateCamBadge();renderSb();
@@ -12514,7 +12565,7 @@ function saveBatchManualReport(){
     toast(handedToWorkshop?`✓ Đã giao ${handedExternal||items.length} model sang luồng Gia công.`:`✓ Đã khai báo ${items.length} Model/Part. Mẻ đang chờ quản lý đối chiếu.`);
     return;
   }
-  r.status='done'; r.completedAt=completedAt; r.external=items.length>0;
+  r.status='done'; r.completedAt=completedAt; r.external=items.length>0;if(items.length)r.externalOrigin=true;
   r.completedBy=ensureBatchActor(); r.removedBy=r.completedBy;
   /* Mẻ ngoài đơn chưa nên tự tick Order. Tuy vậy vẫn giữ chính xác việc cả
      plate đã được giao xưởng, để khi người dùng đối chiếu vào Order sau đó,
@@ -13257,7 +13308,7 @@ function viewBatchReport(id){
   const reportDone=isOperationalBatchReport(r);
   const meta=`<div class="batch-report-image-meta"><div class="batch-report-meta-top"><span class="badge ${reportDone?'bg-gr':'bg-am'}">${reportDone?'Đã xử lý':'Chờ xử lý'}</span><b>${esc(fil?fil.brand+' · '+fil.name:'Chưa chọn màu')}</b></div><div class="batch-report-meta-detail">📷 ${esc(batchActorLabel(r.capturedBy))}${r.completedBy||r.removedBy?`<br/>🧹 ${esc(batchActorLabel(r.removedBy||r.completedBy))}`:''}${handover?`<br/>🔧 Đã giao xưởng · ${esc(batchActorLabel(r.workshopHandover.by))}${r.workshopHandover.scope==='whole_plate'?` · ${Number(r.workshopHandover.count)||0} dòng`:''}`:''}</div>${dateControl}</div>`;
   const aiAction=!STAFF_REPORT_MODE&&canEdit&&r.image?`<div class="batch-report-ai-action"><button class="btn btn-ac btn-sm" ${brAiAnalysing.has(r.id)?'disabled':''} onclick="analyzeBatchReportWithAi('${r.id}')">${brAiAnalysing.has(r.id)?'✦ Đang phân tích…':'✦ Phân tích AI'}</button></div>`:'';
-  ov.innerHTML=`<div class="dlg batch-report-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Báo cáo mẻ in</div><div class="batch-report-detail-layout"><div class="batch-report-visual-column"><div class="batch-report-image-stage"><div class="batch-report-detail-media${r.image?'':' is-missing'}">${r.image?`<img src="${esc(r.image)}" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`:''}</div>${meta}${aiAction}</div></div><div class="batch-report-model-column"><div class="card-title" style="margin:0">Model / Part trong mẻ này</div>${batchReportModelProgressHTML(r)}${reconcile.length?`<div class="batch-report-reconcile-note">⚠️ Có ${reconcile.length} Part đã ghi ngoài kế hoạch nhưng vẫn thiếu trong Order.${canEdit?` <button class="btn btn-ac btn-xs" style="margin-left:6px" onclick="openBatchReconciliation('${r.id}')">Đối chiếu ngay</button>`:''}</div>`:''}${showAiDetails?renderBatchAiCard(r,{compact:true,hideAction:true}):''}</div></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button>${canEdit&&r.external?`<button class="btn btn-ghost" onclick="editCompletedManualBatchReport('${r.id}')">Sửa báo cáo</button>`:''}${canEdit&&r.status!=='done'?`<button class="btn btn-ac" onclick="closeDialog('dlg-mv');resumeBatchReport('${r.id}')">Tiếp tục xử lý</button>`:''}</div></div>`;
+  ov.innerHTML=`<div class="dlg batch-report-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Báo cáo mẻ in</div><div class="batch-report-detail-layout"><div class="batch-report-visual-column"><div class="batch-report-image-stage"><div class="batch-report-detail-media${r.image?'':' is-missing'}">${r.image?`<img src="${esc(r.image)}" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`:''}</div>${meta}${aiAction}</div></div><div class="batch-report-model-column"><div class="card-title" style="margin:0">Model / Part trong mẻ này</div>${batchReportModelProgressHTML(r)}${reconcile.length?`<div class="batch-report-reconcile-note">⚠️ Có ${reconcile.length} Part đã ghi ngoài kế hoạch nhưng vẫn thiếu trong Order.${canEdit?` <button class="btn btn-ac btn-xs" style="margin-left:6px" onclick="openBatchReconciliation('${r.id}')">Đối chiếu ngay</button>`:''}</div>`:''}${showAiDetails?renderBatchAiCard(r,{compact:true,hideAction:true}):''}</div></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button>${canEdit&&isExternalBatchReport(r)?`<button class="btn btn-ghost" onclick="editCompletedManualBatchReport('${r.id}')">Sửa báo cáo</button>`:''}${canEdit&&r.status!=='done'?`<button class="btn btn-ac" onclick="closeDialog('dlg-mv');resumeBatchReport('${r.id}')">Tiếp tục xử lý</button>`:''}</div></div>`;
   initBatchReportImageZoom(ov);
   ov.style.display='flex'; ov.onclick=e=>{if(e.target===ov)closeDialog('dlg-mv');};
 }

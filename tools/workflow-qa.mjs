@@ -166,6 +166,27 @@ const results = await page.evaluate(async () => {
   quickSelectBatchModel('qa-model');
   check('Chọn Model từ tìm kiếm chuyển sang bước khai báo', brView === 'manual' && Boolean(document.querySelector('#br-content .br-manual-layout')), brView);
 
+  /* Đối chiếu mẻ ngoài đơn phải là Model + Part + phiên bản. Một lỗi cũ đã
+     cộng cùng một số lượng vào mọi phiên bản có chung Model/Part. */
+  models.push({
+    id: 'qa-variant-model', name: 'QA · Model nhiều phiên bản', cats: ['QA'], images: [],
+    variants: [{ id: 'qa-v35', name: 'Size 3,5cm' }, { id: 'qa-v5', name: 'Size 5cm' }, { id: 'qa-v10', name: 'Size 10cm' }],
+    parts: [{ id: 'qa-variant-part', name: 'Mặt gương', qtyPerModel: 1, filamentIds: [] }],
+  });
+  const variantPitems = [
+    { id: 'qa-rec-35', orderId: 'qa-order', modelId: 'qa-variant-model', partId: 'qa-variant-part', partName: 'Mặt gương', variantId: 'qa-v35', variantName: 'Size 3,5cm', qty: 23, qtyDone: 0 },
+    { id: 'qa-rec-5', orderId: 'qa-order', modelId: 'qa-variant-model', partId: 'qa-variant-part', partName: 'Mặt gương', variantId: 'qa-v5', variantName: 'Size 5cm', qty: 13, qtyDone: 0 },
+    { id: 'qa-rec-10', orderId: 'qa-order', modelId: 'qa-variant-model', partId: 'qa-variant-part', partName: 'Mặt gương', variantId: 'qa-v10', variantName: 'Size 10cm', qty: 7, qtyDone: 0 },
+  ];
+  pitems.push(...variantPitems);
+  const variantReport = { id: 'qa-variant-report', status: 'done', external: true, manualItems: [{ modelId: 'qa-variant-model', modelName: 'QA · Model nhiều phiên bản', partId: 'qa-variant-part', partName: 'Mặt gương', variantId: 'qa-v10', variantName: 'Size 10cm', qty: 4 }] };
+  const variantMatches = getBatchReportReconciliationCandidates(variantReport);
+  check('Đối chiếu chỉ chọn đúng phiên bản trong Order', variantMatches.length === 1 && variantMatches[0]?.pitem?.id === 'qa-rec-10' && variantMatches[0]?.available === 4, variantMatches.map(row => row.pitem.id).join(', '));
+  variantPitems[2].qtyDone = 4;
+  const reversibleReport = { ...variantReport, id: 'qa-reversible-report', external: false, externalOrigin: true, manualItems: [], appliedItems: [{ pitemId: 'qa-rec-10', qty: 4 }], reconciliationBackup: { manualItems: variantReport.manualItems, appliedItems: [] }, reconciliationDeltas: [{ pitemId: 'qa-rec-10', qty: 4 }] };
+  restoreBatchReportBeforeEditing(reversibleReport);
+  check('Sửa báo cáo hoàn tác riêng số lượng đã đối chiếu', variantPitems[2].qtyDone === 0 && variantPitems[0].qtyDone === 0 && variantPitems[1].qtyDone === 0 && reversibleReport.manualItems[0]?.variantId === 'qa-v10' && reversibleReport.external, `${variantPitems.map(item=>item.qtyDone).join('/')} · ${reversibleReport.manualItems[0]?.variantId||''}`);
+
   /* Reload phải giữ đúng vị trí thư viện báo cáo và toàn bộ điều kiện lọc. */
   const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status, day: batchTimelineDay };
   Object.assign(FILTERS.batches, { search: 'qa giữ bộ lọc', sort: 'pending_first', status: 'pending' });
