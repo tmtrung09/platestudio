@@ -15718,15 +15718,6 @@ function saveWorkshopWaitStatus(rowKey){
   closeDialog('dlg-mv');saveOperations();revealFulfillmentStage(label?'waiting':'assembling');toast(label?`✓ Đã lưu: ${label}`:'✓ Đã bỏ trạng thái chờ; model có thể giao xưởng.');
 }
 const WORKSHOP_QUICK_STATUS_LABELS={part_qc:'Chờ QC part',ready:'Sẵn bắt đầu gia công',in_progress:'Đang gia công',waiting:'Tạm dừng · chờ vật tư / bao bì',completed:'Đã hoàn thiện · sẵn giao'};
-function openWorkshopQuickStatus(encodedRowKey){
-  if(!requirePermission('assembly.qc','cập nhật nhanh trạng thái gia công'))return;
-  const rowKey=decodeURIComponent(encodedRowKey),row=fulfillmentWorkshopRows().find(item=>workshopWaitKey(item)===rowKey);if(!row)return;
-  const current=workshopWaitStatus(row)?.label?'waiting':workshopAssemblyStage(row),modelName=row.it?.modelName||row.m?.name||'Model',variant=row.it?.variantName||'';
-  const options=Object.entries(WORKSHOP_QUICK_STATUS_LABELS).map(([value,label])=>`<option value="${value}" ${current===value?'selected':''}>${esc(label)}</option>`).join('');
-  const ov=document.getElementById('dlg-mv');
-  ov.innerHTML=`<div class="dlg workshop-quick-status-dialog" onclick="event.stopPropagation()"><div class="dlg-title">↯ Cập nhật nhanh trạng thái</div><div class="quality-issue-preview"><span style="font-size:25px">⚡</span><div><b>${esc(modelName)}</b><br><span style="color:var(--t3)">${variant?`↔ ${esc(variant)} · `:''}Đang ở: ${esc(WORKSHOP_QUICK_STATUS_LABELS[current]||'Chưa giao xưởng')}</span></div></div><p style="margin:0 0 13px;color:var(--t2);font-size:13px;line-height:1.5">Dùng khi người cập nhật đã kiểm tra thực tế và chịu trách nhiệm rằng model đáp ứng điều kiện của trạng thái được chọn. Thao tác này được ghi vào nhật ký.${current==='completed'?' Đưa model về bước trước sẽ gỡ số lượng khỏi kệ sẵn giao.':''}</p><div class="field"><label>Chuyển đến trạng thái</label><select id="workshop-quick-status">${options}</select></div><div class="field"><label>Ghi chú <small>(tuỳ chọn)</small></label><input id="workshop-quick-note" placeholder="Ví dụ: xưởng đã xác nhận hoàn thiện đủ"></div><div class="field"><label>Trạng thái chờ <small>(chỉ dùng khi tạm dừng)</small></label><input id="workshop-quick-wait" value="${esc(workshopWaitStatus(row)?.label||'Chờ vật tư / bao bì')}" placeholder="Ví dụ: Chờ hộp"></div><label class="br-workshop-handover"><input id="workshop-quick-confirm" type="checkbox"><span><b>Tôi xác nhận điều kiện thực tế đã đạt</b><small>Hệ thống sẽ bỏ qua các bước xác nhận chi tiết và lưu người thao tác.</small></span></label><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" onclick="saveWorkshopQuickStatus('${esc(encodedRowKey)}')">✓ Xác nhận cập nhật</button></div></div>`;
-  ov.style.display='flex';
-}
 function applyWorkshopQuickStatus(encodedRowKey,next,{confirmed=false,note='',waitLabel='Chờ vật tư / bao bì'}={}){
   if(!requirePermission('assembly.qc','cập nhật nhanh trạng thái gia công'))return;
   if(!confirmed){toast('Hãy xác nhận đã kiểm tra điều kiện thực tế trước khi cập nhật nhanh.');return;}
@@ -15753,9 +15744,6 @@ function applyWorkshopQuickStatus(encodedRowKey,next,{confirmed=false,note='',wa
   if(next==='waiting'){operations.assemblyWaitStatuses[rowKey]={label:waitLabel,note,updatedAt:at,updatedBy:by};if(!operations.assemblyWaitPresets.includes(waitLabel))operations.assemblyWaitPresets.push(waitLabel);}else delete operations.assemblyWaitStatuses[rowKey];
   recordAudit('update','Gia công',`${row.it?.modelName||row.m?.name||'Model'}: ${WORKSHOP_QUICK_STATUS_LABELS[wasStage]||wasStage} → ${WORKSHOP_QUICK_STATUS_LABELS[next]}`,{rowKey,source:row.source,from:wasStage,to:next,note,quickStatus:true});
   closeDialog('dlg-mv');saveOperations();revealFulfillmentStage(next==='completed'?'ready-delivery':next==='waiting'?'waiting':next==='in_progress'?'assembling':next==='ready'?'ready-assembly':'part-qc');toast(`✓ Đã chuyển sang: ${WORKSHOP_QUICK_STATUS_LABELS[next]}.`);
-}
-function saveWorkshopQuickStatus(encodedRowKey){
-  return applyWorkshopQuickStatus(encodedRowKey,document.getElementById('workshop-quick-status')?.value||'',{confirmed:document.getElementById('workshop-quick-confirm')?.checked,note:document.getElementById('workshop-quick-note')?.value||'',waitLabel:document.getElementById('workshop-quick-wait')?.value||''});
 }
 let workshopQuickStatusOpen='',workshopQuickStatusConfirmed={};
 function refreshFulfillmentKeepingPosition(){
