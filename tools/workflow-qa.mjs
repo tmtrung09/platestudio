@@ -48,6 +48,13 @@ const results = await page.evaluate(async () => {
   const rows = [];
   const check = (name, passed, detail = '') => rows.push({ name, passed: Boolean(passed), detail });
   const stamp = new Date().toISOString();
+  /* Keep the colour-history regression deterministic even in a fresh browser
+     profile where the workshop has not created a filament yet. */
+  let qaFilament = fils[0];
+  if (!qaFilament) {
+    qaFilament = { id: 'qa-filament', brand: 'QA', name: 'Xanh kiểm thử', hex: '#2563eb' };
+    fils = [...fils, qaFilament];
+  }
   const style = document.createElement('style');
   style.textContent = '#auth-ov{display:none!important;pointer-events:none!important}';
   document.head.append(style);
@@ -184,6 +191,59 @@ const results = await page.evaluate(async () => {
   check('Hoàn tất mẻ ngoài đơn chỉ sẵn giao số QC đạt', workshopReadyDeliveryQty(externalDone) === 2, workshopReadyDeliveryQty(externalDone));
   const invalidQuickCompletion = { source: 'external', externalKey: 'qa-invalid-quick', it: { qty: 4 }, parts: [{ qty: 4, qtyDone: 3 }], ready: false, handover: { qcStatus: 'accepted', assemblyStatus: 'completed', assemblyQty: 4, readyQty: 4, manualStatusOverride: { to: 'completed' } } };
   check('Dữ liệu hoàn tất nhanh cũ thiếu part không còn lọt vào kệ giao', workshopAssemblyStage(invalidQuickCompletion) === 'part_qc' && workshopReadyDeliveryQty(invalidQuickCompletion) === 0, `${workshopAssemblyStage(invalidQuickCompletion)} · ${workshopReadyDeliveryQty(invalidQuickCompletion)} sẵn giao`);
+
+  /* Một model chỉ có một part không cần đợi đủ toàn bộ đơn mới được gia công.
+     12 part đã in là 12 bộ có thể QC/gia công; part thứ 13 vẫn phải chờ in,
+     tuyệt đối không được tự bù thành 13. */
+  models.push({
+    id: 'qa-single-part-model', name: 'QA · Model một part', cats: ['QA'], images: [],
+    variants: [{ id: 'qa-single-size', name: 'Size QA' }],
+    parts: [{ id: 'qa-single-main', name: 'Main', qtyPerModel: 1, filamentIds: [qaFilament.id] }],
+  });
+  orders.push({
+    id: 'qa-single-part-order', note: 'QA · Đơn một part', status: 'processing', createdAt: stamp,
+    items: [{ id: 'qa-single-part-item', modelId: 'qa-single-part-model', modelName: 'QA · Model một part', variantId: 'qa-single-size', variantName: 'Size QA', qty: 13 }],
+    assembly: { status: 'in_progress', items: {}, handovers: { 'qa-single-part-item': { handedAt: stamp, handedBy: 'QA', qcStatus: 'pending' } } },
+  });
+  pitems.push({ id: 'qa-single-main-pitem', orderId: 'qa-single-part-order', orderItemId: 'qa-single-part-item', modelId: 'qa-single-part-model', partId: 'qa-single-main', partName: 'Main', variantId: 'qa-single-size', variantName: 'Size QA', qty: 13, qtyDone: 12, qtyRejected: 0 });
+  batchReports.push({
+    id: 'qa-single-part-print', status: 'done', createdAt: stamp, completedAt: stamp, filamentId: qaFilament.id,
+    manualItems: [{ modelId: 'qa-single-part-model', modelName: 'QA · Model một part', partId: 'qa-single-main', partName: 'Main', variantId: 'qa-single-size', variantName: 'Size QA', qty: 12, filamentId: qaFilament.id }],
+  });
+  const partialOrder = orders.find(order => order.id === 'qa-single-part-order');
+  const partialItem = partialOrder.items[0];
+  let partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
+  check('Một part in 12/13 tạo đúng 12 bộ có thể gia công', orderItemCompleteSetQty(partialOrder, partialItem) === 12 && !itemAllPartsPrinted(partialOrder, partialItem) && workshopCompleteSetQty(partialRow) === 12, `${orderItemCompleteSetQty(partialOrder, partialItem)}/13`);
+  openPartQcDialog(partialOrder.id, partialItem.id);
+  const partialQcQty = document.getElementById('part-qc-qty');
+  check('QC part giới hạn theo số bộ đã in thay vì cả đơn', partialQcQty?.max === '12' && partialQcQty?.value === '12', `${partialQcQty?.value}/${partialQcQty?.max}`);
+  document.getElementById('part-qc-by').value = 'QA';
+  savePartQcAccepted(partialOrder.id, partialItem.id);
+  partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
+  check('QC 12/13 mở gia công đúng 12 bộ', workshopAssemblyStage(partialRow) === 'ready' && workshopAssemblyTargetQty(partialRow) === 12 && partialRow.handover?.qcAcceptedQty === 12, `${workshopAssemblyStage(partialRow)} · ${workshopAssemblyTargetQty(partialRow)}`);
+  startWorkshopAssembly(partialOrder.id, partialItem.id);
+  openAssemblyFinish(partialOrder.id, partialItem.id);
+  const partialAssemblyQty = document.getElementById('assembly-finish-qty');
+  check('Hoàn tất gia công không thể vượt 12 bộ QC đạt', partialAssemblyQty?.max === '12' && partialAssemblyQty?.value === '12', `${partialAssemblyQty?.value}/${partialAssemblyQty?.max}`);
+  document.getElementById('assembly-finish-by').value = 'QA';
+  saveAssemblyFinish(partialOrder.id, partialItem.id, true);
+  partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
+  check('Hoàn tất 12 bộ không tự ghi nhận part thứ 13', workshopAssemblyStage(partialRow) === 'completed' && workshopReadyDeliveryQty(partialRow) === 12 && assembledQty(partialOrder, partialItem.id) === 12 && !itemAllPartsPrinted(partialOrder, partialItem), `${workshopReadyDeliveryQty(partialRow)} sẵn giao · ${assembledQty(partialOrder, partialItem.id)} hoàn tất`);
+  const partialPitem = pitems.find(item => item.id === 'qa-single-main-pitem');
+  partialPitem.qtyDone = 13;
+  partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
+  check('Part in bù xong mở nút QC thêm ngay trên thẻ đã hoàn tất', fulfillmentWorkshopCard(partialRow).includes('+ QC thêm 1'), fulfillmentWorkshopCard(partialRow).includes('+ QC thêm 1') ? 'có nút QC thêm' : 'thiếu nút QC thêm');
+  partialPitem.qtyDone = 12;
+  const singleStock = getModelWorkshopStock('qa-single-part-model');
+  check('Tồn kho model một part không có NaN hoặc undefined', singleStock.total === 12 && singleStock.groups[0]?.counts[0]?.perSet === 1 && Number.isFinite(singleStock.total), `${singleStock.total} bộ · ${singleStock.groups[0]?.counts[0]?.qty}/${singleStock.groups[0]?.counts[0]?.perSet}`);
+  openModelPrintHistory('qa-single-part-model');
+  const singleHistoryText = document.getElementById('dlg-model-history')?.textContent || '';
+  check('Lịch sử in hiện số lượng và màu thực tế', singleHistoryText.includes('12 cái') && singleHistoryText.includes(qaFilament.name), singleHistoryText.slice(0, 240));
+  closeDialog('dlg-model-history');
+  viewModel('qa-single-part-model');
+  const singleModelText = document.getElementById('dlg-mv')?.textContent || '';
+  check('Thông tin model có tóm tắt mẻ in gần đây', singleModelText.includes('In gần đây') && singleModelText.includes('12 cái') && singleModelText.includes(qaFilament.name), singleModelText.slice(0, 260));
+  closeDialog('dlg-mv');
 
   /* Part không khóa màu vẫn phải ghi nhận màu thực tế trong từng dòng mẻ.
      Đây là dữ liệu lịch sử, không phải một quy tắc màu của Model. */

@@ -8652,7 +8652,7 @@ function getModelPrintHistory(modelId) {
     const manual=(r.manualItems||[]).filter(x=>x.modelId===modelId).map(x=>({report:r,partId:x.partId,partName:x.partName,variantId:x.variantId,variantName:x.variantName,filamentId:x.filamentId||r.filamentId||null,qty:x.qty,external:true}));
     const planned=(r.appliedItems||[]).map(x=>{
       const pi=pitems.find(p=>p.id===x.pitemId);
-      return pi?.modelId===modelId ? {report:r,partId:pi.partId,partName:pi.partName,variantId:pi.variantId,variantName:pi.variantName,qty:x.qty,external:false} : null;
+      return pi?.modelId===modelId ? {report:r,partId:pi.partId,partName:pi.partName,variantId:pi.variantId,variantName:pi.variantName,filamentId:x.filamentId||pi.filamentId||r.filamentId||null,qty:x.qty,external:false} : null;
     }).filter(Boolean);
     return [...manual,...planned];
   }).sort((a,b)=>new Date(b.report.completedAt||b.report.createdAt)-new Date(a.report.completedAt||a.report.createdAt));
@@ -8687,7 +8687,7 @@ function getModelWorkshopStock(modelId){
     const counts=partsForVariant(model,variant).map(part=>{
       const byId=part.id?group.counts.get('id:'+part.id):undefined;
       const byName=group.counts.get('name:'+workshopStockTextKey(part.name));
-      return {id:part.id,name:part.name,perSet:part.perSet,qty:Number(byId??byName??0)};
+      return {id:part.id,name:part.name,perSet:Math.max(1,Number(part.qtyPerModel)||1),qty:Number(byId??byName??0)};
     });
     const completed=counts.length?Math.max(0,Math.min(...counts.map(part=>Math.floor(part.qty/part.perSet)))):0;
     return {key:group.key,name:group.name,counts,completed,missing:counts.filter(part=>part.qty<part.perSet)};
@@ -8793,6 +8793,11 @@ function viewModel(id) {
   const orderCount = orders.filter(o=>o.items?.some(i=>i.modelId===id)).length;
   const allPrintHistory = getModelPrintHistory(id);
   const printHistory = allPrintHistory.slice(0,8);
+  const recentPrintSummary=printHistory.slice(0,3).map(entry=>{
+    const filament=getFil(entry.filamentId||entry.report?.filamentId),when=entry.report?.completedAt||entry.report?.createdAt;
+    const color=filament?`${filament.brand||''} ${filament.name||''}`.trim():'Chưa khai báo màu';
+    return `<div class="part-row" style="padding:8px 0"><span class="part-dot" style="background:${filament?.hex||'#aaa'}"></span><div style="min-width:0;flex:1"><b class="part-name">${esc(entry.partName||'Part')}</b><div class="part-meta">${entry.variantName?`${esc(entry.variantName)} · `:''}${fmtDate(when)} · ${esc(color)}</div></div><b style="white-space:nowrap">${Math.max(0,Number(entry.qty)||0)} cái</b></div>`;
+  }).join('');
   const kiotReferenceImages=getModelKiotMetrics(id).products.map(product=>({product,url:kvImageUrl(product.imageUrl)})).filter(x=>x.url).slice(0,8);
   const theme = getModelThemeForModel(m);
   const ov = document.getElementById('dlg-mv');
@@ -8829,8 +8834,9 @@ function viewModel(id) {
           <div style="display:flex;padding-left:6px">${dots}</div>
           <div class="part-name">${esc(p.name)}</div>
           <div class="part-meta">${metaText}</div>
-        </div>`}).join('')}
+      </div>`}).join('')}
     </div>
+    ${recentPrintSummary?`<div style="margin-top:13px;padding:11px 12px;border:1px solid var(--b);border-radius:var(--r);background:var(--s2)"><div style="font-size:12px;font-weight:650;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">In gần đây</div>${recentPrintSummary}</div>`:''}
     <div style="margin-top:13px;padding:11px 12px;border:1px solid var(--b);border-radius:var(--r);background:var(--s2)">
       <div style="display:flex;align-items:center;gap:10px"><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:650;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Lịch sử in</div><div style="font-size:12px;color:var(--t2);margin-top:3px">${allPrintHistory.length ? `${allPrintHistory.length} lần ghi nhận${printHistory[0] ? ` · gần nhất ${fmtDate(printHistory[0].report.completedAt||printHistory[0].report.createdAt)}` : ''}` : 'Chưa có mẻ in nào được ghi nhận.'}</div></div><button class="btn btn-ghost btn-sm" onclick="openModelPrintHistory('${id}')">Xem lịch sử</button></div>
     </div>
@@ -8861,7 +8867,7 @@ function openModelPrintHistory(modelId){
   const history=getModelPrintHistory(modelId);
   const workshopStock=getModelWorkshopStock(modelId);
   const ov=document.getElementById('dlg-model-history');
-  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Lịch sử in · ${esc(m.name)}</div><div style="font-size:12px;color:var(--t3);margin:-.45rem 0 1rem">${history.length} lần ghi nhận mẻ in đã hoàn thành</div>${renderModelWorkshopStock(workshopStock)}${history.length ? `<div class="part-list">${history.map(h=>{ const f=getFil(h.report.filamentId); const when=h.report.completedAt||h.report.createdAt; return `<button type="button" class="part-row" onclick="previewBatchImage('${h.report.id}')" style="width:100%;text-align:left;cursor:pointer"><img src="${esc(h.report.thumb||h.report.image||'')}" loading="lazy" decoding="async" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;background:var(--s2);flex:0 0 42px"/><div class="part-name" style="min-width:0"><b>${esc(h.partName||'Chưa xác định part')}</b><div style="font-size:11px;font-weight:400;color:var(--t3);margin-top:3px">${h.variantName?`${esc(h.variantName)} · `:''}${fmtDate(when)}${h.external?' · Ngoài kế hoạch':''}</div></div><div class="part-meta" style="margin-left:auto;white-space:nowrap"><span class="part-dot" style="display:inline-block;vertical-align:-2px;background:${f?.hex||'#aaa'}"></span> ${h.qty} cái</div></button>`; }).join('')}</div>` : `<div class="empty">Model này chưa có lịch sử in.</div>`}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-model-history')">Đóng</button></div></div>`;
+  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Lịch sử in · ${esc(m.name)}</div><div style="font-size:12px;color:var(--t3);margin:-.45rem 0 1rem">${history.length} lần ghi nhận mẻ in đã hoàn thành</div>${renderModelWorkshopStock(workshopStock)}${history.length ? `<div class="part-list">${history.map(h=>{ const f=getFil(h.filamentId||h.report.filamentId); const when=h.report.completedAt||h.report.createdAt,color=f?`${f.brand||''} ${f.name||''}`.trim():'Chưa khai báo màu'; return `<button type="button" class="part-row" onclick="previewBatchImage('${h.report.id}')" style="width:100%;text-align:left;cursor:pointer"><img src="${esc(h.report.thumb||h.report.image||'')}" loading="lazy" decoding="async" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;background:var(--s2);flex:0 0 42px"/><div class="part-name" style="min-width:0"><b>${esc(h.partName||'Chưa xác định part')}</b><div style="font-size:11px;font-weight:400;color:var(--t3);margin-top:3px">${h.variantName?`${esc(h.variantName)} · `:''}${fmtDate(when)}${h.external?' · Ngoài kế hoạch':''} · ${esc(color)}</div></div><div class="part-meta" style="margin-left:auto;white-space:nowrap"><span class="part-dot" style="display:inline-block;vertical-align:-2px;background:${f?.hex||'#aaa'}"></span> ${h.qty} cái</div></button>`; }).join('')}</div>` : `<div class="empty">Model này chưa có lịch sử in.</div>`}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-model-history')">Đóng</button></div></div>`;
   ov.style.display='flex';
   ov.onclick=e=>{ if(e.target===ov) closeDialog('dlg-model-history'); };
 }
@@ -15667,7 +15673,8 @@ function workshopAssemblyStage(row){
   const incompleteQuickCompletion=handover.manualStatusOverride?.to==='completed'&&!row.ready&&!handover.reprintGroupAt;
   if(incompleteQuickCompletion)return 'part_qc';
   const total=Math.max(0,Number(row.it?.qty)||0);
-  const partialQcPassed=row.source==='external'&&(Math.max(0,Number(handover.qcAcceptedQty)||0)>0||(['in_progress','completed'].includes(handover.assemblyStatus)&&workshopAssemblyTargetQty(row)>0&&workshopAssemblyTargetQty(row)<total));
+  const acceptedQty=Math.max(0,Number(handover.qcAcceptedQty??handover.partQcAcceptedQty)||0);
+  const partialQcPassed=acceptedQty>0&&acceptedQty<total;
   if(handover.qcStatus!=='accepted'&&!legacyReadyWithIssue&&!partialQcPassed)return 'part_qc';
   const required=workshopAssemblyTargetQty(row);
   /* `assemblyStatus` là nhãn thao tác, còn số lượng là nguồn quyết định
@@ -15684,9 +15691,9 @@ function workshopAssemblyStage(row){
    chuyển sang gia công, phần còn lại vẫn ở luồng lỗi/in lại. */
 function workshopAssemblyTargetQty(row){
   const total=Math.max(0,Number(row?.it?.qty)||0);
-  if(row?.source!=='external')return total;
-  const accepted=Math.max(0,Number(row?.handover?.qcAcceptedQty)||0);
+  const accepted=Math.max(0,Number(row?.handover?.qcAcceptedQty??row?.handover?.partQcAcceptedQty)||0);
   if(accepted>0)return Math.min(total,accepted);
+  if(row?.source!=='external')return total;
   /* Tương thích thao tác cũ: nếu đang gia công rồi mới báo lỗi, dữ liệu cũ
      chưa có qcAcceptedQty. Khi đó phần có thể gia công = tổng trừ phần lỗi. */
   const reprint=Math.max(0,Number(row?.handover?.reprintQty??(row?.handover?.qcStatus==='rejected'?row?.handover?.qcRejectedQty:0))||0);
@@ -15696,6 +15703,7 @@ function workshopAssemblyTargetQty(row){
 /* Số bộ model thật sự đã đủ tất cả part. Ví dụ có 4 thân nhưng chỉ 2 đế thì
    chỉ 2 model được đi QC/gia công; 2 model còn lại vẫn chờ part thiếu. */
 function workshopCompleteSetQty(row){
+  if(row?.source==='order'&&row.o&&row.it)return orderItemCompleteSetQty(row.o,row.it);
   const total=Math.max(0,Number(row?.it?.qty)||0),parts=Array.isArray(row?.parts)?row.parts:[];
   if(!total||!parts.length)return 0;
   const available=parts.map(part=>{
@@ -15804,7 +15812,21 @@ function orderItemParts(order,item){
   if(sameLine.length!==1)return [];
   return pitems.filter(p=>p?.orderId===order.id&&!p?.orderItemId&&p?.modelId===modelId&&(p?.variantId||'')===variantId);
 }
-function itemAllPartsPrinted(order,item){const rows=orderItemParts(order,item);return rows.length>0&&rows.every(p=>(Number(p.qtyDone)||0)>=(Number(p.qty)||0));}
+function orderItemPartPerSet(order,item,part){
+  const model=models.find(row=>row.id===item?.modelId),variant=(model?.variants||[]).find(row=>row.id===item?.variantId)||null;
+  const configured=partsForVariant(model,variant).find(row=>String(row.id||'')===String(part?.partId||'')||workshopStockTextKey(row.name||row.partName)===workshopStockTextKey(part?.partName||part?.name));
+  if(configured)return Math.max(1,Number(configured.qtyPerModel)||1);
+  const productQty=Math.max(1,Number(item?.qty)||1);
+  return Math.max(1,Math.ceil(Math.max(0,Number(part?.qty)||0)/productQty));
+}
+/* Số sản phẩm thật sự có thể đưa sang QC/gia công ngay. Một part đã in 12/13
+   vẫn mở đúng 12 sản phẩm, không bị hiểu nhầm là phải chờ đủ toàn bộ đơn. */
+function orderItemCompleteSetQty(order,item){
+  const total=Math.max(0,Number(item?.qty)||0),rows=orderItemParts(order,item);
+  if(!total||!rows.length)return 0;
+  return Math.min(total,...rows.map(part=>Math.floor(Math.max(0,Number(part.qtyDone)||0)/orderItemPartPerSet(order,item,part))));
+}
+function itemAllPartsPrinted(order,item){return orderItemCompleteSetQty(order,item)>=Math.max(0,Number(item?.qty)||0);}
 function handoverForItem(order,itemId){
   const a=order?.assembly||{};
   /* Đơn cũ chỉ có một mốc handedAt chung. Đơn mới có handovers theo từng model;
@@ -15842,8 +15864,8 @@ function workshopReprintQty(row){
   return [...groups.values()].reduce((sum,qty)=>sum+qty,0);
 }
 function workshopNeedsReprint(row){return workshopReprintIssues(row).length>0;}
-function createAssemblyReprintForShortfall(order,item,acceptedQty,{reason='',note='',by=''}={}){
-  const total=Math.max(0,Number(item?.qty)||0),missing=Math.max(0,total-Math.max(0,Number(acceptedQty)||0));
+function createAssemblyReprintForShortfall(order,item,acceptedQty,{reason='',note='',by='',targetQty=null}={}){
+  const total=Math.min(Math.max(0,Number(item?.qty)||0),Math.max(0,Number(targetQty??item?.qty)||0)),missing=Math.max(0,total-Math.max(0,Number(acceptedQty)||0));
   if(!missing)return 0;
   const parts=orderItemParts(order,item);if(!parts.length)return 0;
   const groupId=uid(),at=new Date().toISOString(),actor=by||currentUser?.email?.split('@')[0]||'Xưởng gia công';let created=0;
@@ -16082,12 +16104,12 @@ function fulfillmentWorkshopCard(row){
   /* Đây là SL của lần in/đơn đang được kiểm soát, không phải số biến thể
      tồn tại trong thư viện Model. */
   const quantity=Math.max(0,Number(it?.qty)||0);
-  const qcPending=handed&&handover?.qcStatus!=='accepted';
+  const qcPending=handed&&handover?.qcStatus!=='accepted'&&Math.max(0,Number(handover?.qcAcceptedQty??handover?.partQcAcceptedQty)||0)<=0;
   const qcRejected=handed&&handover?.qcStatus==='rejected';
   const assemblyStage=workshopAssemblyStage(row);
-  const qcPassedQty=external?Math.min(quantity,Math.max(0,Number(handover?.qcAcceptedQty)||0)):quantity;
-  const partialQc=external&&qcPassedQty>0&&qcPassedQty<quantity;
-  const waitingPrintQty=external?Math.max(0,quantity-workshopCompleteSetQty(row)):0;
+  const qcPassedQty=Math.min(quantity,Math.max(0,Number(handover?.qcAcceptedQty??handover?.partQcAcceptedQty)||0));
+  const partialQc=qcPassedQty>0&&qcPassedQty<quantity;
+  const waitingPrintQty=Math.max(0,quantity-workshopCompleteSetQty(row));
   const state=handed?(assemblyStage==='part_qc'?'Đã giao xưởng · chờ QC part':assemblyStage==='ready'?(partialQc?`QC đạt ${qcPassedQty}/${quantity} · sẵn bắt đầu gia công`:'Đã QC đủ part · sẵn bắt đầu gia công'):assemblyStage==='in_progress'?'Đang gia công':assemblyStage==='completed'?'Đã gia công hoàn tất':needsReprint?'Hàng lỗi · chờ in lại':qcRejected?'Đã báo lỗi · cần in bù':'Đang xử lý'):!parts.length?'Chưa thiết lập part':ready?'Đã đủ part · chờ giao xưởng':'Chưa đủ part';
   const detail=handed?(assemblyStage==='ready'?(partialQc?`${qcPassedQty} sản phẩm đạt đi tiếp${reprintQty?` · ${reprintQty} sản phẩm chờ in lại`:''}${waitingPrintQty?` · ${waitingPrintQty} sản phẩm chờ in đủ part`:''}`:'Có thể bắt đầu gia công, bao bì và tag giá'):assemblyStage==='in_progress'?`${handover.assemblyStartedBy||'Xưởng'} đang hoàn thiện${waitStatus?` · ${waitStatus.label}`:''}`:assemblyStage==='completed'?`${handover.assemblyCompletedAt?fmtDate(handover.assemblyCompletedAt):'Đã xác nhận'} · sẵn tạo đợt giao`:needsReprint?`${reprintQty} sản phẩm không đạt · đã trả part về hàng chờ in`:qcRejected?`${handover.qcRejectedPartName?`${handover.qcRejectedPartName} · `:''}${handover.qcRejectedQty||0} cái không đạt${handover.qcRejectedReason?` · ${handover.qcRejectedReason}`:''}`:`${fmtDate(handover.handedAt)}${handover.earlyHandover?' · giao sớm':''} · kiểm từng part`):!parts.length?'Bổ sung part trong Model để kiểm soát đủ bộ':ready?`Đủ ${parts.length}/${parts.length} part`:`Đủ ${completedParts}/${parts.length} part`;
   const missingParts=!ready&&parts.length
@@ -16133,9 +16155,14 @@ function fulfillmentWorkshopCard(row){
   if(assemblyStage==='completed'){
     const readyQty=workshopReadyDeliveryQty(row);
     const remaining=Math.max(0,workshopAssemblyTargetQty(row)-readyQty);
-    const stillWaiting=external?Math.max(0,quantity-workshopCompleteSetQty(row)):0;
+    const stillWaiting=Math.max(0,quantity-workshopCompleteSetQty(row));
+    /* Khi part in bù đã đủ thêm bộ mới, thẻ đã hoàn tất trước đó phải mở được
+       lượt QC kế tiếp. Không bắt người dùng dò lại ở một nhóm quy trình cũ. */
+    const newlyCompleteQty=Math.max(0,workshopCompleteSetQty(row)-workshopAssemblyTargetQty(row));
     const compactIssue=canReportIssue?(external?`<button class="btn btn-danger btn-sm" onclick="openExternalWorkshopQualityIssue('${row.externalKey}')">⚠ Báo lỗi</button>`:`<button class="btn btn-danger btn-sm" onclick="openWorkshopQualityIssuePicker('${o.id}','${it.id}')">⚠ Báo lỗi</button>`):'';
-    const compactDetail=remaining
+    const compactDetail=newlyCompleteQty
+      ? (external?`<button class="btn btn-ac btn-sm" onclick="openExternalWorkshopQcCompletion('${row.externalKey}')">+ QC thêm ${newlyCompleteQty}</button>`:`<button class="btn btn-ac btn-sm" onclick="openPartQcDialog('${o.id}','${it.id}')">+ QC thêm ${newlyCompleteQty}</button>`)
+      : remaining
       ? (external?`<button class="btn btn-ac btn-sm" onclick="openExternalAssemblyFinish('${row.externalKey}')">+ Hoàn tất thêm ${remaining}</button>`:`<button class="btn btn-ac btn-sm" onclick="openAssemblyFinish('${o.id}','${it.id}')">+ Hoàn tất thêm ${remaining}</button>`)
       : `<button class="btn btn-ghost btn-sm" onclick="${external&&row.reports?.[0]?`viewBatchReport('${row.reports[0].id}')`:`goPage('progress')`}">Chi tiết</button>`;
     return `<article class="card workshop-item workshop-item-completed is-ready is-handed"${evidenceAttrs}>${image?`<img class="workshop-item-img" src="${esc(image)}" alt=""/>`:'<div class="workshop-item-img" style="display:grid;place-items:center">📦</div>'}<div style="min-width:0"><b class="workshop-item-title">${esc(it.modelName||m?.name||'Model')}</b>${selectedVariant?`<div class="workshop-completed-evidence">↔ ${esc(selectedVariant)}</div>`:''}<div class="workshop-item-ready"><b>${readyQty}</b><span>sản phẩm sẵn giao</span></div>${stillWaiting?`<div class="workshop-completed-evidence">⏳ ${stillWaiting} sản phẩm còn chờ in đủ part</div>`:''}${evidenceCount?`<div class="workshop-completed-evidence">📷 ${evidenceCount} ảnh minh chứng</div>`:''}</div>${quickStatusPanel}<div class="workshop-item-actions">${quickStatusAction}${compactIssue}${compactDetail}</div></article>`;
@@ -16152,37 +16179,38 @@ function openWorkshopQualityIssuePicker(orderId,itemId){
 }
 function openPartQcDialog(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
-  const parts=orderItemParts(order,item),ov=document.getElementById('dlg-mv');
+  const parts=orderItemParts(order,item),available=orderItemCompleteSetQty(order,item),total=Math.max(0,Number(item.qty)||0),ov=document.getElementById('dlg-mv');
   const rows=parts.map(part=>`<div class="quality-issue-preview"><div style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;margin-top:4px;background:${(Number(part.qtyDone)||0)>=(Number(part.qty)||0)?'var(--gr)':'var(--am)'}"></div><div style="min-width:0;flex:1"><b>${esc(part.partName||'Part')}</b><br/><span style="color:var(--t3)">Đã in ${Number(part.qtyDone)||0}/${Number(part.qty)||0} · kiểm từng part trước khi gia công</span></div><button class="btn btn-danger btn-xs" ${Number(part.qtyDone)?'' :'disabled'} onclick="openQualityIssueDialog('${orderId}','${itemId}','${part.id}')">Báo lỗi</button></div>`).join('');
-  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">QC part trước gia công</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5">Kiểm từng part của <b>${esc(item.modelName||'Model')}</b>. Part lỗi phải báo ngay để quay về hàng chờ in bù; chỉ xác nhận khi tất cả part đều đạt chuẩn.</p>${rows}<div class="field"><label>Người QC</label><input id="part-qc-by" value="${esc(currentUser?.email?.split('@')[0]||'')}"/></div><div class="field"><label>Ghi chú QC</label><input id="part-qc-note" placeholder="Ví dụ: đã kiểm đủ bộ part, lắp thử đạt"/></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Chưa đạt</button><button class="btn btn-ac" onclick="savePartQcAccepted('${orderId}','${itemId}')">✓ Tất cả part đạt</button></div></div>`;
+  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">QC part trước gia công</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5">Kiểm từng part của <b>${esc(item.modelName||'Model')}</b>. Hiện có <b>${available}/${total} bộ</b> đủ part để QC và gia công trước; phần chưa đủ vẫn ở hàng chờ in.</p>${rows}<div class="field"><label>Số bộ đạt QC</label><input id="part-qc-qty" type="number" min="0" max="${available}" value="${available}" ${available?'':'disabled'}/></div><div class="field"><label>Người QC</label><input id="part-qc-by" value="${esc(currentUser?.email?.split('@')[0]||'')}"/></div><div class="field"><label>Ghi chú QC</label><input id="part-qc-note" placeholder="Ví dụ: 12 bộ đạt, còn 1 bộ chờ in Main"/></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Chưa đạt</button><button class="btn btn-ac" ${available?'':'disabled'} onclick="savePartQcAccepted('${orderId}','${itemId}')">✓ Xác nhận ${available} bộ đạt</button></div></div>`;
   ov.style.display='flex';
 }
 function savePartQcAccepted(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId),parts=orderItemParts(order,item);if(!order||!item)return;
-  if(!parts.length||parts.some(part=>(Number(part.qtyDone)||0)<(Number(part.qty)||0))){toast('Chưa đủ tất cả part để xác nhận QC.');return;}
+  const total=Math.max(0,Number(item.qty)||0),available=orderItemCompleteSetQty(order,item),qty=Math.min(available,Math.max(0,parseInt(document.getElementById('part-qc-qty')?.value)||0));
+  if(!parts.length||!qty){toast('Chưa có bộ part hoàn chỉnh để xác nhận QC.');return;}
   const handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{},at=new Date().toISOString(),by=document.getElementById('part-qc-by')?.value||'',note=document.getElementById('part-qc-note')?.value||'';
-  handovers[itemId]={...previous,qcStatus:'accepted',partQcAcceptedAt:at,partQcBy:by,partQcNote:note,assemblyStatus:'ready'};
+  handovers[itemId]={...previous,qcStatus:qty>=total?'accepted':'partial',qcAcceptedQty:qty,partQcAcceptedQty:qty,partQcAcceptedAt:qty>=total?at:null,partQcConfirmedAt:at,partQcBy:by,partQcNote:note,assemblyStatus:'ready',waitingQty:Math.max(0,total-available),waitingReason:available<total?'Chờ in đủ part':''};
   order.assembly={...(order.assembly||{}),status:'in_progress',handovers};
-  if(typeof recordSystemEvent==='function')recordSystemEvent({type:'part_qc_accepted',actor:by||'Xưởng gia công',title:`${by||'Xưởng gia công'} đã QC đủ part`,detail:`${item.modelName||'Model'} có thể bắt đầu gia công.`,permissions:['assembly.qc','packaging.manage'],metadata:{orderId,itemId}});
-  sv(K.orders,orders);closeDialog('dlg-mv');saveOperations();revealFulfillmentStage('ready-assembly');toast('✓ Đã QC đủ part. Có thể bắt đầu gia công và theo dõi bao bì.');
+  if(typeof recordSystemEvent==='function')recordSystemEvent({type:'part_qc_accepted',actor:by||'Xưởng gia công',title:`${by||'Xưởng gia công'} đã QC ${qty} bộ đạt`,detail:`${item.modelName||'Model'} có thể bắt đầu gia công ${qty} sản phẩm.${available<total?` Còn ${total-available} sản phẩm chờ in đủ part.`:''}`,permissions:['assembly.qc','packaging.manage'],metadata:{orderId,itemId,qty,available,total}});
+  sv(K.orders,orders);closeDialog('dlg-mv');saveOperations();revealFulfillmentStage('ready-assembly');toast(qty>=total?'✓ Đã QC đủ part. Có thể bắt đầu gia công.':`✓ Đã QC ${qty} bộ đạt; còn ${Math.max(0,total-available)} bộ chờ in đủ part.`);
 }
 function startWorkshopAssembly(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
   const handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{};
-  if(previous.qcStatus!=='accepted'){toast('Cần QC đủ part trước khi bắt đầu gia công.');return;}
+  if(previous.qcStatus!=='accepted'&&Math.max(0,Number(previous.qcAcceptedQty??previous.partQcAcceptedQty)||0)<=0){toast('Cần có ít nhất một bộ part QC đạt trước khi bắt đầu gia công.');return;}
   handovers[itemId]={...previous,assemblyStatus:'in_progress',assemblyStartedAt:new Date().toISOString(),assemblyStartedBy:currentUser?.email?.split('@')[0]||'Xưởng gia công'};
   order.assembly={...(order.assembly||{}),handovers,status:'in_progress'};sv(K.orders,orders);saveOperations();revealFulfillmentStage('assembling');toast('✓ Đã bắt đầu gia công. Có thể cập nhật trạng thái chờ bao bì.');
 }
 function openAssemblyFinish(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
-  const total=Math.max(0,Number(item.qty)||0),old=Math.min(total,assembledQty(order,itemId)),ov=document.getElementById('dlg-mv');
-  ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Hoàn tất gia công</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5"><b>${esc(item.modelName||'Model')}</b> đã QC đủ part và đang gia công. Nút <b>Hoàn tất đủ</b> luôn chốt ${total} thành phẩm để chuyển sang mục sẵn giao.</p>${old&&old<total?`<div class="access-note" style="margin:0 0 12px">Đã ghi nhận tạm: ${old}/${total}. Số này sẽ không làm nút Hoàn tất bị kẹt.</div>`:''}<div class="field"><label>Số thành phẩm đạt chuẩn</label><input id="assembly-finish-qty" type="number" min="0" max="${total}" value="${total}"/></div><label class="br-workshop-handover"><input id="assembly-finish-reprint" type="checkbox" checked/><span><b>Nếu thiếu, đưa phần còn lại vào Hàng lỗi · chờ in lại</b><small>Hệ thống trả đủ part của số sản phẩm lỗi về hàng chờ in.</small></span></label><div class="field"><label>Người xác nhận</label><input id="assembly-finish-by" value="${esc(currentUser?.email?.split('@')[0]||'')}"/></div><div class="field"><label>Ghi chú</label><input id="assembly-finish-note" placeholder="Ví dụ: đã lắp, đóng gói và kiểm ngoại quan"/></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ghost" onclick="saveAssemblyFinish('${orderId}','${itemId}',false)">Lưu tiến độ</button><button class="btn btn-ac" onclick="saveAssemblyFinish('${orderId}','${itemId}',true)">✓ Hoàn tất đủ ${total}</button></div></div>`;
+  const row=fulfillmentWorkshopRows().find(entry=>entry.source==='order'&&entry.o?.id===orderId&&entry.it?.id===itemId),total=workshopAssemblyTargetQty(row),old=Math.min(total,assembledQty(order,itemId)),ov=document.getElementById('dlg-mv');
+  ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Hoàn tất gia công</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5"><b>${esc(item.modelName||'Model')}</b> đang có <b>${total}</b> bộ đã QC đạt để gia công. Nút <b>Hoàn tất đủ</b> chỉ chốt số bộ này; part còn thiếu vẫn tiếp tục chờ in.</p>${old&&old<total?`<div class="access-note" style="margin:0 0 12px">Đã ghi nhận tạm: ${old}/${total} bộ đã QC.</div>`:''}<div class="field"><label>Số thành phẩm đạt chuẩn</label><input id="assembly-finish-qty" type="number" min="0" max="${total}" value="${total}"/></div><label class="br-workshop-handover"><input id="assembly-finish-reprint" type="checkbox" checked/><span><b>Nếu thiếu trong số đã QC, đưa phần đó vào Hàng lỗi · chờ in lại</b><small>Part chưa in đủ từ đầu không bị coi là lỗi.</small></span></label><div class="field"><label>Người xác nhận</label><input id="assembly-finish-by" value="${esc(currentUser?.email?.split('@')[0]||'')}"/></div><div class="field"><label>Ghi chú</label><input id="assembly-finish-note" placeholder="Ví dụ: đã lắp, đóng gói và kiểm ngoại quan"/></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ghost" onclick="saveAssemblyFinish('${orderId}','${itemId}',false)">Lưu tiến độ</button><button class="btn btn-ac" onclick="saveAssemblyFinish('${orderId}','${itemId}',true)">✓ Hoàn tất ${total} bộ</button></div></div>`;
   ov.style.display='flex';
 }
 function saveAssemblyFinish(orderId,itemId,forceComplete=false){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
-  const total=Math.max(0,Number(item.qty)||0),entered=Math.min(total,Math.max(0,parseInt(document.getElementById('assembly-finish-qty')?.value)||0)),qty=forceComplete?total:entered,completed=forceComplete||qty>=total,markShortfall=!completed&&Boolean(document.getElementById('assembly-finish-reprint')?.checked),items={...(order.assembly?.items||{})},handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{},at=new Date().toISOString(),by=document.getElementById('assembly-finish-by')?.value||'',note=document.getElementById('assembly-finish-note')?.value||'';
-  const reprintModels=markShortfall?createAssemblyReprintForShortfall(order,item,qty,{reason:'Không đạt khi gia công',note,by}):0;
+  const currentRow=fulfillmentWorkshopRows().find(entry=>entry.source==='order'&&entry.o?.id===orderId&&entry.it?.id===itemId),total=workshopAssemblyTargetQty(currentRow),entered=Math.min(total,Math.max(0,parseInt(document.getElementById('assembly-finish-qty')?.value)||0)),qty=forceComplete?total:entered,completed=forceComplete||qty>=total,markShortfall=!completed&&Boolean(document.getElementById('assembly-finish-reprint')?.checked),items={...(order.assembly?.items||{})},handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{},at=new Date().toISOString(),by=document.getElementById('assembly-finish-by')?.value||'',note=document.getElementById('assembly-finish-note')?.value||'';
+  const reprintModels=markShortfall?createAssemblyReprintForShortfall(order,item,qty,{reason:'Không đạt khi gia công',note,by,targetQty:total}):0;
   /* Lỗi sau gia công không được xoá cả model khỏi kệ giao hàng. Giữ số đạt
      hiện có ở readyQty, còn phần thiếu được các qualityIssue đưa sang in lại. */
   items[itemId]=qty;handovers[itemId]={...previous,qcStatus:reprintModels?'accepted':previous.qcStatus,assemblyStatus:(reprintModels||completed)?'completed':'in_progress',assemblyCompletedAt:(reprintModels||completed)?at:null,assemblyCompletedBy:by,assemblyNote:note,readyQty:(reprintModels||completed)?qty:Math.max(0,Number(previous.readyQty)||0),reprintGroupAt:reprintModels?at:previous.reprintGroupAt||null};
