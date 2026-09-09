@@ -101,7 +101,11 @@ const results = await page.evaluate(async () => {
   check('Nhóm gia công luôn theo thứ tự part → xưởng → giao', missingPartsIndex >= 0 && missingPartsIndex < workshopFlowIndex && workshopFlowIndex < deliveryReadyIndex, `${missingPartsIndex} → ${workshopFlowIndex} → ${deliveryReadyIndex}`);
   const guide = document.getElementById('fulfillment-flow-guide');
   const flowFloat = document.getElementById('fulfillment-flow-float');
+  const searchRow = document.querySelector('.fulfillment-search-row');
+  const workshopZone = document.getElementById('fulfillment-workshop-zone');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
+  const follows = Node.DOCUMENT_POSITION_FOLLOWING;
+  check('Thanh luồng xử lý nằm đầu trang trước tìm kiếm và các khối nghiệp vụ', Boolean(guide?.closest('.fulfillment-page-intro') && searchRow && workshopZone && (guide.compareDocumentPosition(searchRow) & follows) && (guide.compareDocumentPosition(workshopZone) & follows)), guide?.parentElement?.className || 'thiếu thanh');
   check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
   const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
