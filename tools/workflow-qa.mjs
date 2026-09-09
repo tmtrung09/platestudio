@@ -270,6 +270,12 @@ const results = await page.evaluate(async () => {
   check('Kết quả đầy đủ được lọc sau nhịp gõ', document.querySelector('.delivery-wizard-stage') !== deliveryStageBeforeSearch && document.getElementById('delivery-workspace-search')?.value === 'Size 10cm', document.getElementById('delivery-workspace-search')?.value || 'thiếu ô tìm');
   setDeliveryWorkspaceSearch('');
   await new Promise(resolve => setTimeout(resolve, 210));
+  deliveryWorkspaceState = { ...deliveryWorkspaceState, step: 'info', selected: { 0: 1 }, form: { ...(deliveryWorkspaceState.form || {}), destination: 'Bánh mì Stationery', date: '2026-09-09' } };
+  renderDeliveryBuilderPage({ persist: false });
+  const deliveryInfoContinue = document.querySelector('.delivery-wizard-stage .delivery-form-card .delivery-workspace-actions button[onclick="setDeliveryWorkspaceStep(\'photos\')"]');
+  check('Bước thông tin giao có nút tiếp tục ngay cuối form', Boolean(deliveryInfoContinue) && !deliveryInfoContinue.disabled, deliveryInfoContinue?.textContent.trim() || 'thiếu nút');
+  deliveryInfoContinue?.click();
+  check('Nút tiếp tục ở bước thông tin chuyển sang bước chụp ảnh', deliveryWorkspaceState.step === 'photos' && Boolean(document.querySelector('.delivery-wizard-camera')), deliveryWorkspaceState.step);
 
   goPage('inventory', { historyMode: 'none' });
   return rows;
