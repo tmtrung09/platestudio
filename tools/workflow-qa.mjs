@@ -165,28 +165,17 @@ const results = await page.evaluate(async () => {
   toggleWorkshopQuickStatus(quickRowKey);
   check('Cập nhật nhanh bung lựa chọn ngay trong thẻ', Boolean(document.querySelector('.workshop-quick-status-panel')) && !document.querySelector('.workshop-quick-status-dialog'), document.querySelector('.workshop-quick-status-panel') ? 'nội tuyến' : 'thiếu dãy chọn');
   setWorkshopQuickStatusConfirm(quickRowKey, true);
-  setWorkshopQuickStatusInline(quickRowKey, 'in_progress');
-  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
-  check('Cập nhật nhanh đưa model sang đang gia công', workshopAssemblyStage(row) === 'in_progress', workshopAssemblyStage(row));
-  check('Cập nhật nhanh có lưu vết trách nhiệm', Boolean(operations.auditLog?.[0]?.metadata?.quickStatus && operations.auditLog[0]?.metadata?.to === 'in_progress'), JSON.stringify(operations.auditLog?.[0]?.metadata || {}));
-  toggleWorkshopQuickStatus(quickRowKey);
-  setWorkshopQuickStatusConfirm(quickRowKey, true);
+  check('Hoàn tất nhanh bị khoá khi model còn thiếu part', Boolean(document.querySelector('.workshop-quick-status-option[onclick*="completed"]:disabled')) && Boolean(document.querySelector('.workshop-quick-status-hint')), document.querySelector('.workshop-quick-status-hint')?.textContent || 'thiếu khoá an toàn');
   setWorkshopQuickStatusInline(quickRowKey, 'completed');
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
-  check('Cập nhật nhanh có thể chốt hoàn tất trực tiếp', workshopAssemblyStage(row) === 'completed' && workshopReadyDeliveryQty(row) === 4, `${workshopAssemblyStage(row)} · ${workshopReadyDeliveryQty(row)}`);
-  toggleWorkshopQuickStatus(quickRowKey);
-  setWorkshopQuickStatusConfirm(quickRowKey, true);
-  setWorkshopQuickStatusInline(quickRowKey, 'ready');
-  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
-  check('Đổi ngược trạng thái gỡ đúng số khỏi kệ sẵn giao', workshopAssemblyStage(row) === 'ready' && workshopReadyDeliveryQty(row) === 0, `${workshopAssemblyStage(row)} · ${workshopReadyDeliveryQty(row)}`);
-  toggleWorkshopQuickStatus(quickRowKey);
-  setWorkshopQuickStatusConfirm(quickRowKey, true);
-  setWorkshopQuickStatusInline(quickRowKey, 'completed');
+  check('Hoàn tất nhanh không tự bù số lượng part còn thiếu', workshopReadyDeliveryQty(row) === 2 && assembledQty(row.o,row.it.id) === 2 && !operations.auditLog?.some(entry=>entry.metadata?.quickStatus&&entry.metadata?.to==='completed'), `${workshopReadyDeliveryQty(row)} sẵn giao · ${assembledQty(row.o,row.it.id)} đã hoàn thiện`);
 
   const externalPending = { source: 'external', externalKey: 'qa-external', it: { qty: 4 }, handover: { qcStatus: 'rejected', qcAcceptedQty: 2, reprintQty: 2, assemblyStatus: 'in_progress', assemblyQty: 0 } };
   const externalDone = { ...externalPending, handover: { ...externalPending.handover, assemblyStatus: 'completed', assemblyQty: 2, readyQty: 2 } };
   check('Mẻ ngoài đơn chỉ gia công số QC đạt', workshopAssemblyTargetQty(externalPending) === 2, workshopAssemblyTargetQty(externalPending));
   check('Hoàn tất mẻ ngoài đơn chỉ sẵn giao số QC đạt', workshopReadyDeliveryQty(externalDone) === 2, workshopReadyDeliveryQty(externalDone));
+  const invalidQuickCompletion = { source: 'external', externalKey: 'qa-invalid-quick', it: { qty: 4 }, parts: [{ qty: 4, qtyDone: 3 }], ready: false, handover: { qcStatus: 'accepted', assemblyStatus: 'completed', assemblyQty: 4, readyQty: 4, manualStatusOverride: { to: 'completed' } } };
+  check('Dữ liệu hoàn tất nhanh cũ thiếu part không còn lọt vào kệ giao', workshopAssemblyStage(invalidQuickCompletion) === 'part_qc' && workshopReadyDeliveryQty(invalidQuickCompletion) === 0, `${workshopAssemblyStage(invalidQuickCompletion)} · ${workshopReadyDeliveryQty(invalidQuickCompletion)} sẵn giao`);
 
   /* Part không khóa màu vẫn phải ghi nhận màu thực tế trong từng dòng mẻ.
      Đây là dữ liệu lịch sử, không phải một quy tắc màu của Model. */
