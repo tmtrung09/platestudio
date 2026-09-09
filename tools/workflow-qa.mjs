@@ -237,6 +237,17 @@ const results = await page.evaluate(async () => {
   saveAssemblyFinish(partialOrder.id, partialItem.id, true);
   partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
   check('Hoàn tất 12 bộ không tự ghi nhận part thứ 13', workshopAssemblyStage(partialRow) === 'completed' && workshopReadyDeliveryQty(partialRow) === 12 && assembledQty(partialOrder, partialItem.id) === 12 && !itemAllPartsPrinted(partialOrder, partialItem), `${workshopReadyDeliveryQty(partialRow)} sẵn giao · ${assembledQty(partialOrder, partialItem.id)} hoàn tất`);
+  const partialMetrics = orderFulfillmentMetrics(partialOrder);
+  check('Tổng hợp đơn giữ đúng số bộ đã in, QC và gia công một phần', partialMetrics.printReadyQty === 12 && partialMetrics.qcAcceptedQty === 12 && partialMetrics.assembledQty === 12 && partialMetrics.total === 13 && partialMetrics.partialWorkshop, `${partialMetrics.printReadyQty} in · ${partialMetrics.qcAcceptedQty} QC · ${partialMetrics.assembledQty} gia công / ${partialMetrics.total}`);
+  check('Đơn gia công từng phần có trạng thái riêng thay vì quay về đang in 0', fulfillmentState(partialOrder) === 'partial_assembly', fulfillmentState(partialOrder));
+  goPage('fulfillment', { historyMode: 'none' });
+  const partialOrderCard = [...document.querySelectorAll('.fulfillment-card')].find(card => card.textContent.includes('QA · Đơn một part'));
+  check('Thẻ đơn hiển thị số lượng thực tế, không còn QC mặc định', partialOrderCard?.textContent.includes('In đủ bộ: 12/13') && partialOrderCard?.textContent.includes('QC đạt: 12/13') && partialOrderCard?.textContent.includes('Gia công xong: 12/13') && !partialOrderCard?.textContent.includes('QC mặc định đạt'), partialOrderCard?.textContent.replace(/\s+/g, ' ').trim() || 'thiếu thẻ');
+  check('Khu Cần xử lý luôn có khung hiển thị', Boolean(document.getElementById('fulfillment-receive')), document.getElementById('fulfillment-receive') ? 'có khung' : 'thiếu khung');
+  openOrderFulfillmentHistory(partialOrder.id);
+  const partialHistoryText = document.getElementById('dlg-mv')?.textContent || '';
+  check('Lịch sử hoàn thiện dùng số QC/gia công thật', partialHistoryText.includes('QC 12/13') && partialHistoryText.includes('gia công xong 12/13') && !partialHistoryText.includes('QC mặc định đạt'), partialHistoryText.replace(/\s+/g, ' ').trim());
+  closeDialog('dlg-mv');
   const partialPitem = pitems.find(item => item.id === 'qa-single-main-pitem');
   partialPitem.qtyDone = 13;
   partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
