@@ -263,6 +263,17 @@ const results = await page.evaluate(async () => {
   renderDeliveryBuilderPage({ persist: false });
   const readyVariant = document.querySelector('.delivery-category-section.is-3d .delivery-product-variant');
   check('Thẻ thành phẩm sẵn giao hiển thị biến thể', readyVariant?.textContent.includes('Size 10cm'), readyVariant?.textContent.trim() || 'thiếu biến thể');
+  const deliveryStageBeforeSearch = document.querySelector('.delivery-wizard-stage');
+  document.getElementById('delivery-workspace-search')?.focus();
+  setDeliveryWorkspaceSearch('Size 10cm');
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  check('Gõ tìm giao hiện gợi ý ngay mà không dựng lại cả trang', Boolean(document.querySelector('.delivery-search-suggestions')) && document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, document.querySelector('.delivery-search-suggestions') ? 'gợi ý nội tuyến' : 'thiếu gợi ý');
+  await new Promise(resolve => setTimeout(resolve, 110));
+  check('Gõ liên tục không render lại toàn bộ thẻ quá sớm', document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, 'đợi người dùng ngừng gõ');
+  await new Promise(resolve => setTimeout(resolve, 120));
+  check('Kết quả đầy đủ được lọc sau nhịp gõ', document.querySelector('.delivery-wizard-stage') !== deliveryStageBeforeSearch && document.getElementById('delivery-workspace-search')?.value === 'Size 10cm', document.getElementById('delivery-workspace-search')?.value || 'thiếu ô tìm');
+  setDeliveryWorkspaceSearch('');
+  await new Promise(resolve => setTimeout(resolve, 210));
 
   goPage('inventory', { historyMode: 'none' });
   return rows;

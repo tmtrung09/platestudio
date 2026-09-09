@@ -16579,7 +16579,7 @@ function restoreDeliveryWorkspaceDraftFromCloud(){
 }
 function deliveryDraftHasItems(draft){return !!(draft&&(Object.keys(draft.selected||{}).length||Object.keys(draft.non3dSelected||{}).length||Object.keys(draft.unreconciledSelected||{}).length||Object.keys(draft.unreconciledVariantSelected||{}).length||(draft.pendingKiot||[]).length||Object.keys(draft.openingSelected||{}).length));}
 let deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
-let deliverySearchRenderTimer=0,deliverySearchPersistTimer=0;
+let deliverySearchRenderTimer=0,deliverySearchSuggestionFrame=0;
 let receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
 let unreconciledVariantMenuId='';
 function openingStockEntries(){
@@ -16794,16 +16794,16 @@ function removePendingKiotDeliveryItem(id){captureDeliveryWorkspaceForm();delive
 function adjustPendingKiotDeliveryQty(id,delta){captureDeliveryWorkspaceForm();const item=(deliveryWorkspaceState.pendingKiot||[]).find(row=>row.id===id);if(!item)return;item.qty=Math.max(1,Math.min(99999,(Number(item.qty)||1)+delta));renderDeliveryBuilderPage();}
 function setDeliveryWorkspaceSearch(value){
   deliveryWorkspaceState.query=String(value||'');
-  clearTimeout(deliverySearchRenderTimer);clearTimeout(deliverySearchPersistTimer);
-  /* Lọc danh sách có thể phải dựng lại nhiều thẻ ảnh. Đợi một nhịp rất ngắn
-     sau khi người dùng ngừng gõ để bàn phím vẫn phản hồi tức thì. */
+  clearTimeout(deliverySearchRenderTimer);cancelAnimationFrame(deliverySearchSuggestionFrame);
+  /* Khi gõ chỉ cập nhật danh sách gợi ý nhỏ ở ngay dưới ô tìm. Không dựng lại
+     cả ba nhóm card/ảnh trong mỗi phím bấm — đó là nguồn gây lag trên máy yếu. */
+  deliverySearchSuggestionFrame=requestAnimationFrame(()=>{deliverySearchSuggestionFrame=0;updateDeliverySearchSuggestions(deliveryWorkspaceState.query);});
+  /* Danh sách card đầy đủ chỉ lọc khi người dùng dừng gõ. Từ khoá là trạng
+     thái hiển thị tạm thời, không cần ghi localStorage hay đồng bộ cloud. */
   deliverySearchRenderTimer=setTimeout(()=>{
     deliverySearchRenderTimer=0;
     if(curPage==='delivery-builder')rerenderKeepingTextInputFocus('delivery-workspace-search',()=>renderDeliveryBuilderPage({persist:false}));
-  },85);
-  /* Từ khoá cũng được lưu vào nháp cloud, nhưng không ghi localStorage / cloud
-     ở từng phím bấm. */
-  deliverySearchPersistTimer=setTimeout(()=>{deliverySearchPersistTimer=0;persistDeliveryWorkspaceDraft();},500);
+  },180);
 }
 function toggleDeliveryWorkspaceItem(index){
   captureDeliveryWorkspaceForm();const lines=deliveryReadyLines(deliveryWorkspaceState.sourceOrderId),line=lines[index];if(!line)return;
@@ -16856,7 +16856,19 @@ function deliverySearchSuggestions(query){
   unreconciledLegacyModels(term).forEach(model=>{const variants=model.variants||[],subtitleBase=`${modelKiotSearchText(model.id)||model.sku||'Không có SKU KiotViet'}`;if(variants.length)variants.forEach(variant=>suggestions.push({type:'unreconciled-variant',key:legacyVariantKey(model.id,variant.id),icon:'◌',tag:'Chưa đối soát',group:'Hàng chưa đối soát',image:model.images?.[0]||'',title:`${model.name||'Model'} · ${variant.name||'Biến thể'}`,subtitle:subtitleBase}));else suggestions.push({type:'unreconciled',key:model.id,icon:'◌',tag:'Chưa đối soát',group:'Hàng chưa đối soát',image:model.images?.[0]||'',title:model.name||'Model',subtitle:subtitleBase});});
   return suggestions.slice(0,12);
 }
+function deliverySearchSuggestionsHtml(query){
+  const suggestions=deliverySearchSuggestions(query);if(!suggestions.length)return '';
+  const groups=['3D sẵn giao','Hàng ngoài 3D','Hàng chưa đối soát'].map(group=>[group,suggestions.filter(item=>item.group===group)]).filter(([,items])=>items.length);
+  return `<div class="delivery-search-suggestions" role="listbox" aria-label="Gợi ý sản phẩm">${groups.map(([group,items])=>`<section class="delivery-search-group" data-group="${esc(group)}"><div class="delivery-search-group-label">${esc(group)} · ${items.length}</div>${items.map(item=>`<button type="button" class="delivery-search-suggestion" role="option" onclick="selectDeliverySearchSuggestion('${item.type}','${item.key}')"><span class="delivery-search-thumb">${item.image?`<img src="${esc(item.image)}" alt="" loading="lazy">`:item.icon}</span><span><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><em>${esc(item.tag)}</em></button>`).join('')}</section>`).join('')}</div>`;
+}
+function updateDeliverySearchSuggestions(query){
+  if(curPage!=='delivery-builder')return;
+  const input=document.getElementById('delivery-workspace-search'),search=input?.closest('.page-smart-search');if(!search)return;
+  search.querySelector('.delivery-search-suggestions')?.remove();
+  const html=deliverySearchSuggestionsHtml(query);if(html)search.insertAdjacentHTML('beforeend',html);
+}
 function selectDeliverySearchSuggestion(type,key){
+  clearTimeout(deliverySearchRenderTimer);cancelAnimationFrame(deliverySearchSuggestionFrame);deliverySearchRenderTimer=0;deliverySearchSuggestionFrame=0;
   captureDeliveryWorkspaceForm();const state=deliveryWorkspaceState;state.query='';
   let animation=null;if(type==='ready'){const index=Number(key),line=deliveryReadyLines(state.sourceOrderId)[index];if(line){const added=!state.selected[index];state.selected[index]=state.selected[index]||line.available;if(added)animation={name:line.it.modelName||line.m?.name||'Model',image:line.m?.images?.[0]||''};}}
   else if(type==='non3d'){const item=non3dCatalogProducts().find(row=>row.id===key);state.non3dSelected=state.non3dSelected||{};const added=!state.non3dSelected[key];state.non3dSelected[key]=state.non3dSelected[key]||1;if(added)animation={name:item?.name||'Hàng ngoài 3D',image:item?.image||''};}
@@ -16897,7 +16909,7 @@ function renderDeliveryBuilderPage({persist=true}={}){
     if(productHead) productHead.outerHTML=`<div class="delivery-product-toolbar"><span>Chọn sản phẩm</span><button class="btn btn-primary btn-sm delivery-cart-button" onclick="openDeliveryCartDialog()">🛒 Giỏ <strong>${summaryNow.qty}</strong></button></div>`;
   }
   const searchInput=host.querySelector('.page-smart-search input');if(searchInput)searchInput.placeholder='Tìm Model 3D, SKU hàng ngoài 3D hoặc hàng chưa đối soát...';
-  const suggestions=deliverySearchSuggestions(state.query);if(searchInput&&suggestions.length){const groups=['3D sẵn giao','Hàng ngoài 3D','Hàng chưa đối soát'].map(group=>[group,suggestions.filter(item=>item.group===group)]).filter(([,items])=>items.length);searchInput.closest('.page-smart-search')?.insertAdjacentHTML('beforeend',`<div class="delivery-search-suggestions" role="listbox" aria-label="Gợi ý sản phẩm">${groups.map(([group,items])=>`<section class="delivery-search-group" data-group="${esc(group)}"><div class="delivery-search-group-label">${esc(group)} · ${items.length}</div>${items.map(item=>`<button type="button" class="delivery-search-suggestion" role="option" onclick="selectDeliverySearchSuggestion('${item.type}','${item.key}')"><span class="delivery-search-thumb">${item.image?`<img src="${esc(item.image)}" alt="" loading="lazy">`:item.icon}</span><span><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><em>${esc(item.tag)}</em></button>`).join('')}</section>`).join('')}</div>`);}
+  const searchSuggestionsHtml=deliverySearchSuggestionsHtml(state.query);if(searchInput&&searchSuggestionsHtml)searchInput.closest('.page-smart-search')?.insertAdjacentHTML('beforeend',searchSuggestionsHtml);
   if(main&&step==='products')main.insertAdjacentHTML('beforeend',`<section class="non3d-delivery-section delivery-category-section is-non3d"><div class="delivery-category-head"><div class="delivery-category-copy">${deliveryCategoryVisual(non3d.map(item=>item.image),'🛍️')}<div><div class="eyebrow">HÀNG NGOÀI 3D</div><h2>Thêm trực tiếp vào đợt giao</h2><p class="delivery-workspace-sub">Không theo quy trình sản xuất; chỉ ghi nhận lượng xưởng giao.</p></div></div><span class="delivery-category-badge">${non3d.length}/${non3dCatalogProducts().length} SKU</span></div><div class="non3d-delivery-body">${non3dCards?`<div class="delivery-product-grid">${non3dCards}</div>`:`<div class="delivery-empty non3d-delivery-empty">${state.query?'Không tìm thấy hàng ngoài 3D phù hợp.':'Chưa có danh mục hàng ngoài 3D. Quản lý có thể nhập tại trang KiotViet.'}</div>`}</div></section>`);
   const unreconciledCards=unreconciled.map(model=>renderUnreconciledDeliveryCard(model,state)).join('');
   const pendingKiotCards=(state.pendingKiot||[]).map(item=>`<article class="delivery-product-card non3d-delivery-card is-selected"><div class="delivery-product-image delivery-product-empty">⏳</div><div class="delivery-product-info"><span class="unreconciled-delivery-kind">Chờ tạo Kiot</span><div class="delivery-product-name">${esc(item.name)}</div><div class="delivery-product-meta">${esc(item.note||'Chưa có SKU KiotViet')}</div><div class="delivery-qty"><button type="button" onclick="adjustPendingKiotDeliveryQty('${item.id}',-1)">−</button><input type="number" value="${Number(item.qty)||1}" readonly aria-label="Số lượng giao"><button type="button" onclick="adjustPendingKiotDeliveryQty('${item.id}',1)">+</button></div><button class="btn btn-ghost btn-sm" style="margin-top:9px" onclick="removePendingKiotDeliveryItem('${item.id}')">Bỏ</button></div></article>`).join('');
