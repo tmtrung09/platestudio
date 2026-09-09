@@ -75,10 +75,18 @@ const results = await page.evaluate(async () => {
   normalizeOperations();
   goPage('fulfillment', { historyMode: 'none' });
 
-  const fulfillmentHeader = document.querySelector('#page-fulfillment .sect-hd');
+  const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');
   check('Thanh tìm kiếm gia công tách khỏi cụm giao hàng', Boolean(document.querySelector('.fulfillment-search-row .page-smart-search')) && !document.querySelector('.fulfillment-command'));
   const fulfillmentHeaderActions = ['refreshFulfillmentPage()', 'openReceivingHub()', 'openDeliveryBatchBuilder()'];
-  check('Thao tác giao hàng nằm cùng hàng Làm mới', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
+  check('Thao tác giao hàng nằm trong cụm lệnh riêng', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
+  const fulfillmentCommandActions = fulfillmentHeader?.querySelector('.fulfillment-command-actions');
+  const createDelivery = fulfillmentHeader?.querySelector('.fulfillment-create-delivery');
+  check('Nút tạo đợt giao là hành động chính của cụm lệnh', Boolean(createDelivery && fulfillmentCommandActions?.contains(createDelivery)), createDelivery?.textContent.trim() || 'thiếu nút');
+  check('Tiêu đề trang và cụm thao tác không lặp tên luồng', !/hoàn thiện\s*&\s*giao hàng/i.test(fulfillmentHeader?.querySelector('.fulfillment-command-title')?.textContent || ''), fulfillmentHeader?.querySelector('.fulfillment-command-title')?.textContent.trim() || 'thiếu tiêu đề');
+  const refreshDelivery = fulfillmentHeader?.querySelector('button[onclick="refreshFulfillmentPage()"]');
+  const receiveDelivery = fulfillmentHeader?.querySelector('button[onclick="openReceivingHub()"]');
+  const createRect = createDelivery?.getBoundingClientRect(), refreshRect = refreshDelivery?.getBoundingClientRect(), receiveRect = receiveDelivery?.getBoundingClientRect();
+  check('Mobile đặt tạo đợt giao lên hàng chính riêng', Boolean(createRect && refreshRect && receiveRect && createRect.top < refreshRect.top && createRect.bottom <= refreshRect.top + 1 && Math.abs(refreshRect.top - receiveRect.top) < 2), createRect && refreshRect ? `${Math.round(createRect.top)} → ${Math.round(refreshRect.top)}` : 'thiếu nút');
   const fulfillmentRendererSource = renderFulfillmentPage.toString();
   const missingPartsIndex = fulfillmentRendererSource.indexOf('id="fulfillment-missing-parts"');
   const workshopFlowIndex = fulfillmentRendererSource.indexOf('id="fulfillment-workshop-flow"');
@@ -264,9 +272,9 @@ const results = await page.evaluate(async () => {
   setDeliveryWorkspaceSearch('Size 10cm');
   await new Promise(resolve => requestAnimationFrame(resolve));
   check('Gõ tìm giao hiện gợi ý ngay mà không dựng lại cả trang', Boolean(document.querySelector('.delivery-search-suggestions')) && document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, document.querySelector('.delivery-search-suggestions') ? 'gợi ý nội tuyến' : 'thiếu gợi ý');
-  await new Promise(resolve => setTimeout(resolve, 110));
+  await new Promise(resolve => setTimeout(resolve, 100));
   check('Gõ liên tục không render lại toàn bộ thẻ quá sớm', document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, 'đợi người dùng ngừng gõ');
-  await new Promise(resolve => setTimeout(resolve, 120));
+  await new Promise(resolve => setTimeout(resolve, 190));
   check('Kết quả đầy đủ được lọc sau nhịp gõ', document.querySelector('.delivery-wizard-stage') !== deliveryStageBeforeSearch && document.getElementById('delivery-workspace-search')?.value === 'Size 10cm', document.getElementById('delivery-workspace-search')?.value || 'thiếu ô tìm');
   setDeliveryWorkspaceSearch('');
   await new Promise(resolve => setTimeout(resolve, 210));

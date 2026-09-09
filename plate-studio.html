@@ -3812,6 +3812,10 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 /* A narrow desktop window still has mouse hover. Do not suppress its chart value
    labels just because the viewport is narrow; touch devices keep the compact view. */
 @media(max-width:700px) and (hover:hover) and (pointer:fine){.sales-chart-bars{min-height:242px;padding:54px 4px 0}.sales-chart-value{display:block}}
+/* Fulfillment has a page hero already; its command area is therefore a compact
+   action cluster, not a second competing title. */
+.fulfillment-command-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--pu) 18%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--pu) 5%,var(--s))}.fulfillment-command-title,.fulfillment-command-actions{display:flex;align-items:center;gap:7px}.fulfillment-command-title{min-width:0;color:var(--t2);font-size:12px;font-weight:800}.fulfillment-command-title svg{width:17px;height:17px;fill:none;stroke:var(--pu);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.fulfillment-command-actions{justify-content:flex-end;flex-wrap:wrap}.fulfillment-command-actions .btn{justify-content:center}
+@media(max-width:600px){#page-fulfillment>.page-heading{margin-bottom:12px!important}#page-fulfillment .page-heading-main{flex-direction:column;gap:11px!important}#page-fulfillment .page-heading-main>.gap-row{display:grid;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#page-fulfillment .page-heading-main>.gap-row .btn{justify-content:center}.fulfillment-command-bar{display:grid;gap:10px;margin:0 8px 14px;padding:12px;border-radius:17px}.fulfillment-command-title{font-size:11px}.fulfillment-command-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.fulfillment-command-actions .btn{width:100%;min-width:0}.fulfillment-command-actions .fulfillment-create-delivery{grid-column:1/-1;grid-row:1;min-height:40px!important;font-size:12px!important}.fulfillment-command-actions .btn:nth-child(1){grid-column:1;grid-row:2}.fulfillment-command-actions .btn:nth-child(2){grid-column:2;grid-row:2}}
 @media(max-width:370px){.page-heading h1{font-size:27px!important}.page.active{padding-left:6px!important;padding-right:6px!important}.page-heading,.page-smart-search,#page-models .model-category-wrap,#page-models .model-grid{margin-left:6px!important;margin-right:6px!important}}
 </style>
 </head>
@@ -16581,6 +16585,7 @@ function restoreDeliveryWorkspaceDraftFromCloud(){
 function deliveryDraftHasItems(draft){return !!(draft&&(Object.keys(draft.selected||{}).length||Object.keys(draft.non3dSelected||{}).length||Object.keys(draft.unreconciledSelected||{}).length||Object.keys(draft.unreconciledVariantSelected||{}).length||(draft.pendingKiot||[]).length||Object.keys(draft.openingSelected||{}).length));}
 let deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
 let deliverySearchRenderTimer=0,deliverySearchSuggestionFrame=0;
+const DELIVERY_SEARCH_IDLE_MS=260;
 let receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
 let unreconciledVariantMenuId='';
 function openingStockEntries(){
@@ -16804,7 +16809,7 @@ function setDeliveryWorkspaceSearch(value){
   deliverySearchRenderTimer=setTimeout(()=>{
     deliverySearchRenderTimer=0;
     if(curPage==='delivery-builder')rerenderKeepingTextInputFocus('delivery-workspace-search',()=>renderDeliveryBuilderPage({persist:false}));
-  },180);
+  },DELIVERY_SEARCH_IDLE_MS);
 }
 function toggleDeliveryWorkspaceItem(index){
   captureDeliveryWorkspaceForm();const lines=deliveryReadyLines(deliveryWorkspaceState.sourceOrderId),line=lines[index];if(!line)return;
