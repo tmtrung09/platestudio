@@ -54,7 +54,7 @@ const results = await page.evaluate(async () => {
 
   /* Fixture only exists in this ephemeral Playwright tab. */
   models = [{
-    id: 'qa-model', name: 'QA · Mô hình kiểm thử', cats: ['QA'], images: [], variants: [],
+    id: 'qa-model', name: 'QA · Mô hình kiểm thử', cats: ['QA'], images: [], variants: [{ id: 'qa-size-10', name: 'Size 10cm' }],
     parts: [
       { id: 'qa-body', name: 'Thân', qtyPerModel: 1, filamentIds: [] },
       { id: 'qa-base', name: 'Đế', qtyPerModel: 1, filamentIds: [] },
@@ -63,7 +63,7 @@ const results = await page.evaluate(async () => {
   }];
   orders = [{
     id: 'qa-order', note: 'QA · Đơn kiểm thử', status: 'processing', createdAt: stamp,
-    items: [{ id: 'qa-item', modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: '', variantName: '', qty: 4 }],
+    items: [{ id: 'qa-item', modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: 'qa-size-10', variantName: 'Size 10cm', qty: 4 }],
     assembly: { status: 'in_progress', items: {}, handovers: { 'qa-item': { handedAt: stamp, handedBy: 'QA', qcStatus: 'pending' } }, },
   }];
   pitems = [
@@ -233,6 +233,12 @@ const results = await page.evaluate(async () => {
   check('Phiếu đã xác nhận hiện đúng khi có dữ liệu', Boolean(receiptHeading));
   check('Mô tả phiếu trên mobile nằm dưới tiêu đề, không bị ép ngang', Boolean(receiptHeading && receiptHelp && receiptHelp.getBoundingClientRect().top > receiptHeading.getBoundingClientRect().top + 14), receiptHelp ? `${Math.round(receiptHelp.getBoundingClientRect().top - receiptHeading.getBoundingClientRect().top)}px` : 'không có mô tả');
   check('Khu phiếu đã nhận không tràn ngang', !receiptHeading || receiptHeading.scrollWidth <= receiptHeading.clientWidth + 1, receiptHeading ? `${receiptHeading.scrollWidth}/${receiptHeading.clientWidth}` : 'không có heading');
+
+  deliveryWorkspaceState = { ...deliveryWorkspaceState, sourceOrderId: 'qa-order', step: 'products', selected: {} };
+  goPage('delivery-builder', { historyMode: 'none' });
+  renderDeliveryBuilderPage({ persist: false });
+  const readyVariant = document.querySelector('.delivery-category-section.is-3d .delivery-product-variant');
+  check('Thẻ thành phẩm sẵn giao hiển thị biến thể', readyVariant?.textContent.includes('Size 10cm'), readyVariant?.textContent.trim() || 'thiếu biến thể');
 
   goPage('inventory', { historyMode: 'none' });
   return rows;
