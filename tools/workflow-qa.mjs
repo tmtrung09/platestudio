@@ -184,6 +184,14 @@ const results = await page.evaluate(async () => {
   setWorkshopQuickStatusInline(quickRowKey, 'completed');
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Hoàn tất nhanh không tự bù số lượng part còn thiếu', workshopReadyDeliveryQty(row) === 2 && assembledQty(row.o,row.it.id) === 2 && !operations.auditLog?.some(entry=>entry.metadata?.quickStatus&&entry.metadata?.to==='completed'), `${workshopReadyDeliveryQty(row)} sẵn giao · ${assembledQty(row.o,row.it.id)} đã hoàn thiện`);
+  const quickAssemblyBefore = JSON.parse(JSON.stringify(row.o.assembly));
+  const quickReadyButton = document.querySelector('.workshop-quick-status-option[onclick*="\'ready\'"]');
+  const quickProgressButton = document.querySelector('.workshop-quick-status-option[onclick*="\'in_progress\'"]');
+  check('Trạng thái nhanh QC/gia công vẫn bấm được khi còn thiếu part', !quickReadyButton?.disabled && !quickProgressButton?.disabled, `sẵn gia công ${quickReadyButton?.disabled ? 'khoá' : 'mở'} · đang gia công ${quickProgressButton?.disabled ? 'khoá' : 'mở'}`);
+  setWorkshopQuickStatusInline(quickRowKey, 'ready');
+  row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
+  check('Trạng thái nhanh chỉ mở đúng số bộ đang đủ part', workshopAssemblyStage(row) === 'ready' && workshopAssemblyTargetQty(row) === 2 && row.handover?.qcAcceptedQty === 2, `${workshopAssemblyStage(row)} · ${workshopAssemblyTargetQty(row)} bộ`);
+  row.o.assembly = quickAssemblyBefore;
 
   const externalPending = { source: 'external', externalKey: 'qa-external', it: { qty: 4 }, handover: { qcStatus: 'rejected', qcAcceptedQty: 2, reprintQty: 2, assemblyStatus: 'in_progress', assemblyQty: 0 } };
   const externalDone = { ...externalPending, handover: { ...externalPending.handover, assemblyStatus: 'completed', assemblyQty: 2, readyQty: 2 } };
