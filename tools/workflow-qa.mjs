@@ -103,6 +103,14 @@ const results = await page.evaluate(async () => {
   Element.prototype.scrollIntoView = flowOriginalScrollIntoView;
   check('Bước QC trên thanh nổi dẫn đến đúng nhóm', flowTarget === 'fulfillment-stage-part-qc', flowTarget || 'không có nhóm QC');
 
+  const variantWorkshopCard = fulfillmentWorkshopCard({
+    source: 'external', externalKey: 'qa-variant-card', o: null,
+    it: { id: 'qa-variant-card', modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: 'qa-size-10', variantName: 'Size 10cm', qty: 4 },
+    m: { id: 'qa-model', name: 'QA · Mô hình kiểm thử', images: [], variants: [{ id: 'qa-size-10', name: 'Size 10cm' }], parts: [] },
+    parts: [], completedParts: 0, ready: false, handover: null, handed: false, reports: [], reportCount: 1,
+  });
+  check('Thẻ gia công luôn hiện biến thể khi có', variantWorkshopCard.includes('workshop-item-variant') && variantWorkshopCard.includes('Size 10cm'), variantWorkshopCard.includes('Size 10cm') ? 'Size 10cm' : 'thiếu biến thể');
+
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
 
