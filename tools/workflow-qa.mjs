@@ -165,6 +165,8 @@ const results = await page.evaluate(async () => {
   brUnifiedSearch = 'QA';
   quickSelectBatchModel('qa-model');
   check('Chọn Model từ tìm kiếm chuyển sang bước khai báo', brView === 'manual' && Boolean(document.querySelector('#br-content .br-manual-layout')), brView);
+  const actualColorPicker = document.querySelector('.br-color-picker');
+  check('Chọn màu thực tế có chấm màu và ô tìm kiếm', Boolean(actualColorPicker?.querySelector('.br-color-picker-dot') && actualColorPicker?.querySelector('input[type="search"]') && actualColorPicker?.querySelector('.br-color-picker-option')), actualColorPicker ? 'có bộ chọn màu' : 'thiếu bộ chọn màu');
 
   /* Đối chiếu mẻ ngoài đơn phải là Model + Part + phiên bản. Một lỗi cũ đã
      cộng cùng một số lượng vào mọi phiên bản có chung Model/Part. */
