@@ -258,6 +258,13 @@ const results = await page.evaluate(async () => {
   check('Mô tả phiếu trên mobile nằm dưới tiêu đề, không bị ép ngang', Boolean(receiptHeading && receiptHelp && receiptHelp.getBoundingClientRect().top > receiptHeading.getBoundingClientRect().top + 14), receiptHelp ? `${Math.round(receiptHelp.getBoundingClientRect().top - receiptHeading.getBoundingClientRect().top)}px` : 'không có mô tả');
   check('Khu phiếu đã nhận không tràn ngang', !receiptHeading || receiptHeading.scrollWidth <= receiptHeading.clientWidth + 1, receiptHeading ? `${receiptHeading.scrollWidth}/${receiptHeading.clientWidth}` : 'không có heading');
 
+  /* Các lời nhắc ngắn không được tự biến thành popup chặn, nhất là khi giao
+     hàng chưa đối soát: người dùng vẫn có thể tiếp tục và bổ sung nhật ký nếu cần. */
+  closeActionDialog?.();
+  toast('Hãy ghi người xác nhận và lý do cho hàng chưa đối soát.');
+  check('Toast cảnh báo không tự mở dialog chặn', !document.getElementById('dlg-action')?.classList.contains('open') && !document.getElementById('dlg-action')?.classList.contains('show'), document.getElementById('dlg-action')?.style.display || 'đã đóng');
+  check('Giao hàng chưa đối soát không còn bị bắt buộc ghi xác nhận/lý do', !saveDeliveryBatchFromWorkspace.toString().includes("itemsUnreconciled.length&&(!f.legacyConfirmedBy?.trim()||!f.legacyReason?.trim())"));
+
   deliveryWorkspaceState = { ...deliveryWorkspaceState, sourceOrderId: 'qa-order', step: 'products', selected: {} };
   goPage('delivery-builder', { historyMode: 'none' });
   renderDeliveryBuilderPage({ persist: false });
