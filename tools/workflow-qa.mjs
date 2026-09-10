@@ -484,6 +484,8 @@ const results = await page.evaluate(async () => {
   const cloudKiotSettings = kiotVietForCloudSettings();
   check('Lịch sử bán lớn chỉ đồng bộ metadata, không gửi chi tiết SKU trong settings', cloudKiotSettings.sales.length === 0 && cloudKiotSettings.salesImports.length === 1 && !Object.hasOwn(cloudKiotSettings.salesImports[0], 'sales') && cloudKiotSettings.salesImports[0].qtyTotal === 12, JSON.stringify(cloudKiotSettings.salesImports[0]));
   check('Bù theo khoảng chỉ xếp các ngày chưa có báo cáo', JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')) === JSON.stringify(['2026-09-02', '2026-09-03']), JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')));
+  const rangeDialogSource = `${openKiotSalesRangeDialog} ${startKiotSalesRangeSync} ${refreshKiotSalesRangeAutomation} ${previewKiotSalesRange}`;
+  check('Bù khoảng ngày chỉ mở khi mẫu extension hợp lệ và gửi đúng danh sách ngày thiếu', /kiotSalesRangeAutomation\.ready/.test(rangeDialogSource) && /\/range\/run/.test(rangeDialogSource) && /days:missing/.test(rangeDialogSource), rangeDialogSource.includes('/range/run') ? 'có guard mẫu và hàng chờ' : 'thiếu hàng chờ');
   kiotViet = priorKiotArchive;kiotSalesArchiveReadyForSettings = priorKiotArchiveReady;
 
   goPage('inventory', { historyMode: 'none' });

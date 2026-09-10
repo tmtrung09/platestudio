@@ -65,10 +65,29 @@
     await waitFor(()=>[...picker.querySelectorAll('li.k-button')].some(item=>normal(item.textContent).startsWith(normal(category))),'xác nhận nhóm hàng');await reportProgress(job,'Đang chờ KiotViet lọc nhóm hàng…');await wait(RENDER.filter);
   }
   async function selectTimeRange(job){
-    /* Không được âm thầm chọn “Năm nay” cho một job theo ngày: như vậy app sẽ
-       gắn số liệu cả năm vào một ngày. Selector của lịch tùy chỉnh sẽ được
-       kích hoạt sau lượt ghi thao tác thật, còn hiện tại dừng an toàn. */
-    if(job.period==='custom-day')throw new Error('Chưa có mẫu thao tác chọn ngày tùy chỉnh. Hãy ghi một lượt chọn cùng ngày ở Từ ngày và Đến ngày trên KiotViet trước khi chạy bù theo khoảng.');
+    /* Một job bù luôn là đúng một ngày. Bản ghi thao tác thật xác nhận bộ
+       chọn Tùy chỉnh gồm #reportsortOtherLbl và hai lịch Kendo hiển thị cạnh nhau
+       và nút Tạo báo cáo. Không được rơi về “Năm nay”, vì sẽ gán số liệu của
+       cả năm cho một ngày. */
+    if(job.period==='custom-day'){
+      const day=String(job.reportDay||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw new Error('Job bù không có ngày báo cáo hợp lệ.');
+      const targetDate=(()=>{const [year,month,date]=day.split('-').map(Number);return new Date(year,month-1,date,12,0,0,0);})();
+      const dayKey=value=>{const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?'':`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;};
+      const setCalendar=(calendar,label)=>{
+        const jq=window.jQuery||window.$,widget=jq?.(calendar).data?.('kendoCalendar');
+        if(!widget||typeof widget.value!=='function')throw new Error(`Không đọc được lịch ${label} của KiotViet.`);
+        widget.value(targetDate);widget.trigger?.('change');calendar.dispatchEvent(new Event('change',{bubbles:true}));
+        if(dayKey(widget.value())!==day)throw new Error(`KiotViet chưa nhận ngày ${label}.`);
+      };
+      await reportProgress(job,`Mở chọn ngày ${day}…`);
+      const custom=await waitFor(()=>firstVisible('#reportsortOtherLbl'),'mục Tùy chỉnh');await realClick(custom);await wait(RENDER.picker);
+      const calendars=await waitFor(()=>{const all=[...document.querySelectorAll('.kv-filter-time-other .k-calendar,.popover-filter .k-calendar')].filter(visible),from=firstVisible('#fromDate')||all[0],to=all.find(calendar=>calendar!==from)||null;return from&&to?{from,to}:null;},'hai lịch Từ ngày và Đến ngày');
+      const fromCalendar=calendars.from,toCalendar=calendars.to;
+      setCalendar(fromCalendar,'Từ ngày');setCalendar(toCalendar,'Đến ngày');await reportProgress(job,`Đã chọn ${day}. Đang tạo báo cáo…`);
+      const createReport=await waitFor(()=>textButton('Tạo báo cáo',{popupOnly:true}),'nút Tạo báo cáo');await realClick(createReport);
+      await waitFor(()=>!firstVisible('.popover-filter.kv-filter-time-other,.kv-filter-time-other.popover'),'hộp chọn ngày đóng lại',12000);
+      await reportProgress(job,`Đang chờ KiotViet tải báo cáo ngày ${day}…`);await wait(RENDER.time);return;
+    }
     const yesterday=job.period==='yesterday';
     const range={key:yesterday?'yesterday':'year',label:yesterday?'Hôm qua':'Năm nay',loading:yesterday?'báo cáo hôm qua':'báo cáo năm nay'};
     const activeLabel=firstVisible('#reportsortDateTimeLbl')||[...document.querySelectorAll('li.reportsortDateTime .sortTimeLbl')].find(visible);if(!activeLabel)throw new Error('Không tìm thấy bộ chọn thời gian.');

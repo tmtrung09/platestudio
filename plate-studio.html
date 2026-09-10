@@ -17800,16 +17800,40 @@ function kiotSalesMissingDays(from,to){
   const recorded=new Set((kiotViet.salesImports||[]).map(kiotSalesReportDay).filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)));
   return kiotSalesRangeDays(from,to).filter(day=>!recorded.has(day));
 }
+let kiotSalesRangeAutomation={checked:false,ready:false,detail:'Đang kiểm tra extension…'};
+async function refreshKiotSalesRangeAutomation(){
+  try{
+    const recording=await kiotChromeSyncRequest('/recording'),actions=Array.isArray(recording?.actions)?recording.actions:[],selectors=actions.flatMap(action=>action?.element?.selectors||[]),texts=actions.map(action=>String(action?.element?.text||''));
+    const ready=recording?.status==='ready'&&selectors.includes('#reportsortOtherLbl')&&selectors.includes('#fromDate')&&texts.includes('Tạo báo cáo');
+    kiotSalesRangeAutomation={checked:true,ready,detail:ready?'Extension đã có mẫu chọn ngày.':'Chưa tìm thấy đủ mẫu chọn ngày trong extension.'};
+  }catch(error){kiotSalesRangeAutomation={checked:true,ready:false,detail:'Không kết nối được local bridge/extension.'};}
+  previewKiotSalesRange();return kiotSalesRangeAutomation;
+}
 function previewKiotSalesRange(){
   const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'',missing=kiotSalesMissingDays(from,to),summary=document.getElementById('kiot-sales-range-summary'),button=document.getElementById('kiot-sales-range-start');
-  if(summary)summary.textContent=!from||!to||from>to?'Chọn một khoảng ngày hợp lệ.':missing.length?`Còn thiếu ${missing.length} ngày: ${missing.slice(0,5).map(fmtDate).join(', ')}${missing.length>5?'…':''}`:'Khoảng này đã đủ báo cáo.';
-  if(button)button.disabled=true;
+  const rangeValid=Boolean(from&&to&&from<=to),canStart=rangeValid&&missing.length>0&&kiotSalesRangeAutomation.ready;
+  if(summary)summary.textContent=!rangeValid?'Chọn một khoảng ngày hợp lệ.':!kiotSalesRangeAutomation.checked?'Đang kiểm tra mẫu thao tác extension…':missing.length?`Còn thiếu ${missing.length} ngày: ${missing.slice(0,5).map(fmtDate).join(', ')}${missing.length>5?'…':''}`:'Khoảng này đã đủ báo cáo.';
+  if(button){button.disabled=!canStart;button.textContent=canStart?`Lấy ${missing.length} ngày thiếu`:kiotSalesRangeAutomation.checked?kiotSalesRangeAutomation.detail:'Đang kiểm tra extension…';}
+}
+async function startKiotSalesRangeSync(){
+  const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'',missing=kiotSalesMissingDays(from,to);
+  if(!missing.length){toast('Khoảng này không có ngày thiếu để lấy.');return;}
+  const capability=await refreshKiotSalesRangeAutomation();if(!capability.ready){toast(capability.detail,5000);return;}
+  if(['requested','claimed','running','downloaded'].includes(kiotChromeSync.status)){toast('Đang có một lượt đồng bộ Chrome chạy.');return;}
+  const button=document.getElementById('kiot-sales-range-start');if(button)button.disabled=true;
+  try{
+    await kiotChromeSyncRequest('/health');
+    const queued=await kiotChromeSyncRequest('/range/run',{method:'POST',body:JSON.stringify({days:missing,report:'sales-by-product',categoryParent:'Rùm Beng',category:'3D Rùm Beng'})}),job=queued?.job;
+    if(!job?.id)throw new Error('Không tạo được hàng chờ lấy báo cáo.');
+    closeDialog('dlg-mv');kiotChromeSync={status:job.status||'requested',detail:job.detail||`Đang xếp ${missing.length} ngày…`,jobId:job.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();toast(`Đã xếp ${missing.length} ngày thiếu. Chrome sẽ lấy lần lượt từng ngày.`);
+  }catch(error){toast('Không thể bắt đầu bù báo cáo: '+String(error?.message||error),6000);previewKiotSalesRange();}
 }
 async function openKiotSalesRangeDialog(){
   await loadKiotSalesArchiveIndex();
   const to=kiotSalesRangeDayBefore(kiotSalesRangeToday()),from=kiotSalesRangeDayBefore(to),ov=document.getElementById('dlg-mv');
-  ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Bù báo cáo bán theo khoảng</div><p class="manual-sales-note">Plate Studio sẽ rà ngày thiếu trong khoảng này, rồi xếp Chrome lấy <b>từng ngày một</b>. Dữ liệu chỉ được đánh dấu xong sau khi file của ngày đó đã nhập hợp lệ.</p><div class="manual-sales-meta"><label class="field"><span>Từ ngày</span><input id="kiot-sales-range-from" type="date" value="${esc(from)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label><label class="field"><span>Đến ngày</span><input id="kiot-sales-range-to" type="date" value="${esc(to)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label></div><div id="kiot-sales-range-summary" class="manual-sales-note" style="margin-top:12px"></div><div class="kv-note" style="margin-top:10px">Chưa thể bật lấy tự động: cần một lượt ghi mẫu thao tác chọn cùng ngày ở Từ ngày và Đến ngày trên KiotViet. Hệ thống đang chặn luồng này để không gán nhầm báo cáo cả năm vào một ngày.</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button id="kiot-sales-range-start" class="btn btn-ac" type="button" disabled>Chờ ghi mẫu extension</button></div></div>`;
-  ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};previewKiotSalesRange();
+  kiotSalesRangeAutomation={checked:false,ready:false,detail:'Đang kiểm tra extension…'};
+  ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Bù báo cáo bán theo khoảng</div><p class="manual-sales-note">Plate Studio rà ngày thiếu, rồi Chrome lấy <b>từng ngày một</b>. Một ngày chỉ được đánh dấu xong sau khi file của đúng ngày đó đã nhập hợp lệ.</p><div class="manual-sales-meta"><label class="field"><span>Từ ngày</span><input id="kiot-sales-range-from" type="date" value="${esc(from)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label><label class="field"><span>Đến ngày</span><input id="kiot-sales-range-to" type="date" value="${esc(to)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label></div><div id="kiot-sales-range-summary" class="manual-sales-note" style="margin-top:12px"></div><div class="kv-note" style="margin-top:10px">Chrome sẽ giữ đúng ngày đang lấy; nếu một file không nhập được, hàng chờ dừng ở ngày đó để không bỏ qua dữ liệu.</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button id="kiot-sales-range-start" class="btn btn-ac" type="button" disabled onclick="startKiotSalesRangeSync()">Đang kiểm tra extension…</button></div></div>`;
+  ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};previewKiotSalesRange();await refreshKiotSalesRangeAutomation();
 }
 async function importKiotSalesFileForDate(input){
   const day=document.getElementById('manual-sales-date')?.value||'',note=document.getElementById('manual-sales-note')?.value.trim()||'';
