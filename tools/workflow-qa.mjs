@@ -392,6 +392,14 @@ const results = await page.evaluate(async () => {
   await new Promise(resolve => setTimeout(resolve, 210));
   deliveryWorkspaceState = { ...deliveryWorkspaceState, step: 'info', selected: { 0: 1 }, form: { ...(deliveryWorkspaceState.form || {}), destination: 'Bánh mì Stationery', date: '2026-09-09' } };
   renderDeliveryBuilderPage({ persist: false });
+  const deliveryInfoStage = document.querySelector('.delivery-wizard-stage');
+  const deliveryInfoHead = deliveryInfoStage?.querySelector('.delivery-wizard-stage-head');
+  const deliveryInfoSummary = deliveryInfoHead?.querySelector('.delivery-wizard-summary-compact');
+  const deliveryInfoForm = deliveryInfoStage?.querySelector('.delivery-form-card');
+  check('Bước thông tin giao chỉ giữ một tiêu đề theo mục tiêu', Boolean(deliveryInfoHead?.querySelector('h2')) && !/BƯỚC\s*2|Thông tin này sẽ in|Đã chọn ở bước 1/i.test(deliveryInfoStage?.innerText || ''), deliveryInfoStage?.innerText.slice(0, 180) || 'thiếu bước');
+  check('Tóm tắt số hàng ở bước giao được gộp thành một chip', Boolean(deliveryInfoSummary?.textContent.includes('1 dòng') && deliveryInfoSummary?.textContent.includes('1 cái')) && document.querySelectorAll('.delivery-wizard-hero .badge').length === 0, deliveryInfoSummary?.textContent.trim() || 'thiếu chip');
+  const infoHeadRect = deliveryInfoHead?.getBoundingClientRect(), infoFormRect = deliveryInfoForm?.getBoundingClientRect();
+  check('Bước giao có khoảng thở rõ giữa tiêu đề và biểu mẫu', Boolean(infoHeadRect && infoFormRect && infoFormRect.top - infoHeadRect.bottom >= 16), infoHeadRect && infoFormRect ? `${Math.round(infoFormRect.top - infoHeadRect.bottom)}px` : 'thiếu khối');
   const deliveryInfoContinue = document.querySelector('.delivery-wizard-stage .delivery-form-card .delivery-workspace-actions button[onclick="setDeliveryWorkspaceStep(\'photos\')"]');
   check('Bước thông tin giao có nút tiếp tục ngay cuối form', Boolean(deliveryInfoContinue) && !deliveryInfoContinue.disabled, deliveryInfoContinue?.textContent.trim() || 'thiếu nút');
   deliveryInfoContinue?.click();
