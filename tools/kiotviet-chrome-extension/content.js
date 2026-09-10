@@ -71,13 +71,23 @@
        cả năm cho một ngày. */
     if(job.period==='custom-day'){
       const day=String(job.reportDay||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw new Error('Job bù không có ngày báo cáo hợp lệ.');
-      const targetDate=(()=>{const [year,month,date]=day.split('-').map(Number);return new Date(year,month-1,date,12,0,0,0);})();
-      const dayKey=value=>{const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?'':`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;};
-      const setCalendar=(calendar,label)=>{
-        const jq=window.jQuery||window.$,widget=jq?.(calendar).data?.('kendoCalendar');
-        if(!widget||typeof widget.value!=='function')throw new Error(`Không đọc được lịch ${label} của KiotViet.`);
-        widget.value(targetDate);widget.trigger?.('change');calendar.dispatchEvent(new Event('change',{bubbles:true}));
-        if(dayKey(widget.value())!==day)throw new Error(`KiotViet chưa nhận ngày ${label}.`);
+      const [targetYear,targetMonth,targetDay]=day.split('-').map(Number),monthKey=(year,month)=>year*12+month;
+      /* Content script ở isolated world không đọc được window.jQuery/Kendo của
+         trang. Thay vì gọi API nội bộ dễ vỡ, điều hướng bằng DOM công khai mà
+         người dùng cũng đang bấm: header tháng, mũi tên và ô ngày. */
+      const readMonth=calendar=>{const text=String(calendar.querySelector('.k-header')?.textContent||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();const match=text.match(/thang\s*(\d{1,2})\s*(\d{4})/);return match?{month:Number(match[1]),year:Number(match[2])}:null;};
+      const setCalendar=async(calendar,label)=>{
+        for(let step=0;step<32;step++){
+          const current=readMonth(calendar);if(!current)throw new Error(`Không đọc được tháng của lịch ${label} trên KiotViet.`);
+          if(current.year===targetYear&&current.month===targetMonth)break;
+          const forward=monthKey(targetYear,targetMonth)>monthKey(current.year,current.month),nav=firstVisible(forward?'.k-nav-next,.k-i-arrow-60-right':'.k-nav-prev,.k-i-arrow-60-left',calendar);
+          if(!nav)throw new Error(`Không tìm thấy mũi tên chuyển tháng của lịch ${label}.`);
+          const before=calendar.querySelector('.k-header')?.textContent||'';await realClick(nav);await waitFor(()=>String(calendar.querySelector('.k-header')?.textContent||'')!==before,`lịch ${label} chuyển tháng`,5000);
+        }
+        const current=readMonth(calendar);if(!current||current.year!==targetYear||current.month!==targetMonth)throw new Error(`Không thể chuyển lịch ${label} đến tháng cần lấy.`);
+        const dateLink=[...calendar.querySelectorAll('td:not(.k-other-month) a.k-link')].find(link=>visible(link)&&Number(link.textContent.trim())===targetDay);
+        if(!dateLink)throw new Error(`Không tìm thấy ngày ${targetDay} trong lịch ${label}.`);
+        await realClick(dateLink);
       };
       await reportProgress(job,`Mở chọn ngày ${day}…`);
       const custom=await waitFor(()=>firstVisible('#reportsortOtherLbl'),'mục Tùy chỉnh');await realClick(custom);await wait(RENDER.picker);
