@@ -90,6 +90,41 @@ async function auditQuantityControlThemes(page) {
     return { light, dark, failures };
   });
 }
+/* The More sheet is shared mobile navigation. Light mode must stay calm and
+   legible, while dark mode deliberately keeps its expressive aurora treatment. */
+async function auditMoreSheetThemes(page) {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const oldTheme = root.getAttribute('data-theme');
+    const read = () => {
+      const item = document.querySelector('.more-group .more-item');
+      const title = document.querySelector('.more-group-title');
+      const style = item && getComputedStyle(item);
+      return {
+        itemBackground: style?.backgroundImage || '', itemColor: style?.color || '',
+        borderColor: style?.borderColor || '', animation: style?.animationName || '',
+        titleColor: title ? getComputedStyle(title).color : '',
+      };
+    };
+    root.setAttribute('data-theme', 'light');
+    const light = read();
+    root.removeAttribute('data-theme');
+    const dark = read();
+    if (oldTheme !== null) root.setAttribute('data-theme', oldTheme);
+    const luminance = color => {
+      const values = (color.match(/\d+(?:\.\d+)?/g) || []).slice(0, 3).map(Number);
+      if (values.length !== 3) return null;
+      const channels = values.map(value => value / 255);
+      return .2126 * channels[0] + .7152 * channels[1] + .0722 * channels[2];
+    };
+    const failures = [];
+    if (light.itemBackground !== 'none') failures.push(`More menu light vẫn dùng nền gradient (${light.itemBackground})`);
+    if (light.animation !== 'none') failures.push(`More menu light vẫn chạy animation (${light.animation})`);
+    if (luminance(light.itemColor) === null || luminance(light.itemColor) < .12) failures.push(`Chữ More menu light thiếu tương phản (${light.itemColor})`);
+    if (dark.itemBackground === 'none' || dark.animation === 'none') failures.push('Dark mode đã mất style aurora riêng của menu');
+    return { light, dark, failures };
+  });
+}
 for (const route of routes) {
   const page = await context.newPage();
   const consoleErrors = [];
@@ -163,6 +198,7 @@ for (const route of routes) {
   }, route).catch(error => ({ evaluationError: error.message }));
   if (route === routes[0]) {
     report.themeAudit = await auditQuantityControlThemes(page).catch(error => ({ failures: [`Không kiểm tra theme control: ${error.message}`] }));
+    report.moreSheetThemeAudit = await auditMoreSheetThemes(page).catch(error => ({ failures: [`Không kiểm tra được More menu: ${error.message}`] }));
   }
   const screenshot = join(outputDir, `${stamp}-${route}.png`);
   await page.screenshot({ path: screenshot, fullPage: true }).catch(() => {});
@@ -173,6 +209,7 @@ for (const route of routes) {
     ...(!checks.activeHasContent ? ['Trang active không có nội dung hiển thị'] : []),
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
     ...(route === routes[0] ? (report.themeAudit?.failures || []) : []),
+    ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),

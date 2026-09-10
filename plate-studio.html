@@ -1416,6 +1416,50 @@ body.more-sheet-open{overscroll-behavior:none}
 @media(max-width:860px){.more-sheet-ov{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,9,15,.72)}}
 @media(max-width:360px){.more-group-grid{grid-template-columns:1fr}.more-sheet{height:calc(100dvh - 8px)}.more-sheet-scroll{padding-inline:10px}.more-sheet-head,.more-sheet-footer{padding-inline:10px}}
 
+/* Giao diện sáng dùng một menu tác vụ có nhịp điệu văn phòng: bề mặt trắng,
+   viền trung tính và chỉ một màu nhấn cho trạng thái tương tác. Không để bảng
+   màu aurora của dark mode tràn sang light mode. */
+html[data-theme="light"] .more-sheet-ov,
+html.theme-light .more-sheet-ov{background:rgba(24,28,38,.30);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+html[data-theme="light"] .more-sheet,
+html.theme-light .more-sheet{background:#fff;border:1px solid rgba(29,35,48,.10);box-shadow:0 -14px 40px rgba(22,27,39,.18)}
+html[data-theme="light"] .more-sheet-head,
+html.theme-light .more-sheet-head{background:#fff;border-bottom-color:#e6e8ee}
+html[data-theme="light"] .more-sheet-handle,
+html.theme-light .more-sheet-handle{background:#c5cad4}
+html[data-theme="light"] .more-sheet-title-row b,
+html.theme-light .more-sheet-title-row b{color:#202632}
+html[data-theme="light"] .more-sheet-title-row small,
+html.theme-light .more-sheet-title-row small{color:#707887}
+html[data-theme="light"] .more-sheet-close,
+html.theme-light .more-sheet-close{background:#f2f4f7;color:#4f5868}
+html[data-theme="light"] .more-group-title,
+html[data-theme="light"] .more-group:nth-child(n) .more-group-title,
+html.theme-light .more-group-title,
+html.theme-light .more-group:nth-child(n) .more-group-title{color:#7a8392}
+html[data-theme="light"] .more-group+.more-group,
+html.theme-light .more-group+.more-group{margin-top:18px;padding-top:16px;border-top:1px solid #eef0f4}
+html[data-theme="light"] .more-item,
+html.theme-light .more-item{--more-a:#667085;--more-b:#667085;min-height:50px;border:1px solid #e1e5eb!important;background:#fff!important;color:#303846;box-shadow:0 2px 7px rgba(30,38,53,.055)!important;animation:none!important;filter:none!important}
+html[data-theme="light"] .more-item svg,
+html.theme-light .more-item svg{color:#667085;filter:none}
+html[data-theme="light"] .more-item:hover,
+html[data-theme="light"] .more-item:focus-visible,
+html.theme-light .more-item:hover,
+html.theme-light .more-item:focus-visible{border-color:#b9c2d0!important;background:#f7f8fa!important;color:#202733;box-shadow:0 5px 12px rgba(30,38,53,.09)!important;transform:translateY(-1px)}
+html[data-theme="light"] .more-item:active,
+html.theme-light .more-item:active{transform:translateY(0) scale(.985);background:#eef1f5!important;box-shadow:inset 0 1px 2px rgba(30,38,53,.08)!important}
+html[data-theme="light"] .more-item:focus-visible,
+html.theme-light .more-item:focus-visible{outline:2px solid #5964d8;outline-offset:2px}
+html[data-theme="light"] .more-item::after,
+html.theme-light .more-item::after{display:none!important}
+html[data-theme="light"] .more-sheet-footer,
+html.theme-light .more-sheet-footer{background:#fff;border-top-color:#e6e8ee}
+html[data-theme="light"] .more-sheet-footer .more-item,
+html.theme-light .more-sheet-footer .more-item{min-height:42px;background:#fff7f7!important;border-color:#f0d7da!important;color:#a94854;box-shadow:none!important}
+html[data-theme="light"] .more-sheet-footer .more-item svg,
+html.theme-light .more-sheet-footer .more-item svg{color:#b84e59}
+
 /* ═══════════════════════════════════════
    RESPONSIVE — thu gọn topbar + sidebar icon-rail thành bottom-nav trên điện thoại/tablet nhỏ
 ═══════════════════════════════════════ */
