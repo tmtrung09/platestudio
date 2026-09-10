@@ -106,6 +106,31 @@ const results = await page.evaluate(async () => {
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
   const follows = Node.DOCUMENT_POSITION_FOLLOWING;
   check('Thanh luồng xử lý nằm đầu trang trước tìm kiếm và các khối nghiệp vụ', Boolean(guide?.closest('.fulfillment-page-intro') && searchRow && workshopZone && (guide.compareDocumentPosition(searchRow) & follows) && (guide.compareDocumentPosition(workshopZone) & follows)), guide?.parentElement?.className || 'thiếu thanh');
+  /* Page layout is a shared primitive. Only named business blocks may be
+     customized; fixed guides, floating navigation and anonymous wrappers must
+     never leak into the user's list, including from a stale saved preference. */
+  const layoutItems = pageLayoutItems('fulfillment');
+  const layoutLabels = layoutItems.map(item => item.label);
+  const layoutSlots = layoutItems.map(item => item.slot);
+  check('Bố cục chỉ hiện các khối nghiệp vụ có tên rõ ràng', layoutLabels.includes('Gia công') && layoutLabels.includes('Cần xử lý') && layoutLabels.every(label => !/^(Khối\s*\d+|.*(?:fulfillment|flow|zone|guide).*)$/i.test(label)), layoutLabels.join(' · '));
+  check('Bố cục không nhận wrapper hoặc điều hướng nổi làm khối', !layoutItems.some(item => item.el.matches('.fulfillment-page-intro,#fulfillment-flow-guide,#fulfillment-flow-float,nav')), layoutItems.map(item => item.el.id || item.el.className).join(' · '));
+  const layoutOwner = pageLayoutOwnerKey();
+  const layoutPrefs = allPageLayoutPrefs();
+  layoutPrefs[layoutOwner] = { ...(layoutPrefs[layoutOwner] || {}), fulfillment: { order: ['fulfillment-flow-guide-0', 'fulfillment-workshop-zone-0', ...layoutSlots], hidden: ['fulfillment-flow-float-0', 'fulfillment-flow-guide-0'] } };
+  localStorage.setItem('ps_page_layout_prefs', JSON.stringify(layoutPrefs));
+  applyPageLayout('fulfillment');
+  const cleanedLayoutPrefs = pageLayoutPrefs('fulfillment');
+  check('Cấu hình bố cục cũ tự loại ID kỹ thuật đã lưu', [...cleanedLayoutPrefs.order, ...cleanedLayoutPrefs.hidden].every(slot => !/(flow-guide|flow-float|workshop-zone)/.test(slot)), JSON.stringify(cleanedLayoutPrefs));
+  check('Khối cố định vẫn hiển thị sau khi dọn cấu hình cũ', !document.querySelector('.fulfillment-page-intro')?.hidden && !document.getElementById('fulfillment-flow-float')?.hidden);
+  const layoutSandbox = document.createElement('main');
+  layoutSandbox.id = 'page-layout-qa';
+  layoutSandbox.innerHTML = '<section data-layout-internal id="internal-flow"><h2>Luồng nội bộ</h2></section><nav id="floating-nav" aria-label="Đi nhanh">Đi nhanh</nav><section id="unnamed-technical"></section><section data-layout-block="business-card" data-layout-label="Khối nghiệp vụ"><h2>Không dùng tên này</h2></section><section><h2>Tiêu đề nghiệp vụ</h2></section>';
+  document.body.append(layoutSandbox);
+  PAGE_LAYOUT_ROOTS['layout-qa'] = '#page-layout-qa';
+  const sandboxLabels = pageLayoutItems('layout-qa').map(item => item.label);
+  check('Primitive Bố cục loại vùng kỹ thuật trên mọi trang', sandboxLabels.length === 2 && sandboxLabels.includes('Khối nghiệp vụ') && sandboxLabels.includes('Tiêu đề nghiệp vụ'), sandboxLabels.join(' · '));
+  delete PAGE_LAYOUT_ROOTS['layout-qa'];
+  layoutSandbox.remove();
   check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
   const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
