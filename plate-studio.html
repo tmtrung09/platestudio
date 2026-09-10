@@ -4822,7 +4822,7 @@ const K = {
   models:'ps_models', fils:'ps_fils', projects:'ps_projects',
   orders:'ps_orders', plates:'ps_plates', pitems:'ps_pitems', brands:'ps_brands',
   batchReports:'ps_batch_reports', modelCategoriesPinned:'ps_model_categories_pinned', aiQueue:'ps_batch_ai_queue',
-  syncOutbox:'ps_sync_outbox', operations:'ps_operations', kiotViet:'ps_kiotviet', trash:'ps_trash', backups:'ps_backups', deliveryPhotoHub:'ps_delivery_photo_hub'
+  syncOutbox:'ps_sync_outbox', operations:'ps_operations', kiotViet:'ps_kiotviet', kiotSalesDetails:'ps_kiot_sales_details', trash:'ps_trash', backups:'ps_backups', deliveryPhotoHub:'ps_delivery_photo_hub'
 };
 /* Phải có trước lần lưu dữ liệu đầu tiên của profile mới, vì sv() có thể tạo
    bản sao ngay trong lúc khởi tạo localStorage. */
@@ -5127,6 +5127,14 @@ let kiotViet = ld(K.kiotViet, {catalog:[],snapshots:[],mappings:[],skippedSkus:[
 if(!kiotViet || typeof kiotViet!=='object') kiotViet={catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[],lastCatalogImportAt:'',lastCatalogFile:'',lastSalesImportAt:'',lastSalesFile:''};
 ['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(k=>{if(!Array.isArray(kiotViet[k]))kiotViet[k]=[];});
 if(!kiotViet.salesImports.length&&kiotViet.sales.length)kiotViet.salesImports.push({id:'legacy-sales-import',importedAt:kiotViet.lastSalesImportAt||new Date().toISOString(),fileName:kiotViet.lastSalesFile||'Dữ liệu bán hàng trước đây',source:'legacy',period:null,sales:kiotViet.sales});
+/* Lịch sử bán có thể lớn dần từng ngày. Metadata còn ở settings để app mở
+   offline được, nhưng chi tiết SKU chỉ cache cục bộ và được lưu server theo
+   từng báo cáo. Tuyệt đối không đẩy lại toàn bộ lịch sử trong settings. */
+const KIOT_SALES_REPORTS_TABLE='kiot_sales_reports',KIOT_SALES_LINES_TABLE='kiot_sales_report_lines',KIOT_SALES_DETAIL_CACHE_LIMIT=31;
+let kiotSalesDetailCache=ld(K.kiotSalesDetails,{});
+if(!kiotSalesDetailCache||typeof kiotSalesDetailCache!=='object'||Array.isArray(kiotSalesDetailCache))kiotSalesDetailCache={};
+let kiotSalesArchiveAvailable=true,kiotSalesArchiveLoaded=false,kiotSalesArchiveLoading=null,kiotSalesArchiveWorkspace='',kiotSalesArchiveReadyForSettings=false;
+let kiotSalesArchiveRefreshTimer=0;
 if(!kiotViet.inventoryInsight || typeof kiotViet.inventoryInsight!=='object') kiotViet.inventoryInsight=null;
 function systemUndoSnapshot(){
   try{return JSON.stringify({models,fils,projects,orders,plates,pitems,brands,modelCategoriesPinned,batchReports,trashItems,operations,kiotViet});}catch(error){console.warn('Không thể tạo mốc hoàn tác',error);return '';}
@@ -5695,7 +5703,7 @@ function saveLocalValue(key, value) {
   try { localStorage.setItem(key, JSON.stringify(lightLocalValue(key,value))); }
   catch(error) { console.warn('Local cache skipped', key, error); }
 }
-function getCloudCollections() { return {models, fils, projects, orders, plates, pitems, settings:[{id:'brands', values:brands},{id:'operations',values:operations},{id:'kiotviet',values:kiotViet},{id:'trash',values:trashItems},{id:'delivery_photo_hub',values:deliveryPhotoHub}], batchReports}; }
+function getCloudCollections() { return {models, fils, projects, orders, plates, pitems, settings:[{id:'brands', values:brands},{id:'operations',values:operations},{id:'kiotviet',values:kiotVietForCloudSettings()},{id:'trash',values:trashItems},{id:'delivery_photo_hub',values:deliveryPhotoHub}], batchReports}; }
 function saveLocalCollections() {
   [[K.models,models],[K.fils,fils],[K.projects,projects],[K.orders,orders],[K.plates,plates],[K.pitems,pitems],[K.brands,brands],[K.operations,operations],[K.kiotViet,kiotViet],[K.trash,trashItems],[K.deliveryPhotoHub,deliveryPhotoHub]]
     .forEach(([k,v]) => saveLocalValue(k,v));
@@ -6279,6 +6287,10 @@ function setupCloudRealtime() {
       if(workspace===cloudWorkspaceId()) scheduleCloudRefresh(key);
     });
   });
+  channel.on('postgres_changes',{event:'*',schema:'public',table:KIOT_SALES_REPORTS_TABLE},payload=>{
+    const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
+    if(workspace===cloudWorkspaceId())scheduleKiotSalesArchiveRefresh();
+  });
   channel.subscribe((status,error)=>handleCloudRealtimeStatus(channel,status,error));
 }
 async function loadCloudData() {
@@ -6551,6 +6563,12 @@ async function startCloudSession(session) {
     registerBatchDevice();
     installCloudRemoteReconcileListeners();
     setupCloudRealtime();
+    loadKiotSalesArchiveIndex().then(async()=>{
+      await migrateLegacyKiotSalesArchive();
+      if(curPage==='kiotviet')renderKiotVietPage();
+      if(curPage==='sales')renderSalesPage();
+      if(curPage==='inventory')renderInventoryPage();
+    });
     /* Mốc được ghi sau lần tải đầu tiên, nhờ đó lần đối chiếu nền chỉ nạp lại
        đúng khi cloud đã đổi — không tự dựng lại giao diện vô ích. */
     primeCloudRemoteRevisions();
@@ -17398,12 +17416,150 @@ async function saveQualityIssue(orderId,itemId,partId){
    Không có API: mọi số liệu đều là ảnh chụp tại thời điểm export file.
 ═══════════════════════════════════════ */
 function saveKiotViet(){
-  sv(K.kiotViet,kiotViet); renderSb();
+  (kiotViet.salesImports||[]).forEach(persistKiotSalesDetail);
+  /* Local settings giữ chỉ mục; cache chi tiết có key riêng và giới hạn. Nhờ
+     vậy save Kiot không còn phình dần theo số file đã lấy. */
+  saveLocalValue(K.kiotViet,kiotVietForCloudSettings());
+  if(cloudReady&&!loadingCloud)scheduleCloudSync();renderSb();
   if(curPage==='kiotviet')renderKiotVietPage();
   if(curPage==='sales')renderSalesPage();
   if(curPage==='inventory')renderInventoryPage();
   if(curPage==='models')renderModels();
   if(curPage==='dashboard')renderDashboard();
+}
+function kiotSalesArchiveEntry(entry){
+  const {sales,...meta}=entry||{};
+  const period=meta.period||{};
+  const day=/^\d{4}-\d{2}-\d{2}$/.test(period.from||'')&&period.from===period.to?period.from:'';
+  const metrics=kiotSalesImportMetrics(entry);
+  return {...meta,period:day?{from:day,to:day}:period,skuCount:Number(meta.skuCount??metrics.sku)||0,qtyTotal:Number(meta.qtyTotal??metrics.qty)||0,revenueTotal:Number(meta.revenueTotal??metrics.revenue)||0};
+}
+function kiotVietForCloudSettings(){
+  /* Không cho JSON settings phình theo số ngày. `sales` chỉ là tiện ích cache
+     của phiên hiện tại; cloud dùng bảng kiot_sales_* làm nguồn chi tiết. Giữ
+     bản tương thích nguyên vẹn cho đến khi lịch sử cũ đã chuyển kho xong. */
+  if(!kiotSalesArchiveReadyForSettings)return kiotViet;
+  return {...kiotViet,sales:[],salesImports:(kiotViet.salesImports||[]).map(kiotSalesArchiveEntry)};
+}
+function persistKiotSalesDetail(entry){
+  if(!entry?.id||!Array.isArray(entry.sales))return;
+  kiotSalesDetailCache[entry.id]={sales:entry.sales,updatedAt:entry.importedAt||new Date().toISOString()};
+  const keep=Object.entries(kiotSalesDetailCache).sort(([,a],[,b])=>String(b?.updatedAt||'').localeCompare(String(a?.updatedAt||''))).slice(0,KIOT_SALES_DETAIL_CACHE_LIMIT);
+  kiotSalesDetailCache=Object.fromEntries(keep);saveLocalValue(K.kiotSalesDetails,kiotSalesDetailCache);
+}
+function compactKiotSalesInMemory(){
+  /* Giữ vài ngày gần nhất đang xem trong RAM; các ngày cũ đã có cache/server
+     chỉ còn metadata. Đây là chốt tránh tab mở lâu dần khi bù nhiều tháng. */
+  const keep=new Set((kiotViet.salesImports||[]).slice(0,7).map(entry=>entry.id));
+  (kiotViet.salesImports||[]).forEach(entry=>{
+    if(keep.has(entry.id)||!Array.isArray(entry.sales))return;
+    persistKiotSalesDetail(entry);delete entry.sales;entry.detailLoaded=false;
+  });
+}
+function hydrateKiotSalesDetail(entry){
+  if(!entry?.id||Array.isArray(entry.sales)&&entry.sales.length)return entry;
+  const cached=kiotSalesDetailCache[entry.id]?.sales;
+  if(Array.isArray(cached)){entry.sales=cached;entry.detailLoaded=true;}
+  return entry;
+}
+function kiotSalesArchiveRow(row){
+  const entry={id:row.id,importedAt:row.imported_at||row.updated_at||'',fileName:row.file_name||'Báo cáo KiotViet',source:row.source||'chrome',note:row.note||'',period:{from:row.report_day,to:row.report_day},skuCount:Number(row.sku_count)||0,qtyTotal:Number(row.quantity_total)||0,revenueTotal:Number(row.revenue_total)||0,detailLoaded:false};
+  return hydrateKiotSalesDetail(entry);
+}
+function mergeKiotSalesArchiveIndex(rows){
+  const localByDay=new Map((kiotViet.salesImports||[]).map(entry=>[kiotSalesImportKey(entry),entry]));
+  const merged=(rows||[]).map(row=>{
+    const entry=kiotSalesArchiveRow(row),legacy=localByDay.get(kiotSalesImportKey(entry));
+    if(legacy?.sales?.length){entry.sales=legacy.sales;entry.archiveMigrated=true;}
+    return entry;
+  });
+  /* Khi migration chưa được chạy, các báo cáo cũ local/settings vẫn là nguồn
+     tương thích. Không bỏ dữ liệu chỉ vì bảng mới hiện đang rỗng. */
+  /* Một lần chuyển đổi có thể bị ngắt giữa chừng. Giữ các ngày local chưa có
+     trên server để lần kế tiếp tiếp tục chuyển, thay vì vô tình bỏ chúng. */
+  const archivedDays=new Set(merged.map(kiotSalesImportKey));
+  localByDay.forEach((legacy,day)=>{if(!archivedDays.has(day))merged.push(legacy);});
+  if(!merged.length)return kiotViet.salesImports||[];
+  kiotViet.salesImports=merged;sortKiotSalesImports();return kiotViet.salesImports;
+}
+async function loadKiotSalesArchiveIndex({force=false}={}){
+  const workspace=cloudWorkspaceId();
+  if(!sb||!currentUser||!workspace||!kiotSalesArchiveAvailable)return kiotViet.salesImports||[];
+  if(kiotSalesArchiveWorkspace!==workspace){kiotSalesArchiveWorkspace=workspace;kiotSalesArchiveLoaded=false;kiotSalesArchiveReadyForSettings=false;}
+  if(kiotSalesArchiveLoaded&&!force)return kiotViet.salesImports||[];
+  if(kiotSalesArchiveLoading)return kiotSalesArchiveLoading;
+  kiotSalesArchiveLoading=(async()=>{
+    try{
+      /* Chỉ mục là metadata nhỏ, nhưng vẫn phân trang để lịch sử nhiều năm
+         không bị cắt ở giới hạn mặc định của API. Chi tiết từng ngày tải lười. */
+      const rows=[],pageSize=500;
+      for(let offset=0;;offset+=pageSize){
+        const {data,error}=await sb.from(KIOT_SALES_REPORTS_TABLE).select('id,report_day,source,file_name,note,sku_count,quantity_total,revenue_total,imported_at,updated_at').eq('workspace_id',workspace).order('report_day',{ascending:false}).range(offset,offset+pageSize-1);
+        if(error)throw error;rows.push(...(data||[]));if((data||[]).length<pageSize)break;
+      }
+      mergeKiotSalesArchiveIndex(rows);kiotSalesArchiveLoaded=true;
+      saveLocalValue(K.kiotViet,kiotViet);
+      return kiotViet.salesImports||[];
+    }catch(error){
+      if(error.code==='42P01'||error.code==='PGRST205'){kiotSalesArchiveAvailable=false;console.warn('Chưa có bảng lịch sử bán theo ngày; dùng dữ liệu tương thích.',error);}
+      else console.warn('Không tải được chỉ mục báo cáo bán',error);
+      return kiotViet.salesImports||[];
+    }finally{kiotSalesArchiveLoading=null;}
+  })();
+  return kiotSalesArchiveLoading;
+}
+async function migrateLegacyKiotSalesArchive(){
+  if(!kiotSalesArchiveLoaded||!kiotSalesArchiveAvailable)return false;
+  const legacy=(kiotViet.salesImports||[]).filter(entry=>Array.isArray(entry.sales)&&entry.sales.length&&!entry.archiveMigrated);
+  if(!legacy.length){kiotSalesArchiveReadyForSettings=true;return true;}
+  let complete=true;
+  for(const entry of legacy){
+    const saved=await persistKiotSalesArchive(entry);
+    if(saved)entry.archiveMigrated=true;
+    else {complete=false;break;}
+  }
+  if(complete){kiotSalesArchiveReadyForSettings=true;compactKiotSalesInMemory();saveLocalValue(K.kiotViet,kiotViet);}
+  return complete;
+}
+function scheduleKiotSalesArchiveRefresh(){
+  if(Date.now()-lastCloudWriteAt<1200||cloudSyncing)return;
+  clearTimeout(kiotSalesArchiveRefreshTimer);
+  kiotSalesArchiveRefreshTimer=setTimeout(()=>loadKiotSalesArchiveIndex({force:true}).then(()=>{
+    if(curPage==='kiotviet')renderKiotVietPage();
+    if(curPage==='sales')renderSalesPage();
+    if(curPage==='inventory')renderInventoryPage();
+  }),450);
+}
+async function loadKiotSalesArchiveDetail(entry){
+  if(!entry)return null;hydrateKiotSalesDetail(entry);if(Array.isArray(entry.sales)&&entry.sales.length)return entry;
+  if(!sb||!currentUser||!cloudWorkspaceId()||!kiotSalesArchiveAvailable)return entry;
+  try{
+    const {data,error}=await sb.from(KIOT_SALES_LINES_TABLE).select('sku,name,category,quantity,revenue').eq('workspace_id',cloudWorkspaceId()).eq('report_id',entry.id).order('sku',{ascending:true});
+    if(error)throw error;
+    entry.sales=(data||[]).map(line=>({sku:line.sku,name:line.name,category:line.category,qty:Number(line.quantity)||0,revenue:Number(line.revenue)||0}));entry.detailLoaded=true;persistKiotSalesDetail(entry);return entry;
+  }catch(error){console.warn('Không tải được chi tiết báo cáo bán',error);return entry;}
+}
+async function persistKiotSalesArchive(entry){
+  const day=kiotSalesReportDay(entry),workspace=cloudWorkspaceId();
+  if(!sb||!currentUser||!workspace||!kiotSalesArchiveAvailable||!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Array.isArray(entry?.sales))return false;
+  const metrics=kiotSalesImportMetrics(entry),lines=kiotSalesRows(entry).map(row=>({sku:String(row.sku||'').trim(),name:String(row.name||''),category:String(row.category||''),quantity:Math.max(0,Number(row.qty)||0),revenue:Math.max(0,Number(row.revenue)||0)})).filter(row=>row.sku);
+  try{
+    const {data,error}=await sb.rpc('replace_kiot_sales_report',{p_workspace_id:workspace,p_report_day:day,p_source:entry.source||'chrome',p_file_name:entry.fileName||'',p_note:entry.note||'',p_sku_count:metrics.sku,p_quantity_total:metrics.qty,p_revenue_total:metrics.revenue,p_lines:lines});
+    if(error)throw error;
+    if(data?.[0]?.id)entry.id=data[0].id;
+    entry.period={from:day,to:day};entry.skuCount=metrics.sku;entry.qtyTotal=metrics.qty;entry.revenueTotal=metrics.revenue;persistKiotSalesDetail(entry);kiotSalesArchiveLoaded=false;
+    return true;
+  }catch(error){
+    if(error.code==='PGRST202'||error.code==='42P01'||error.code==='PGRST205')kiotSalesArchiveAvailable=false;
+    console.warn('Không lưu được báo cáo bán vào kho dữ liệu riêng',error);return false;
+  }
+}
+async function deleteKiotSalesArchive(entry){
+  if(!entry?.id||!sb||!currentUser||!cloudWorkspaceId()||!kiotSalesArchiveAvailable)return true;
+  try{
+    const {error}=await sb.from(KIOT_SALES_REPORTS_TABLE).delete().eq('workspace_id',cloudWorkspaceId()).eq('id',entry.id);
+    if(error)throw error;delete kiotSalesDetailCache[entry.id];saveLocalValue(K.kiotSalesDetails,kiotSalesDetailCache);return true;
+  }catch(error){console.warn('Không xóa được báo cáo bán trên cloud',error);toast('Không thể xóa báo cáo trên cloud; dữ liệu được giữ nguyên.');return false;}
 }
 
 /* ── Nhắc tồn kho ──────────────────────────────────────────────────────
@@ -17613,7 +17769,10 @@ async function kvReadSalesReportPeriod(file){
   }catch(_){return null;}
 }
 function kiotSalesProductRow(row){const sku=String(row?.sku||'').trim(),name=String(row?.name||'').trim(),text=kvNorm(`${sku} ${name}`);return Boolean(sku||name)&&Number(row?.qty)>0&&!/^(sl mat hang|tong|tổng|doanh thu|gia tri tra)/.test(text);}
-function kiotSalesRows(entry){return (entry?.sales||[]).filter(kiotSalesProductRow);}
+function kiotSalesRows(entry){
+  hydrateKiotSalesDetail(entry);
+  return (entry?.sales||[]).filter(kiotSalesProductRow);
+}
 function kiotSalesImportMetrics(entry){const rows=kiotSalesRows(entry);return {sku:rows.length,qty:rows.reduce((sum,row)=>sum+(Number(row.qty)||0),0),revenue:rows.reduce((sum,row)=>sum+(Number(row.revenue)||0),0)};}
 function kiotSalesImportPeriodLabel(entry){const period=entry?.period;if(period?.from&&period?.to)return `${fmtDate(period.from)} – ${fmtDate(period.to)}`;return 'Chưa xác định kỳ';}
 function kiotSalesImportKey(entry){const period=entry?.period;return period?.from&&period?.to?`${period.from}:${period.to}`:'';}
@@ -17629,6 +17788,28 @@ function openManualKiotSalesDialog(date=''){
   const day=/^\d{4}-\d{2}-\d{2}$/.test(date)?date:manualKiotSalesToday(),existing=(kiotViet.salesImports||[]).find(entry=>entry?.period?.from===day&&entry?.period?.to===day),ov=document.getElementById('dlg-mv');
   ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Tải báo cáo bán theo ngày</div><p class="manual-sales-note">Chọn ngày bán, rồi tải file báo cáo <b>Bán hàng theo hàng hóa</b> xuất từ KiotViet. Hệ thống sẽ gắn file vào đúng ngày bạn chọn${existing?' và thay báo cáo đang có của ngày này':''}.</p><div class="manual-sales-meta"><label class="field"><span>Ngày bán</span><input id="manual-sales-date" type="date" value="${esc(day)}"></label><label class="field"><span>Ghi chú</span><input id="manual-sales-note" placeholder="Ví dụ: báo cáo ca tối, cửa hàng 1..."></label></div><label class="field"><span>File báo cáo KiotViet</span><input id="manual-sales-file" type="file" accept=".xlsx,.xls,.csv" onchange="importKiotSalesFileForDate(this)"></label><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" type="button" onclick="document.getElementById('manual-sales-file')?.click()">Chọn file báo cáo</button></div></div>`;
   ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};
+}
+function kiotSalesRangeDayBefore(day){const date=new Date(`${day}T12:00:00Z`);date.setUTCDate(date.getUTCDate()-1);return date.toISOString().slice(0,10);}
+function kiotSalesRangeToday(){return new Date().toISOString().slice(0,10);}
+function kiotSalesRangeDays(from,to){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(from||'')||!/^\d{4}-\d{2}-\d{2}$/.test(to||'')||from>to)return [];
+  const days=[],cursor=new Date(`${from}T12:00:00Z`),end=new Date(`${to}T12:00:00Z`);
+  while(cursor<=end&&days.length<=730){days.push(cursor.toISOString().slice(0,10));cursor.setUTCDate(cursor.getUTCDate()+1);}return days;
+}
+function kiotSalesMissingDays(from,to){
+  const recorded=new Set((kiotViet.salesImports||[]).map(kiotSalesReportDay).filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)));
+  return kiotSalesRangeDays(from,to).filter(day=>!recorded.has(day));
+}
+function previewKiotSalesRange(){
+  const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'',missing=kiotSalesMissingDays(from,to),summary=document.getElementById('kiot-sales-range-summary'),button=document.getElementById('kiot-sales-range-start');
+  if(summary)summary.textContent=!from||!to||from>to?'Chọn một khoảng ngày hợp lệ.':missing.length?`Còn thiếu ${missing.length} ngày: ${missing.slice(0,5).map(fmtDate).join(', ')}${missing.length>5?'…':''}`:'Khoảng này đã đủ báo cáo.';
+  if(button)button.disabled=true;
+}
+async function openKiotSalesRangeDialog(){
+  await loadKiotSalesArchiveIndex();
+  const to=kiotSalesRangeDayBefore(kiotSalesRangeToday()),from=kiotSalesRangeDayBefore(to),ov=document.getElementById('dlg-mv');
+  ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Bù báo cáo bán theo khoảng</div><p class="manual-sales-note">Plate Studio sẽ rà ngày thiếu trong khoảng này, rồi xếp Chrome lấy <b>từng ngày một</b>. Dữ liệu chỉ được đánh dấu xong sau khi file của ngày đó đã nhập hợp lệ.</p><div class="manual-sales-meta"><label class="field"><span>Từ ngày</span><input id="kiot-sales-range-from" type="date" value="${esc(from)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label><label class="field"><span>Đến ngày</span><input id="kiot-sales-range-to" type="date" value="${esc(to)}" max="${esc(to)}" onchange="previewKiotSalesRange()"></label></div><div id="kiot-sales-range-summary" class="manual-sales-note" style="margin-top:12px"></div><div class="kv-note" style="margin-top:10px">Chưa thể bật lấy tự động: cần một lượt ghi mẫu thao tác chọn cùng ngày ở Từ ngày và Đến ngày trên KiotViet. Hệ thống đang chặn luồng này để không gán nhầm báo cáo cả năm vào một ngày.</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button id="kiot-sales-range-start" class="btn btn-ac" type="button" disabled>Chờ ghi mẫu extension</button></div></div>`;
+  ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};previewKiotSalesRange();
 }
 async function importKiotSalesFileForDate(input){
   const day=document.getElementById('manual-sales-date')?.value||'',note=document.getElementById('manual-sales-note')?.value.trim()||'';
@@ -17673,7 +17854,12 @@ function renderSalesPage(){
   const host=document.getElementById('sales-page');if(!host)return;
   const imports=(kiotViet.salesImports||[]).slice();
   if(!imports.length){host.innerHTML=`<div class="sales-page"><section class="sales-hero"><div><h2>Chưa có dữ liệu bán hàng</h2><p>Tải file báo cáo KiotViet và gắn vào đúng ngày bán để bắt đầu theo dõi.</p></div><div class="sales-hero-actions"><button class="btn btn-ghost" onclick="goPage('kiotviet')">Nhập file KiotViet</button><button class="btn btn-ac" onclick="openManualKiotSalesDialog()">+ Tải file theo ngày</button></div></section></div>`;return;}
-  const report=salesPageReport(),rows=salesPageRows(report),metrics=kiotSalesImportMetrics(report),restocks=getSalesRestockNeeds(report),urgent=restocks.filter(row=>row.state!=='normal');
+  const report=salesPageReport();
+  if(report&&!report.detailLoaded&&!kiotSalesRows(report).length&&currentUser&&sb&&kiotSalesArchiveAvailable){
+    host.innerHTML='<div class="sales-page"><section class="sales-panel"><div class="empty">Đang tải chi tiết báo cáo bán…</div></section></div>';
+    loadKiotSalesArchiveDetail(report).then(()=>{if(curPage==='sales')renderSalesPage();});return;
+  }
+  const rows=salesPageRows(report),metrics=kiotSalesImportMetrics(report),restocks=getSalesRestockNeeds(report),urgent=restocks.filter(row=>row.state!=='normal');
   const categoryMap=new Map();rows.forEach(row=>{const name=row.category||row.product?.category||'Chưa phân nhóm',item=categoryMap.get(name)||{name,qty:0,revenue:0,sku:0};item.qty+=row.qty;item.revenue+=row.revenue;item.sku++;categoryMap.set(name,item);});
   const categories=[...categoryMap.values()].sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue).slice(0,7);
   const reportId=String(report.id||''),options=imports.map(entry=>`<option value="${esc(entry.id)}"${entry.id===report.id?' selected':''}>${esc(kiotSalesImportPeriodLabel(entry))} · ${kiotSalesImportMetrics(entry).qty.toLocaleString('vi-VN')} bán</option>`).join('');
@@ -17685,18 +17871,23 @@ function renderSalesPage(){
 function kiotSalesHistoryHTML(){
   /* Lối vào nhanh cho nhân viên chỉ có số bán trong ngày, không cần file Excel. */
   const imports=(kiotViet.salesImports||[]).slice(0,8),rows=imports.map(entry=>{const metric=kiotSalesImportMetrics(entry);return `<div class="kiot-sales-history-row"><div><b>${esc(kiotSalesImportPeriodLabel(entry))}</b><small>${fmtDate(entry.importedAt)} · ${metric.sku} SKU · ${metric.qty.toLocaleString('vi-VN')} bán${kiotSalesSourceLabel(entry)}</small></div><button class="btn btn-ghost btn-xs" onclick="openKiotSalesComparison('${entry.id}')">Xem báo cáo</button></div>`;}).join('');
-  return `<section id="kiot-sales-history-card" class="card" style="margin-top:14px;padding:14px"><div class="kiot-sales-history-head"><div class="card-title">Lịch sử bán hằng ngày <span class="sect-count">${(kiotViet.salesImports||[]).length}</span></div><button class="btn btn-ghost btn-xs" onclick="openKiotSalesHistoryManager()">Quản lý</button></div><div class="kiot-sales-history">${rows||'<div class="kiot-sales-history-empty">Chưa có file bán theo ngày.</div>'}</div></section>`;
+  return `<section id="kiot-sales-history-card" class="card" style="margin-top:14px;padding:14px"><div class="kiot-sales-history-head"><div class="card-title">Lịch sử bán hằng ngày <span class="sect-count">${(kiotViet.salesImports||[]).length}</span></div><div class="kiot-sales-history-actions"><button class="btn btn-ac btn-xs" onclick="openKiotSalesRangeDialog()">Bù khoảng ngày</button><button class="btn btn-ghost btn-xs" onclick="openKiotSalesHistoryManager()">Quản lý</button></div></div><div class="kiot-sales-history">${rows||'<div class="kiot-sales-history-empty">Chưa có file bán theo ngày.</div>'}</div></section>`;
 }
 function openKiotSalesHistoryManager(){
   const imports=kiotViet.salesImports||[],rows=imports.map(entry=>{const metric=kiotSalesImportMetrics(entry);return `<div class="kiot-sales-history-row"><div><b>${esc(kiotSalesImportPeriodLabel(entry))}</b><small>${fmtDate(entry.importedAt)} · ${metric.sku} SKU · ${metric.qty.toLocaleString('vi-VN')} bán${kiotSalesSourceLabel(entry)} · ${esc(entry.fileName||'Không rõ tên file')}</small></div><div class="kiot-sales-history-actions"><button class="btn btn-ghost btn-xs" onclick="openKiotSalesComparison('${entry.id}')">Xem</button><button class="btn btn-danger btn-xs" onclick="removeKiotSalesImport('${entry.id}')">Xóa</button></div></div>`;}).join('')||'<div class="kiot-sales-history-empty">Chưa có bản ghi nào.</div>';
   const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Quản lý lịch sử bán hàng</div><div style="font-size:12px;color:var(--t3);margin:-.4rem 0 12px">Mỗi ngày chỉ lưu một báo cáo. Nhập lại cùng kỳ sẽ thay thế bản ghi cũ.</div><div class="kiot-sales-history">${rows}</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};
 }
-function removeKiotSalesImport(id){
+async function removeKiotSalesImport(id){
   const entry=(kiotViet.salesImports||[]).find(row=>row.id===id);if(!entry||!confirm(`Xóa báo cáo ${kiotSalesImportPeriodLabel(entry)}?`))return;
+  if(!await deleteKiotSalesArchive(entry))return;
   kiotViet.salesImports=kiotViet.salesImports.filter(row=>row.id!==id);const latest=kiotViet.salesImports[0];kiotViet.sales=latest?.sales||[];kiotViet.lastSalesImportAt=latest?.importedAt||'';kiotViet.lastSalesFile=latest?.fileName||'';saveKiotViet();forgetKiotDailyImport(entry.period);openKiotSalesHistoryManager();toast('Đã xóa bản ghi bán hàng.');
 }
 function openKiotSalesComparison(id){
   const imports=kiotViet.salesImports||[],index=imports.findIndex(entry=>entry.id===id),current=imports[index];if(!current)return;
+  if(!current.detailLoaded&&!kiotSalesRows(current).length&&currentUser&&sb&&kiotSalesArchiveAvailable){
+    const ov=document.getElementById('dlg-mv');ov.innerHTML='<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Đang tải báo cáo</div><div class="empty">Đang tải chi tiết của ngày đã chọn…</div></div>';ov.style.display='flex';
+    loadKiotSalesArchiveDetail(current).then(()=>openKiotSalesComparison(id));return;
+  }
   const rows=kiotSalesRows(current).sort((a,b)=>(Number(b.qty)||0)-(Number(a.qty)||0)||String(a.name||'').localeCompare(String(b.name||''),'vi')),metric=kiotSalesImportMetrics(current),body=`<div class="kv-summary" style="margin:0 0 12px"><div class="kv-kpi"><b>${metric.sku}</b><span>SKU đã bán</span></div><div class="kv-kpi"><b>${metric.qty.toLocaleString('vi-VN')}</b><span>Sản phẩm đã bán</span></div></div><div class="kiot-sales-history">${rows.length?rows.map(row=>{const image=kiotSalesImageForSku(row.sku);return `<div class="kiot-sales-history-row"><div class="kiot-sales-history-product"><span class="kiot-sales-history-thumb">${image?`<img src="${esc(image)}" alt="" loading="lazy" onerror="this.parentElement.textContent='📦'"/>`:'📦'}</span><div><b>${esc(kiotSalesDisplayName(row.name||row.sku))}</b><small>${esc(row.sku)}</small></div></div><div style="text-align:right;flex:0 0 auto"><b>${Number(row.qty).toLocaleString('vi-VN')}</b><small>bán</small></div></div>`;}).join(''):'<div class="kiot-sales-history-empty">Không có sản phẩm đã bán trong file này.</div>'}</div>`;
   const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Báo cáo sản phẩm đã bán</div><div style="font-size:12px;color:var(--t3);margin:-.4rem 0 12px">${esc(kiotSalesImportPeriodLabel(current))} · nhập ${fmtDate(current.importedAt)}</div>${body}<div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};
 }
@@ -17775,7 +17966,7 @@ let kiotScheduledWatch=0;
 async function watchKiotScheduledImport(){
   try{
     const job=await kiotChromeSyncRequest('/job');
-    if(job?.origin==='scheduled'&&job.status==='downloaded'&&kiotChromeSync.importedJobId!==job.id&&kiotChromeSync.jobId!==job.id){
+    if(['scheduled','range'].includes(job?.origin)&&job.status==='downloaded'&&kiotChromeSync.importedJobId!==job.id&&kiotChromeSync.jobId!==job.id){
       kiotChromeSync={status:'downloaded',detail:job.detail||'Đã nhận file từ lịch nền.',jobId:job.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();
     }
   }catch{}finally{kiotScheduledWatch=setTimeout(watchKiotScheduledImport,8000);}
@@ -17788,7 +17979,12 @@ async function pollKiotChromeSync(){
     if(job.status==='downloaded'&&kiotChromeSync.importedJobId!==job.id){
       kiotChromeSync.importedJobId=job.id;const download=await fetch(KIOT_CHROME_SYNC_API+'/download');if(!download.ok)throw new Error('Không đọc được file Excel vừa tải từ Chrome.');
       const blob=await download.blob(),file=new File([blob],job.fileName||'Bao-cao-KiotViet.xls',{type:blob.type||'application/vnd.ms-excel'});
-      const source=job.origin==='scheduled'?'scheduled':'chrome',imported=await importKiotSalesFile({files:[file],value:''},source);if(!imported){await kiotChromeSyncRequest('/extension/error',{method:'POST',body:JSON.stringify({id:job.id,detail:'Plate Studio không đọc được file Excel vừa tải.'})});throw new Error('Không thể nhập file Excel vừa tải.');}await kiotChromeSyncRequest('/acknowledge',{method:'POST',body:JSON.stringify({id:job.id})});
+      const source=job.origin==='scheduled'?'scheduled':job.origin==='range'?'range':'chrome',day=job.reportDay||job.scheduledFor||'',periodOverride=/^\d{4}-\d{2}-\d{2}$/.test(day)?{from:day,to:day}:null,imported=await importKiotSalesFile({files:[file],value:''},source,periodOverride);if(!imported){await kiotChromeSyncRequest('/extension/error',{method:'POST',body:JSON.stringify({id:job.id,detail:'Plate Studio không đọc được file Excel vừa tải.'})});throw new Error('Không thể nhập file Excel vừa tải.');}
+      const acknowledged=await kiotChromeSyncRequest('/acknowledge',{method:'POST',body:JSON.stringify({id:job.id})});
+      const next=acknowledged?.job;
+      if(job.origin==='range'&&next?.id&&['requested','claimed','running','downloaded'].includes(next.status)){
+        kiotChromeSync={status:next.status,detail:next.detail||'Đang lấy ngày tiếp theo…',jobId:next.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();return;
+      }
       kiotChromeSync.status='imported';kiotChromeSync.detail='✓ Đã nhập báo cáo bán hàng từ Chrome.';updateKiotChromeSyncUI();setTimeout(()=>{if(curPage==='kiotviet')renderKiotVietPage();},450);stopKiotChromeSyncPolling();return;
     }
     if(job.status==='error'){stopKiotChromeSyncPolling();showActionDialog({title:'Không thể đồng bộ Chrome',icon:'⚠️',message:esc(job.detail||'Chrome không hoàn thành thao tác. Hãy mở KiotViet và thử lại.'),primaryLabel:'Đã hiểu'});return;}
@@ -17810,7 +18006,11 @@ async function importKiotSalesFile(input,source='manual',periodOverride=null,not
     if(!sales.length) throw new Error('Không nhận diện được dữ liệu bán hàng. Hãy chọn báo cáo “Bán hàng theo hàng hóa / nhóm hàng” có Mã hàng.');
     const useOverride=/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.from||'')&&/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.to||''),reportPeriod=useOverride?{from:periodOverride.from,to:periodOverride.to}:period;
     const importedAt=new Date().toISOString();kiotViet.salesImports=Array.isArray(kiotViet.salesImports)?kiotViet.salesImports:[];const entry={id:uid(),importedAt,fileName:file.name,source,period:reportPeriod,note:String(note||''),sales},key=kiotSalesImportKey(entry),existingIndex=key?kiotViet.salesImports.findIndex(row=>kiotSalesImportKey(row)===key):-1;
-    if(existingIndex>=0)entry.id=kiotViet.salesImports[existingIndex].id,kiotViet.salesImports.splice(existingIndex,1);kiotViet.salesImports.push(entry);sortKiotSalesImports();kiotViet.salesImports=kiotViet.salesImports.slice(0,90);
+    /* Khi schema mới đã có, mỗi ngày là một báo cáo độc lập trên server. File
+       được parse xong rồi bỏ; không dồn hàng trăm ngày SKU vào settings JSON. */
+    const archived=await persistKiotSalesArchive(entry);
+    if(existingIndex>=0)kiotViet.salesImports.splice(existingIndex,1);kiotViet.salesImports.push(entry);sortKiotSalesImports();compactKiotSalesInMemory();
+    if(!archived)kiotViet.salesImports=kiotViet.salesImports.slice(0,90);
     kiotViet.sales=sales;kiotViet.lastSalesImportAt=importedAt;kiotViet.lastSalesFile=file.name;salesPageReportId=entry.id;closeDialog('dlg-mv');saveKiotViet();markKiotDailyImport(reportPeriod);toast(`${existingIndex>=0?'✓ Đã cập nhật':'✓ Đã lưu'} báo cáo ${useOverride?`ngày ${fmtDate(reportPeriod.from)}`:'bán hàng'}: ${sales.length} SKU.`);return true;
   }catch(error){toast('Không thể nhập báo cáo bán hàng: '+error.message,6000);return false;}
 }

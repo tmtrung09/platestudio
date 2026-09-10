@@ -3,7 +3,8 @@
     "qa:mobile": "node tools/mobile-qa.mjs",
     "qa:desktop": "node tools/desktop-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs",
-    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow"
+    "qa:kiot-sync": "node tools/kiot-sync-qa.mjs",
+    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

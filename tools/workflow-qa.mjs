@@ -471,6 +471,21 @@ const results = await page.evaluate(async () => {
   cloudRemoteRevisions.clear(); priorCloudSync.revisions.forEach(([key, revision]) => cloudRemoteRevisions.set(key, revision));
   queueRemoteDataRefresh = priorCloudSync.queue;
 
+  /* Lịch sử bán tăng mỗi ngày phải không bị nhét lại vào settings JSON. Chỉ
+     metadata được đồng bộ; chi tiết SKU nằm ở kho báo cáo theo ngày. */
+  const priorKiotArchive = kiotViet;
+  const priorKiotArchiveReady = kiotSalesArchiveReadyForSettings;
+  kiotViet = {
+    ...kiotViet, sales: [{ sku: 'QA-LATEST', name: 'QA', qty: 1, revenue: 10000 }],
+    salesImports: [{ id: 'qa-sales-archive', importedAt: stamp, source: 'range', period: { from: '2026-09-01', to: '2026-09-01' }, sales: [{ sku: 'QA-SKU', name: 'QA SKU', category: 'QA', qty: 12, revenue: 120000 }] }],
+  };
+  check('Lịch sử cũ vẫn được giữ trong settings trước khi chuyển kho xong', kiotVietForCloudSettings().salesImports[0].sales?.length === 1, JSON.stringify(kiotVietForCloudSettings().salesImports[0]));
+  kiotSalesArchiveReadyForSettings = true;
+  const cloudKiotSettings = kiotVietForCloudSettings();
+  check('Lịch sử bán lớn chỉ đồng bộ metadata, không gửi chi tiết SKU trong settings', cloudKiotSettings.sales.length === 0 && cloudKiotSettings.salesImports.length === 1 && !Object.hasOwn(cloudKiotSettings.salesImports[0], 'sales') && cloudKiotSettings.salesImports[0].qtyTotal === 12, JSON.stringify(cloudKiotSettings.salesImports[0]));
+  check('Bù theo khoảng chỉ xếp các ngày chưa có báo cáo', JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')) === JSON.stringify(['2026-09-02', '2026-09-03']), JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')));
+  kiotViet = priorKiotArchive;kiotSalesArchiveReadyForSettings = priorKiotArchiveReady;
+
   goPage('inventory', { historyMode: 'none' });
   return rows;
 });

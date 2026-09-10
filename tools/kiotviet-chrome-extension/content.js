@@ -65,6 +65,10 @@
     await waitFor(()=>[...picker.querySelectorAll('li.k-button')].some(item=>normal(item.textContent).startsWith(normal(category))),'xác nhận nhóm hàng');await reportProgress(job,'Đang chờ KiotViet lọc nhóm hàng…');await wait(RENDER.filter);
   }
   async function selectTimeRange(job){
+    /* Không được âm thầm chọn “Năm nay” cho một job theo ngày: như vậy app sẽ
+       gắn số liệu cả năm vào một ngày. Selector của lịch tùy chỉnh sẽ được
+       kích hoạt sau lượt ghi thao tác thật, còn hiện tại dừng an toàn. */
+    if(job.period==='custom-day')throw new Error('Chưa có mẫu thao tác chọn ngày tùy chỉnh. Hãy ghi một lượt chọn cùng ngày ở Từ ngày và Đến ngày trên KiotViet trước khi chạy bù theo khoảng.');
     const yesterday=job.period==='yesterday';
     const range={key:yesterday?'yesterday':'year',label:yesterday?'Hôm qua':'Năm nay',loading:yesterday?'báo cáo hôm qua':'báo cáo năm nay'};
     const activeLabel=firstVisible('#reportsortDateTimeLbl')||[...document.querySelectorAll('li.reportsortDateTime .sortTimeLbl')].find(visible);if(!activeLabel)throw new Error('Không tìm thấy bộ chọn thời gian.');
