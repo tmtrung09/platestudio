@@ -8,6 +8,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "supabase": "^2.115.0"
+    "supabase": "^2.117.0"
   }
 }
