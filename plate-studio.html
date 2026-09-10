@@ -16011,11 +16011,11 @@ function saveOperations(){
   if(curPage==='orders')renderOrders();if(typeof renderDashboard==='function')renderDashboard();
 }
 const FULFILLMENT_FLOW_TARGETS={
-  print:['fulfillment-missing-parts','fulfillment-stage-reprint','fulfillment-workshop-zone'],
-  workshop:['fulfillment-stage-handover','fulfillment-workshop-flow'],
-  qc:['fulfillment-stage-part-qc','fulfillment-workshop-flow'],
-  delivery:['fulfillment-ready-delivery','fulfillment-workshop-flow'],
-  receive:['fulfillment-receipts','fulfillment-receive','fulfillment-workshop-zone']
+  print:['fulfillment-missing-parts','fulfillment-stage-reprint'],
+  workshop:['fulfillment-stage-handover'],
+  qc:['fulfillment-stage-part-qc'],
+  delivery:['fulfillment-ready-delivery'],
+  receive:['fulfillment-receipts']
 };
 /* Chỉ dùng các mốc thực sự của từng bước để tô sáng thanh nổi. Các fallback
    (như cả cụm Gia công) chỉ dành cho thao tác đi tới; dùng chúng để nhận diện
@@ -16056,18 +16056,32 @@ function bindFulfillmentFlowFloat(){
   if(fulfillmentFlowFloatListenersBound)return;
   fulfillmentFlowFloatListenersBound=true;window.addEventListener('resize',syncFulfillmentFlowFloat,{passive:true});
 }
+function fulfillmentScrollHost(){return document.querySelector('.pg-content')||document.scrollingElement||document.documentElement;}
+function fulfillmentFlowTarget(flow){
+  const target=(FULFILLMENT_FLOW_TARGETS[flow]||[]).map(id=>document.getElementById(id)).find(Boolean);
+  return target?.closest('.fulfillment-workshop-stage')||target||null;
+}
+function scrollFulfillmentToTarget(target,{behavior='smooth'}={}){
+  if(!target)return false;
+  const host=fulfillmentScrollHost(),hostRect=host===document.scrollingElement||host===document.documentElement?{top:0}:host.getBoundingClientRect();
+  const floating=document.getElementById('fulfillment-flow-float'),floatingRect=floating?.classList.contains('is-visible')?floating.getBoundingClientRect():null;
+  const clearance=Math.max(16,(floatingRect?.bottom||hostRect.top)-hostRect.top+14);
+  const rawTop=host.scrollTop+target.getBoundingClientRect().top-hostRect.top-clearance;
+  const maxTop=Math.max(0,(host.scrollHeight||0)-(host.clientHeight||0));
+  const top=maxTop?Math.min(maxTop,Math.max(0,rawTop)):Math.max(0,rawTop);
+  host.scrollTo?.({top,left:host.scrollLeft||0,behavior});if(!host.scrollTo)host.scrollTop=top;
+  requestAnimationFrame(syncFulfillmentFlowFloat);return true;
+}
 function jumpToFulfillmentFlow(flow){
   if(curPage!=='fulfillment')return;
   const stage=FULFILLMENT_FLOW_STAGE[flow];
-  if(stage){revealFulfillmentStage(stage,{focus:true});return;}
-  const target=(FULFILLMENT_FLOW_TARGETS[flow]||[]).map(id=>document.getElementById(id)).find(Boolean);
-  target?.scrollIntoView({behavior:'smooth',block:'start'});
+  if(stage){revealFulfillmentStage(stage,{focus:true,flow});return;}
+  if(!scrollFulfillmentToTarget(fulfillmentFlowTarget(flow)))toast('Bước này hiện chưa có việc để hiển thị.');
 }
-function fulfillmentScrollHost(){return document.querySelector('.pg-content')||document.scrollingElement||document.documentElement;}
 /* Sau khi tick một bước, mở chính xác nhóm đích nếu nhóm đó đang thu gọn.
    Việc mở nhóm tuyệt đối không được cướp vị trí đọc: người QC thường cần bấm
    liên tiếp các thẻ trong cùng nhóm, nên tự cuộn sang nhóm đích sẽ làm đứt nhịp. */
-function revealFulfillmentStage(stageId,{focus=false}={}){
+function revealFulfillmentStage(stageId,{focus=false,flow=''}={}){
   if(curPage!=='fulfillment')return;
   const scrollHost=fulfillmentScrollHost(),scrollLeft=scrollHost.scrollLeft,scrollTop=scrollHost.scrollTop;
   const collapsed=fulfillmentCollapsedStages();
@@ -16078,8 +16092,8 @@ function revealFulfillmentStage(stageId,{focus=false}={}){
   requestAnimationFrame(()=>{
     scrollHost.scrollTo?.(scrollLeft,scrollTop);if(!scrollHost.scrollTo){scrollHost.scrollLeft=scrollLeft;scrollHost.scrollTop=scrollTop;}
     if(focus){
-      const target=document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`);
-      target?.scrollIntoView({behavior:'smooth',block:'nearest'});
+      const target=flow?fulfillmentFlowTarget(flow):(document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`)?.closest('.fulfillment-workshop-stage')||document.getElementById(stageId==='ready-delivery'?'fulfillment-ready-delivery':`fulfillment-stage-${stageId}`));
+      scrollFulfillmentToTarget(target)||toast('Bước này hiện chưa có việc để hiển thị.');
     }
   });
 }

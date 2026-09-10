@@ -144,13 +144,47 @@ const results = await page.evaluate(async () => {
   syncFulfillmentFlowFloat();
   check('Cuộn qua hướng dẫn thì hiện thanh quy trình nổi', flowFloat?.classList.contains('is-visible'));
   if (guide) guide.getBoundingClientRect = originalGuideRect;
-  const flowOriginalScrollIntoView = Element.prototype.scrollIntoView;
-  let flowTarget = '';
-  Element.prototype.scrollIntoView = function(...args) { flowTarget = this.id; return flowOriginalScrollIntoView?.apply(this, args); };
-  jumpToFulfillmentFlow('qc');
-  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  Element.prototype.scrollIntoView = flowOriginalScrollIntoView;
-  check('Bước QC trên thanh nổi dẫn đến đúng nhóm', flowTarget === 'fulfillment-stage-part-qc', flowTarget || 'không có nhóm QC');
+  /* Every navigation button must resolve to one precise business anchor, never
+     the generic workshop wrapper. Add only missing anchors to this isolated
+     fixture so the mapping is checked even when that queue happens to be empty. */
+  const temporaryFlowTargets = [];
+  const expectedFlowTargets = { print: 'fulfillment-missing-parts', workshop: 'fulfillment-stage-handover', qc: 'fulfillment-stage-part-qc', delivery: 'fulfillment-ready-delivery', receive: 'fulfillment-receipts' };
+  Object.values(expectedFlowTargets).forEach(id => {
+    if (document.getElementById(id)) return;
+    const anchor = document.createElement('div');
+    anchor.id = id; anchor.className = 'fulfillment-workshop-stage';
+    document.getElementById('fulfillment-workshop-zone')?.append(anchor);
+    temporaryFlowTargets.push(anchor);
+  });
+  const flowResolvesTo = (flow, id) => { const target = fulfillmentFlowTarget(flow), anchor = document.getElementById(id); return Boolean(target && anchor && (target === anchor || target.contains(anchor))); };
+  check('Cả 5 nút điều hướng dùng mốc nghiệp vụ riêng', Object.entries(expectedFlowTargets).every(([flow, id]) => flowResolvesTo(flow, id)), Object.entries(expectedFlowTargets).map(([flow, id]) => `${flow}:${flowResolvesTo(flow, id) ? id : 'trống'}`).join(' · '));
+  check('Điều hướng không dùng lại vùng Gia công chung làm fallback', !Object.values(FULFILLMENT_FLOW_TARGETS).flat().some(id => /workshop-zone|workshop-flow/.test(id)), JSON.stringify(FULFILLMENT_FLOW_TARGETS));
+  const scrollTarget = fulfillmentFlowTarget('qc');
+  const originalHostRect = fulfillmentScrollHost.getBoundingClientRect?.bind(fulfillmentScrollHost);
+  const originalTargetRect = scrollTarget?.getBoundingClientRect.bind(scrollTarget);
+  const originalFloatingRect = flowFloat?.getBoundingClientRect.bind(flowFloat);
+  const originalScrollTo = fulfillmentScrollHost.scrollTo;
+  const originalScrollTop = fulfillmentScrollHost.scrollTop;
+  const originalScrollHeight = Object.getOwnPropertyDescriptor(fulfillmentScrollHost, 'scrollHeight');
+  const originalClientHeight = Object.getOwnPropertyDescriptor(fulfillmentScrollHost, 'clientHeight');
+  let requestedFlowScroll = null;
+  Object.defineProperty(fulfillmentScrollHost, 'scrollTop', { configurable: true, writable: true, value: 180 });
+  Object.defineProperty(fulfillmentScrollHost, 'scrollHeight', { configurable: true, value: 5000 });
+  Object.defineProperty(fulfillmentScrollHost, 'clientHeight', { configurable: true, value: 800 });
+  fulfillmentScrollHost.getBoundingClientRect = () => ({ top: 20, bottom: 820, left: 0, right: 390, width: 390, height: 800 });
+  if (scrollTarget) scrollTarget.getBoundingClientRect = () => ({ top: 520, bottom: 590, left: 0, right: 360, width: 360, height: 70 });
+  if (flowFloat) { flowFloat.classList.add('is-visible'); flowFloat.getBoundingClientRect = () => ({ top: 18, bottom: 92, left: 20, right: 370, width: 350, height: 74 }); }
+  fulfillmentScrollHost.scrollTo = options => { requestedFlowScroll = options; };
+  scrollFulfillmentToTarget(scrollTarget, { behavior: 'auto' });
+  check('Thanh điều hướng cuộn trong đúng container và chừa thanh nổi', Boolean(requestedFlowScroll && requestedFlowScroll.behavior === 'auto' && Math.round(requestedFlowScroll.top) === 594), requestedFlowScroll ? JSON.stringify(requestedFlowScroll) : 'không gọi scroll container');
+  if (originalHostRect) fulfillmentScrollHost.getBoundingClientRect = originalHostRect;
+  if (scrollTarget && originalTargetRect) scrollTarget.getBoundingClientRect = originalTargetRect;
+  if (flowFloat && originalFloatingRect) flowFloat.getBoundingClientRect = originalFloatingRect;
+  fulfillmentScrollHost.scrollTo = originalScrollTo;
+  Object.defineProperty(fulfillmentScrollHost, 'scrollTop', { configurable: true, writable: true, value: originalScrollTop });
+  if (originalScrollHeight) Object.defineProperty(fulfillmentScrollHost, 'scrollHeight', originalScrollHeight); else delete fulfillmentScrollHost.scrollHeight;
+  if (originalClientHeight) Object.defineProperty(fulfillmentScrollHost, 'clientHeight', originalClientHeight); else delete fulfillmentScrollHost.clientHeight;
+  temporaryFlowTargets.forEach(anchor => anchor.remove());
 
   const variantWorkshopCard = fulfillmentWorkshopCard({
     source: 'external', externalKey: 'qa-variant-card', o: null,
