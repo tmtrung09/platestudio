@@ -439,6 +439,38 @@ const results = await page.evaluate(async () => {
   deliveryInfoContinue?.click();
   check('Nút tiếp tục ở bước thông tin chuyển sang bước chụp ảnh', deliveryWorkspaceState.step === 'photos' && Boolean(document.querySelector('.delivery-wizard-camera')), deliveryWorkspaceState.step);
 
+  /* Realtime có thể bị browser ngắt khi máy ngủ hoặc đổi mạng. Khi đó app phải
+     tự phát hiện revision từ cloud và nạp lại, không được buộc người vận hành
+     reload trang. Dùng Supabase giả để kiểm tra đúng lớp fallback này. */
+  const priorCloudSync = {
+    sb, currentUser, cloudReady, activeWorkspace, cloudSyncing, lastCloudWriteAt, cloudOutbox: [...cloudOutbox],
+    reconcileWorkspace: cloudRemoteRevisionWorkspace, revisions: [...cloudRemoteRevisions.entries()],
+    queue: queueRemoteDataRefresh,
+  };
+  const remoteVersions = Object.fromEntries(Object.values(CLOUD_TABLES).map((table, index) => [table, `2026-09-10T00:00:0${index}.000Z`]));
+  sb = { from(table) {
+    const query = {
+      select() { return query; }, eq() { return query; }, order() { return query; },
+      limit() { return Promise.resolve({ data: remoteVersions[table] ? [{ updated_at: remoteVersions[table] }] : [], error: null }); },
+    };
+    return query;
+  } };
+  currentUser = { id: 'qa-realtime-user' }; cloudReady = true; activeWorkspace = { workspace_id: 'qa-realtime-workspace' };
+  cloudSyncing = false; cloudOutbox = []; lastCloudWriteAt = 0; cloudRemoteRevisionWorkspace = ''; cloudRemoteRevisions.clear(); remoteRefreshTables.clear();
+  let fallbackRefreshes = 0;
+  queueRemoteDataRefresh = () => { fallbackRefreshes += 1; };
+  await reconcileRemoteCloudChanges();
+  remoteVersions.models = '2026-09-10T01:00:00.000Z';
+  const detectedRemoteChange = await reconcileRemoteCloudChanges();
+  check('Đồng bộ nền tự phát hiện dữ liệu máy khác khi Realtime không tới', detectedRemoteChange && fallbackRefreshes === 1 && remoteRefreshTables.has('models'), `${fallbackRefreshes} lượt · ${[...remoteRefreshTables].join(',')}`);
+  const realtimeRecoverySource = `${setupCloudRealtime.toString()} ${handleCloudRealtimeStatus.toString()} ${installCloudRemoteReconcileListeners.toString()}`;
+  check('Kênh Realtime có theo dõi trạng thái, tự nối lại và kiểm tra khi quay lại app', /subscribe\(\(status,error\)=>handleCloudRealtimeStatus/.test(realtimeRecoverySource) && /CHANNEL_ERROR/.test(realtimeRecoverySource) && /visibilitychange/.test(realtimeRecoverySource) && /online/.test(realtimeRecoverySource), realtimeRecoverySource.includes('CHANNEL_ERROR') ? 'có fallback kết nối' : 'thiếu fallback');
+  clearTimeout(cloudRemoteReconcileTimer); remoteRefreshTables.clear();
+  sb = priorCloudSync.sb; currentUser = priorCloudSync.currentUser; cloudReady = priorCloudSync.cloudReady; activeWorkspace = priorCloudSync.activeWorkspace;
+  cloudSyncing = priorCloudSync.cloudSyncing; cloudOutbox = priorCloudSync.cloudOutbox; lastCloudWriteAt = priorCloudSync.lastCloudWriteAt; cloudRemoteRevisionWorkspace = priorCloudSync.reconcileWorkspace;
+  cloudRemoteRevisions.clear(); priorCloudSync.revisions.forEach(([key, revision]) => cloudRemoteRevisions.set(key, revision));
+  queueRemoteDataRefresh = priorCloudSync.queue;
+
   goPage('inventory', { historyMode: 'none' });
   return rows;
 });

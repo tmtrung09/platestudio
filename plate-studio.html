@@ -5057,6 +5057,12 @@ const DEF_BRANDS = ['Bambu Lab','eSUN','Sunlu','Polymaker','Creality','Overture'
 ═══════════════════════════════════════ */
 let sb = null, currentUser = null, cloudReady = false, loadingCloud = false;
 let cloudSyncTimer = null, cloudRetryTimer = null, cloudChannel = null, cloudSyncing = false, cloudRefreshTimer = null, remoteRefreshWatchTimer = null, remoteRefreshApplying = false, lastCloudWriteAt = 0, remoteDataRefreshPending = false;
+/* Realtime là đường chính. Tuy nhiên máy có thể ngủ, đổi mạng hoặc bị chặn
+   WebSocket mà không báo lỗi rõ ràng. Các biến này giữ một lớp đối chiếu nhẹ
+   để dữ liệu từ máy khác vẫn tự đến, thay vì bắt người dùng phải tải lại trang. */
+let cloudRealtimeStatus = 'IDLE', cloudRealtimeReconnectTimer = null, cloudRemoteReconcileTimer = null, cloudRemoteReconcileRunning = false, cloudRemoteRevisionWorkspace = '';
+const cloudRemoteRevisions = new Map();
+const CLOUD_REMOTE_RECONCILE_MS = 15000, CLOUD_REALTIME_RECONNECT_MS = 3500;
 const remoteRefreshTables=new Set();
 let cloudSyncedSnapshot = null;
 let needsCloudBatchSeed = false;
@@ -6170,6 +6176,88 @@ function queueRemoteDataRefresh(){
   if(canAutoApplyRemoteRefresh())applyRemoteDataRefresh();
   else{showRemoteDataRefreshNotice();scheduleDeferredRemoteRefresh();}
 }
+function canReconcileRemoteCloud(){
+  return Boolean(currentUser&&cloudReady&&sb&&cloudWorkspaceId()&&!document.hidden);
+}
+async function readCloudRemoteRevisions(){
+  const workspace=cloudWorkspaceId();
+  if(!workspace||!sb)return {workspace,revisions:[]};
+  const revisions=await Promise.all(Object.entries(CLOUD_TABLES).map(async([key,table])=>{
+    const {data,error}=await sb.from(table).select('updated_at').eq('workspace_id',workspace).order('updated_at',{ascending:false}).limit(1);
+    if(error)throw error;
+    return [key,data?.[0]?.updated_at||''];
+  }));
+  return {workspace,revisions};
+}
+async function primeCloudRemoteRevisions(){
+  if(!canReconcileRemoteCloud())return false;
+  try{
+    const {workspace,revisions}=await readCloudRemoteRevisions();
+    if(workspace!==cloudWorkspaceId())return false;
+    if(cloudRemoteRevisionWorkspace!==workspace){cloudRemoteRevisionWorkspace=workspace;cloudRemoteRevisions.clear();}
+    revisions.forEach(([key,revision])=>cloudRemoteRevisions.set(key,revision));
+    return true;
+  }catch(error){console.warn('Không thể lấy mốc đồng bộ cloud',error);return false;}
+}
+function scheduleCloudRemoteReconcile(delay=CLOUD_REMOTE_RECONCILE_MS){
+  clearTimeout(cloudRemoteReconcileTimer);
+  if(!canReconcileRemoteCloud())return;
+  cloudRemoteReconcileTimer=setTimeout(()=>reconcileRemoteCloudChanges(),Math.max(0,delay));
+}
+async function reconcileRemoteCloudChanges(){
+  if(!canReconcileRemoteCloud()||cloudRemoteReconcileRunning)return false;
+  /* Khi đang có dữ liệu chưa gửi, chỉ dời lượt kiểm tra. Tuyệt đối không để
+     snapshot từ máy khác chồng lên thay đổi hiện tại của người đang thao tác. */
+  if(cloudSyncing||cloudOutbox.length||Date.now()-lastCloudWriteAt<1200){scheduleCloudRemoteReconcile(1200);return false;}
+  cloudRemoteReconcileRunning=true;
+  try{
+    const {workspace,revisions}=await readCloudRemoteRevisions();
+    if(workspace!==cloudWorkspaceId())return false;
+    if(cloudRemoteRevisionWorkspace!==workspace){cloudRemoteRevisionWorkspace=workspace;cloudRemoteRevisions.clear();}
+    const changed=[];
+    revisions.forEach(([key,revision])=>{
+      const previous=cloudRemoteRevisions.get(key);
+      cloudRemoteRevisions.set(key,revision);
+      if(previous!==undefined&&previous!==revision)changed.push(key);
+    });
+    if(changed.length){
+      changed.forEach(key=>remoteRefreshTables.add(key));
+      queueRemoteDataRefresh();
+    }
+    return Boolean(changed.length);
+  }catch(error){console.warn('Không thể đối chiếu dữ liệu cloud nền',error);return false;
+  }finally{cloudRemoteReconcileRunning=false;scheduleCloudRemoteReconcile();}
+}
+function handleCloudRealtimeStatus(channel,status,error){
+  if(channel!==cloudChannel)return;
+  cloudRealtimeStatus=status;
+  if(status==='SUBSCRIBED'){
+    clearTimeout(cloudRealtimeReconnectTimer);
+    scheduleCloudRemoteReconcile();
+    return;
+  }
+  if(!['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status))return;
+  if(error)console.warn('Kênh đồng bộ thời gian thực bị gián đoạn',error);
+  /* Lấy mốc ngay khi kênh có vấn đề; cơ chế này cũng là fallback cho project
+     Supabase chưa bật publication Realtime đầy đủ. */
+  scheduleCloudRemoteReconcile(0);
+  clearTimeout(cloudRealtimeReconnectTimer);
+  cloudRealtimeReconnectTimer=setTimeout(()=>{
+    if(currentUser&&cloudReady&&sb&&cloudWorkspaceId()&&cloudRealtimeStatus!== 'SUBSCRIBED')setupCloudRealtime();
+  },CLOUD_REALTIME_RECONNECT_MS);
+}
+let cloudRemoteReconcileListenersInstalled=false;
+function installCloudRemoteReconcileListeners(){
+  if(cloudRemoteReconcileListenersInstalled)return;
+  cloudRemoteReconcileListenersInstalled=true;
+  const reconcileAfterResume=()=>{if(canReconcileRemoteCloud())reconcileRemoteCloudChanges();};
+  window.addEventListener('focus',reconcileAfterResume);
+  window.addEventListener('online',()=>{
+    reconcileAfterResume();
+    if(currentUser&&cloudReady&&cloudRealtimeStatus!=='SUBSCRIBED')setupCloudRealtime();
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)reconcileAfterResume();});
+}
 function scheduleCloudRefresh(key='') {
   // Không nạp dữ liệu từ Realtime đè lên thay đổi còn trong outbox.
   if(Date.now()-lastCloudWriteAt < 1200 || cloudSyncing || cloudOutbox.length) return;
@@ -6182,14 +6270,16 @@ function scheduleCloudRefresh(key='') {
 }
 function setupCloudRealtime() {
   if(cloudChannel) sb.removeChannel(cloudChannel);
-  cloudChannel=sb.channel('plate-sync-'+cloudWorkspaceId());
+  cloudRealtimeStatus='CONNECTING';
+  const channel=sb.channel('plate-sync-'+cloudWorkspaceId());
+  cloudChannel=channel;
   Object.entries(CLOUD_TABLES).forEach(([key,table])=>{
-    cloudChannel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{
+    channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{
       const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
       if(workspace===cloudWorkspaceId()) scheduleCloudRefresh(key);
     });
   });
-  cloudChannel.subscribe();
+  channel.subscribe((status,error)=>handleCloudRealtimeStatus(channel,status,error));
 }
 async function loadCloudData() {
   const localBatchBackup = [...batchReports];
@@ -6459,7 +6549,11 @@ async function startCloudSession(session) {
     await loadWorkspaceAccessRows();
     if(requiredWorkspacePermission(curPage)&&!canAccess(requiredWorkspacePermission(curPage)))curPage='dashboard';
     registerBatchDevice();
+    installCloudRemoteReconcileListeners();
     setupCloudRealtime();
+    /* Mốc được ghi sau lần tải đầu tiên, nhờ đó lần đối chiếu nền chỉ nạp lại
+       đúng khi cloud đã đổi — không tự dựng lại giao diện vô ích. */
+    primeCloudRemoteRevisions();
     await migrateInlineMedia();
     if(needsCloudBatchSeed) {
       /* batch_reports không còn đi qua sync snapshot vì snapshot chỉ chứa
@@ -6502,7 +6596,12 @@ async function initCloudApp() {
     } else showAuth();
     sb.auth.onAuthStateChange((_event, session) => {
       if(session) startCloudSession(session);
-      else { currentUser=null; cloudReady=false; cloudSyncedSnapshot=null; syncAuthUI(false); showAuth(); setSyncState('Chưa đăng nhập'); }
+      else {
+        currentUser=null; cloudReady=false; cloudSyncedSnapshot=null;
+        cloudRealtimeStatus='IDLE';cloudRemoteRevisionWorkspace='';cloudRemoteRevisions.clear();
+        clearTimeout(cloudRealtimeReconnectTimer);clearTimeout(cloudRemoteReconcileTimer);
+        syncAuthUI(false); showAuth(); setSyncState('Chưa đăng nhập');
+      }
     });
   } catch(error) { console.error(error); setSyncState('Không tải được kết nối', 'err'); showAuth('signin'); authMessage('Không thể kết nối máy chủ. Kiểm tra Internet rồi thử tải lại.'); }
 }
