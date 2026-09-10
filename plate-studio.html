@@ -17803,9 +17803,11 @@ function kiotSalesMissingDays(from,to){
 let kiotSalesRangeAutomation={checked:false,ready:false,detail:'Đang kiểm tra extension…'};
 async function refreshKiotSalesRangeAutomation(){
   try{
-    const recording=await kiotChromeSyncRequest('/recording'),actions=Array.isArray(recording?.actions)?recording.actions:[],selectors=actions.flatMap(action=>action?.element?.selectors||[]),texts=actions.map(action=>String(action?.element?.text||''));
-    const ready=recording?.status==='ready'&&selectors.includes('#reportsortOtherLbl')&&selectors.includes('#fromDate')&&texts.includes('Tạo báo cáo');
-    kiotSalesRangeAutomation={checked:true,ready,detail:ready?'Extension đã có mẫu chọn ngày.':'Chưa tìm thấy đủ mẫu chọn ngày trong extension.'};
+    await kiotChromeSyncRequest('/health');
+    /* Mẫu thao tác đã được chuyển thành selector trong extension. Không giữ
+       việc chạy tool phụ thuộc bản ghi tạm trong RAM của local bridge, vì bản
+       ghi đó sẽ mất khi nhân viên khởi động lại tiến trình. */
+    kiotSalesRangeAutomation={checked:true,ready:true,detail:'Sẵn sàng lấy theo từng ngày.'};
   }catch(error){kiotSalesRangeAutomation={checked:true,ready:false,detail:'Không kết nối được local bridge/extension.'};}
   previewKiotSalesRange();return kiotSalesRangeAutomation;
 }
