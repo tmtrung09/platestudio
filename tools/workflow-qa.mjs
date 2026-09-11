@@ -488,6 +488,30 @@ const results = await page.evaluate(async () => {
   check('Bù khoảng ngày kiểm tra bridge, gửi đúng ngày thiếu và không phụ thuộc bản ghi RAM', /kiotSalesRangeAutomation\.ready/.test(rangeDialogSource) && /\/health/.test(rangeDialogSource) && /\/range\/run/.test(rangeDialogSource) && /days:missing/.test(rangeDialogSource) && !/\/recording/.test(refreshKiotSalesRangeAutomation.toString()), rangeDialogSource.includes('/range/run') ? 'có health check và hàng chờ' : 'thiếu hàng chờ');
   kiotViet = priorKiotArchive;kiotSalesArchiveReadyForSettings = priorKiotArchiveReady;
 
+  /* Sổ tồn dùng snapshot bất biến làm mốc, không được lấy tồn mới rồi tự cộng
+     đè lên. 2 + nhận 5 - bán 3 phải ra đúng 4 để phát hiện mọi chênh lệch. */
+  const priorInventoryLedger = kiotInventoryLedger;
+  kiotViet = {
+    ...kiotViet,
+    catalog: [{ sku: 'QA-STOCK-A', name: 'QA Product A', stock: 4 }],
+    snapshots: [
+      { id: 'qa-stock-current', observedAt: '2026-09-15T23:59:59.999+07:00', stockBySku: { 'QA-STOCK-A': 4 }, fileName: 'current.xlsx' },
+      { id: 'qa-stock-baseline', observedAt: '2026-09-09T23:59:59.999+07:00', stockBySku: { 'QA-STOCK-A': 2 }, fileName: 'baseline.xlsx' },
+    ],
+  };
+  kiotInventoryLedger = { movements: [
+    { sourceKey: 'delivery:qa', kind: 'delivery_received', occurredAt: '2026-09-10T12:00:00+07:00', sku: 'QA-STOCK-A', name: 'QA Product A', quantityDelta: 5 },
+    { sourceKey: 'sales:qa', kind: 'sale', occurredAt: '2026-09-15T23:59:59.999+07:00', sku: 'QA-STOCK-A', name: 'QA Product A', quantityDelta: -3 },
+  ], remoteReconciliation: [], remoteSnapshots: [], loaded: true };
+  const stockLedgerRows = kiotInventoryLocalReconciliation(kiotViet.snapshots[0]);
+  check('Sổ tồn kho tính snapshot + giao − bán đúng', stockLedgerRows[0]?.expectedStock === 4 && stockLedgerRows[0]?.observedStock === 4 && stockLedgerRows[0]?.status === 'matched', JSON.stringify(stockLedgerRows[0]));
+  kiotViet.snapshots[0].stockBySku['QA-STOCK-A'] = 6;
+  const stockVarianceRows = kiotInventoryLocalReconciliation(kiotViet.snapshots[0]);
+  check('Snapshot lệch tồn tạo cảnh báo thay vì tự sửa số', stockVarianceRows[0]?.variance === 2 && stockVarianceRows[0]?.status === 'open', JSON.stringify(stockVarianceRows[0]));
+  check('KiotViet có luồng ghi điều chỉnh tồn kho có lý do', /openKiotInventoryAdjustmentDialog/.test(kiotInventoryControlHTML()) && /Lý do bắt buộc/.test(openKiotInventoryAdjustmentDialog.toString()) && /persistKiotInventoryMovement/.test(saveKiotInventoryAdjustment.toString()), 'có adjustment audit');
+  check('Trang Kiot không tự render vô hạn khi chưa đăng nhập cloud', /!kiotInventoryLedger\.loaded&&sb&&currentUser&&cloudWorkspaceId\(\)&&kiotInventoryLedgerAvailable/.test(renderKiotVietPage.toString()), 'chỉ hydrate ledger cloud khi đã có phiên đăng nhập');
+  kiotInventoryLedger = priorInventoryLedger;kiotViet = priorKiotArchive;
+
   goPage('inventory', { historyMode: 'none' });
   return rows;
 });
