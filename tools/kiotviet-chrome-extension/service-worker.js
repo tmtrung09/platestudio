@@ -6,15 +6,15 @@ async function notify(path,payload){try{await bridge(path,{method:'POST',body:JS
 async function waitForTab(tabId){
   for(let i=0;i<80;i++){const tab=await chrome.tabs.get(tabId);if(tab.status==='complete'&&tab.url?.includes('banhmi19.kiotviet.vn'))return tab;await wait(500);}throw new Error('KiotViet tải quá lâu.');
 }
-async function targetTab(){
+async function targetTab(job){
   const tabs=await chrome.tabs.query({url:'https://banhmi19.kiotviet.vn/*'});let tab=tabs.find(item=>item.url?.includes('/man/'))||tabs[0];
   if(!tab)tab=await chrome.tabs.create({url:REPORT_URL,active:true});
   else if(!tab.url?.includes('/ProductReport'))tab=await chrome.tabs.update(tab.id,{url:REPORT_URL,active:true});
-  else {tab=await chrome.tabs.update(tab.id,{active:true});await chrome.tabs.reload(tab.id);}
+  else {tab=await chrome.tabs.update(tab.id,{active:true});if(!(job?.origin==='range'&&job?.period==='custom-day'&&job?.rangeId))await chrome.tabs.reload(tab.id);}
   return waitForTab(tab.id);
 }
 async function run(job){
-  const tab=await targetTab();await notify('/extension/progress',{id:job.id,detail:'Đang mở Báo cáo hàng hóa trong Chrome…'});
+  const tab=await targetTab(job);await notify('/extension/progress',{id:job.id,detail:job?.origin==='range'?'Đang giữ tab Báo cáo cho lượt bù ngày tiếp theo…':'Đang mở Báo cáo hàng hóa trong Chrome…'});
   await chrome.scripting.executeScript({target:{tabId:tab.id},files:['content.js']});
   const reply=await chrome.tabs.sendMessage(tab.id,{type:'plate-studio-run-kiot-sync',job});
   if(!reply?.ok)throw new Error(reply?.error||'Không gửi được lệnh đến trang KiotViet.');
