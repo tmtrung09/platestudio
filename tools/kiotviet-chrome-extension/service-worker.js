@@ -11,7 +11,7 @@ async function targetTab(job){
   const tabs=await chrome.tabs.query({url:'https://banhmi19.kiotviet.vn/*'});let tab=tabs.find(item=>item.url?.includes('/man/'))||tabs[0];
   if(!tab)tab=await chrome.tabs.create({url:REPORT_URL,active:true});
   else if(!tab.url?.includes('/ProductReport'))tab=await chrome.tabs.update(tab.id,{url:REPORT_URL,active:true});
-  else {tab=await chrome.tabs.update(tab.id,{active:true});if(!(job?.origin==='range'&&job?.period==='custom-day'&&job?.rangeId))await chrome.tabs.reload(tab.id);}
+  else {tab=await chrome.tabs.update(tab.id,{active:true});await chrome.tabs.reload(tab.id);}
   return waitForTab(tab.id);
 }
 async function contentVersion(tabId){try{return await chrome.tabs.sendMessage(tabId,{type:'plate-studio-kiot-content-version'});}catch{return null;}}
@@ -28,7 +28,7 @@ async function ensureCurrentContent(tab){
   return refreshed;
 }
 async function run(job){
-  let tab=await targetTab(job);tab=await ensureCurrentContent(tab);await notify('/extension/progress',{id:job.id,detail:job?.origin==='range'?'Đang giữ tab Báo cáo cho lượt bù ngày tiếp theo…':'Đang mở Báo cáo hàng hóa trong Chrome…'});
+  let tab=await targetTab(job);tab=await ensureCurrentContent(tab);await notify('/extension/progress',{id:job.id,detail:'Đang mở lại Báo cáo hàng hóa cho ngày cần lấy…'});
   const reply=await chrome.tabs.sendMessage(tab.id,{type:'plate-studio-run-kiot-sync',job});
   if(!reply?.ok)throw new Error(reply?.error||'Không gửi được lệnh đến trang KiotViet.');
 }

@@ -114,20 +114,9 @@
     // trực tiếp vào mục đó là cùng lệnh xuất, đồng thời không phụ thuộc :hover.
     const xls=await waitFor(()=>firstVisible('[data-command="telerik_ReportViewer_export"][data-command-parameter="XLS"]',menu),'Excel 97–2003');xls.focus?.();click(xls);await reportProgress(job,'KiotViet đang chuẩn bị file Excel…');
   }
-  // Ngày đầu của một lượt bù chuẩn bị đầy đủ. Các ngày tiếp theo giữ nguyên
-  // tab, chế độ Báo cáo và nhóm 3D đã xác nhận; chỉ thay đổi khoảng ngày.
-  // Marker nằm trên window của tab nên tự mất khi người dùng đổi trang/reload.
-  const activeRangeSession=job=>job?.origin==='range'&&job.rangeId&&window.__plateStudioKiotRangeSessionId===job.rangeId;
-  async function execute(job){
-    const continueRange=activeRangeSession(job);
-    try{
-      if(!continueRange){await selectReportMode(job);await selectCategory(job,job.category||'3D Rùm Beng',job.categoryParent||'Rùm Beng');}
-      else await reportProgress(job,`Giữ bộ lọc 3D Rùm Beng. Chuyển sang ngày ${job.reportDay}…`);
-      await selectTimeRange(job);await exportExcel(job);
-      if(job?.origin==='range'&&job.rangeId)window.__plateStudioKiotRangeSessionId=job.rangeId;else delete window.__plateStudioKiotRangeSessionId;
-      showSyncStatus('Đã yêu cầu Chrome tải file Excel. Đang chờ Plate Studio nhập file…','done');
-    }catch(error){if(job?.origin==='range')delete window.__plateStudioKiotRangeSessionId;showSyncStatus(error.message||String(error),'error');throw error;}
-  }
+  // KiotViet không ổn định khi tái dùng state của popup/báo cáo. Mỗi ngày bù
+  // đều được service worker reload trang trước, rồi chạy lại quy trình đầy đủ.
+  async function execute(job){try{await selectReportMode(job);await selectCategory(job,job.category||'3D Rùm Beng',job.categoryParent||'Rùm Beng');await selectTimeRange(job);await exportExcel(job);showSyncStatus('Đã yêu cầu Chrome tải file Excel. Đang chờ Plate Studio nhập file…','done');}catch(error){showSyncStatus(error.message||String(error),'error');throw error;}}
   const recorder=(()=>{try{const saved=JSON.parse(sessionStorage.getItem('plateStudioKiotRecorder')||'null');if(saved?.active&&Array.isArray(saved.actions))return saved;}catch{}return {active:false,startedAt:0,actions:[],lastPointer:null,lastLoadState:null};})();
   function updateRecorderBadge(){
     let badge=document.querySelector('#plate-studio-kiot-recording-badge');
