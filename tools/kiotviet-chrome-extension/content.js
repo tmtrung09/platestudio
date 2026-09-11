@@ -88,7 +88,7 @@
          trong main world và vẫn chờ popup đóng như người dùng bấm nút. */
       const created=await chrome.runtime.sendMessage({type:'plate-studio-create-kiot-date-report'});
       if(!created?.ok)throw new Error(created?.error||'Không thể bấm Tạo báo cáo trên KiotViet.');
-      await waitFor(()=>!firstVisible('[ng-click="filterbyDateRange()"]'),'hộp chọn ngày đóng lại',12000);
+      await waitFor(()=>![...document.querySelectorAll('a,button')].some(element=>visible(element)&&normal(element.textContent)==='tạo báo cáo'),'hộp chọn ngày đóng lại',12000);
       await reportProgress(job,`Đang chờ KiotViet tải báo cáo ngày ${day}…`);await wait(RENDER.time);
       const displayDay=day.split('-').reverse().join('/');
       const rangeControl=[...document.querySelectorAll('input,button,a,label,span')].find(element=>visible(element)&&normal(('value'in element&&element.value)||element.textContent).includes(normal(`${displayDay} - ${displayDay}`)));

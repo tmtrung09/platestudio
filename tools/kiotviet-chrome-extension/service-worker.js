@@ -88,7 +88,9 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     const tabId=sender.tab?.id;
     if(!tabId){reply({ok:false,error:'Không tìm thấy tab KiotViet.'});return;}
     chrome.scripting.executeScript({target:{tabId},world:'MAIN',func:()=>{
-      const button=[...document.querySelectorAll('[ng-click="filterbyDateRange()"]')].find(node=>node.offsetWidth||node.offsetHeight||node.getClientRects().length);
+      const visible=node=>!!node&&(node.offsetWidth||node.offsetHeight||node.getClientRects().length);
+      const normal=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/\s+/g,' ').trim().toLowerCase();
+      const button=[...document.querySelectorAll('[ng-click="filterbyDateRange()"],a,button')].find(node=>visible(node)&&(node.matches('[ng-click="filterbyDateRange()"]')||normal(node.textContent)==='tao bao cao'));
       if(!button)return {ok:false,error:'Không tìm thấy nút Tạo báo cáo.'};
       const angularApi=window.angular;
       let scope=angularApi?.element?.(button).scope?.()||null;

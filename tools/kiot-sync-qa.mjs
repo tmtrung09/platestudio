@@ -52,6 +52,7 @@ try {
   assert.match(workerSource, /world:'MAIN'/, 'Kendo phải được gọi trong main world, không phải isolated content script');
   assert.match(workerSource, /kendoCalendar/, 'Bù ngày phải dùng widget lịch thật của KiotViet');
   assert.match(workerSource, /filterbyDateRange\(\)/, 'Nút Tạo báo cáo phải gọi đúng handler Angular của KiotViet');
+  assert.match(workerSource, /normal\(node\.textContent\)==='tao bao cao'/, 'Nút Tạo báo cáo phải có fallback theo nhãn khi KiotViet đổi ng-click');
   assert.match(workerSource, /await new Promise\(resolve=>setTimeout\(resolve,260\)\)/, 'Sau khi chọn Từ ngày phải chờ KiotViet render lại lịch Đến ngày');
   assert.match(workerSource, /const refreshed=calendarEntries\(\)/, 'Phải truy vấn lại lịch Đến ngày sau khi lịch hai cột đổi trạng thái');
   assert.match(workerSource, /selectedFrom!==requestedDay\|\|selectedTo!==requestedDay/, 'Phải đọc lại hai ngày trước khi cho phép tạo báo cáo');
