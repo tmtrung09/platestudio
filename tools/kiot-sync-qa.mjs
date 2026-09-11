@@ -44,14 +44,17 @@ try {
   const final = await request('/acknowledge', { method: 'POST', body: JSON.stringify({ id: second.job.id }) });
   assert.equal(final.range.status, 'idle', 'Xong hàng chờ phải không tạo thêm job');
   assert.match(extensionSource, /#reportsortOtherLbl/, 'Bù ngày phải mở bộ lọc Tùy chỉnh đã được ghi mẫu');
-  assert.match(extensionSource, /#fromDate/, 'Bù ngày phải đặt lịch Từ ngày theo selector đã ghi mẫu');
-  assert.match(extensionSource, /\.k-calendar/, 'Bù ngày phải nhận diện đủ hai lịch Kendo, kể cả lịch Đến ngày không có ID ổn định');
-  assert.match(extensionSource, /\.k-nav-next/, 'Bù ngày tháng cũ phải tự chuyển lịch tiến/lùi theo tháng đích');
-  assert.match(extensionSource, /td:not\(\.k-other-month\)/, 'Bù ngày phải chọn ô ngày đúng tháng, không nhầm ngày cùng số ở tháng kề');
-  assert.doesNotMatch(extensionSource, /window\.jQuery\|\|window\.\$/, 'Content script không được phụ thuộc API Kendo nội bộ không truy cập được từ isolated world');
+  const workerSource = readFileSync(new URL('./kiotviet-chrome-extension/service-worker.js', import.meta.url), 'utf8');
+  assert.match(workerSource, /#fromDate/, 'Bù ngày phải đặt lịch Từ ngày theo selector đã ghi mẫu');
+  assert.match(extensionSource, /plate-studio-set-kiot-date-range/, 'Content script phải yêu cầu main world đặt cả Từ ngày và Đến ngày');
+  assert.match(extensionSource, /pendingApplication/, 'Nhóm hàng phải chấp nhận cả KiotViet tự áp dụng lẫn nút Áp dụng');
+  assert.match(workerSource, /world:'MAIN'/, 'Kendo phải được gọi trong main world, không phải isolated content script');
+  assert.match(workerSource, /kendoCalendar/, 'Bù ngày phải dùng widget lịch thật của KiotViet');
+  assert.match(workerSource, /selectedFrom!==requestedDay\|\|selectedTo!==requestedDay/, 'Phải đọc lại hai ngày trước khi cho phép tạo báo cáo');
   assert.match(extensionSource, /Tạo báo cáo/, 'Bù ngày phải xác nhận tạo đúng báo cáo trước khi xuất file');
+  assert.match(extensionSource, /Đã dừng trước khi xuất file/, 'Nếu nhãn báo cáo sai ngày thì phải chặn xuất file');
   assert.doesNotMatch(extensionSource, /if\(job\.period==='custom-day'\)throw/, 'Không được khóa job bù sau khi đã có mẫu thao tác');
-  console.log(JSON.stringify({ summary: { passed: 15, failed: 0 }, range: 'sequential custom-day queue and calendar navigation' }, null, 2));
+  console.log(JSON.stringify({ summary: { passed: 17, failed: 0 }, range: 'sequential custom-day queue with main-world date verification' }, null, 2));
 } finally {
   child.kill();
   rmSync(stateDir, { recursive: true, force: true });

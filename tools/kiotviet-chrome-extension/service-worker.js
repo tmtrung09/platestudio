@@ -46,6 +46,33 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     }}).then(result=>reply(result[0]?.result||{ok:false,error:'Không thể mở menu Xuất file.'})).catch(error=>reply({ok:false,error:error.message||String(error)}));
     return true;
   }
+  if(message?.type==='plate-studio-set-kiot-date-range'){
+    const tabId=sender.tab?.id,day=String(message.day||'');
+    if(!tabId){reply({ok:false,error:'Không tìm thấy tab KiotViet.'});return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(day)){reply({ok:false,error:'Ngày báo cáo không hợp lệ.'});return;}
+    /* Chạy ở MAIN world để truy cập chính Kendo widget mà KiotViet đang dùng.
+       Không bấm giả theo toạ độ: value + change cập nhật model của KiotViet,
+       sau đó đọc lại cả Từ ngày và Đến ngày làm điều kiện an toàn. */
+    chrome.scripting.executeScript({target:{tabId},world:'MAIN',args:[day],func:(requestedDay)=>{
+      const jq=window.jQuery||window.$;
+      if(!jq)return {ok:false,error:'KiotViet chưa sẵn sàng bộ chọn lịch.'};
+      const visible=node=>!!node&&(node.offsetWidth||node.offsetHeight||node.getClientRects().length);
+      const asDay=value=>{if(!(value instanceof Date)||Number.isNaN(value.getTime()))return '';const pad=number=>String(number).padStart(2,'0');return `${value.getFullYear()}-${pad(value.getMonth()+1)}-${pad(value.getDate())}`;};
+      const target=new Date(`${requestedDay}T12:00:00`);
+      const nodes=[...document.querySelectorAll('.kv-filter-time-other .k-calendar,.popover-filter .k-calendar')].filter(visible);
+      const fromNode=document.querySelector('#fromDate')||nodes[0];
+      const toNode=nodes.find(node=>node!==fromNode)||document.querySelector('#toDate');
+      const widgetFor=node=>node?jq(node).data('kendoCalendar'):null;
+      const from=widgetFor(fromNode),to=widgetFor(toNode);
+      if(!from||!to)return {ok:false,error:'Không tìm thấy đủ hai lịch Từ ngày và Đến ngày của KiotViet.'};
+      const assign=(widget,node)=>{widget.value(target);widget.trigger('change');node.dispatchEvent(new Event('change',{bubbles:true}));};
+      assign(from,fromNode);assign(to,toNode);
+      const selectedFrom=asDay(from.value()),selectedTo=asDay(to.value());
+      if(selectedFrom!==requestedDay||selectedTo!==requestedDay)return {ok:false,error:`KiotViet không nhận ngày yêu cầu (Từ ${selectedFrom||'trống'}, Đến ${selectedTo||'trống'}).`};
+      return {ok:true,from:selectedFrom,to:selectedTo};
+    }}).then(result=>reply(result[0]?.result||{ok:false,error:'Không thể đặt ngày trên KiotViet.'})).catch(error=>reply({ok:false,error:error.message||String(error)}));
+    return true;
+  }
   if(message?.type==='plate-studio-recorder-control'){
     const tabId=message.tabId||sender.tab?.id;
     if(!tabId){reply({ok:false,error:'Không tìm thấy tab KiotViet.'});return;}

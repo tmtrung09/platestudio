@@ -61,7 +61,10 @@
        Nhãn nhóm luôn mang thêm số lượng trong ngoặc, nên phải so khớp đầu chuỗi. */
     click(picker);await wait(RENDER.picker);await reportProgress(job,'Gõ “3d” để lọc cây nhóm hàng…');const input=await waitFor(()=>firstVisible('#categorySearchInput,#categorySearchFilter'),'ô tìm Nhóm hàng');setInput(input,'3d');await wait(RENDER.search);
     await reportProgress(job,'Chọn nhóm “3D Rùm Beng”…');const option=await waitFor(()=>categoryOption(category),'nhãn nhóm hàng 3D Rùm Beng');click(option.label);await waitFor(()=>!option.input||option.input.checked,'xác nhận chọn nhóm hàng 3D Rùm Beng');await wait(RENDER.choice);
-    await reportProgress(job,'Bấm Áp dụng nhóm hàng…');const apply=await waitFor(()=>textButton('Áp dụng',{popupOnly:true}),'nút Áp dụng');click(apply);
+    /* Có lúc KiotViet tự áp dụng khi chọn nhánh và đóng popover, có lúc mới
+       hiện nút Áp dụng. Chấp nhận cả hai trạng thái xác nhận này thay vì dừng
+       job rồi vô tình để lần chạy sau quay về bộ lọc/ngày mặc định. */
+    await reportProgress(job,'Xác nhận nhóm hàng…');const pendingApplication=await waitFor(()=>{const selected=[...picker.querySelectorAll('li.k-button')].some(item=>normal(item.textContent).startsWith(normal(category)));if(selected)return {selected:true};const apply=textButton('Áp dụng',{popupOnly:true});return apply?{apply}:null;},'xác nhận nhóm hàng');if(pendingApplication.apply)click(pendingApplication.apply);
     await waitFor(()=>[...picker.querySelectorAll('li.k-button')].some(item=>normal(item.textContent).startsWith(normal(category))),'xác nhận nhóm hàng');await reportProgress(job,'Đang chờ KiotViet lọc nhóm hàng…');await wait(RENDER.filter);
   }
   async function selectTimeRange(job){
@@ -71,32 +74,23 @@
        cả năm cho một ngày. */
     if(job.period==='custom-day'){
       const day=String(job.reportDay||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw new Error('Job bù không có ngày báo cáo hợp lệ.');
-      const [targetYear,targetMonth,targetDay]=day.split('-').map(Number),monthKey=(year,month)=>year*12+month;
-      /* Content script ở isolated world không đọc được window.jQuery/Kendo của
-         trang. Thay vì gọi API nội bộ dễ vỡ, điều hướng bằng DOM công khai mà
-         người dùng cũng đang bấm: header tháng, mũi tên và ô ngày. */
-      const readMonth=calendar=>{const text=String(calendar.querySelector('.k-header')?.textContent||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();const match=text.match(/thang\s*(\d{1,2})\s*(\d{4})/);return match?{month:Number(match[1]),year:Number(match[2])}:null;};
-      const setCalendar=async(calendar,label)=>{
-        for(let step=0;step<32;step++){
-          const current=readMonth(calendar);if(!current)throw new Error(`Không đọc được tháng của lịch ${label} trên KiotViet.`);
-          if(current.year===targetYear&&current.month===targetMonth)break;
-          const forward=monthKey(targetYear,targetMonth)>monthKey(current.year,current.month),nav=firstVisible(forward?'.k-nav-next,.k-i-arrow-60-right':'.k-nav-prev,.k-i-arrow-60-left',calendar);
-          if(!nav)throw new Error(`Không tìm thấy mũi tên chuyển tháng của lịch ${label}.`);
-          const before=calendar.querySelector('.k-header')?.textContent||'';await realClick(nav);await waitFor(()=>String(calendar.querySelector('.k-header')?.textContent||'')!==before,`lịch ${label} chuyển tháng`,5000);
-        }
-        const current=readMonth(calendar);if(!current||current.year!==targetYear||current.month!==targetMonth)throw new Error(`Không thể chuyển lịch ${label} đến tháng cần lấy.`);
-        const dateLink=[...calendar.querySelectorAll('td:not(.k-other-month) a.k-link')].find(link=>visible(link)&&Number(link.textContent.trim())===targetDay);
-        if(!dateLink)throw new Error(`Không tìm thấy ngày ${targetDay} trong lịch ${label}.`);
-        await realClick(dateLink);
-      };
       await reportProgress(job,`Mở chọn ngày ${day}…`);
       const custom=await waitFor(()=>firstVisible('#reportsortOtherLbl'),'mục Tùy chỉnh');await realClick(custom);await wait(RENDER.picker);
-      const calendars=await waitFor(()=>{const all=[...document.querySelectorAll('.kv-filter-time-other .k-calendar,.popover-filter .k-calendar')].filter(visible),from=firstVisible('#fromDate')||all[0],to=all.find(calendar=>calendar!==from)||null;return from&&to?{from,to}:null;},'hai lịch Từ ngày và Đến ngày');
-      const fromCalendar=calendars.from,toCalendar=calendars.to;
-      setCalendar(fromCalendar,'Từ ngày');setCalendar(toCalendar,'Đến ngày');await reportProgress(job,`Đã chọn ${day}. Đang tạo báo cáo…`);
+      /* Kendo nằm trong main world của KiotViet. Gọi qua service worker để
+         widget nhận đúng value/change; content script isolated không thể tự
+         gọi API đó. Hàm phía main world cũng trả về giá trị đã đọc lại, nên
+         không thể xuất nhầm báo cáo “hôm nay”. */
+      const selected=await chrome.runtime.sendMessage({type:'plate-studio-set-kiot-date-range',day});
+      if(!selected?.ok)throw new Error(selected?.error||'KiotViet không xác nhận được ngày đã chọn.');
+      await reportProgress(job,`Đã xác nhận ${selected.from} – ${selected.to}. Đang tạo báo cáo…`);
       const createReport=await waitFor(()=>textButton('Tạo báo cáo',{popupOnly:true}),'nút Tạo báo cáo');await realClick(createReport);
       await waitFor(()=>!firstVisible('.popover-filter.kv-filter-time-other,.kv-filter-time-other.popover'),'hộp chọn ngày đóng lại',12000);
-      await reportProgress(job,`Đang chờ KiotViet tải báo cáo ngày ${day}…`);await wait(RENDER.time);return;
+      await reportProgress(job,`Đang chờ KiotViet tải báo cáo ngày ${day}…`);await wait(RENDER.time);
+      const displayDay=day.split('-').reverse().join('/');
+      const timeLabel=firstVisible('#reportsortDateTimeLbl')||[...document.querySelectorAll('li.reportsortDateTime .sortTimeLbl,.thoigiantuden')].find(visible);
+      const timeText=normal(timeLabel?.textContent);
+      if(!timeText.includes(normal(displayDay)))throw new Error(`KiotViet đang hiển thị “${timeLabel?.textContent?.trim()||'không rõ thời gian'}”, không phải ngày ${displayDay}. Đã dừng trước khi xuất file.`);
+      return;
     }
     const yesterday=job.period==='yesterday';
     const range={key:yesterday?'yesterday':'year',label:yesterday?'Hôm qua':'Năm nay',loading:yesterday?'báo cáo hôm qua':'báo cáo năm nay'};
