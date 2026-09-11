@@ -1,6 +1,7 @@
 (()=>{
   if(window.__plateStudioKiotSyncInstalled)return;
   window.__plateStudioKiotSyncInstalled=true;
+  const CONTENT_VERSION='range-session-20260911-2';
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const visible=element=>!!element&&!!(element.offsetWidth||element.offsetHeight||element.getClientRects().length)&&getComputedStyle(element).visibility!=='hidden';
   const normal=value=>String(value||'').replace(/\s+/g,' ').trim().toLocaleLowerCase('vi');
@@ -182,6 +183,7 @@
   setInterval(recordLoadState,250);
   updateRecorderBadge();
   chrome.runtime.onMessage.addListener((message,_sender,reply)=>{
+    if(message?.type==='plate-studio-kiot-content-version'){reply({version:CONTENT_VERSION});return;}
     if(message?.type==='plate-studio-run-kiot-sync'){execute(message.job).then(()=>reply({ok:true})).catch(error=>reply({ok:false,error:error.message||String(error)}));return true;}
     if(message?.type==='plate-studio-recorder-control'){
       if(message.action==='start'){recorder.active=true;recorder.startedAt=Date.now();recorder.actions=[];recorder.lastPointer=null;recorder.lastLoadState=null;recordLoadState();persistRecorder();reply({ok:true,active:true});return;}

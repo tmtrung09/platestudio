@@ -1,5 +1,6 @@
 const BRIDGE='http://127.0.0.1:41761';
 const REPORT_URL='https://banhmi19.kiotviet.vn/man/#/ProductReport';
+const CONTENT_VERSION='range-session-20260911-2';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function bridge(path,options={}){const response=await fetch(BRIDGE+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});if(!response.ok)throw new Error((await response.json().catch(()=>({}))).error||'Không liên lạc được local bridge.');return response.json();}
 async function notify(path,payload){try{await bridge(path,{method:'POST',body:JSON.stringify(payload)});}catch(error){console.warn('Plate Studio Kiot sync:',error);}}
@@ -13,9 +14,21 @@ async function targetTab(job){
   else {tab=await chrome.tabs.update(tab.id,{active:true});if(!(job?.origin==='range'&&job?.period==='custom-day'&&job?.rangeId))await chrome.tabs.reload(tab.id);}
   return waitForTab(tab.id);
 }
-async function run(job){
-  const tab=await targetTab(job);await notify('/extension/progress',{id:job.id,detail:job?.origin==='range'?'Đang giữ tab Báo cáo cho lượt bù ngày tiếp theo…':'Đang mở Báo cáo hàng hóa trong Chrome…'});
+async function contentVersion(tabId){try{return await chrome.tabs.sendMessage(tabId,{type:'plate-studio-kiot-content-version'});}catch{return null;}}
+async function ensureCurrentContent(tab){
   await chrome.scripting.executeScript({target:{tabId:tab.id},files:['content.js']});
+  if((await contentVersion(tab.id))?.version===CONTENT_VERSION)return tab;
+  /* Reload extension không thay content script đã nằm trong tab cũ. Làm mới
+     đúng một lần ngay khi phát hiện phiên bản cũ để tránh chạy đồng thời logic
+     cũ (còn bấm lùi tháng) và logic phiên bù mới. Những job tiếp theo không
+     đi qua nhánh này nữa. */
+  await chrome.tabs.reload(tab.id);const refreshed=await waitForTab(tab.id);
+  await chrome.scripting.executeScript({target:{tabId:refreshed.id},files:['content.js']});
+  if((await contentVersion(refreshed.id))?.version!==CONTENT_VERSION)throw new Error('Không nạp được phiên bản mới của Plate Studio KiotViet.');
+  return refreshed;
+}
+async function run(job){
+  let tab=await targetTab(job);tab=await ensureCurrentContent(tab);await notify('/extension/progress',{id:job.id,detail:job?.origin==='range'?'Đang giữ tab Báo cáo cho lượt bù ngày tiếp theo…':'Đang mở Báo cáo hàng hóa trong Chrome…'});
   const reply=await chrome.tabs.sendMessage(tab.id,{type:'plate-studio-run-kiot-sync',job});
   if(!reply?.ok)throw new Error(reply?.error||'Không gửi được lệnh đến trang KiotViet.');
 }

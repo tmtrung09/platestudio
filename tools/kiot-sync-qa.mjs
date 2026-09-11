@@ -50,19 +50,22 @@ try {
   assert.match(extensionSource, /plate-studio-create-kiot-date-report/, 'Bù ngày phải kích hoạt Tạo báo cáo qua main world');
   assert.match(extensionSource, /__plateStudioKiotRangeSessionId/, 'Các ngày trong cùng lượt bù phải dùng marker phiên làm việc chung');
   assert.match(extensionSource, /if\(!continueRange\)/, 'Ngày tiếp theo chỉ được bỏ qua phần chọn chế độ/nhóm hàng khi cùng lượt bù');
+  assert.match(extensionSource, /range-session-20260911-2/, 'Content script phải công bố phiên bản để tránh chạy logic cũ còn trong tab');
   assert.match(extensionSource, /pendingApplication/, 'Nhóm hàng phải chấp nhận cả KiotViet tự áp dụng lẫn nút Áp dụng');
   assert.match(workerSource, /world:'MAIN'/, 'Kendo phải được gọi trong main world, không phải isolated content script');
   assert.match(workerSource, /kendoCalendar/, 'Bù ngày phải dùng widget lịch thật của KiotViet');
   assert.match(workerSource, /filterbyDateRange\(\)/, 'Nút Tạo báo cáo phải gọi đúng handler Angular của KiotViet');
   assert.match(workerSource, /normal\(node\.textContent\)==='tao bao cao'/, 'Nút Tạo báo cáo phải có fallback theo nhãn khi KiotViet đổi ng-click');
   assert.match(workerSource, /job\?\.origin==='range'&&job\?\.period==='custom-day'&&job\?\.rangeId/, 'Job bù ngày tiếp theo không được reload lại tab Báo cáo');
+  assert.match(workerSource, /ensureCurrentContent/, 'Service worker phải kiểm tra content script sau khi extension được reload');
+  assert.match(workerSource, /plate-studio-kiot-content-version/, 'Service worker phải xác nhận đúng phiên bản content script trước khi chạy job');
   assert.match(workerSource, /await new Promise\(resolve=>setTimeout\(resolve,260\)\)/, 'Sau khi chọn Từ ngày phải chờ KiotViet render lại lịch Đến ngày');
   assert.match(workerSource, /const refreshed=calendarEntries\(\)/, 'Phải truy vấn lại lịch Đến ngày sau khi lịch hai cột đổi trạng thái');
   assert.match(workerSource, /selectedFrom!==requestedDay\|\|selectedTo!==requestedDay/, 'Phải đọc lại hai ngày trước khi cho phép tạo báo cáo');
   assert.match(extensionSource, /Tạo báo cáo/, 'Bù ngày phải xác nhận tạo đúng báo cáo trước khi xuất file');
   assert.match(extensionSource, /không xác nhận khoảng/i, 'Nếu khoảng báo cáo sai thì phải chặn xuất file');
   assert.doesNotMatch(extensionSource, /if\(job\.period==='custom-day'\)throw/, 'Không được khóa job bù sau khi đã có mẫu thao tác');
-  console.log(JSON.stringify({ summary: { passed: 21, failed: 0 }, range: 'sequential custom-day queue with session reuse and date verification' }, null, 2));
+  console.log(JSON.stringify({ summary: { passed: 24, failed: 0 }, range: 'sequential custom-day queue with session reuse, version guard, and date verification' }, null, 2));
 } finally {
   child.kill();
   rmSync(stateDir, { recursive: true, force: true });
