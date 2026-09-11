@@ -83,13 +83,17 @@
       const selected=await chrome.runtime.sendMessage({type:'plate-studio-set-kiot-date-range',day});
       if(!selected?.ok)throw new Error(selected?.error||'KiotViet không xác nhận được ngày đã chọn.');
       await reportProgress(job,`Đã xác nhận ${selected.from} – ${selected.to}. Đang tạo báo cáo…`);
-      const createReport=await waitFor(()=>textButton('Tạo báo cáo',{popupOnly:true}),'nút Tạo báo cáo');await realClick(createReport);
-      await waitFor(()=>!firstVisible('.popover-filter.kv-filter-time-other,.kv-filter-time-other.popover'),'hộp chọn ngày đóng lại',12000);
+      /* `filterbyDateRange()` là handler Angular thật của nút. Bấm vật lý qua
+         debugger có thể đến muộn khi popup hai lịch vừa render, nên gọi handler
+         trong main world và vẫn chờ popup đóng như người dùng bấm nút. */
+      const created=await chrome.runtime.sendMessage({type:'plate-studio-create-kiot-date-report'});
+      if(!created?.ok)throw new Error(created?.error||'Không thể bấm Tạo báo cáo trên KiotViet.');
+      await waitFor(()=>!firstVisible('[ng-click="filterbyDateRange()"]'),'hộp chọn ngày đóng lại',12000);
       await reportProgress(job,`Đang chờ KiotViet tải báo cáo ngày ${day}…`);await wait(RENDER.time);
       const displayDay=day.split('-').reverse().join('/');
-      const timeLabel=firstVisible('#reportsortDateTimeLbl')||[...document.querySelectorAll('li.reportsortDateTime .sortTimeLbl,.thoigiantuden')].find(visible);
-      const timeText=normal(timeLabel?.textContent);
-      if(!timeText.includes(normal(displayDay)))throw new Error(`KiotViet đang hiển thị “${timeLabel?.textContent?.trim()||'không rõ thời gian'}”, không phải ngày ${displayDay}. Đã dừng trước khi xuất file.`);
+      const rangeControl=[...document.querySelectorAll('input,button,a,label,span')].find(element=>visible(element)&&normal(('value'in element&&element.value)||element.textContent).includes(normal(`${displayDay} - ${displayDay}`)));
+      const rangeText=rangeControl&&(('value'in rangeControl&&rangeControl.value)||rangeControl.textContent||'').trim();
+      if(!rangeText)throw new Error(`KiotViet không xác nhận khoảng ${displayDay} – ${displayDay}. Đã dừng trước khi xuất file.`);
       return;
     }
     const yesterday=job.period==='yesterday';

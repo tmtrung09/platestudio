@@ -47,14 +47,16 @@ try {
   const workerSource = readFileSync(new URL('./kiotviet-chrome-extension/service-worker.js', import.meta.url), 'utf8');
   assert.match(workerSource, /#fromDate/, 'Bù ngày phải đặt lịch Từ ngày theo selector đã ghi mẫu');
   assert.match(extensionSource, /plate-studio-set-kiot-date-range/, 'Content script phải yêu cầu main world đặt cả Từ ngày và Đến ngày');
+  assert.match(extensionSource, /plate-studio-create-kiot-date-report/, 'Bù ngày phải kích hoạt Tạo báo cáo qua main world');
   assert.match(extensionSource, /pendingApplication/, 'Nhóm hàng phải chấp nhận cả KiotViet tự áp dụng lẫn nút Áp dụng');
   assert.match(workerSource, /world:'MAIN'/, 'Kendo phải được gọi trong main world, không phải isolated content script');
   assert.match(workerSource, /kendoCalendar/, 'Bù ngày phải dùng widget lịch thật của KiotViet');
+  assert.match(workerSource, /filterbyDateRange\(\)/, 'Nút Tạo báo cáo phải gọi đúng handler Angular của KiotViet');
   assert.match(workerSource, /await new Promise\(resolve=>setTimeout\(resolve,260\)\)/, 'Sau khi chọn Từ ngày phải chờ KiotViet render lại lịch Đến ngày');
   assert.match(workerSource, /const refreshed=calendarEntries\(\)/, 'Phải truy vấn lại lịch Đến ngày sau khi lịch hai cột đổi trạng thái');
   assert.match(workerSource, /selectedFrom!==requestedDay\|\|selectedTo!==requestedDay/, 'Phải đọc lại hai ngày trước khi cho phép tạo báo cáo');
   assert.match(extensionSource, /Tạo báo cáo/, 'Bù ngày phải xác nhận tạo đúng báo cáo trước khi xuất file');
-  assert.match(extensionSource, /Đã dừng trước khi xuất file/, 'Nếu nhãn báo cáo sai ngày thì phải chặn xuất file');
+  assert.match(extensionSource, /không xác nhận khoảng/i, 'Nếu khoảng báo cáo sai thì phải chặn xuất file');
   assert.doesNotMatch(extensionSource, /if\(job\.period==='custom-day'\)throw/, 'Không được khóa job bù sau khi đã có mẫu thao tác');
   console.log(JSON.stringify({ summary: { passed: 17, failed: 0 }, range: 'sequential custom-day queue with main-world date verification' }, null, 2));
 } finally {

@@ -84,6 +84,25 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     }}).then(result=>reply(result[0]?.result||{ok:false,error:'Không thể đặt ngày trên KiotViet.'})).catch(error=>reply({ok:false,error:error.message||String(error)}));
     return true;
   }
+  if(message?.type==='plate-studio-create-kiot-date-report'){
+    const tabId=sender.tab?.id;
+    if(!tabId){reply({ok:false,error:'Không tìm thấy tab KiotViet.'});return;}
+    chrome.scripting.executeScript({target:{tabId},world:'MAIN',func:()=>{
+      const button=[...document.querySelectorAll('[ng-click="filterbyDateRange()"]')].find(node=>node.offsetWidth||node.offsetHeight||node.getClientRects().length);
+      if(!button)return {ok:false,error:'Không tìm thấy nút Tạo báo cáo.'};
+      const angularApi=window.angular;
+      let scope=angularApi?.element?.(button).scope?.()||null;
+      for(let level=0;scope&&level<8&&typeof scope.filterbyDateRange!=='function';level+=1)scope=scope.$parent;
+      if(typeof scope?.filterbyDateRange==='function'){
+        const invoke=()=>scope.filterbyDateRange();
+        if(scope.$root?.$$phase)invoke();else scope.$apply(invoke);
+        return {ok:true,method:'angular-filterbyDateRange'};
+      }
+      button.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+      return {ok:true,method:'main-world-click'};
+    }}).then(result=>reply(result[0]?.result||{ok:false,error:'Không thể kích hoạt Tạo báo cáo.'})).catch(error=>reply({ok:false,error:error.message||String(error)}));
+    return true;
+  }
   if(message?.type==='plate-studio-recorder-control'){
     const tabId=message.tabId||sender.tab?.id;
     if(!tabId){reply({ok:false,error:'Không tìm thấy tab KiotViet.'});return;}
