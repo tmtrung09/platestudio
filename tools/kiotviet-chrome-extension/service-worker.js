@@ -53,21 +53,32 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     /* Chạy ở MAIN world để truy cập chính Kendo widget mà KiotViet đang dùng.
        Không bấm giả theo toạ độ: value + change cập nhật model của KiotViet,
        sau đó đọc lại cả Từ ngày và Đến ngày làm điều kiện an toàn. */
-    chrome.scripting.executeScript({target:{tabId},world:'MAIN',args:[day],func:(requestedDay)=>{
+    chrome.scripting.executeScript({target:{tabId},world:'MAIN',args:[day],func:async(requestedDay)=>{
       const jq=window.jQuery||window.$;
       if(!jq)return {ok:false,error:'KiotViet chưa sẵn sàng bộ chọn lịch.'};
       const visible=node=>!!node&&(node.offsetWidth||node.offsetHeight||node.getClientRects().length);
       const asDay=value=>{if(!(value instanceof Date)||Number.isNaN(value.getTime()))return '';const pad=number=>String(number).padStart(2,'0');return `${value.getFullYear()}-${pad(value.getMonth()+1)}-${pad(value.getDate())}`;};
       const target=new Date(`${requestedDay}T12:00:00`);
-      const nodes=[...document.querySelectorAll('.kv-filter-time-other .k-calendar,.popover-filter .k-calendar')].filter(visible);
-      const fromNode=document.querySelector('#fromDate')||nodes[0];
-      const toNode=nodes.find(node=>node!==fromNode)||document.querySelector('#toDate');
-      const widgetFor=node=>node?jq(node).data('kendoCalendar'):null;
-      const from=widgetFor(fromNode),to=widgetFor(toNode);
-      if(!from||!to)return {ok:false,error:'Không tìm thấy đủ hai lịch Từ ngày và Đến ngày của KiotViet.'};
+      const calendarEntries=()=>[...document.querySelectorAll('.kv-filter-time-other .k-calendar,.popover-filter .k-calendar')].filter(visible).map(node=>({node,widget:jq(node).data('kendoCalendar')||jq(node).data('kendoDatePicker')})).filter(entry=>entry.widget);
+      const widgetFor=node=>node?(jq(node).data('kendoCalendar')||jq(node).data('kendoDatePicker')):null;
+      const entries=calendarEntries();
+      const fromNode=document.querySelector('#fromDate')||entries[0]?.node;
+      const from=widgetFor(fromNode);
+      if(!from)return {ok:false,error:'Không tìm thấy lịch Từ ngày của KiotViet.'};
       const assign=(widget,node)=>{widget.value(target);widget.trigger('change');node.dispatchEvent(new Event('change',{bubbles:true}));};
-      assign(from,fromNode);assign(to,toNode);
-      const selectedFrom=asDay(from.value()),selectedTo=asDay(to.value());
+      /* Chọn Từ ngày làm KiotViet render lại cột Đến ngày. Vì vậy phải chờ
+         render rồi truy vấn widget bên phải lần nữa; giữ node cũ khiến ngày
+         kết thúc bị trả về Hôm nay, đúng lỗi đã quan sát trên lịch hai cột. */
+      assign(from,fromNode);
+      await new Promise(resolve=>setTimeout(resolve,260));
+      const refreshed=calendarEntries();
+      const refreshedFromNode=document.querySelector('#fromDate')||fromNode;
+      const toNode=document.querySelector('#toDate')||refreshed.find(entry=>entry.node!==refreshedFromNode)?.node;
+      const to=widgetFor(toNode);
+      if(!to)return {ok:false,error:'Không tìm thấy lịch Đến ngày của KiotViet sau khi chọn Từ ngày.'};
+      assign(to,toNode);
+      await new Promise(resolve=>setTimeout(resolve,160));
+      const selectedFrom=asDay(widgetFor(document.querySelector('#fromDate')||fromNode)?.value()),selectedTo=asDay(widgetFor(document.querySelector('#toDate')||toNode)?.value());
       if(selectedFrom!==requestedDay||selectedTo!==requestedDay)return {ok:false,error:`KiotViet không nhận ngày yêu cầu (Từ ${selectedFrom||'trống'}, Đến ${selectedTo||'trống'}).`};
       return {ok:true,from:selectedFrom,to:selectedTo};
     }}).then(result=>reply(result[0]?.result||{ok:false,error:'Không thể đặt ngày trên KiotViet.'})).catch(error=>reply({ok:false,error:error.message||String(error)}));

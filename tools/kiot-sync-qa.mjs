@@ -50,6 +50,8 @@ try {
   assert.match(extensionSource, /pendingApplication/, 'Nhóm hàng phải chấp nhận cả KiotViet tự áp dụng lẫn nút Áp dụng');
   assert.match(workerSource, /world:'MAIN'/, 'Kendo phải được gọi trong main world, không phải isolated content script');
   assert.match(workerSource, /kendoCalendar/, 'Bù ngày phải dùng widget lịch thật của KiotViet');
+  assert.match(workerSource, /await new Promise\(resolve=>setTimeout\(resolve,260\)\)/, 'Sau khi chọn Từ ngày phải chờ KiotViet render lại lịch Đến ngày');
+  assert.match(workerSource, /const refreshed=calendarEntries\(\)/, 'Phải truy vấn lại lịch Đến ngày sau khi lịch hai cột đổi trạng thái');
   assert.match(workerSource, /selectedFrom!==requestedDay\|\|selectedTo!==requestedDay/, 'Phải đọc lại hai ngày trước khi cho phép tạo báo cáo');
   assert.match(extensionSource, /Tạo báo cáo/, 'Bù ngày phải xác nhận tạo đúng báo cáo trước khi xuất file');
   assert.match(extensionSource, /Đã dừng trước khi xuất file/, 'Nếu nhãn báo cáo sai ngày thì phải chặn xuất file');
