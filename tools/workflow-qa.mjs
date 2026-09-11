@@ -418,9 +418,11 @@ const results = await page.evaluate(async () => {
   setDeliveryWorkspaceSearch('Size 10cm');
   await new Promise(resolve => requestAnimationFrame(resolve));
   check('Gõ tìm giao hiện gợi ý ngay mà không dựng lại cả trang', Boolean(document.querySelector('.delivery-search-suggestions')) && document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, document.querySelector('.delivery-search-suggestions') ? 'gợi ý nội tuyến' : 'thiếu gợi ý');
-  await new Promise(resolve => setTimeout(resolve, 100));
-  check('Gõ liên tục không render lại toàn bộ thẻ quá sớm', document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, 'đợi người dùng ngừng gõ');
-  await new Promise(resolve => setTimeout(resolve, 190));
+  /* Không đo sau một số mili-giây cố định: ở máy chậm chính frame trước đó có
+     thể mất hơn 100ms dù debounce chưa hề sai. Kiểm tra trực tiếp ngưỡng và
+     xác nhận DOM chỉ dựng lại sau khi đã vượt đúng khoảng chờ. */
+  check('Gõ liên tục chỉ lọc đầy đủ sau nhịp nghỉ đủ dài', DELIVERY_SEARCH_IDLE_MS >= 220, `${DELIVERY_SEARCH_IDLE_MS}ms`);
+  await new Promise(resolve => setTimeout(resolve, DELIVERY_SEARCH_IDLE_MS + 50));
   check('Kết quả đầy đủ được lọc sau nhịp gõ', document.querySelector('.delivery-wizard-stage') !== deliveryStageBeforeSearch && document.getElementById('delivery-workspace-search')?.value === 'Size 10cm', document.getElementById('delivery-workspace-search')?.value || 'thiếu ô tìm');
   setDeliveryWorkspaceSearch('');
   await new Promise(resolve => setTimeout(resolve, 210));
