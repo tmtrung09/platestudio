@@ -102,6 +102,27 @@ const results = await page.evaluate(async () => {
   const receiveDelivery = fulfillmentHeader?.querySelector('button[onclick="openReceivingHub()"]');
   const createRect = createDelivery?.getBoundingClientRect(), refreshRect = refreshDelivery?.getBoundingClientRect(), receiveRect = receiveDelivery?.getBoundingClientRect();
   check('Mobile đặt tạo đợt giao lên hàng chính riêng', Boolean(createRect && refreshRect && receiveRect && createRect.top < refreshRect.top && createRect.bottom <= refreshRect.top + 1 && Math.abs(refreshRect.top - receiveRect.top) < 2), createRect && refreshRect ? `${Math.round(createRect.top)} → ${Math.round(refreshRect.top)}` : 'thiếu nút');
+  const bulkItem = { ...orders[0].items[0], id: 'qa-bulk-item' };
+  orders.push({ ...orders[0], id: 'qa-bulk-order', note: 'QA · Hàng loạt', items: [bulkItem], assembly: { status: 'in_progress', items: {}, handovers: {} } });
+  pitems.push(
+    { id: 'qa-bulk-body', orderId: 'qa-bulk-order', orderItemId: 'qa-bulk-item', modelId: 'qa-model', partId: 'qa-body', partName: 'Thân', qty: 4, qtyDone: 4, qtyRejected: 0 },
+    { id: 'qa-bulk-base', orderId: 'qa-bulk-order', orderItemId: 'qa-bulk-item', modelId: 'qa-model', partId: 'qa-base', partName: 'Đế', qty: 4, qtyDone: 4, qtyRejected: 0 },
+    { id: 'qa-bulk-locked', orderId: 'qa-bulk-order', orderItemId: 'qa-bulk-item', modelId: 'qa-model', partId: 'qa-locked', partName: 'Chi tiết có màu quy định', qty: 4, qtyDone: 4, qtyRejected: 0 }
+  );
+  normalizeOperations();
+  renderFulfillmentPage();
+  const bulkModeButton = document.querySelector('#fulfillment-workshop-zone .fulfillment-bulk-tools button[onclick="toggleFulfillmentBulkMode()"]');
+  check('Có nút mở thao tác hàng loạt khi có model đủ điều kiện', Boolean(bulkModeButton), bulkModeButton?.textContent.trim() || 'thiếu nút');
+  bulkModeButton?.click();
+  const bulkChoice = document.querySelector('#fulfillment-workshop-zone .workshop-bulk-select input');
+  check('Chế độ hàng loạt chỉ hiện lựa chọn trên model được phép giao xưởng', Boolean(bulkChoice) && !document.querySelector('.workshop-item.is-handed .workshop-bulk-select'), bulkChoice ? 'có lựa chọn hợp lệ' : 'thiếu lựa chọn');
+  if(bulkChoice){bulkChoice.checked=true;bulkChoice.dispatchEvent(new Event('change',{bubbles:true}));}
+  check('Chọn model hàng loạt hiển thị hành động giao xưởng theo số đã chọn', /Giao xưởng \(1\)/.test(document.querySelector('.fulfillment-bulk-tools')?.textContent || ''), document.querySelector('.fulfillment-bulk-tools')?.textContent.trim() || 'thiếu cụm lệnh');
+  if(fulfillmentBulkMode)toggleFulfillmentBulkMode();
+  orders=orders.filter(order=>order.id!=='qa-bulk-order');
+  pitems=pitems.filter(item=>item.orderId!=='qa-bulk-order');
+  normalizeOperations();
+  renderFulfillmentPage();
   const fulfillmentRendererSource = renderFulfillmentPage.toString();
   const missingPartsIndex = fulfillmentRendererSource.indexOf('id="fulfillment-missing-parts"');
   const workshopFlowIndex = fulfillmentRendererSource.indexOf('id="fulfillment-workshop-flow"');
