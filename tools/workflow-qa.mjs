@@ -77,7 +77,11 @@ const results = await page.evaluate(async () => {
     { id: 'qa-pitem-body', orderId: 'qa-order', orderItemId: 'qa-item', modelId: 'qa-model', partId: 'qa-body', partName: 'Thân', qty: 4, qtyDone: 4, qtyRejected: 0 },
     { id: 'qa-pitem-base', orderId: 'qa-order', orderItemId: 'qa-item', modelId: 'qa-model', partId: 'qa-base', partName: 'Đế', qty: 4, qtyDone: 4, qtyRejected: 0 },
   ];
-  plates = []; batchReports = []; projects = [];
+  plates = []; batchReports = [{
+    id: 'qa-evidence-report', status: 'done', createdAt: stamp, completedAt: stamp, completedBy: 'QA', filamentId: qaFilament.id,
+    image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="90"%3E%3Crect width="120" height="90" fill="%232563eb"/%3E%3C/svg%3E',
+    appliedItems: [{ pitemId: 'qa-pitem-body', qty: 4 }], manualItems: [],
+  }]; projects = [];
   operations = { qualityIssues: [], deliveries: [], deliveryBatches: [], events: [], externalWorkshopHandovers: {} };
   normalizeOperations();
   goPage('fulfillment', { historyMode: 'none' });
@@ -196,6 +200,11 @@ const results = await page.evaluate(async () => {
 
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
+  openWorkshopEvidence(workshopWaitKey(row));
+  const evidenceDeclaration = document.querySelector('.workshop-evidence-card .workshop-evidence-declaration');
+  const evidenceSummary = document.querySelector('.workshop-evidence-card .workshop-evidence-copy > b');
+  check('Ảnh minh chứng hiện part, số lượng và màu đã khai báo', Boolean(evidenceDeclaration && evidenceSummary) && evidenceDeclaration.textContent.includes('Thân ×4') && evidenceDeclaration.textContent.includes(qaFilament.name) && evidenceSummary.textContent.includes('4 cái'), `${evidenceSummary?.textContent.trim() || 'thiếu tóm tắt'} · ${evidenceDeclaration?.textContent.trim() || 'thiếu khai báo'}`);
+  closeDialog('dlg-mv');
 
   /* QC is a repeat action on mobile. Rendering the destination group must not
      steal the operator away from the remaining cards in the current group. */
