@@ -88,6 +88,11 @@ const results = await page.evaluate(async () => {
   }]; projects = [];
   operations = { qualityIssues: [], deliveries: [], deliveryBatches: [], events: [], externalWorkshopHandovers: {} };
   normalizeOperations();
+  goPage('batches', { historyMode: 'none' });
+  renderBatchReportPage();
+  const batchPreviewImage = document.querySelector('.batch-report-media > img');
+  const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
+  check('Ảnh thẻ báo cáo mẻ luôn hiện trọn khung và canh giữa', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'contain' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
   goPage('fulfillment', { historyMode: 'none' });
 
   const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');
