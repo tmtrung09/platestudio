@@ -71,7 +71,7 @@ const results = await page.evaluate(async () => {
   orders = [{
     id: 'qa-order', note: 'QA · Đơn kiểm thử', status: 'processing', createdAt: stamp,
     items: [{ id: 'qa-item', modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: 'qa-size-10', variantName: 'Size 10cm', qty: 4 }],
-    assembly: { status: 'in_progress', items: {}, handovers: { 'qa-item': { handedAt: stamp, handedBy: 'QA', qcStatus: 'pending' } }, },
+    assembly: { status: 'in_progress', items: {}, handovers: { 'qa-item': { handedAt: stamp, handedBy: 'QA', qcStatus: 'pending', batchReportId: 'qa-evidence-legacy' } }, },
   }];
   pitems = [
     { id: 'qa-pitem-body', orderId: 'qa-order', orderItemId: 'qa-item', modelId: 'qa-model', partId: 'qa-body', partName: 'Thân', qty: 4, qtyDone: 4, qtyRejected: 0 },
@@ -81,6 +81,10 @@ const results = await page.evaluate(async () => {
     id: 'qa-evidence-report', status: 'done', createdAt: stamp, completedAt: stamp, completedBy: 'QA', filamentId: qaFilament.id,
     image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="90"%3E%3Crect width="120" height="90" fill="%232563eb"/%3E%3C/svg%3E',
     appliedItems: [{ pitemId: 'qa-pitem-body', qty: 4 }], manualItems: [],
+  }, {
+    id: 'qa-evidence-legacy', status: 'done', createdAt: stamp, completedAt: stamp, completedBy: 'QA', filamentId: qaFilament.id,
+    image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="90"%3E%3Crect width="120" height="90" fill="%2394a3b8"/%3E%3C/svg%3E',
+    appliedItems: [], manualItems: [],
   }]; projects = [];
   operations = { qualityIssues: [], deliveries: [], deliveryBatches: [], events: [], externalWorkshopHandovers: {} };
   normalizeOperations();
@@ -201,9 +205,11 @@ const results = await page.evaluate(async () => {
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
   openWorkshopEvidence(workshopWaitKey(row));
+  const evidenceCards = [...document.querySelectorAll('.workshop-evidence-card')];
   const evidenceDeclaration = document.querySelector('.workshop-evidence-card .workshop-evidence-declaration');
   const evidenceSummary = document.querySelector('.workshop-evidence-card .workshop-evidence-copy > b');
   check('Ảnh minh chứng hiện part, số lượng và màu đã khai báo', Boolean(evidenceDeclaration && evidenceSummary) && evidenceDeclaration.textContent.includes('Thân ×4') && evidenceDeclaration.textContent.includes(qaFilament.name) && evidenceSummary.textContent.includes('4 cái'), `${evidenceSummary?.textContent.trim() || 'thiếu tóm tắt'} · ${evidenceDeclaration?.textContent.trim() || 'thiếu khai báo'}`);
+  check('Mọi ảnh minh chứng đều dùng thẻ khai báo, kể cả ảnh cũ thiếu dữ liệu', evidenceCards.length === 2 && evidenceCards.every(card => card.dataset.evidenceLayout === 'declaration-v2' && card.querySelector('.workshop-evidence-copy') && card.querySelector('.workshop-evidence-declaration')) && evidenceCards.some(card => card.textContent.includes('Chưa khai báo part cho model này')), `${evidenceCards.length} ảnh · ${evidenceCards.map(card => card.querySelector('.workshop-evidence-copy') ? 'có nội dung' : 'thiếu nội dung').join(', ')}`);
   closeDialog('dlg-mv');
 
   /* QC is a repeat action on mobile. Rendering the destination group must not

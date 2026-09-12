@@ -29,6 +29,8 @@ jobs:
           mkdir -p site
           cp index.html plate-studio.html manifest.webmanifest push-sw.js plate-studio-mark.svg site/
           cp -R assets site/assets
+          sed -i "s/__DEPLOY_REVISION__/${GITHUB_SHA}/g" site/plate-studio.html
+          printf '{"revision":"%s"}\n' "$GITHUB_SHA" > site/release.json
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

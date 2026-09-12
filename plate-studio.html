@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-plate-release="__DEPLOY_REVISION__">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12,6 +12,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <script>try{if(localStorage.getItem('ps_theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
+<script>
+/* GitHub Pages can briefly serve an older HTML file after a deploy.  Every
+   deployed build carries its commit id; once a newer release is visible, move
+   this tab to a cache-busting URL exactly once.  Local/file previews keep the
+   placeholder and never make a network request. */
+(()=>{
+  const release=document.documentElement.dataset.plateRelease||'';
+  if(!/^[a-f0-9]{7,40}$/i.test(release)||location.protocol==='file:')return;
+  const check=async()=>{
+    try{
+      const response=await fetch(new URL('release.json',document.baseURI),{cache:'no-store'});
+      const remote=await response.json(),next=String(remote?.revision||'');
+      if(!/^[a-f0-9]{7,40}$/i.test(next)||next===release)return;
+      const url=new URL(location.href);
+      if(url.searchParams.get('ps_release')===next)return;
+      url.searchParams.set('ps_release',next);
+      location.replace(url.href);
+    }catch(_){}
+  };
+  window.addEventListener('load',()=>window.setTimeout(check,900),{once:true});
+})();
+</script>
 <style>
 /* ═══════════════════════════════
    TOKENS
@@ -16378,7 +16400,7 @@ function openWorkshopEvidence(rowKey){
   const cards=reports.map((report,index)=>{
     const declaration=workshopEvidenceDeclaration(report,row),partText=declaration.lines.map(line=>`${line.partName} ×${line.quantity}`).join(' · '),colorText=declaration.colors.join(' · '),summary=declaration.lines.length?`${declaration.total} cái · ${declaration.lines.length} part`:'Chưa khai báo part cho model này';
     const src=report.thumb||report.image;
-    return `<button type="button" class="workshop-evidence-card" onclick="viewBatchReport('${esc(report.id)}')" aria-label="Ảnh ${index+1}: ${esc(summary)}"><span class="workshop-evidence-media"><img src="${esc(src)}" alt="Ảnh minh chứng ${index+1} của ${esc(name)}" loading="lazy" onerror="batchReportImageFallback(this)"/><i>Ảnh ${index+1}</i></span><span class="workshop-evidence-copy"><b>${esc(summary)}</b><span class="workshop-evidence-declaration"><strong>Đã khai báo</strong><span>${esc(partText||'Chưa có part được khai báo')}${colorText?` · ${esc(colorText)}`:''}</span></span><small class="workshop-evidence-meta">${fmtDate(report.completedAt||report.createdAt)} · ${esc(batchActorLabel(report.completedBy||report.removedBy||report.capturedBy))}</small></span></button>`;
+    return `<button type="button" class="workshop-evidence-card" data-evidence-layout="declaration-v2" onclick="viewBatchReport('${esc(report.id)}')" aria-label="Ảnh ${index+1}: ${esc(summary)}"><span class="workshop-evidence-media"><img src="${esc(src)}" alt="Ảnh minh chứng ${index+1} của ${esc(name)}" loading="lazy" onerror="batchReportImageFallback(this)"/><i>Ảnh ${index+1}</i></span><span class="workshop-evidence-copy"><b>${esc(summary)}</b><span class="workshop-evidence-declaration"><strong>Đã khai báo</strong><span>${esc(partText||'Chưa có part được khai báo')}${colorText?` · ${esc(colorText)}`:''}</span></span><small class="workshop-evidence-meta">${fmtDate(report.completedAt||report.createdAt)} · ${esc(batchActorLabel(report.completedBy||report.removedBy||report.capturedBy))}</small></span></button>`;
   }).join('');
   const ov=document.getElementById('dlg-mv');
   ov.innerHTML=`<div class="dlg wide workshop-evidence-dialog" onclick="event.stopPropagation()"><div class="workshop-evidence-head"><div><div class="eyebrow">ẢNH MINH CHỨNG</div><div class="dlg-title">${esc(name)}</div><p>${reports.length} ảnh báo cáo đã gắn với sản phẩm này.</p></div><button class="more-sheet-close" type="button" onclick="closeDialog('dlg-mv')" aria-label="Đóng">×</button></div><div class="workshop-evidence-grid">${cards}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;
