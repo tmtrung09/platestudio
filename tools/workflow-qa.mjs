@@ -108,6 +108,11 @@ const results = await page.evaluate(async () => {
   const contextMenu = document.getElementById('app-context-menu');
   check('Chuột phải trên thẻ gia công mở menu theo ngữ cảnh', Boolean(contextPrevented && contextMenu?.classList.contains('show') && /Model gia công/.test(contextMenu.textContent)), contextMenu?.textContent.trim() || 'không mở menu');
   check('Menu thẻ gia công chỉ hiện thao tác của bước hiện tại', !/Tạo đợt giao|Chụp mẻ in/.test(contextMenu?.textContent || ''), contextMenu?.textContent.trim() || 'không mở menu');
+  const quickStatusTrigger = contextMenu?.querySelector('.app-context-menu-submenu-trigger');
+  quickStatusTrigger?.focus();
+  const quickStatusPanel = contextMenu?.querySelector('.app-context-submenu-panel');
+  check('Menu thẻ gia công có menu con cập nhật trạng thái nhanh', Boolean(quickStatusTrigger && /Cập nhật trạng thái nhanh/.test(quickStatusTrigger.textContent)), quickStatusTrigger?.textContent.trim() || 'thiếu menu con');
+  check('Focus hoặc rê chuột vào trạng thái nhanh mở các lựa chọn hợp lệ', Boolean(quickStatusPanel && getComputedStyle(quickStatusPanel).display !== 'none' && /QC|Gia công|Chờ vật tư/.test(quickStatusPanel.textContent)), quickStatusPanel?.textContent.trim() || 'không hiện lựa chọn');
   closeAppContextMenu();
   const bulkItem = { ...orders[0].items[0], id: 'qa-bulk-item' };
   orders.push({ ...orders[0], id: 'qa-bulk-order', note: 'QA · Hàng loạt', items: [bulkItem], assembly: { status: 'in_progress', items: {}, handovers: {} } });
