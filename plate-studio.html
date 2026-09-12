@@ -5431,7 +5431,10 @@ let fulfillmentOperationalRefreshWorkspace = '';
 let fulfillmentServerReportsAvailable = true;
 function invalidateFulfillmentCloudManualReports(){
   fulfillmentCloudManualLoaded=false;
-  fulfillmentCloudManualReports=[];
+  /* Giữ bản đầy đủ cuối cùng trong lúc tải lại. Xoá ngay ở đây từng làm thẻ
+     Model ngoài đơn chỉ còn mẻ vừa sửa trong một nhịp, khiến thư viện ảnh
+     minh chứng nhìn như đã mất các ảnh khác. Việc đổi workspace vẫn xoá cache
+     ở loadFulfillmentManualReportsFromCloud để không lẫn dữ liệu tài khoản. */
 }
 function fulfillmentReportSource(){
   const rows=new Map();
@@ -10940,6 +10943,9 @@ let brCurrentId = null;
 let brManualModelId = null;
 let brManualPartId = null;
 let brManualItems = [];
+/* Khi mở một mẻ từ thư viện ảnh của thẻ Gia công, sau khi lưu phải quay về
+   đúng thư viện đó thay vì làm người dùng tìm lại Model. */
+let brEvidenceReturnRowKey = '';
 let brManualPreferredModelId = null;
 let brManualPreferredPartId = null;
 let brManualPreferredReportId = null;
@@ -11591,8 +11597,11 @@ function openBatchReportHub(){
   document.getElementById('ov-batch-report').style.display = 'flex';
   renderBatchReport();
 }
-function closeBatchReport(){
+function closeBatchReport({returnToEvidence=false}={}){
   document.getElementById('ov-batch-report').style.display = 'none';
+  const rowKey=brEvidenceReturnRowKey;
+  brEvidenceReturnRowKey='';
+  if(returnToEvidence&&rowKey&&curPage==='fulfillment')requestAnimationFrame(()=>openWorkshopEvidence(rowKey));
 }
 function declareBatchReportContents(reportId){
   if(!canDescribeBatchReports()){toast('Bạn chưa được cấp quyền khai báo Model/Part của mẻ in.');return;}
@@ -12862,7 +12871,7 @@ function saveBatchManualReport(){
     sv(K.batchReports,batchReports);updateCamBadge();renderSb();
     recordAudit('update','Báo cáo mẻ',`Đã khai báo ${items.length} Model/Part${handedToWorkshop?' và giao xưởng':''}`,{reportId:r.id,itemCount:items.length,limited:true,handedToWorkshop});
     if(curPage==='batches')renderBatchReportPage();
-    brManualItems=[];brView='hub';closeBatchReport();
+    brManualItems=[];brView='hub';closeBatchReport({returnToEvidence:true});
     toast(handedToWorkshop?`✓ Đã giao ${handedExternal||items.length} model sang luồng Gia công.`:`✓ Đã khai báo ${items.length} Model/Part. Mẻ đang chờ quản lý đối chiếu.`);
     return;
   }
@@ -12883,7 +12892,7 @@ function saveBatchManualReport(){
     saveOperations();
   }
   if(curPage==='batches') renderBatchReportPage();
-  brManualItems=[]; brView='hub'; closeBatchReport();
+  brManualItems=[]; brView='hub'; closeBatchReport({returnToEvidence:true});
   toast(`✓ Đã lưu ${items.length} Model/Part vào lịch sử in${handedExternal?` · đã giao xưởng ${handedExternal} model`:''}`);
 }
 
@@ -13595,7 +13604,8 @@ function batchReportModelProgressHTML(report){
     return `<section class="batch-report-model-card"><div class="batch-report-model-head">${image?`<img src="${esc(image)}" alt="" onerror="this.outerHTML='<span class=\"batch-report-model-image-empty\">📦</span>'">`:'<span class="batch-report-model-image-empty">📦</span>'}<div><b>${esc(group.model?.name||group.name)}</b><small>${variants.length?esc(variants.join(' · '))+' · ':''}${group.entries.length} Part đã chọn trong mẻ này</small></div></div><div class="batch-report-model-parts">${currentRows}${relatedRows}</div></section>`;
   }).join('');
 }
-function viewBatchReport(id){
+function viewBatchReport(id,{keepEvidenceReturn=false}={}){
+  if(!keepEvidenceReturn)brEvidenceReturnRowKey='';
   const r=findOperationalBatchReport(id); if(!r) { toast('Báo cáo chưa có trong dữ liệu đã tải.'); return; }
   const canEdit=canEditBatchReports();
   const fil=r.filamentId?getFil(r.filamentId):null;
@@ -16386,6 +16396,10 @@ function workshopEvidenceReports(row){
   reports.forEach(report=>{if(report?.id&&(report.image||report.thumb))unique.set(report.id,report);});
   return [...unique.values()].sort((a,b)=>new Date(b.completedAt||b.createdAt||0)-new Date(a.completedAt||a.createdAt||0));
 }
+function openWorkshopEvidenceReport(rowKey,reportId){
+  brEvidenceReturnRowKey=String(rowKey||'');
+  viewBatchReport(reportId,{keepEvidenceReturn:true});
+}
 function workshopEvidenceDeclaration(report,row){
   const modelId=row?.it?.modelId||row?.m?.id||'',variantId=row?.it?.variantId||'';
   const forModel=batchReportDetailItems(report).filter(item=>item.modelId===modelId);
@@ -16409,7 +16423,7 @@ function openWorkshopEvidence(rowKey){
   const cards=reports.map((report,index)=>{
     const declaration=workshopEvidenceDeclaration(report,row),partText=declaration.lines.map(line=>`${line.partName} ×${line.quantity}`).join(' · '),colorText=declaration.colors.join(' · '),summary=declaration.lines.length?`${declaration.total} cái · ${declaration.lines.length} part`:'Chưa khai báo part cho model này';
     const src=report.thumb||report.image;
-    return `<button type="button" class="workshop-evidence-card" data-evidence-layout="declaration-v2" onclick="viewBatchReport('${esc(report.id)}')" aria-label="Ảnh ${index+1}: ${esc(summary)}"><span class="workshop-evidence-media"><img src="${esc(src)}" alt="Ảnh minh chứng ${index+1} của ${esc(name)}" loading="lazy" onerror="batchReportImageFallback(this)"/><i>Ảnh ${index+1}</i></span><span class="workshop-evidence-copy"><b>${esc(summary)}</b><span class="workshop-evidence-declaration"><strong>Đã khai báo</strong><span>${esc(partText||'Chưa có part được khai báo')}${colorText?` · ${esc(colorText)}`:''}</span></span><small class="workshop-evidence-meta">${fmtDate(report.completedAt||report.createdAt)} · ${esc(batchActorLabel(report.completedBy||report.removedBy||report.capturedBy))}</small></span></button>`;
+    return `<button type="button" class="workshop-evidence-card" data-evidence-layout="declaration-v2" onclick="openWorkshopEvidenceReport('${esc(rowKey)}','${esc(report.id)}')" aria-label="Ảnh ${index+1}: ${esc(summary)}"><span class="workshop-evidence-media"><img src="${esc(src)}" alt="Ảnh minh chứng ${index+1} của ${esc(name)}" loading="lazy" onerror="batchReportImageFallback(this)"/><i>Ảnh ${index+1}</i></span><span class="workshop-evidence-copy"><b>${esc(summary)}</b><span class="workshop-evidence-declaration"><strong>Đã khai báo</strong><span>${esc(partText||'Chưa có part được khai báo')}${colorText?` · ${esc(colorText)}`:''}</span></span><small class="workshop-evidence-meta">${fmtDate(report.completedAt||report.createdAt)} · ${esc(batchActorLabel(report.completedBy||report.removedBy||report.capturedBy))}</small></span></button>`;
   }).join('');
   const ov=document.getElementById('dlg-mv');
   ov.innerHTML=`<div class="dlg wide workshop-evidence-dialog" onclick="event.stopPropagation()"><div class="workshop-evidence-head"><div><div class="eyebrow">ẢNH MINH CHỨNG</div><div class="dlg-title">${esc(name)}</div><p>${reports.length} ảnh báo cáo đã gắn với sản phẩm này.</p></div><button class="more-sheet-close" type="button" onclick="closeDialog('dlg-mv')" aria-label="Đóng">×</button></div><div class="workshop-evidence-grid">${cards}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;

@@ -212,6 +212,27 @@ const results = await page.evaluate(async () => {
   check('Mọi ảnh minh chứng đều dùng thẻ khai báo, kể cả ảnh cũ thiếu dữ liệu', evidenceCards.length === 2 && evidenceCards.every(card => card.dataset.evidenceLayout === 'declaration-v2' && card.querySelector('.workshop-evidence-copy') && card.querySelector('.workshop-evidence-declaration')) && evidenceCards.some(card => card.textContent.includes('Chưa khai báo part cho model này')), `${evidenceCards.length} ảnh · ${evidenceCards.map(card => card.querySelector('.workshop-evidence-copy') ? 'có nội dung' : 'thiếu nội dung').join(', ')}`);
   closeDialog('dlg-mv');
 
+  /* Mở một ảnh từ thư viện của Model ngoài đơn, sửa rồi lưu không được làm
+     thư viện rơi về chỉ mẻ vừa sửa khi cache vận hành đang tải lại. */
+  const evidenceImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="90"%3E%3Crect width="120" height="90" fill="%232563eb"/%3E%3C/svg%3E';
+  ['a', 'b', 'c'].forEach((suffix, index) => batchReports.push({
+    id: `qa-external-evidence-${suffix}`, status: 'done', external: true, externalOrigin: true,
+    createdAt: new Date(Date.now() + index).toISOString(), completedAt: stamp, completedBy: 'QA', image: evidenceImage,
+    manualItems: [{ modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: 'qa-size-10', variantName: 'Size 10cm', partId: 'qa-body', partName: 'Thân', filamentId: qaFilament.id, qty: 1 }], appliedItems: [],
+  }));
+  const externalEvidenceRow = fulfillmentWorkshopRows().find(item => item.source === 'external' && item.externalKey === 'qa-model::qa-size-10');
+  const externalEvidenceKey = workshopWaitKey(externalEvidenceRow);
+  openWorkshopEvidence(externalEvidenceKey);
+  const evidenceBeforeEdit = document.querySelectorAll('.workshop-evidence-card').length;
+  openWorkshopEvidenceReport(externalEvidenceKey, 'qa-external-evidence-a');
+  editCompletedManualBatchReport('qa-external-evidence-a');
+  brManualItems[0].qty = 2;
+  saveBatchManualReport();
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const evidenceAfterEdit = document.querySelectorAll('.workshop-evidence-card').length;
+  check('Sửa một ảnh rồi quay lại vẫn giữ toàn bộ ảnh minh chứng của Model', evidenceBeforeEdit === 3 && evidenceAfterEdit === 3 && document.querySelector('.workshop-evidence-head .dlg-title')?.textContent.includes('QA · Mô hình kiểm thử'), `${evidenceBeforeEdit} trước sửa · ${evidenceAfterEdit} sau sửa`);
+  closeDialog('dlg-mv');
+
   /* QC is a repeat action on mobile. Rendering the destination group must not
      steal the operator away from the remaining cards in the current group. */
   fulfillmentScrollHost.scrollTop = 180;
