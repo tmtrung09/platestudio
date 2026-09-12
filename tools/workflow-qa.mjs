@@ -92,10 +92,15 @@ const results = await page.evaluate(async () => {
   renderBatchReportPage();
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
   const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
-  check('Ảnh thẻ báo cáo mẻ luôn hiện trọn khung và canh giữa', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'contain' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
-  const batchReportGrid = document.querySelector('.batch-report-grid');
-  const batchReportGridStyle = batchReportGrid ? getComputedStyle(batchReportGrid) : null;
-  check('Lưới thẻ ảnh báo cáo mẻ được canh giữa thay vì kéo giãn lệch một phía', Boolean(batchReportGridStyle && batchReportGridStyle.justifyContent === 'center' && /340px/.test(batchReportGridStyle.gridTemplateColumns)), batchReportGridStyle ? `${batchReportGridStyle.justifyContent} · ${batchReportGridStyle.gridTemplateColumns}` : 'không có lưới');
+  check('Ảnh thẻ báo cáo mẻ dùng crop tập trung vào nội dung thay vì kéo lệch tự do', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'cover'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
+  const focusHost = document.createElement('div');
+  focusHost.className = 'batch-report-media'; focusHost.style.cssText = 'position:fixed;left:-1000px;top:0;width:240px;height:180px';
+  const focusImage = document.createElement('img');
+  focusImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200"%3E%3Crect width="400" height="200" fill="%23111111"/%3E%3Crect x="22" y="35" width="115" height="130" fill="white"/%3E%3C/svg%3E';
+  focusHost.append(focusImage); document.body.append(focusHost); await focusImage.decode();
+  applyBatchReportSmartFocus(focusImage);
+  check('Crop ảnh mẻ tự dồn chủ thể lệch tâm về giữa khung', Boolean(focusImage.style.objectPosition && focusImage.style.objectPosition !== '50% 50%'), focusImage.style.objectPosition || 'không có focus');
+  focusHost.remove();
   goPage('fulfillment', { historyMode: 'none' });
 
   const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');
