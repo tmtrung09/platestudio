@@ -102,6 +102,13 @@ const results = await page.evaluate(async () => {
   const receiveDelivery = fulfillmentHeader?.querySelector('button[onclick="openReceivingHub()"]');
   const createRect = createDelivery?.getBoundingClientRect(), refreshRect = refreshDelivery?.getBoundingClientRect(), receiveRect = receiveDelivery?.getBoundingClientRect();
   check('Mobile đặt tạo đợt giao lên hàng chính riêng', Boolean(createRect && refreshRect && receiveRect && createRect.top < refreshRect.top && createRect.bottom <= refreshRect.top + 1 && Math.abs(refreshRect.top - receiveRect.top) < 2), createRect && refreshRect ? `${Math.round(createRect.top)} → ${Math.round(refreshRect.top)}` : 'thiếu nút');
+  const contextWorkshopCard = document.querySelector('#fulfillment-workshop-zone .workshop-item');
+  let contextPrevented = false;
+  openAppContextMenu({ target: contextWorkshopCard, clientX: 120, clientY: 120, preventDefault(){contextPrevented=true;} });
+  const contextMenu = document.getElementById('app-context-menu');
+  check('Chuột phải trên thẻ gia công mở menu theo ngữ cảnh', Boolean(contextPrevented && contextMenu?.classList.contains('show') && /Model gia công/.test(contextMenu.textContent)), contextMenu?.textContent.trim() || 'không mở menu');
+  check('Menu thẻ gia công chỉ hiện thao tác của bước hiện tại', !/Tạo đợt giao|Chụp mẻ in/.test(contextMenu?.textContent || ''), contextMenu?.textContent.trim() || 'không mở menu');
+  closeAppContextMenu();
   const bulkItem = { ...orders[0].items[0], id: 'qa-bulk-item' };
   orders.push({ ...orders[0], id: 'qa-bulk-order', note: 'QA · Hàng loạt', items: [bulkItem], assembly: { status: 'in_progress', items: {}, handovers: {} } });
   pitems.push(

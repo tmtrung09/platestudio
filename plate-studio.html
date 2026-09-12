@@ -3896,6 +3896,9 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
    giao xưởng; nhờ vậy một thao tác không thể nhảy qua bước QC/gia công. */
 .fulfillment-workshop-tools{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;flex-wrap:wrap}.fulfillment-bulk-tools{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.fulfillment-bulk-count{padding:6px 9px;border-radius:999px;background:color-mix(in srgb,var(--pu) 13%,var(--s2));color:var(--pu);font-size:11px;font-weight:850;white-space:nowrap}.workshop-item{position:relative}.workshop-bulk-select{position:absolute;z-index:3;top:9px;right:9px;display:flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid color-mix(in srgb,var(--pu) 42%,var(--b));border-radius:999px;background:color-mix(in srgb,var(--s) 92%,transparent);color:var(--pu);font-size:9px;font-weight:850;box-shadow:var(--ss);cursor:pointer}.workshop-bulk-select input{accent-color:var(--pu)}.workshop-item.is-bulk-selected{outline:2px solid var(--pu);box-shadow:0 0 0 4px color-mix(in srgb,var(--pu) 14%,transparent),var(--sm)}
 @media(max-width:640px){.fulfillment-workshop-tools{width:100%;align-items:stretch;justify-content:stretch}.fulfillment-workshop-counts{width:100%}.fulfillment-bulk-tools{display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto}.fulfillment-bulk-tools .btn:first-child{justify-content:center}.fulfillment-bulk-tools .btn:last-child{grid-column:1/-1;justify-content:center}.workshop-bulk-select{top:7px;right:7px}.workshop-bulk-select span{display:none}.workshop-bulk-select{width:28px;height:28px;padding:0;justify-content:center;border-radius:9px}}
+/* Menu chuột phải dùng chung: chỉ hiển thị tác vụ phù hợp với trang/thẻ được
+   nhấn, nên không biến thành một menu hệ thống dài và khó nhớ. */
+.app-context-menu{position:fixed;z-index:12000;display:none;width:min(252px,calc(100vw - 20px));padding:6px;border:1px solid color-mix(in srgb,var(--ac) 26%,var(--b));border-radius:16px;background:color-mix(in srgb,var(--s) 96%,#171927);box-shadow:0 18px 44px rgba(0,0,0,.34),inset 0 1px color-mix(in srgb,#fff 14%,transparent);backdrop-filter:blur(18px)}.app-context-menu.show{display:block;animation:contextMenuIn .14s ease-out}.app-context-menu-title{display:block;padding:7px 9px 5px;color:var(--t3);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.app-context-menu button{display:flex;align-items:center;gap:9px;width:100%;min-height:36px;padding:7px 9px;border:0;border-radius:10px;background:transparent;color:var(--t);font:750 12px var(--font);text-align:left;cursor:pointer}.app-context-menu button:hover,.app-context-menu button:focus-visible{outline:0;background:color-mix(in srgb,var(--ac) 13%,var(--s2));color:var(--ac)}.app-context-menu button i{display:grid;place-items:center;width:22px;height:22px;border-radius:8px;background:var(--s2);font-style:normal;font-size:13px}.app-context-menu-separator{height:1px;margin:5px 4px;background:var(--b)}@keyframes contextMenuIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
 @media(max-width:370px){.page-heading h1{font-size:27px!important}.page.active{padding-left:6px!important;padding-right:6px!important}.page-heading,.page-smart-search,#page-models .model-category-wrap,#page-models .model-grid{margin-left:6px!important;margin-right:6px!important}}
 </style>
 </head>
@@ -7579,6 +7582,43 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
   if(restoreScroll!==null)setTimeout(()=>window.scrollTo({top:restoreScroll,behavior:'instant'}),0);
 }
 
+let appContextActions={};
+function closeAppContextMenu(){const menu=document.getElementById('app-context-menu');if(menu){menu.classList.remove('show');menu.innerHTML='';}appContextActions={};}
+function runAppContextAction(id){const action=appContextActions[id];closeAppContextMenu();try{action?.();}catch(error){console.error('Không thực hiện được thao tác trong menu chuột phải',error);toast('Không thể thực hiện thao tác này.');}}
+function appContextItem(label,icon,action,{separator=false}={}){const id=uid();appContextActions[id]=action;return `${separator?'<span class="app-context-menu-separator"></span>':''}<button type="button" onclick="runAppContextAction('${id}')"><i aria-hidden="true">${icon}</i><span>${esc(label)}</span></button>`;}
+function appContextPageItems(page){
+  const refresh=()=>renderPage(page);
+  if(page==='models')return [appContextItem('Thêm Model','＋',()=>openAddModel?.()),appContextItem('Tạo đơn hàng','＋',()=>openOrderForm(),{separator:true}),appContextItem('Làm mới danh sách','↻',refresh)];
+  if(page==='fulfillment')return [appContextItem('Thao tác hàng loạt','☷',()=>{if(!fulfillmentBulkMode)toggleFulfillmentBulkMode();else toast('Đang ở chế độ chọn nhiều.');}),appContextItem('Tạo đợt giao','🚚',()=>openDeliveryBatchBuilder(),{separator:true}),appContextItem('Nhận hàng','📥',()=>openReceivingHub()),appContextItem('Làm mới','↻',()=>refreshFulfillmentPage())];
+  if(page==='batches')return [appContextItem('Chụp mẻ in','📷',()=>openBatchReportHub()),appContextItem('Chọn nhiều báo cáo','☷',()=>toggleBatchReportMultiSelect?.(),{separator:true}),appContextItem('Làm mới','↻',()=>renderBatchReportPage?.())];
+  if(page==='orders'||page==='order-form')return [appContextItem('Tạo đơn hàng','＋',()=>openOrderForm()),appContextItem('Mở tiến độ in','▥',()=>goPage('progress'),{separator:true}),appContextItem('Làm mới','↻',refresh)];
+  if(page==='delivery-builder')return [appContextItem('Mở giỏ giao','🛒',()=>openDeliveryCartDialog?.()),appContextItem('Quay về gia công','←',()=>goPage('fulfillment'),{separator:true})];
+  if(page==='inventory')return [appContextItem('Phân tích tồn kho','✦',()=>analyzeKiotInventory?.()),appContextItem('Làm mới','↻',()=>renderInventoryPage?.(),{separator:true})];
+  return [appContextItem('Làm mới trang','↻',refresh)];
+}
+function appContextItemsForTarget(target){
+  const page=target.closest('.page.active')?.id?.replace(/^page-/,'')||curPage;
+  const modelCard=target.closest('.model-card[data-model-id]');
+  if(modelCard){const modelId=modelCard.dataset.modelId;return {title:'Model',items:[appContextItem('Mở chi tiết','◌',()=>viewModel(modelId)),appContextItem('Tạo đơn với Model này','＋',()=>openOrderForm(modelId),{separator:true}),appContextItem('Sao chép tên','⧉',()=>navigator.clipboard?.writeText(models.find(row=>row.id===modelId)?.name||''))]};}
+  const workshop=target.closest('.workshop-item');
+  if(workshop){const primary=[...workshop.querySelectorAll('.workshop-item-actions .btn')].filter(button=>!button.disabled&&!button.classList.contains('workshop-quick-status')&&!button.classList.contains('btn-danger')).at(-1),issue=workshop.querySelector('.workshop-item-actions .btn-danger'),evidence=workshop.dataset.evidenceKey;const items=[];if(primary)items.push(appContextItem(primary.textContent.trim()||'Bước tiếp theo','→',()=>primary.click()));if(issue)items.push(appContextItem('Báo lỗi','⚠',()=>issue.click(),{separator:items.length>0}));if(evidence)items.push(appContextItem('Xem ảnh minh chứng','▧',()=>openWorkshopEvidence(decodeURIComponent(evidence)),{separator:items.length>0}));return {title:'Model gia công',items:items.length?items:appContextPageItems(page)};}
+  const batch=target.closest('.batch-report-card[data-batch-report-id]');
+  if(batch){const reportId=batch.dataset.batchReportId;return {title:'Báo cáo mẻ in',items:[appContextItem('Xem chi tiết','▧',()=>viewBatchReport(reportId)),appContextItem('Chọn nhiều','☷',()=>toggleBatchReportMultiSelect?.(),{separator:true})]};}
+  const search=target.closest('input[type="search"],.page-smart-search input');
+  if(search)return {title:'Tìm kiếm',items:[appContextItem('Xoá từ khoá','×',()=>{search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));}),appContextItem('Chọn toàn bộ','⌘',()=>search.select(),{separator:true})]};
+  return {title:PAGE_META?.[page]?.title||'Thao tác trang',items:appContextPageItems(page)};
+}
+function openAppContextMenu(event){
+  if(event.defaultPrevented||event.target.closest('input,textarea,[contenteditable="true"],select')||event.target.closest('#app-context-menu,.dlg,.guide-tour-card'))return;
+  const context=appContextItemsForTarget(event.target);if(!context?.items?.length)return;
+  event.preventDefault();const menu=document.getElementById('app-context-menu');if(!menu)return;menu.innerHTML=`<span class="app-context-menu-title">${esc(context.title)}</span>${context.items.join('')}`;menu.classList.add('show');
+  const margin=10,rect=menu.getBoundingClientRect(),left=Math.max(margin,Math.min(event.clientX,innerWidth-rect.width-margin)),top=Math.max(margin,Math.min(event.clientY,innerHeight-rect.height-margin));menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+document.addEventListener('contextmenu',openAppContextMenu);
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('#app-context-menu'))closeAppContextMenu();},true);
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeAppContextMenu();});
+addEventListener('resize',closeAppContextMenu);addEventListener('scroll',closeAppContextMenu,true);
+
 function renderPage(p) {
   if      (p === 'dashboard') renderDashboard();
   else if (p === 'models')    renderModels();
@@ -9403,7 +9443,7 @@ function renderModels() {
     const missingInfo = modelMissingInfo(m);
 
     const selected = selectedModelIds.has(m.id);
-    return `<div class="model-card" draggable="true" onmouseenter="this.classList.add('show-details')" onmouseleave="this.classList.remove('show-details')" ondragstart="startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}" style="${selected?'outline:2px solid var(--ac);outline-offset:1px':''}">
+    return `<div class="model-card" data-model-id="${esc(m.id)}" draggable="true" onmouseenter="this.classList.add('show-details')" onmouseleave="this.classList.remove('show-details')" ondragstart="startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}" style="${selected?'outline:2px solid var(--ac);outline-offset:1px':''}">
       ${imgHTML}
       <div class="model-body">
         <div class="model-name" style="display:flex;align-items:center;gap:7px">${modelSelectionMode ? `<input type="checkbox" ${selected?'checked':''} onclick="event.stopPropagation();toggleModelSelected('${m.id}')" style="accent-color:var(--ac)"/>` : ''}${esc(m.name)}</div>
@@ -19620,5 +19660,6 @@ installPointerControlGlow();
 installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNotificationButton();renderSb();ensureAccessSidebarLink();},0);
 
 </script>
+<div id="app-context-menu" class="app-context-menu" role="menu" aria-label="Thao tác theo ngữ cảnh"></div>
 </body>
 </html>
