@@ -61,7 +61,7 @@ const results = await page.evaluate(async () => {
 
   /* Fixture only exists in this ephemeral Playwright tab. */
   models = [{
-    id: 'qa-model', name: 'QA · Mô hình kiểm thử', cats: ['QA'], images: [], variants: [{ id: 'qa-size-10', name: 'Size 10cm' }],
+    id: 'qa-model', name: 'QA · Mô hình kiểm thử', cats: ['QA'], images: ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect width="80" height="80" rx="12" fill="%232563eb"/%3E%3C/svg%3E'], variants: [{ id: 'qa-size-10', name: 'Size 10cm' }],
     parts: [
       { id: 'qa-body', name: 'Thân', qtyPerModel: 1, filamentIds: [] },
       { id: 'qa-base', name: 'Đế', qtyPerModel: 1, filamentIds: [] },
@@ -368,6 +368,8 @@ const results = await page.evaluate(async () => {
   check('Chọn Model từ tìm kiếm chuyển sang bước khai báo', brView === 'manual' && Boolean(document.querySelector('#br-content .br-manual-layout')), brView);
   const actualColorPicker = document.querySelector('.br-color-picker');
   check('Chọn màu thực tế có chấm màu và ô tìm kiếm', Boolean(actualColorPicker?.querySelector('.br-color-picker-dot') && actualColorPicker?.querySelector('input[type="search"]') && actualColorPicker?.querySelector('.br-color-picker-option')), actualColorPicker ? 'có bộ chọn màu' : 'thiếu bộ chọn màu');
+  const selectedModelThumb = document.querySelector('.br-manual-model-input .br-manual-model-thumb');
+  check('Dòng model đã chọn trong mẻ in hiện ảnh sản phẩm', Boolean(selectedModelThumb?.getAttribute('src') && selectedModelThumb.closest('.br-manual-model-input')), selectedModelThumb?.getAttribute('src') || 'thiếu ảnh model');
 
   /* Đối chiếu mẻ ngoài đơn phải là Model + Part + phiên bản. Một lỗi cũ đã
      cộng cùng một số lượng vào mọi phiên bản có chung Model/Part. */
