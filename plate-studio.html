@@ -5092,6 +5092,15 @@ let cloudRealtimeStatus = 'IDLE', cloudRealtimeReconnectTimer = null, cloudRemot
 const cloudRemoteRevisions = new Map();
 const CLOUD_REMOTE_RECONCILE_MS = 15000, CLOUD_REALTIME_RECONNECT_MS = 3500;
 const remoteRefreshTables=new Set();
+/* Hai tab cùng trình duyệt không cần đợi vòng Realtime/REST. localStorage phát
+   sự kiện ở tab còn lại, còn thiết bị khác đi theo Realtime bên dưới. */
+const LOCAL_WORKSPACE_STORAGE_TABLES=new Map([
+  [K.models,'models'],[K.fils,'fils'],[K.projects,'projects'],[K.orders,'orders'],
+  [K.plates,'plates'],[K.pitems,'pitems'],[K.brands,'settings'],[K.operations,'settings'],
+  [K.kiotViet,'settings'],[K.trash,'settings'],[K.deliveryPhotoHub,'settings'],[K.batchReports,'batchReports']
+]);
+const localWorkspaceRefreshPending=new Map();
+let localWorkspaceRefreshTimer=null,localWorkspaceRefreshApplying=false,localWorkspaceSyncListenersInstalled=false;
 let cloudSyncedSnapshot = null;
 let needsCloudBatchSeed = false;
 /* Undo chỉ ở bộ nhớ phiên hiện tại: tránh ghi một lịch sử nặng vào cloud, nhưng
@@ -6195,6 +6204,57 @@ function showRemoteDataRefreshNotice(){
   document.getElementById('remote-data-refresh-notice')?.remove();
   if(remoteDataRefreshPending)setSyncState('Sẽ tự đồng bộ sau khi hoàn tất thao tác','ok');
 }
+function applyLocalWorkspaceCacheValue(key,raw){
+  if(!LOCAL_WORKSPACE_STORAGE_TABLES.has(key)||raw===null)return false;
+  let value;try{value=JSON.parse(raw);}catch{return false;}
+  if(key===K.models){models=Array.isArray(value)?value:[];migrateModelsSchema();}
+  else if(key===K.fils)fils=Array.isArray(value)?value:[];
+  else if(key===K.projects)projects=Array.isArray(value)?value:[];
+  else if(key===K.orders)orders=Array.isArray(value)?value:[];
+  else if(key===K.plates)plates=Array.isArray(value)?value:[];
+  else if(key===K.pitems)pitems=Array.isArray(value)?value:[];
+  else if(key===K.brands)brands=Array.isArray(value)?value:[];
+  else if(key===K.operations){operations=value&&typeof value==='object'?value:{qualityIssues:[],deliveries:[],deliveryBatches:[]};normalizeOperations();}
+  else if(key===K.kiotViet){kiotViet=value&&typeof value==='object'?value:{catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[],aiInsights:[]};['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(name=>{if(!Array.isArray(kiotViet[name]))kiotViet[name]=[];});}
+  else if(key===K.trash)trashItems=Array.isArray(value)?value:[];
+  else if(key===K.deliveryPhotoHub){deliveryPhotoHub=value&&typeof value==='object'?value:{requests:[],photos:[]};normalizeDeliveryPhotoHub();}
+  else if(key===K.batchReports)batchReports=Array.isArray(value)?value:[];
+  else return false;
+  return true;
+}
+function applyLocalWorkspaceRefresh(){
+  if(localWorkspaceRefreshApplying||!localWorkspaceRefreshPending.size)return;
+  if(!canAutoApplyRemoteRefresh()){scheduleLocalWorkspaceRefresh();return;}
+  localWorkspaceRefreshApplying=true;
+  const scrollTop=window.scrollY||0;
+  try{
+    let changed=false;
+    for(const [key,raw] of localWorkspaceRefreshPending){changed=applyLocalWorkspaceCacheValue(key,raw)||changed;}
+    localWorkspaceRefreshPending.clear();
+    if(!changed)return;
+    updateCamBadge();renderPage(curPage);renderSb();
+    requestAnimationFrame(()=>window.scrollTo({top:scrollTop,left:0,behavior:'instant'}));
+    setSyncState('Đã đồng bộ','ok');
+  }finally{localWorkspaceRefreshApplying=false;if(localWorkspaceRefreshPending.size)scheduleLocalWorkspaceRefresh();}
+}
+function scheduleLocalWorkspaceRefresh(delay=80){
+  clearTimeout(localWorkspaceRefreshTimer);
+  localWorkspaceRefreshTimer=setTimeout(applyLocalWorkspaceRefresh,delay);
+}
+function queueLocalWorkspaceRefresh(key,raw){
+  if(!LOCAL_WORKSPACE_STORAGE_TABLES.has(key))return;
+  localWorkspaceRefreshPending.set(key,raw);
+  if(canAutoApplyRemoteRefresh())scheduleLocalWorkspaceRefresh();
+  else{showRemoteDataRefreshNotice();scheduleLocalWorkspaceRefresh(350);}
+}
+function installLocalWorkspaceSyncListeners(){
+  if(localWorkspaceSyncListenersInstalled)return;
+  localWorkspaceSyncListenersInstalled=true;
+  window.addEventListener('storage',event=>{
+    if(event.storageArea!==localStorage||!LOCAL_WORKSPACE_STORAGE_TABLES.has(event.key)||event.newValue===null)return;
+    queueLocalWorkspaceRefresh(event.key,event.newValue);
+  });
+}
 async function refreshRemoteCloudTable(key){
   if(key==='batchReports'){
     invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize});
@@ -6365,12 +6425,13 @@ function installCloudRemoteReconcileListeners(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)reconcileAfterResume();});
 }
 function scheduleCloudRefresh(key='') {
-  // Không nạp dữ liệu từ Realtime đè lên thay đổi còn trong outbox.
-  if(Date.now()-lastCloudWriteAt < 1200 || cloudSyncing || cloudOutbox.length) return;
+  /* Luôn ghi nhớ event trước. Bản cũ return ngay lúc outbox đang gửi, làm mất
+     thay đổi vừa đến và người dùng chỉ thấy khi F5. */
   if(key)remoteRefreshTables.add(key);
   clearTimeout(cloudRefreshTimer);
   cloudRefreshTimer=setTimeout(async()=>{
-    if(!currentUser || loadingCloud) return;
+    if(!currentUser)return;
+    if(Date.now()-lastCloudWriteAt<1200||cloudSyncing||cloudOutbox.length||loadingCloud){scheduleCloudRefresh();return;}
     queueRemoteDataRefresh();
   },500);
 }
@@ -6380,12 +6441,12 @@ function setupCloudRealtime() {
   const channel=sb.channel('plate-sync-'+cloudWorkspaceId());
   cloudChannel=channel;
   Object.entries(CLOUD_TABLES).forEach(([key,table])=>{
-    channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{
+    channel.on('postgres_changes',{event:'*',schema:'public',table,filter:`workspace_id=eq.${cloudWorkspaceId()}`},payload=>{
       const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
       if(workspace===cloudWorkspaceId()) scheduleCloudRefresh(key);
     });
   });
-  channel.on('postgres_changes',{event:'*',schema:'public',table:KIOT_SALES_REPORTS_TABLE},payload=>{
+  channel.on('postgres_changes',{event:'*',schema:'public',table:KIOT_SALES_REPORTS_TABLE,filter:`workspace_id=eq.${cloudWorkspaceId()}`},payload=>{
     const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
     if(workspace===cloudWorkspaceId())scheduleKiotSalesArchiveRefresh();
   });
@@ -6659,6 +6720,7 @@ async function startCloudSession(session) {
     await loadWorkspaceAccessRows();
     if(requiredWorkspacePermission(curPage)&&!canAccess(requiredWorkspacePermission(curPage)))curPage='dashboard';
     registerBatchDevice();
+    installLocalWorkspaceSyncListeners();
     installCloudRemoteReconcileListeners();
     setupCloudRealtime();
     loadKiotSalesArchiveIndex().then(async()=>{

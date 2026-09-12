@@ -10,7 +10,7 @@
  * Run: npm run qa:workflow
  */
 import { chromium } from 'playwright-core';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -511,6 +511,14 @@ const results = await page.evaluate(async () => {
   check('Đồng bộ nền tự phát hiện dữ liệu máy khác khi Realtime không tới', detectedRemoteChange && fallbackRefreshes === 1 && remoteRefreshTables.has('models'), `${fallbackRefreshes} lượt · ${[...remoteRefreshTables].join(',')}`);
   const realtimeRecoverySource = `${setupCloudRealtime.toString()} ${handleCloudRealtimeStatus.toString()} ${installCloudRemoteReconcileListeners.toString()}`;
   check('Kênh Realtime có theo dõi trạng thái, tự nối lại và kiểm tra khi quay lại app', /subscribe\(\(status,error\)=>handleCloudRealtimeStatus/.test(realtimeRecoverySource) && /CHANNEL_ERROR/.test(realtimeRecoverySource) && /visibilitychange/.test(realtimeRecoverySource) && /online/.test(realtimeRecoverySource), realtimeRecoverySource.includes('CHANNEL_ERROR') ? 'có fallback kết nối' : 'thiếu fallback');
+  const beforeLocalCacheModels = models;
+  const receivedLocalCache = applyLocalWorkspaceCacheValue(K.models, JSON.stringify([{ id: 'qa-live-model', name: 'Model vừa sửa ở tab khác', parts: [] }]));
+  check('Tab cùng máy nhận ngay dữ liệu mới từ cache dùng chung, không cần reload', receivedLocalCache && models[0]?.name === 'Model vừa sửa ở tab khác', models[0]?.name || 'không nhận cache');
+  models = beforeLocalCacheModels;
+  remoteRefreshTables.clear(); cloudOutbox = [{ id: 'qa-pending-write' }]; lastCloudWriteAt = Date.now();
+  scheduleCloudRefresh('models');
+  check('Event Realtime đến lúc outbox đang gửi vẫn được giữ để nạp sau', remoteRefreshTables.has('models'), [...remoteRefreshTables].join(',') || 'event đã bị rơi');
+  clearTimeout(cloudRefreshTimer); cloudOutbox = [];
   clearTimeout(cloudRemoteReconcileTimer); remoteRefreshTables.clear();
   sb = priorCloudSync.sb; currentUser = priorCloudSync.currentUser; cloudReady = priorCloudSync.cloudReady; activeWorkspace = priorCloudSync.activeWorkspace;
   cloudSyncing = priorCloudSync.cloudSyncing; cloudOutbox = priorCloudSync.cloudOutbox; lastCloudWriteAt = priorCloudSync.lastCloudWriteAt; cloudRemoteRevisionWorkspace = priorCloudSync.reconcileWorkspace;
@@ -560,6 +568,13 @@ const results = await page.evaluate(async () => {
 
   goPage('inventory', { historyMode: 'none' });
   return rows;
+});
+const realtimeMigration = readFileSync(join(root, 'supabase', 'migrations', '20260912084151_realtime_operational_sync.sql'), 'utf8');
+const publishedCoreTables = ['models','filaments','projects','orders','plates','plate_items','settings','batch_reports'].every(table => realtimeMigration.includes(`'${table}'`));
+results.push({
+  name: 'Migration publish đủ bảng vận hành vào Supabase Realtime',
+  passed: publishedCoreTables && /alter publication supabase_realtime add table/.test(realtimeMigration),
+  detail: publishedCoreTables ? '8 bảng vận hành' : 'thiếu bảng publication',
 });
 await page.waitForTimeout(300);
 const inventoryShot = join(outputDir, `${stamp}-inventory.png`);
