@@ -576,6 +576,29 @@ results.push({
   passed: publishedCoreTables && /alter publication supabase_realtime add table/.test(realtimeMigration),
   detail: publishedCoreTables ? '8 bảng vận hành' : 'thiếu bảng publication',
 });
+/* Desktop thu hẹp không được giữ ba cột khi card còn mang phần khai báo: đây là
+   breakpoint dễ bị bỏ sót vì nó không phải mobile, nhưng là nơi copy bị bóp nhất. */
+await page.setViewportSize({ width: 760, height: 820 });
+const compactEvidence = await page.evaluate(() => {
+  const row = fulfillmentWorkshopRows().find(item => item.source === 'external' && item.externalKey === 'qa-model::qa-size-10');
+  openWorkshopEvidence(workshopWaitKey(row));
+  const grid = document.querySelector('.workshop-evidence-grid');
+  const cards = [...document.querySelectorAll('.workshop-evidence-card')];
+  const columns = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length;
+  const minCardWidth = Math.min(...cards.map(card => card.getBoundingClientRect().width));
+  const declarationsFit = cards.every(card => {
+    const declaration = card.querySelector('.workshop-evidence-declaration');
+    return declaration && declaration.scrollWidth <= declaration.clientWidth + 1;
+  });
+  closeDialog('dlg-mv');
+  return { columns, minCardWidth, declarationsFit, overflow: grid.scrollWidth - grid.clientWidth };
+});
+results.push({
+  name: 'Gallery ảnh minh chứng chuyển 2 cột ở desktop thu hẹp, không bóp nội dung',
+  passed: compactEvidence.columns === 2 && compactEvidence.minCardWidth >= 250 && compactEvidence.declarationsFit && compactEvidence.overflow <= 1,
+  detail: `${compactEvidence.columns} cột · ${Math.round(compactEvidence.minCardWidth)}px · tràn ${compactEvidence.overflow}px`,
+});
+await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 const inventoryShot = join(outputDir, `${stamp}-inventory.png`);
 await page.screenshot({ path: inventoryShot, fullPage: true });
