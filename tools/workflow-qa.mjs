@@ -219,6 +219,12 @@ const results = await page.evaluate(async () => {
   startWorkshopAssembly('qa-order', 'qa-item');
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bắt đầu gia công giữ đúng trạng thái', workshopAssemblyStage(row) === 'in_progress', workshopAssemblyStage(row));
+  const workshopActionBar = [...document.querySelectorAll('.workshop-item:not(.workshop-item-completed) .workshop-item-actions')]
+    .find(bar => [...bar.querySelectorAll('button')].some(button => /Hoàn tất gia công/.test(button.textContent))) || null;
+  const workshopActionButtons = workshopActionBar ? [...workshopActionBar.querySelectorAll('button')] : [];
+  const workshopPrimaryAction = workshopActionButtons.at(-1), workshopActionBarRect = workshopActionBar?.getBoundingClientRect();
+  const workshopSecondaryActions = workshopActionButtons.slice(0, -1);
+  check('Mobile tách nút gia công chính khỏi nhóm thao tác phụ', Boolean(workshopPrimaryAction && workshopActionBarRect) && workshopPrimaryAction.getBoundingClientRect().top > Math.max(...workshopSecondaryActions.map(button => button.getBoundingClientRect().bottom)) + 2 && workshopPrimaryAction.getBoundingClientRect().width >= workshopActionBarRect.width - 2 && workshopSecondaryActions.every(button => button.getBoundingClientRect().width >= 72), workshopActionButtons.map(button => `${button.textContent.trim()} ${Math.round(button.getBoundingClientRect().width)}×${Math.round(button.getBoundingClientRect().height)}`).join(' · ') || 'thiếu nút');
 
   openAssemblyFinish('qa-order', 'qa-item');
   document.getElementById('assembly-finish-qty').value = '2';
