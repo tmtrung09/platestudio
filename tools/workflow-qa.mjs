@@ -93,6 +93,9 @@ const results = await page.evaluate(async () => {
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
   const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
   check('Ảnh thẻ báo cáo mẻ luôn hiện trọn khung và canh giữa', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'contain' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
+  const batchReportGrid = document.querySelector('.batch-report-grid');
+  const batchReportGridStyle = batchReportGrid ? getComputedStyle(batchReportGrid) : null;
+  check('Lưới thẻ ảnh báo cáo mẻ được canh giữa thay vì kéo giãn lệch một phía', Boolean(batchReportGridStyle && batchReportGridStyle.justifyContent === 'center' && /340px/.test(batchReportGridStyle.gridTemplateColumns)), batchReportGridStyle ? `${batchReportGridStyle.justifyContent} · ${batchReportGridStyle.gridTemplateColumns}` : 'không có lưới');
   goPage('fulfillment', { historyMode: 'none' });
 
   const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');

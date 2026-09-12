@@ -2854,6 +2854,7 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
 /* Ảnh mẻ là chứng từ: luôn giữ trọn khung ảnh và canh giữa, không cắt mép
    chỉ để lấp đầy thẻ. Cách này áp dụng cho cả ảnh ngang, dọc và ảnh cũ. */
 .batch-report-media>img{width:100%;height:100%;object-fit:contain;object-position:center center;display:block;transition:transform .12s ease-out;will-change:transform}
+.batch-report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),340px));justify-content:center;gap:10px}
 .batch-report-overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:space-between;padding:11px;background:linear-gradient(180deg,rgba(8,10,18,.06) 12%,rgba(8,10,18,.16) 38%,rgba(8,10,18,.96) 100%);color:#fff;opacity:0;pointer-events:none;transform:translateY(7px);transition:opacity .2s ease,transform .24s ease}
 .batch-report-card:hover .batch-report-overlay,.batch-report-card:focus-within .batch-report-overlay{opacity:1;pointer-events:auto;transform:translateY(0)}
 .batch-report-overlay-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;min-height:25px}.batch-report-overlay-badges{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.batch-report-overlay .badge{box-shadow:0 4px 12px rgba(0,0,0,.22)}
@@ -13530,7 +13531,7 @@ function renderBatchReportPage(){
       <span style="width:10px;height:10px;border-radius:50%;background:${accent}"></span>
       <b style="font-size:14px">${title}</b><span class="badge" style="background:var(--s2);color:var(--t3)">${items.length}</span>
     </div>
-    ${items.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">${items.map(reportCard).join('')}</div>`:`<div style="padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--t3);font-size:13px">${empty}</div>`}
+    ${items.length?`<div class="batch-report-grid">${items.map(reportCard).join('')}</div>`:`<div style="padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--t3);font-size:13px">${empty}</div>`}
   </section>`;
   const searchEl=document.getElementById('batch-smart-search'); if(searchEl && searchEl.value!==FILTERS.batches.search) searchEl.value=FILTERS.batches.search;
   const sortEl=document.getElementById('batch-report-sort'); if(sortEl && sortEl.value!==(FILTERS.batches.sort||'recorded_desc')) sortEl.value=FILTERS.batches.sort||'recorded_desc';
