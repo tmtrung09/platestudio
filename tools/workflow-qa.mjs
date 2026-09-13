@@ -672,6 +672,43 @@ results.push({
   passed: compactEvidence.columns === 2 && compactEvidence.minCardWidth >= 250 && compactEvidence.declarationsFit && compactEvidence.overflow <= 1,
   detail: `${compactEvidence.columns} cột · ${Math.round(compactEvidence.minCardWidth)}px · tràn ${compactEvidence.overflow}px`,
 });
+/* Ở desktop phóng to, phần mô tả từng ảnh không được bị chính thẻ hoặc vùng
+   cuộn của dialog cắt mất. Fixture 9 ảnh tái hiện đúng thư viện dài của xưởng. */
+await page.setViewportSize({ width: 1280, height: 900 });
+const fullEvidence = await page.evaluate(() => {
+  ['d', 'e', 'f', 'g', 'h', 'i'].forEach((suffix, index) => batchReports.push({
+    id: `qa-external-evidence-${suffix}`, status: 'done', external: true, externalOrigin: true,
+    createdAt: new Date(Date.now() + 10 + index).toISOString(), completedAt: new Date().toISOString(), completedBy: 'QA',
+    image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="90"%3E%3Crect width="120" height="90" fill="%232563eb"/%3E%3C/svg%3E',
+    manualItems: [{ modelId: 'qa-model', modelName: 'QA · Mô hình kiểm thử', variantId: 'qa-size-10', variantName: 'Size 10cm', partId: 'qa-body', partName: 'Thân', filamentId: fils[0]?.id || '', qty: 1 }], appliedItems: [],
+  }));
+  const row = fulfillmentWorkshopRows().find(item => item.source === 'external' && item.externalKey === 'qa-model::qa-size-10');
+  openWorkshopEvidence(workshopWaitKey(row));
+  const dialog = document.querySelector('.workshop-evidence-dialog');
+  const grid = document.querySelector('.workshop-evidence-grid');
+  const cards = [...document.querySelectorAll('.workshop-evidence-card')];
+  const copiesVisible = cards.every(card => {
+    const copy = card.querySelector('.workshop-evidence-copy');
+    const cardRect = card.getBoundingClientRect(), copyRect = copy?.getBoundingClientRect();
+    return copy && copyRect.top >= cardRect.top - 1 && copyRect.bottom <= cardRect.bottom + 1 && copyRect.height > 20;
+  });
+  const dialogFits = dialog.getBoundingClientRect().bottom <= window.innerHeight + 1;
+  const gridScrollable = grid.scrollHeight > grid.clientHeight;
+  const firstCard = cards[0], firstCopy = firstCard?.querySelector('.workshop-evidence-copy');
+  const firstMedia = firstCard?.querySelector('.workshop-evidence-media');
+  const firstCardRect = firstCard?.getBoundingClientRect(), firstCopyRect = firstCopy?.getBoundingClientRect();
+  const firstMediaRect = firstMedia?.getBoundingClientRect();
+  const cardDisplay = getComputedStyle(firstCard).display, copyPosition = getComputedStyle(firstCopy).position;
+  const dialogHeight = Math.round(dialog.getBoundingClientRect().height), dialogCssHeight = getComputedStyle(dialog).height;
+  const gridHeight = Math.round(grid.clientHeight), gridScrollHeight = Math.round(grid.scrollHeight), gridFlex = getComputedStyle(grid).flex;
+  closeDialog('dlg-mv');
+  return { count: cards.length, copiesVisible, dialogFits, gridScrollable, dialogHeight, dialogCssHeight, gridHeight, gridScrollHeight, gridFlex, cardDisplay, copyPosition, firstCardHeight: Math.round(firstCardRect?.height || 0), firstMediaBottom: Math.round(firstMediaRect?.bottom || 0), firstCopyTop: Math.round(firstCopyRect?.top || 0), firstCopyBottom: Math.round(firstCopyRect?.bottom || 0), firstCardBottom: Math.round(firstCardRect?.bottom || 0) };
+});
+results.push({
+  name: 'Gallery ảnh minh chứng phóng to giữ trọn nội dung từng thẻ và cuộn trong dialog',
+  passed: fullEvidence.count === 9 && fullEvidence.copiesVisible && fullEvidence.dialogFits && fullEvidence.gridScrollable,
+  detail: `${fullEvidence.count} ảnh · copy ${fullEvidence.copiesVisible} · dialog ${fullEvidence.dialogFits}/${fullEvidence.dialogHeight}px/${fullEvidence.dialogCssHeight} · cuộn ${fullEvidence.gridScrollable} · grid ${fullEvidence.gridHeight}/${fullEvidence.gridScrollHeight}/${fullEvidence.gridFlex} · ${fullEvidence.cardDisplay}/${fullEvidence.copyPosition} · thẻ ${fullEvidence.firstCardHeight}px · ảnh đến ${fullEvidence.firstMediaBottom} · copy ${fullEvidence.firstCopyTop}-${fullEvidence.firstCopyBottom}/${fullEvidence.firstCardBottom}`,
+});
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 const inventoryShot = join(outputDir, `${stamp}-inventory.png`);
