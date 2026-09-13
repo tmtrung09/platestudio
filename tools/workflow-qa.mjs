@@ -121,6 +121,7 @@ const results = await page.evaluate(async () => {
   const contextMenu = document.getElementById('app-context-menu');
   check('Chuột phải trên thẻ gia công mở menu theo ngữ cảnh', Boolean(contextPrevented && contextMenu?.classList.contains('show') && /Model gia công/.test(contextMenu.textContent)), contextMenu?.textContent.trim() || 'không mở menu');
   check('Menu thẻ gia công chỉ hiện thao tác của bước hiện tại', !/Tạo đợt giao|Chụp mẻ in/.test(contextMenu?.textContent || ''), contextMenu?.textContent.trim() || 'không mở menu');
+  check('Menu chuột phải luôn có nhóm chức năng hệ thống độc lập với ngữ cảnh', Boolean(/Hệ thống/.test(contextMenu?.textContent || '') && /Tìm nhanh toàn hệ thống/.test(contextMenu?.textContent || '') && /Hướng dẫn trang này/.test(contextMenu?.textContent || '') && /giao diện/.test(contextMenu?.textContent || '')), contextMenu?.textContent.trim() || 'thiếu nhóm hệ thống');
   const quickStatusTrigger = contextMenu?.querySelector('.app-context-menu-submenu-trigger');
   quickStatusTrigger?.focus();
   const quickStatusPanel = contextMenu?.querySelector('.app-context-submenu-panel');
