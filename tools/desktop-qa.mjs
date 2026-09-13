@@ -207,6 +207,34 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       if (originalTheme === null) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', originalTheme);
       return result;
     })();
+    /* .field là primitive dùng chung, nên checkbox nằm trong editor biến thể
+       cũng phải luôn là control gọn ở desktop thay vì có chiều rộng của text input. */
+    const variantEditorControls = (() => {
+      if (expectedRoute !== 'models' || typeof openEditModel !== 'function' || typeof openVariantEditor !== 'function') return null;
+      const originalModels = models;
+      const probe = {
+        id: 'qa-desktop-variant-control', name: 'QA · Checkbox biến thể', cats: [], images: [],
+        variants: [{ id: 'qa-variant', name: 'Phiên bản QA' }],
+        parts: [{ id: 'qa-part-a', name: 'Part A', qtyPerModel: 1, filamentIds: [] }, { id: 'qa-part-b', name: 'Part B', qtyPerModel: 1, filamentIds: [] }],
+      };
+      models = [probe];
+      try {
+        openEditModel(probe.id);
+        openVariantEditor('qa-variant');
+        const controls = [...document.querySelectorAll('#dlg-variant-editor input[id^="mv-part-enabled-"]')];
+        const boxes = controls.map(control => {
+          const rect = control.getBoundingClientRect();
+          return { width: Math.round(rect.width), height: Math.round(rect.height) };
+        });
+        const first = controls[0], before = Boolean(first?.checked);
+        first?.click();
+        return { boxes, toggled: Boolean(first && first.checked !== before), passed: controls.length === 2 && boxes.every(box => box.width >= 16 && box.width <= 28 && box.height >= 16 && box.height <= 28) && Boolean(first && first.checked !== before) };
+      } finally {
+        closeVariantEditor();
+        closeDialog('dlg-model');
+        models = originalModels;
+      }
+    })();
     return {
       title: document.title,
       ready: document.readyState,
@@ -225,6 +253,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       sidebar: { scroll: rectOf(document.querySelector('.sb-scroll')), bottom: rectOf(document.querySelector('.sb-bottom')), notifications: rectOf(document.querySelector('#system-notification-button')), system: rectOf([...document.querySelectorAll('.sb-nav-group-toggle')].find(element => element.textContent.trim() === 'Hệ thống')) },
       chartTooltip,
       modelDetailLayout,
+      variantEditorControls,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   let axe = { violations: [], incomplete: [] };
@@ -254,6 +283,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.noDialogOverflow ? [`Dialog Model có cuộn ngang ngoài vùng bảng (${checks.modelDetailLayout.width}px)`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.narrowDesktopStacks ? [`Dialog Model hẹp vẫn giữ hai cột (${checks.modelDetailLayout.tracks.join(' + ')})`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
+    ...(checks.variantEditorControls && !checks.variantEditorControls.passed ? [`Checkbox chọn part của biến thể bị kéo sai kích thước (${checks.variantEditorControls.boxes.map(box => `${box.width}×${box.height}`).join(', ') || 'không có control'})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),

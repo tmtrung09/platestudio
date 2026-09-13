@@ -88,6 +88,18 @@ const results = await page.evaluate(async () => {
   }]; projects = [];
   operations = { qualityIssues: [], deliveries: [], deliveryBatches: [], events: [], externalWorkshopHandovers: {} };
   normalizeOperations();
+  /* Checkbox trong biểu mẫu biến thể dùng chung primitive .field. Nó phải giữ
+     kích thước control thay vì bị rule input 100% kéo ngang cả hàng trên mobile. */
+  openEditModel('qa-model');
+  openVariantEditor('qa-size-10');
+  const variantPartChecks = [...document.querySelectorAll('#dlg-variant-editor input[id^="mv-part-enabled-"]')];
+  const variantPartCheckRects = variantPartChecks.map(input => input.getBoundingClientRect());
+  const firstVariantPartCheck = variantPartChecks[0];
+  const checkedBeforeToggle = Boolean(firstVariantPartCheck?.checked);
+  firstVariantPartCheck?.click();
+  check('Mobile: checkbox chọn part của biến thể là control gọn, không kéo ngang hàng', Boolean(variantPartChecks.length >= 2 && variantPartCheckRects.every(rect => rect.width >= 16 && rect.width <= 28 && rect.height >= 16 && rect.height <= 28) && firstVariantPartCheck?.checked !== checkedBeforeToggle), variantPartCheckRects.map(rect => `${Math.round(rect.width)}×${Math.round(rect.height)}`).join(' · '));
+  closeVariantEditor();
+  closeDialog('dlg-model');
   goPage('batches', { historyMode: 'none' });
   renderBatchReportPage();
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
@@ -436,12 +448,24 @@ const results = await page.evaluate(async () => {
   const configuredPartSource = models[0].parts.find(part => part.id === 'qa-locked');
   check('Part có màu quy định không bắt buộc khai báo lại', !manualItemRequiresActualColor(models[0], configuredColorPart, configuredPartSource) && hasDeclaredManualItemFilament(configuredColorPart), String(configuredColorPart.filamentId));
   brUnifiedSearch = 'QA';
+  document.getElementById('ov-batch-report').style.display = 'flex';
   quickSelectBatchModel('qa-model');
   check('Chọn Model từ tìm kiếm chuyển sang bước khai báo', brView === 'manual' && Boolean(document.querySelector('#br-content .br-manual-layout')), brView);
   const actualColorPicker = document.querySelector('.br-color-picker');
   check('Chọn màu thực tế có chấm màu và ô tìm kiếm', Boolean(actualColorPicker?.querySelector('.br-color-picker-dot') && actualColorPicker?.querySelector('input[type="search"]') && actualColorPicker?.querySelector('.br-color-picker-option')), actualColorPicker ? 'có bộ chọn màu' : 'thiếu bộ chọn màu');
   const selectedModelThumb = document.querySelector('.br-manual-model-input .br-manual-model-thumb');
   check('Dòng model đã chọn trong mẻ in hiện ảnh sản phẩm', Boolean(selectedModelThumb?.getAttribute('src') && selectedModelThumb.closest('.br-manual-model-input')), selectedModelThumb?.getAttribute('src') || 'thiếu ảnh model');
+  /* Dòng khai báo là một component dùng lại trong mọi mẻ ngoài kế hoạch. Trên
+     điện thoại không được giữ cấu trúc bảng desktop khiến Model/Part/Màu/SL
+     tràn ngang hoặc ép nút lưu ra ngoài màn hình. */
+  const manualRow = document.querySelector('.br-manual-item-row');
+  const manualModel = manualRow?.querySelector('.br-manual-item-model');
+  const manualColor = manualRow?.querySelector('.br-manual-item-color');
+  const manualPrimary = document.querySelector('.br-manual-detail > .br-actions .btn-ac');
+  const manualRowStyle = manualRow && getComputedStyle(manualRow);
+  const manualRowRect = manualRow?.getBoundingClientRect(), manualModelRect = manualModel?.getBoundingClientRect(), manualColorRect = manualColor?.getBoundingClientRect(), manualPrimaryRect = manualPrimary?.getBoundingClientRect();
+  check('Mobile xếp dòng khai báo mẻ in theo nhóm, không còn bảng tràn ngang', Boolean(manualRowStyle && manualRowStyle.gridTemplateColumns.trim().split(/\s+/).length === 2 && manualRowRect && manualModelRect && manualColorRect && manualModelRect.width >= manualRow.clientWidth - 22 && manualColorRect.width >= manualRow.clientWidth - 22 && manualRow.scrollWidth <= manualRow.clientWidth + 1), manualRowRect ? `${manualRowStyle.gridTemplateColumns} · dòng ${Math.round(manualRowRect.width)}px · model ${Math.round(manualModelRect?.width||0)}px · màu ${Math.round(manualColorRect?.width||0)}px · ${manualRow.scrollWidth}/${manualRow.clientWidth}` : 'thiếu dòng khai báo');
+  check('Mobile để nút lưu mẻ in thành hành động chính đủ rộng', Boolean(manualPrimaryRect && manualRowRect && manualPrimaryRect.width >= manualRowRect.width - 4 && manualPrimaryRect.right <= innerWidth + 1), manualPrimaryRect ? `${Math.round(manualPrimaryRect.width)}px` : 'thiếu nút lưu');
 
   /* Đối chiếu mẻ ngoài đơn phải là Model + Part + phiên bản. Một lỗi cũ đã
      cộng cùng một số lượng vào mọi phiên bản có chung Model/Part. */
