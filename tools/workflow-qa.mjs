@@ -415,10 +415,14 @@ const results = await page.evaluate(async () => {
   const singleHistoryText = document.getElementById('dlg-model-history')?.textContent || '';
   check('Lịch sử in hiện số lượng và màu thực tế', singleHistoryText.includes('12 cái') && singleHistoryText.includes(qaFilament.name), singleHistoryText.slice(0, 240));
   closeDialog('dlg-model-history');
+  operations.deliveryBatches.push({ id: 'qa-model-delivery', code: 'GH-QA-01', status: 'received', destination: 'Cửa hàng QA', deliveredAt: stamp, items: [{ modelId: 'qa-single-part-model', modelName: 'QA · Model một part', variantName: 'Size QA', sentQty: 12, receivedQty: 12 }] });
   viewModel('qa-single-part-model');
   const singleModelText = document.getElementById('dlg-mv')?.textContent || '';
   check('Thông tin model có tóm tắt mẻ in gần đây', singleModelText.includes('In gần đây') && singleModelText.includes('12 cái') && singleModelText.includes(qaFilament.name), singleModelText.slice(0, 260));
+  const modelDeliveryHistoryText = document.querySelector('#dlg-mv .model-delivery-history')?.textContent || '';
+  check('Dialog Model hiển thị lịch sử giao theo model và trạng thái nhận', modelDeliveryHistoryText.includes('GH-QA-01') && modelDeliveryHistoryText.includes('Cửa hàng QA') && modelDeliveryHistoryText.includes('12 cái') && /nhận đủ/i.test(modelDeliveryHistoryText), modelDeliveryHistoryText);
   closeDialog('dlg-mv');
+  operations.deliveryBatches = operations.deliveryBatches.filter(batch => batch.id !== 'qa-model-delivery');
 
   /* Part không khóa màu vẫn phải ghi nhận màu thực tế trong từng dòng mẻ.
      Đây là dữ liệu lịch sử, không phải một quy tắc màu của Model. */

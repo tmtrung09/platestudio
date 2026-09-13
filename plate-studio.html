@@ -3280,6 +3280,7 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
   #page-models .model-card{min-height:276px}
 }
 .model-detail-dlg{max-inline-size:100%;overflow-x:hidden}.model-detail-columns{display:grid;min-width:0;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:14px;align-items:start}.model-detail-column,.model-detail-secondary,.model-detail-dlg .model-kiot-card{min-width:0;max-width:100%}.model-detail-secondary{display:grid;gap:12px}.model-detail-secondary .kiot-model-card{margin-top:0!important}.model-detail-dlg .model-kiot-detail-wrap{max-width:100%;overscroll-behavior-inline:contain}
+.model-delivery-history{display:grid;gap:7px;margin-top:13px;padding:11px 12px;border:1px solid var(--b);border-radius:var(--r);background:var(--s2)}.model-delivery-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--t3);font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase}.model-delivery-history-head span{color:var(--t3);font-size:10px;font-weight:650;letter-spacing:0;text-transform:none}.model-delivery-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px;border-radius:11px;background:var(--s3)}.model-delivery-row button,.model-delivery-copy{min-width:0;border:0;background:transparent;color:var(--t);font:inherit;text-align:left}.model-delivery-row button{cursor:pointer}.model-delivery-row button:hover b{color:var(--ac)}.model-delivery-row b,.model-delivery-row small{display:block}.model-delivery-row b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.model-delivery-row small{margin-top:3px;color:var(--t3);font-size:10.5px;line-height:1.35}.model-delivery-state{padding:4px 6px;border-radius:999px;background:var(--s);font-size:9px;font-weight:850;white-space:nowrap}.model-delivery-state.ok{color:var(--gr)}.model-delivery-state.warn{color:var(--re)}.model-delivery-state.pending{color:var(--am)}.model-delivery-empty{padding:7px 0;color:var(--t3);font-size:11px}
 @media(min-width:861px) and (max-width:1180px){#dlg-mv .model-detail-dlg{width:calc(100vw - 32px);max-width:960px}.model-detail-columns{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:860px){
   /* Dialog phải nổi trên mobile navigation, không để thanh dưới chặn nút thao tác. */
@@ -9174,6 +9175,24 @@ async function analyzeKiotProduct(modelId){
   }catch(error){showActionDialog({title:'Không thể phân tích dữ liệu bán',icon:'✨',message:esc(String(error?.message||error||'Hãy thử lại sau.')),primaryLabel:'Đã hiểu'});}
   finally{delete kiotViet.aiLoadingModelId;viewModel(modelId);}
 }
+function modelDeliveryHistory(modelId){
+  normalizeOperations();
+  const itemModelId=item=>item?.modelId||rawOrder(item?.orderId)?.items?.find(row=>row.id===item?.itemId)?.modelId||'';
+  const current=(operations.deliveryBatches||[]).flatMap(batch=>(batch.items||[]).filter(item=>itemModelId(item)===modelId).map(item=>({batch,item,legacy:false})));
+  const legacy=(operations.deliveries||[]).flatMap(batch=>(batch.items||[]).filter(item=>itemModelId(item)===modelId).map(item=>({batch,item,legacy:true})));
+  return [...current,...legacy].sort((a,b)=>new Date(b.batch.deliveredAt||b.batch.createdAt||0)-new Date(a.batch.deliveredAt||a.batch.createdAt||0));
+}
+function renderModelDeliveryHistory(modelId){
+  const rows=modelDeliveryHistory(modelId).slice(0,6);
+  if(!rows.length)return `<section class="model-delivery-history"><div class="model-delivery-history-head">Lịch sử giao</div><div class="model-delivery-empty">Chưa có đợt giao.</div></section>`;
+  return `<section class="model-delivery-history"><div class="model-delivery-history-head">Lịch sử giao <span>${rows.length} đợt gần nhất</span></div>${rows.map(({batch,item,legacy})=>{
+    const sent=Number(item.sentQty??item.qty)||0,received=Number(item.receivedQty??sent)||0,state=legacy?{label:'Biên bản cũ',tone:'pending'}:deliveryReceiptStatus(batch);
+    const detail=`${fmtDate(batch.deliveredAt||batch.createdAt)} · ${esc(batch.destination||'Cửa hàng')} · ${sent} cái${item.variantName?` · ${esc(item.variantName)}`:''}${state.confirmed&&received!==sent?` · nhận ${received}`:''}`;
+    const copy=`<div class="model-delivery-copy"><b>${esc(batch.code||batch.destination||'Phiếu giao hàng')}</b><small>${detail}</small></div>`;
+    const content=legacy?copy:`<button type="button" onclick="openCompletedDeliveryReview(operations.deliveryBatches.find(row=>row.id==='${esc(batch.id)}'))">${copy}</button>`;
+    return `<div class="model-delivery-row">${content}<span class="model-delivery-state ${state.tone}">${esc(state.label||state.title)}</span></div>`;
+  }).join('')}</section>`;
+}
 function viewModel(id) {
   /* Model dialogs must never be rendered behind the full-screen Progress view. */
   if(document.getElementById('page-progress')?.classList.contains('active')) closePrintProgress('models');
@@ -9229,6 +9248,7 @@ function viewModel(id) {
     <div style="margin-top:13px;padding:11px 12px;border:1px solid var(--b);border-radius:var(--r);background:var(--s2)">
       <div style="display:flex;align-items:center;gap:10px"><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:650;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Lịch sử in</div><div style="font-size:12px;color:var(--t2);margin-top:3px">${allPrintHistory.length ? `${allPrintHistory.length} lần ghi nhận${printHistory[0] ? ` · gần nhất ${fmtDate(printHistory[0].report.completedAt||printHistory[0].report.createdAt)}` : ''}` : 'Chưa có mẻ in nào được ghi nhận.'}</div></div><button class="btn btn-ghost btn-sm" onclick="openModelPrintHistory('${id}')">Xem lịch sử</button></div>
     </div>
+    ${renderModelDeliveryHistory(id)}
     ${m.links?.length ? `<div style="margin-top:10px">
       <div style="font-size:12px;font-weight:600;color:var(--t3);margin-bottom:5px">Files / Links</div>
       ${m.links.map(l=>`<a href="${esc(l.url)}" target="_blank"
