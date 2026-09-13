@@ -121,7 +121,7 @@ const results = await page.evaluate(async () => {
   const contextMenu = document.getElementById('app-context-menu');
   check('Chuột phải trên thẻ gia công mở menu theo ngữ cảnh', Boolean(contextPrevented && contextMenu?.classList.contains('show') && /Model gia công/.test(contextMenu.textContent)), contextMenu?.textContent.trim() || 'không mở menu');
   check('Menu thẻ gia công chỉ hiện thao tác của bước hiện tại', !/Tạo đợt giao|Chụp mẻ in/.test(contextMenu?.textContent || ''), contextMenu?.textContent.trim() || 'không mở menu');
-  check('Menu chuột phải luôn có nhóm chức năng hệ thống độc lập với ngữ cảnh', Boolean(/Hệ thống/.test(contextMenu?.textContent || '') && /Tìm nhanh toàn hệ thống/.test(contextMenu?.textContent || '') && /Hướng dẫn trang này/.test(contextMenu?.textContent || '') && /giao diện/.test(contextMenu?.textContent || '')), contextMenu?.textContent.trim() || 'thiếu nhóm hệ thống');
+  check('Menu chuột phải luôn có nhóm chức năng hệ thống độc lập với ngữ cảnh', Boolean(/Hệ thống/.test(contextMenu?.textContent || '') && /Tìm nhanh/.test(contextMenu?.textContent || '') && /Hướng dẫn/.test(contextMenu?.textContent || '') && /Giao diện/.test(contextMenu?.textContent || '')), contextMenu?.textContent.trim() || 'thiếu nhóm hệ thống');
   const quickStatusTrigger = contextMenu?.querySelector('.app-context-menu-submenu-trigger');
   quickStatusTrigger?.focus();
   const quickStatusPanel = contextMenu?.querySelector('.app-context-submenu-panel');
@@ -502,6 +502,11 @@ const results = await page.evaluate(async () => {
   deliveryWorkspaceState = { ...deliveryWorkspaceState, sourceOrderId: 'qa-order', step: 'products', selected: {} };
   goPage('delivery-builder', { historyMode: 'none' });
   renderDeliveryBuilderPage({ persist: false });
+  check('Mô tả đầu trang dùng copy ngắn thay vì lặp lại nội dung các khối bên dưới', Object.values(PAGE_META).every(meta => String(meta.subtitle || '').length <= 24), Object.values(PAGE_META).map(meta => meta.subtitle).join(' · '));
+  const deliveryStepLabels = [...document.querySelectorAll('.delivery-wizard-step')];
+  check('Stepper giao hàng chỉ giữ tên bước, không lặp diễn giải', deliveryStepLabels.length === 3 && deliveryStepLabels.every(step => !step.querySelector('small') && step.textContent.trim().length <= 18), deliveryStepLabels.map(step => step.textContent.trim()).join(' · '));
+  const deliveryGroups = [...document.querySelectorAll('.delivery-category-section h2')].map(node => node.textContent.trim());
+  check('Nhóm hàng giao dùng tên ngắn nhưng vẫn phân biệt đủ bốn nguồn', ['Hàng 3D sẵn giao', 'Hàng ngoài 3D', 'Hàng chưa đối soát', 'Hàng mới'].every(name => deliveryGroups.includes(name)), deliveryGroups.join(' · '));
   const readyVariant = document.querySelector('.delivery-category-section.is-3d .delivery-product-variant');
   check('Thẻ thành phẩm sẵn giao hiển thị biến thể', readyVariant?.textContent.includes('Size 10cm'), readyVariant?.textContent.trim() || 'thiếu biến thể');
   const deliveryStageBeforeSearch = document.querySelector('.delivery-wizard-stage');

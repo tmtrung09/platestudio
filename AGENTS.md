@@ -32,6 +32,19 @@ bắt buộc làm đủ các bước sau:
 - Một ảnh hoặc item hiển thị lỗi: kiểm tra tất cả đường dẫn render/fallback/lazy-load
   cùng loại, không chỉ record xuất hiện trong ảnh.
 
+## Nội dung giao diện (mandatory)
+
+Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng thái hoặc ra quyết định.
+
+1. Tiêu đề trang: tên + một mô tả ngắn; không liệt kê lại các mục đã có ở menu,
+   thẻ, bộ lọc hoặc bước bên dưới.
+2. Stepper, nút, chip và tiêu đề nhóm: ưu tiên nhãn ngắn. Không đặt thêm câu giải
+   thích nếu nhãn, số lượng hoặc trạng thái đã truyền đủ ý.
+3. Mô tả chỉ được giữ khi nó làm rõ một hệ quả quan trọng (dữ liệu không ảnh hưởng
+   tồn kho, thao tác không thể hoàn tác, quyền hạn, hay điều kiện cần thực hiện).
+4. Khi rút gọn copy, quét cả họ component và mọi breakpoint; thêm regression check
+   cho nguyên tắc mới thay vì chỉ cắt chữ ở ảnh người dùng gửi.
+
 ## Định nghĩa hoàn tất
 
 Một sửa lỗi UI chỉ hoàn tất khi đã có: sửa ở nguồn dùng chung hoặc lý do rõ ràng cho
