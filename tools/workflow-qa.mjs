@@ -500,11 +500,18 @@ const results = await page.evaluate(async () => {
   openDeliveryReceiptEditor('qa-receipt');
   const receiptEditor = document.querySelector('#dlg-mv .dlg');
   check('Form sửa biên lai không tràn ngang trên mobile', !receiptEditor || receiptEditor.scrollWidth <= receiptEditor.clientWidth + 1, receiptEditor ? `${receiptEditor.scrollWidth}/${receiptEditor.clientWidth}` : 'không mở form');
+  const receiptSentQty = document.getElementById('receipt-edit-sent-0');
+  const receiptReceivedQty = document.getElementById('receipt-edit-received-0');
+  check('Quản trị viên có thể sửa số giao và số nhận trên từng dòng biên lai', Boolean(receiptSentQty && receiptReceivedQty), `giao=${Boolean(receiptSentQty)} · nhận=${Boolean(receiptReceivedQty)}`);
   document.getElementById('receipt-edit-destination').value = 'Cửa hàng QA đã sửa';
   document.getElementById('receipt-edit-receive-note').value = 'QA đã kiểm tra lại';
+  receiptSentQty.value = '3';
+  receiptReceivedQty.value = '9';
+  syncDeliveryReceiptQuantity(0);
   saveDeliveryReceiptEditor('qa-receipt');
   const editedReceipt = operations.deliveryBatches.find(batch => batch.id === 'qa-receipt');
-  check('Quản trị viên sửa biên lai sau khi cửa hàng báo nhận và có nhật ký', editedReceipt?.destination === 'Cửa hàng QA đã sửa' && editedReceipt?.receiveNote === 'QA đã kiểm tra lại' && editedReceipt?.editHistory?.[0]?.fields?.includes('destination') && editedReceipt?.editHistory?.[0]?.fields?.includes('receiveNote'), JSON.stringify(editedReceipt?.editHistory?.[0] || {}));
+  check('Số nhận bị giới hạn theo số giao và trạng thái biên lai tự cập nhật', editedReceipt?.items?.[0]?.sentQty === 3 && editedReceipt?.items?.[0]?.receivedQty === 3 && editedReceipt?.status === 'received', JSON.stringify(editedReceipt?.items?.[0] || {}));
+  check('Quản trị viên sửa biên lai sau khi cửa hàng báo nhận và có nhật ký', editedReceipt?.destination === 'Cửa hàng QA đã sửa' && editedReceipt?.receiveNote === 'QA đã kiểm tra lại' && editedReceipt?.editHistory?.[0]?.fields?.includes('destination') && editedReceipt?.editHistory?.[0]?.fields?.includes('receiveNote') && editedReceipt?.editHistory?.[0]?.fields?.includes('items[0].sentQty'), JSON.stringify(editedReceipt?.editHistory?.[0] || {}));
   closeDialog?.('dlg-mv');
 
   /* Các lời nhắc ngắn không được tự biến thành popup chặn, nhất là khi giao
