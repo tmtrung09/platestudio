@@ -178,6 +178,8 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     const modelDetailLayout = (() => {
       if (expectedRoute !== 'models' || typeof viewModel !== 'function' || !Array.isArray(models)) return null;
       const originalModels = models;
+      const originalTheme = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
       const probe = models[0] || { id: 'qa-desktop-model-detail', name: 'QA · Dialog Model', cats: [], images: [], variants: [{ id: 'qa-v', name: 'Phiên bản QA' }], parts: [{ id: 'qa-p', name: 'Part QA', qtyPerModel: 1, filamentIds: [] }] };
       if (!models[0]) models = [probe];
       viewModel(probe.id);
@@ -191,9 +193,18 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
         narrowDesktopStacks: innerWidth > 860 && innerWidth <= 1180 ? tracks.length === 1 : true,
         tracks,
         width: rect ? Math.round(rect.width) : 0,
+        darkSurfaceSafe: (() => {
+          const row = dialog?.querySelector('.model-detail-primary .part-row');
+          const color = row ? getComputedStyle(row).backgroundColor : '';
+          const raw = color.match(/[\d.]+/g)?.map(Number) || [];
+          const channels = raw.length >= 3 ? raw.slice(-3).map(value => value <= 1 ? value * 255 : value) : [];
+          const brightness = channels.length === 3 ? Math.round((channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000) : 999;
+          return { color, brightness, passed: brightness < 120 };
+        })(),
       };
       closeDialog('dlg-mv');
       models = originalModels;
+      if (originalTheme === null) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', originalTheme);
       return result;
     })();
     return {
@@ -242,6 +253,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.inViewport ? [`Dialog Model lệch khỏi viewport (${checks.modelDetailLayout.width}px)`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.noDialogOverflow ? [`Dialog Model có cuộn ngang ngoài vùng bảng (${checks.modelDetailLayout.width}px)`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.narrowDesktopStacks ? [`Dialog Model hẹp vẫn giữ hai cột (${checks.modelDetailLayout.tracks.join(' + ')})`] : []),
+    ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),
