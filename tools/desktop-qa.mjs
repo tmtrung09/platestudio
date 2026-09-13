@@ -172,6 +172,30 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       probe.remove();
       return { inside: visible && label.top >= viewport.top - 1 && label.bottom <= viewport.bottom + 1, visible, labelTop: Math.round(label.top - viewport.top), viewportHeight: Math.round(viewport.height) };
     })();
+    /* Model detail is a shared two-column dialog. At narrow desktop widths it
+       must collapse before either column can push the dialog past the viewport;
+       tables may scroll only inside their own wrapper. */
+    const modelDetailLayout = (() => {
+      if (expectedRoute !== 'models' || typeof viewModel !== 'function' || !Array.isArray(models)) return null;
+      const originalModels = models;
+      const probe = models[0] || { id: 'qa-desktop-model-detail', name: 'QA · Dialog Model', cats: [], images: [], variants: [{ id: 'qa-v', name: 'Phiên bản QA' }], parts: [{ id: 'qa-p', name: 'Part QA', qtyPerModel: 1, filamentIds: [] }] };
+      if (!models[0]) models = [probe];
+      viewModel(probe.id);
+      const dialog = document.querySelector('#dlg-mv .model-detail-dlg');
+      const columns = dialog?.querySelector('.model-detail-columns');
+      const rect = dialog?.getBoundingClientRect();
+      const tracks = columns ? getComputedStyle(columns).gridTemplateColumns.trim().split(/\s+/).filter(Boolean) : [];
+      const result = {
+        inViewport: Boolean(rect && rect.left >= -1 && rect.right <= innerWidth + 1),
+        noDialogOverflow: Boolean(dialog && dialog.scrollWidth <= dialog.clientWidth + 2),
+        narrowDesktopStacks: innerWidth > 860 && innerWidth <= 1180 ? tracks.length === 1 : true,
+        tracks,
+        width: rect ? Math.round(rect.width) : 0,
+      };
+      closeDialog('dlg-mv');
+      models = originalModels;
+      return result;
+    })();
     return {
       title: document.title,
       ready: document.readyState,
@@ -189,6 +213,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       headingLevels: headings,
       sidebar: { scroll: rectOf(document.querySelector('.sb-scroll')), bottom: rectOf(document.querySelector('.sb-bottom')), notifications: rectOf(document.querySelector('#system-notification-button')), system: rectOf([...document.querySelectorAll('.sb-nav-group-toggle')].find(element => element.textContent.trim() === 'Hệ thống')) },
       chartTooltip,
+      modelDetailLayout,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   let axe = { violations: [], incomplete: [] };
@@ -214,6 +239,9 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.actualActive !== `page-${route}` ? [`Sai trang đang mở: ${checks.actualActive || 'không có trang active'}`] : []),
     ...(!checks.activeHasContent ? ['Trang active không có nội dung hiển thị'] : []),
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
+    ...(checks.modelDetailLayout && !checks.modelDetailLayout.inViewport ? [`Dialog Model lệch khỏi viewport (${checks.modelDetailLayout.width}px)`] : []),
+    ...(checks.modelDetailLayout && !checks.modelDetailLayout.noDialogOverflow ? [`Dialog Model có cuộn ngang ngoài vùng bảng (${checks.modelDetailLayout.width}px)`] : []),
+    ...(checks.modelDetailLayout && !checks.modelDetailLayout.narrowDesktopStacks ? [`Dialog Model hẹp vẫn giữ hai cột (${checks.modelDetailLayout.tracks.join(' + ')})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),

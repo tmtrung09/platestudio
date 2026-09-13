@@ -3279,7 +3279,8 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
   #page-models .model-img{height:160px!important}
   #page-models .model-card{min-height:276px}
 }
-.model-detail-columns{display:grid;grid-template-columns:minmax(0,.82fr) minmax(390px,1.18fr);gap:14px;align-items:start}.model-detail-column{min-width:0}.model-detail-secondary{display:grid;gap:12px}.model-detail-secondary .kiot-model-card{margin-top:0!important}
+.model-detail-dlg{max-inline-size:100%;overflow-x:hidden}.model-detail-columns{display:grid;min-width:0;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:14px;align-items:start}.model-detail-column,.model-detail-secondary,.model-detail-dlg .model-kiot-card{min-width:0;max-width:100%}.model-detail-secondary{display:grid;gap:12px}.model-detail-secondary .kiot-model-card{margin-top:0!important}.model-detail-dlg .model-kiot-detail-wrap{max-width:100%;overscroll-behavior-inline:contain}
+@media(min-width:861px) and (max-width:1180px){#dlg-mv .model-detail-dlg{width:calc(100vw - 32px);max-width:960px}.model-detail-columns{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:860px){
   /* Dialog phải nổi trên mobile navigation, không để thanh dưới chặn nút thao tác. */
   .dlg-ov{z-index:1600!important;padding:calc(10px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom))!important}
