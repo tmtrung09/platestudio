@@ -495,6 +495,17 @@ const results = await page.evaluate(async () => {
   check('Phiếu đã xác nhận hiện đúng khi có dữ liệu', Boolean(receiptHeading));
   check('Mô tả phiếu trên mobile nằm dưới tiêu đề, không bị ép ngang', Boolean(receiptHeading && receiptHelp && receiptHelp.getBoundingClientRect().top > receiptHeading.getBoundingClientRect().top + 14), receiptHelp ? `${Math.round(receiptHelp.getBoundingClientRect().top - receiptHeading.getBoundingClientRect().top)}px` : 'không có mô tả');
   check('Khu phiếu đã nhận không tràn ngang', !receiptHeading || receiptHeading.scrollWidth <= receiptHeading.clientWidth + 1, receiptHeading ? `${receiptHeading.scrollWidth}/${receiptHeading.clientWidth}` : 'không có heading');
+  openCompletedDeliveryReview(operations.deliveryBatches.find(batch => batch.id === 'qa-receipt'));
+  check('Quản trị viên có nút sửa cả biên lai đã xác nhận', Boolean(document.querySelector('#dlg-mv button[onclick*="openDeliveryReceiptEditor"]')), document.getElementById('dlg-mv')?.textContent || 'không mở biên lai');
+  openDeliveryReceiptEditor('qa-receipt');
+  const receiptEditor = document.querySelector('#dlg-mv .dlg');
+  check('Form sửa biên lai không tràn ngang trên mobile', !receiptEditor || receiptEditor.scrollWidth <= receiptEditor.clientWidth + 1, receiptEditor ? `${receiptEditor.scrollWidth}/${receiptEditor.clientWidth}` : 'không mở form');
+  document.getElementById('receipt-edit-destination').value = 'Cửa hàng QA đã sửa';
+  document.getElementById('receipt-edit-receive-note').value = 'QA đã kiểm tra lại';
+  saveDeliveryReceiptEditor('qa-receipt');
+  const editedReceipt = operations.deliveryBatches.find(batch => batch.id === 'qa-receipt');
+  check('Quản trị viên sửa biên lai sau khi cửa hàng báo nhận và có nhật ký', editedReceipt?.destination === 'Cửa hàng QA đã sửa' && editedReceipt?.receiveNote === 'QA đã kiểm tra lại' && editedReceipt?.editHistory?.[0]?.fields?.includes('destination') && editedReceipt?.editHistory?.[0]?.fields?.includes('receiveNote'), JSON.stringify(editedReceipt?.editHistory?.[0] || {}));
+  closeDialog?.('dlg-mv');
 
   /* Các lời nhắc ngắn không được tự biến thành popup chặn, nhất là khi giao
      hàng chưa đối soát: người dùng vẫn có thể tiếp tục và bổ sung nhật ký nếu cần. */
