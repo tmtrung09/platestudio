@@ -770,6 +770,8 @@ const results = await page.evaluate(async () => {
   check('Thẻ QC vẫn cho báo lỗi các part tiếp theo sau lượt đầu', Boolean(trafficQcCard?.querySelector('[data-workshop-action="issue"]')), trafficQcCard?.textContent.replace(/\s+/g, ' ').trim() || 'thiếu thẻ QC');
   selectFulfillmentProcessTab('reprint'); renderFulfillmentPage();
   const trafficReprintPartIds = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')].map(card => card.dataset.reprintPartId);
+  const trafficReprintCards = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')];
+  check('Tab in bù ghi rõ đây là part lỗi trên từng thẻ', trafficReprintCards.filter(card => ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].includes(card.dataset.reprintPartId)).every(card => card.textContent.includes('PART LỖI') && /cái cần in lại/.test(card.textContent)), trafficReprintCards.map(card => card.textContent.replace(/\s+/g, ' ').trim()).join(' · '));
   check('Tab in bù hiển thị thẻ riêng cho từng part lỗi', ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].every(id => trafficReprintPartIds.includes(id)), trafficReprintPartIds.join(' · '));
   orders = orders.filter(order => order.id !== trafficOrder.id);
   models = models.filter(model => model.id !== trafficModel.id);
