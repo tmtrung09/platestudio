@@ -263,6 +263,7 @@ const results = await page.evaluate(async () => {
 
   let row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bàn giao đi vào chờ QC', workshopAssemblyStage(row) === 'part_qc', workshopAssemblyStage(row));
+  check('Nút QC có nhận diện công đoạn riêng', Boolean(document.querySelector('.workshop-item-actions [data-workshop-action="qc"]')));
   openWorkshopEvidence(workshopWaitKey(row));
   const evidenceCards = [...document.querySelectorAll('.workshop-evidence-card')];
   const evidenceDeclaration = document.querySelector('.workshop-evidence-card .workshop-evidence-declaration');
@@ -310,12 +311,14 @@ const results = await page.evaluate(async () => {
   check('QC part giữ nguyên vị trí thao tác', !requestedAutoFocus && Math.abs(fulfillmentScrollHost.scrollTop - scrollBeforeQc) <= 2, `trước ${scrollBeforeQc}px · sau ${fulfillmentScrollHost.scrollTop}px · tự focus ${requestedAutoFocus}`);
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('QC đủ part chuyển sang sẵn gia công', workshopAssemblyStage(row) === 'ready', workshopAssemblyStage(row));
+  check('Nút gia công có nhận diện công đoạn riêng', Boolean(document.querySelector('.workshop-item-actions [data-workshop-action="assembly"]')));
 
   startWorkshopAssembly('qa-order', 'qa-item');
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   check('Bắt đầu gia công giữ đúng trạng thái', workshopAssemblyStage(row) === 'in_progress', workshopAssemblyStage(row));
+  check('Nút hoàn tất có nhận diện công đoạn riêng', Boolean(document.querySelector('.workshop-item-actions [data-workshop-action="complete"]')));
   const workshopActionBar = [...document.querySelectorAll('.workshop-item:not(.workshop-item-completed) .workshop-item-actions')]
-    .find(bar => [...bar.querySelectorAll('button')].some(button => /Hoàn tất gia công/.test(button.textContent))) || null;
+    .find(bar => Boolean(bar.querySelector('button[data-workshop-action="complete"]'))) || null;
   const workshopActionButtons = workshopActionBar ? [...workshopActionBar.querySelectorAll('button')] : [];
   const workshopPrimaryAction = workshopActionButtons.at(-1), workshopActionBarRect = workshopActionBar?.getBoundingClientRect();
   const workshopSecondaryActions = workshopActionButtons.slice(0, -1);
@@ -419,7 +422,7 @@ const results = await page.evaluate(async () => {
   const partialPitem = pitems.find(item => item.id === 'qa-single-main-pitem');
   partialPitem.qtyDone = 13;
   partialRow = fulfillmentWorkshopRows().find(item => item.o?.id === partialOrder.id);
-  check('Part in bù xong mở nút QC thêm ngay trên thẻ đã hoàn tất', fulfillmentWorkshopCard(partialRow).includes('+ QC thêm 1'), fulfillmentWorkshopCard(partialRow).includes('+ QC thêm 1') ? 'có nút QC thêm' : 'thiếu nút QC thêm');
+  check('Part in bù xong mở nút QC thêm ngay trên thẻ đã hoàn tất', fulfillmentWorkshopCard(partialRow).includes('data-workshop-action="qc"') && fulfillmentWorkshopCard(partialRow).includes('QC thêm 1'), fulfillmentWorkshopCard(partialRow).includes('QC thêm 1') ? 'có nút QC thêm' : 'thiếu nút QC thêm');
   partialPitem.qtyDone = 12;
   const singleStock = getModelWorkshopStock('qa-single-part-model');
   check('Tồn kho model một part không có NaN hoặc undefined', singleStock.total === 12 && singleStock.groups[0]?.counts[0]?.perSet === 1 && Number.isFinite(singleStock.total), `${singleStock.total} bộ · ${singleStock.groups[0]?.counts[0]?.qty}/${singleStock.groups[0]?.counts[0]?.perSet}`);
@@ -635,6 +638,15 @@ const results = await page.evaluate(async () => {
   kiotSalesArchiveReadyForSettings = true;
   const cloudKiotSettings = kiotVietForCloudSettings();
   check('Lịch sử bán lớn chỉ đồng bộ metadata, không gửi chi tiết SKU trong settings', cloudKiotSettings.sales.length === 0 && cloudKiotSettings.salesImports.length === 1 && !Object.hasOwn(cloudKiotSettings.salesImports[0], 'sales') && cloudKiotSettings.salesImports[0].qtyTotal === 12, JSON.stringify(cloudKiotSettings.salesImports[0]));
+  /* Lịch/biểu đồ đọc metadata trước, còn SKU chi tiết chỉ nạp khi mở đúng
+     ngày. Không được biến doanh thu của ngày chưa nạp chi tiết thành 0đ. */
+  const archivedSalesDay = { id: 'qa-sales-summary', period: { from: '2026-09-02', to: '2026-09-02' }, skuCount: 3, qtyTotal: 9, revenueTotal: 456700, detailLoaded: false };
+  const archivedMetric = kiotSalesImportMetrics(archivedSalesDay);
+  const archivedSeries = kiotSalesDailySeries([archivedSalesDay])[0];
+  check('Biểu đồ doanh thu dùng tổng đã lưu khi chi tiết ngày cũ chưa tải', archivedMetric.sku === 3 && archivedMetric.qty === 9 && archivedMetric.revenue === 456700 && archivedSeries?.revenue === 456700, JSON.stringify({ archivedMetric, archivedSeries }));
+  const kiotTextRevenue = kiotSalesRevenueForRow({ 'Mã hàng': 'QA-TEXT', 'Số lượng bán': '2', 'Thành tiền': '1.250.000 đ' });
+  const kiotEnglishRevenue = kiotSalesRevenueForRow({ SKU: 'QA-EN', 'SL bán': '1', 'Tổng doanh thu': '1,250.50' });
+  check('Nhập báo cáo đọc đúng doanh thu dạng text vi-VN và en-US', kiotTextRevenue === 1250000 && kiotEnglishRevenue === 1250.5, `${kiotTextRevenue} · ${kiotEnglishRevenue}`);
   check('Bù theo khoảng chỉ xếp các ngày chưa có báo cáo', JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')) === JSON.stringify(['2026-09-02', '2026-09-03']), JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')));
   const rangeDialogSource = `${openKiotSalesRangeDialog} ${startKiotSalesRangeSync} ${refreshKiotSalesRangeAutomation} ${previewKiotSalesRange}`;
   check('Bù khoảng ngày kiểm tra bridge, gửi đúng ngày thiếu và không phụ thuộc bản ghi RAM', /kiotSalesRangeAutomation\.ready/.test(rangeDialogSource) && /\/health/.test(rangeDialogSource) && /\/range\/run/.test(rangeDialogSource) && /days:missing/.test(rangeDialogSource) && !/\/recording/.test(refreshKiotSalesRangeAutomation.toString()), rangeDialogSource.includes('/range/run') ? 'có health check và hàng chờ' : 'thiếu hàng chờ');
