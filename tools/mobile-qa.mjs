@@ -183,7 +183,35 @@ for (const route of routes) {
       const rect = element.getBoundingClientRect();
       if (rect.top < 0 || rect.bottom > innerHeight || rect.left < 0 || rect.right > innerWidth) return false;
       const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      return top && top !== element && !element.contains(top) && !top.contains(element);
+      if (!top || top === element || element.contains(top) || top.contains(element)) return false;
+      /* Thanh điều hướng nổi che phần ở đáy tại vị trí cuộn hiện tại là bình
+         thường, miễn nút vẫn có thể được cuộn lên vùng thao tác. Chỉ báo lỗi
+         khi nó bị che cố định cả sau khi đưa chính nút vào trung tâm viewport. */
+      if (top.closest?.('.mnav')) {
+        const scrollParent = (() => {
+          for (let node = element.parentElement; node && node !== document.documentElement; node = node.parentElement) {
+            const style = getComputedStyle(node);
+            if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
+          }
+          return null;
+        })();
+        const previousTop = scrollParent?.scrollTop || 0;
+        const previousScrollBehavior = scrollParent?.style.scrollBehavior || '';
+        if (scrollParent) {
+          scrollParent.style.scrollBehavior = 'auto';
+          const parentRect = scrollParent.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+          scrollParent.scrollTop += elementRect.top - parentRect.top - parentRect.height / 2 + elementRect.height / 2;
+        }
+        const moved = element.getBoundingClientRect();
+        const movedTop = document.elementFromPoint(moved.left + moved.width / 2, moved.top + moved.height / 2);
+        if (scrollParent) {
+          scrollParent.scrollTop = previousTop;
+          scrollParent.style.scrollBehavior = previousScrollBehavior;
+        }
+        if (movedTop === element || element.contains(movedTop) || movedTop?.contains(element)) return false;
+      }
+      return true;
     }).slice(0, 12).map(element => ({ label: (element.getAttribute('aria-label') || element.textContent || element.placeholder || element.id).trim().slice(0, 80), blocker: (document.elementFromPoint(element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2, element.getBoundingClientRect().top + element.getBoundingClientRect().height / 2)?.className || '').toString().slice(0, 100) }));
     const tinyTargets = clickable.filter(element => {
       const rect = element.getBoundingClientRect();

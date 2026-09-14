@@ -322,7 +322,16 @@ const results = await page.evaluate(async () => {
   const workshopActionButtons = workshopActionBar ? [...workshopActionBar.querySelectorAll('button')] : [];
   const workshopPrimaryAction = workshopActionButtons.at(-1), workshopActionBarRect = workshopActionBar?.getBoundingClientRect();
   const workshopSecondaryActions = workshopActionButtons.slice(0, -1);
-  check('Mobile tách nút gia công chính khỏi nhóm thao tác phụ', Boolean(workshopPrimaryAction && workshopActionBarRect) && workshopPrimaryAction.getBoundingClientRect().top > Math.max(...workshopSecondaryActions.map(button => button.getBoundingClientRect().bottom)) + 2 && workshopPrimaryAction.getBoundingClientRect().width >= workshopActionBarRect.width - 2 && workshopSecondaryActions.every(button => button.getBoundingClientRect().width >= 72), workshopActionButtons.map(button => `${button.textContent.trim()} ${Math.round(button.getBoundingClientRect().width)}×${Math.round(button.getBoundingClientRect().height)}`).join(' · ') || 'thiếu nút');
+  const actionRows = new Map();
+  workshopActionButtons.forEach(button => {
+    const top = Math.round(button.getBoundingClientRect().top);
+    actionRows.set(top, (actionRows.get(top) || 0) + 1);
+  });
+  check('Thao tác gia công tối đa hai nút mỗi hàng, không tràn thẻ', Boolean(workshopActionBarRect) && [...actionRows.values()].every(count => count <= 2) && workshopActionButtons.every(button => {
+    const rect = button.getBoundingClientRect();
+    return rect.left >= workshopActionBarRect.left - 1 && rect.right <= workshopActionBarRect.right + 1;
+  }), [...actionRows.values()].join(' / ') || 'thiếu nút');
+  check('Mobile chia thao tác gia công theo hai cột dễ bấm', Boolean(workshopPrimaryAction && workshopActionBarRect) && workshopActionButtons.every(button => button.getBoundingClientRect().width >= 72 && button.getBoundingClientRect().height >= 32) && [...actionRows.values()].every(count => count === 2), workshopActionButtons.map(button => `${button.textContent.trim()} ${Math.round(button.getBoundingClientRect().width)}×${Math.round(button.getBoundingClientRect().height)}`).join(' · ') || 'thiếu nút');
 
   openAssemblyFinish('qa-order', 'qa-item');
   document.getElementById('assembly-finish-qty').value = '2';
