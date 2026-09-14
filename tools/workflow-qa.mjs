@@ -643,13 +643,39 @@ const results = await page.evaluate(async () => {
   const archivedSalesDay = { id: 'qa-sales-summary', period: { from: '2026-09-02', to: '2026-09-02' }, skuCount: 3, qtyTotal: 9, revenueTotal: 456700, detailLoaded: false };
   const archivedMetric = kiotSalesImportMetrics(archivedSalesDay);
   const archivedSeries = kiotSalesDailySeries([archivedSalesDay])[0];
-  check('Biểu đồ doanh thu dùng tổng đã lưu khi chi tiết ngày cũ chưa tải', archivedMetric.sku === 3 && archivedMetric.qty === 9 && archivedMetric.revenue === 456700 && archivedSeries?.revenue === 456700, JSON.stringify({ archivedMetric, archivedSeries }));
+  check('Biểu đồ dùng tổng đã lưu khi chi tiết ngày cũ chưa tải', archivedMetric.sku === 3 && archivedMetric.qty === 9 && archivedMetric.revenue === 456700 && archivedSeries?.sku === 3 && archivedSeries?.revenue === 456700, JSON.stringify({ archivedMetric, archivedSeries }));
   const kiotTextRevenue = kiotSalesRevenueForRow({ 'Mã hàng': 'QA-TEXT', 'Số lượng bán': '2', 'Thành tiền': '1.250.000 đ' });
   const kiotEnglishRevenue = kiotSalesRevenueForRow({ SKU: 'QA-EN', 'SL bán': '1', 'Tổng doanh thu': '1,250.50' });
   check('Nhập báo cáo đọc đúng doanh thu dạng text vi-VN và en-US', kiotTextRevenue === 1250000 && kiotEnglishRevenue === 1250.5, `${kiotTextRevenue} · ${kiotEnglishRevenue}`);
   check('Bù theo khoảng chỉ xếp các ngày chưa có báo cáo', JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')) === JSON.stringify(['2026-09-02', '2026-09-03']), JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')));
   const rangeDialogSource = `${openKiotSalesRangeDialog} ${startKiotSalesRangeSync} ${refreshKiotSalesRangeAutomation} ${previewKiotSalesRange}`;
   check('Bù khoảng ngày kiểm tra bridge, gửi đúng ngày thiếu và không phụ thuộc bản ghi RAM', /kiotSalesRangeAutomation\.ready/.test(rangeDialogSource) && /\/health/.test(rangeDialogSource) && /\/range\/run/.test(rangeDialogSource) && /days:missing/.test(rangeDialogSource) && !/\/recording/.test(refreshKiotSalesRangeAutomation.toString()), rangeDialogSource.includes('/range/run') ? 'có health check và hàng chờ' : 'thiếu hàng chờ');
+  /* Bộ chọn kỳ báo cáo là một họ control dùng lại ở trang Bán hàng và hộp
+     quản lý lịch sử. Dữ liệu nhiều tháng phải có lối lọc nhanh, đồng thời chỉ
+     đổi danh sách kỳ/biểu đồ chứ không làm mất báo cáo đang xem. */
+  const priorSalesPageReportId = salesPageReportId, priorSalesPageMonthFilter = salesPageMonthFilter, priorSalesHistoryMonthFilter = salesHistoryMonthFilter;
+  kiotViet = {
+    ...kiotViet,
+    salesImports: ['05-11','06-12','07-13','08-14'].map((day,index) => ({
+      id: `qa-month-${index + 5}`, importedAt: `2026-${String(index + 5).padStart(2, '0')}-${day.slice(3)}T09:00:00.000Z`, source: 'dated-file',
+      period: { from: `2026-${String(index + 5).padStart(2, '0')}-${day.slice(3)}`, to: `2026-${String(index + 5).padStart(2, '0')}-${day.slice(3)}` },
+      sales: [{ sku: `QA-M${index + 5}`, name: `QA tháng ${index + 5}`, category: 'QA', qty: index + 1, revenue: (index + 1) * 10000 }],
+    })),
+  };
+  salesPageReportId = ''; salesPageMonthFilter = 'all'; salesHistoryMonthFilter = 'all';
+  renderSalesPage();
+  const salesMonthChips = [...document.querySelectorAll('#sales-page .sales-month-chip')].map(button => button.textContent.trim());
+  check('Kỳ báo cáo có chip lọc nhanh cho mọi tháng đã nhập', ['Tháng 5 · 2026','Tháng 6 · 2026','Tháng 7 · 2026','Tháng 8 · 2026'].every(label => salesMonthChips.includes(label)), salesMonthChips.join(' | '));
+  setSalesPageMonthFilter('2026-06');
+  const salesOptionsAfterMonthFilter = [...document.querySelectorAll('#sales-period option')].map(option => option.textContent.trim());
+  const chartAfterMonthFilter = document.querySelector('#sales-page .sales-daily-chart')?.textContent || '';
+  check('Lọc tháng chỉ giữ đúng các kỳ và biểu đồ của tháng đã chọn', salesOptionsAfterMonthFilter.length === 1 && /12\/06\/2026/.test(salesOptionsAfterMonthFilter[0] || '') && /12\/06/.test(chartAfterMonthFilter) && !/11\/05|13\/07|14\/08/.test(chartAfterMonthFilter), `${salesOptionsAfterMonthFilter.join(' | ')} · ${chartAfterMonthFilter.slice(0, 120)}`);
+  openKiotSalesHistoryManager();
+  setSalesHistoryMonthFilter('2026-08');
+  const historyRowsAfterMonthFilter = [...document.querySelectorAll('#dlg-mv .kiot-sales-history-row')].map(row => row.textContent.trim());
+  check('Quản lý lịch sử dùng cùng bộ lọc tháng', historyRowsAfterMonthFilter.length === 1 && /14\/08\/2026/.test(historyRowsAfterMonthFilter[0] || ''), historyRowsAfterMonthFilter.join(' | '));
+  closeDialog('dlg-mv');
+  salesPageReportId = priorSalesPageReportId; salesPageMonthFilter = priorSalesPageMonthFilter; salesHistoryMonthFilter = priorSalesHistoryMonthFilter;
   kiotViet = priorKiotArchive;kiotSalesArchiveReadyForSettings = priorKiotArchiveReady;
 
   /* Sổ tồn dùng snapshot bất biến làm mốc, không được lấy tồn mới rồi tự cộng

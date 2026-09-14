@@ -77,6 +77,15 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       const style = document.createElement('style');
       style.textContent = '#auth-ov{display:none!important;pointer-events:none!important}';
       document.head.append(style);
+      /* Có dữ liệu nhiều tháng để QA kiểm tra bộ lọc thật thay vì empty state. */
+      if (targetRoute === 'sales') {
+        kiotViet = { ...kiotViet, salesImports: [5, 6, 7, 8].map(month => ({
+          id: `qa-desktop-month-${month}`, importedAt: `2026-${String(month).padStart(2, '0')}-12T09:00:00.000Z`, source: 'dated-file',
+          period: { from: `2026-${String(month).padStart(2, '0')}-12`, to: `2026-${String(month).padStart(2, '0')}-12` },
+          sales: [{ sku: `QA-DESKTOP-${month}`, name: `QA tháng ${month}`, category: 'QA', qty: month, revenue: month * 10000 }],
+        })) };
+        salesPageReportId = ''; salesPageMonthFilter = 'all';
+      }
       window.goPage(targetRoute, { historyMode: 'none' });
     }, route);
     await page.waitForSelector(`#page-${route}.active`, { timeout: 8000 });
@@ -104,6 +113,9 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     const active = document.querySelector('.page.active');
     const clickable = [...document.querySelectorAll('button,a,input,select,textarea,[role="button"]')]
       .filter(element => !element.closest('#auth-ov'))
+      /* Nút tháng nằm trong strip cuộn ngang có chủ đích; control đó được
+         kiểm riêng ở salesMonthFilter thay vì bị tính nhầm là tràn viewport. */
+      .filter(element => !element.closest('.sales-month-chips'))
       .filter(visible);
     const clipped = clickable.filter(element => {
       const rect = element.getBoundingClientRect();
@@ -235,6 +247,17 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
         models = originalModels;
       }
     })();
+    const salesMonthFilter = expectedRoute === 'sales' ? (() => {
+      const chips = [...document.querySelectorAll('#sales-page .sales-month-chip')];
+      const strip = document.querySelector('#sales-page .sales-month-chips');
+      const labels = chips.map(chip => chip.textContent.trim());
+      return {
+        labels,
+        hasAllMonths: ['Tháng 5 · 2026', 'Tháng 6 · 2026', 'Tháng 7 · 2026', 'Tháng 8 · 2026'].every(label => labels.includes(label)),
+        controlHeight: Math.round(chips[0]?.getBoundingClientRect().height || 0),
+        stripWithinPage: Boolean(strip && strip.getBoundingClientRect().right <= innerWidth + 1),
+      };
+    })() : null;
     return {
       title: document.title,
       ready: document.readyState,
@@ -254,6 +277,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       chartTooltip,
       modelDetailLayout,
       variantEditorControls,
+      salesMonthFilter,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   let axe = { violations: [], incomplete: [] };
@@ -284,6 +308,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.narrowDesktopStacks ? [`Dialog Model hẹp vẫn giữ hai cột (${checks.modelDetailLayout.tracks.join(' + ')})`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
     ...(checks.variantEditorControls && !checks.variantEditorControls.passed ? [`Checkbox chọn part của biến thể bị kéo sai kích thước (${checks.variantEditorControls.boxes.map(box => `${box.width}×${box.height}`).join(', ') || 'không có control'})`] : []),
+    ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),
