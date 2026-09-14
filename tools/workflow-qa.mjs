@@ -771,7 +771,7 @@ const results = await page.evaluate(async () => {
   selectFulfillmentProcessTab('reprint'); renderFulfillmentPage();
   const trafficReprintPartIds = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')].map(card => card.dataset.reprintPartId);
   const trafficReprintCards = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')];
-  check('Tab in bù ghi rõ đây là part lỗi trên từng thẻ', trafficReprintCards.filter(card => ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].includes(card.dataset.reprintPartId)).every(card => card.textContent.includes('PART LỖI') && /cái cần in lại/.test(card.textContent)), trafficReprintCards.map(card => card.textContent.replace(/\s+/g, ' ').trim()).join(' · '));
+  check('Tab in bù ghi rõ part báo lỗi và tách tên model trên từng thẻ', trafficReprintCards.filter(card => ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].includes(card.dataset.reprintPartId)).every(card => /Part báo lỗi: Đèn (đỏ|vàng|xanh)/.test(card.textContent) && card.textContent.includes('Model: QA · Đèn giao thông') && /cái cần in lại/.test(card.textContent)), trafficReprintCards.map(card => card.textContent.replace(/\s+/g, ' ').trim()).join(' · '));
   check('Tab in bù hiển thị thẻ riêng cho từng part lỗi', ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].every(id => trafficReprintPartIds.includes(id)), trafficReprintPartIds.join(' · '));
   orders = orders.filter(order => order.id !== trafficOrder.id);
   models = models.filter(model => model.id !== trafficModel.id);
