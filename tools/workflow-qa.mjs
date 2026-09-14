@@ -162,10 +162,15 @@ const results = await page.evaluate(async () => {
   normalizeOperations();
   renderFulfillmentPage();
   const fulfillmentRendererSource = renderFulfillmentPage.toString();
-  const missingPartsIndex = fulfillmentRendererSource.indexOf('id="fulfillment-missing-parts"');
-  const workshopFlowIndex = fulfillmentRendererSource.indexOf('id="fulfillment-workshop-flow"');
-  const deliveryReadyIndex = fulfillmentRendererSource.indexOf('id="fulfillment-ready-delivery"');
-  check('Nhóm gia công luôn theo thứ tự part → xưởng → giao', missingPartsIndex >= 0 && missingPartsIndex < workshopFlowIndex && workshopFlowIndex < deliveryReadyIndex, `${missingPartsIndex} → ${workshopFlowIndex} → ${deliveryReadyIndex}`);
+  const processTabs = [...document.querySelectorAll('.fulfillment-process-tab[role="tab"]')];
+  const processTabIds = processTabs.map(tab => tab.dataset.stage);
+  const expectedProcessTabs = ['reprint','missing-parts','handover','part-qc','ready-assembly','assembling','waiting','ready-delivery'];
+  check('Gia công chia mọi trạng thái thành tab thư mục theo đúng luồng', expectedProcessTabs.every((id,index) => processTabIds[index] === id), processTabIds.join(' → '));
+  check('Tab quy trình dùng primitive thư mục có trạng thái chọn rõ ràng', Boolean(document.querySelector('.fulfillment-process-tablist[role="tablist"]')) && processTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 && fulfillmentProcessTabsHtml.toString().includes('fulfillment-process-panel'), `${processTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length} tab đang chọn`);
+  const processTabForQc = document.querySelector('.fulfillment-process-tab[data-stage="part-qc"]');
+  processTabForQc?.click();
+  check('Chọn tab chỉ mở đúng một trạng thái và giữ mốc điều hướng', document.querySelector('.fulfillment-process-tab[data-stage="part-qc"]')?.getAttribute('aria-selected') === 'true' && document.getElementById('fulfillment-stage-part-qc')?.classList.contains('fulfillment-process-panel') && document.querySelectorAll('.fulfillment-process-panel').length === 1, document.querySelector('.fulfillment-process-panel')?.id || 'thiếu panel');
+  renderFulfillmentPage();
   const guide = document.getElementById('fulfillment-flow-guide');
   const flowFloat = document.getElementById('fulfillment-flow-float');
   const searchRow = document.querySelector('.fulfillment-search-row');
@@ -341,6 +346,7 @@ const results = await page.evaluate(async () => {
   row = fulfillmentWorkshopRows().find(item => item.o?.id === 'qa-order');
   const reprintNeeds = getQcReprintNeeds();
   const qaNeed = reprintNeeds.find(item => item.model.id === 'qa-model');
+  selectFulfillmentProcessTab('ready-delivery');
   const readyShelf = document.querySelector('.fulfillment-ready-shelf');
   check('Chỉ 2 sản phẩm đạt được mở giao', workshopReadyDeliveryQty(row) === 2, workshopReadyDeliveryQty(row));
   check('Kệ thành phẩm sẵn giao có vùng cuộn riêng', Boolean(readyShelf && getComputedStyle(readyShelf).overflowY === 'auto' && readyShelf.getBoundingClientRect().height <= innerHeight * .4 + 2), readyShelf ? `${Math.round(readyShelf.getBoundingClientRect().height)}px` : 'không có kệ');
@@ -353,6 +359,7 @@ const results = await page.evaluate(async () => {
   /* Cập nhật nhanh phải có xác nhận trách nhiệm, đổi trạng thái tại chỗ và
      lưu vết người thao tác; không cần cuộn sang nhóm kế tiếp để tìm lại thẻ. */
   const quickRowKey = encodeURIComponent('order:qa-order:qa-item');
+  selectFulfillmentProcessTab('ready-delivery');
   toggleWorkshopQuickStatus(quickRowKey);
   check('Cập nhật nhanh bung lựa chọn ngay trong thẻ', Boolean(document.querySelector('.workshop-quick-status-panel')) && !document.querySelector('.workshop-quick-status-dialog'), document.querySelector('.workshop-quick-status-panel') ? 'nội tuyến' : 'thiếu dãy chọn');
   setWorkshopQuickStatusConfirm(quickRowKey, true);
@@ -568,7 +575,8 @@ const results = await page.evaluate(async () => {
   const readyVariant = document.querySelector('.delivery-category-section.is-3d .delivery-product-variant');
   check('Thẻ thành phẩm sẵn giao hiển thị biến thể', readyVariant?.textContent.includes('Size 10cm'), readyVariant?.textContent.trim() || 'thiếu biến thể');
   const deliveryStageBeforeSearch = document.querySelector('.delivery-wizard-stage');
-  document.getElementById('delivery-workspace-search')?.focus();
+  const deliverySearchInput = document.getElementById('delivery-workspace-search');
+  if (deliverySearchInput) { deliverySearchInput.focus(); deliverySearchInput.value = 'Size 10cm'; }
   setDeliveryWorkspaceSearch('Size 10cm');
   await new Promise(resolve => requestAnimationFrame(resolve));
   check('Gõ tìm giao hiện gợi ý ngay mà không dựng lại cả trang', Boolean(document.querySelector('.delivery-search-suggestions')) && document.querySelector('.delivery-wizard-stage') === deliveryStageBeforeSearch, document.querySelector('.delivery-search-suggestions') ? 'gợi ý nội tuyến' : 'thiếu gợi ý');

@@ -258,6 +258,21 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
         stripWithinPage: Boolean(strip && strip.getBoundingClientRect().right <= innerWidth + 1),
       };
     })() : null;
+    const fulfillmentProcessTabs = expectedRoute === 'fulfillment' ? (() => {
+      const list = document.querySelector('.fulfillment-process-tablist[role="tablist"]');
+      const tabs = [...document.querySelectorAll('.fulfillment-process-tab[role="tab"]')];
+      const activeTabs = tabs.filter(tab => tab.getAttribute('aria-selected') === 'true');
+      const panel = document.querySelector('.fulfillment-process-panel[role="tabpanel"]');
+      const listRect = list?.getBoundingClientRect();
+      return {
+        count: tabs.length,
+        activeCount: activeTabs.length,
+        panelCount: document.querySelectorAll('.fulfillment-process-panel').length,
+        tabHeight: Math.round(tabs[0]?.getBoundingClientRect().height || 0),
+        scrollsInside: Boolean(list && listRect && listRect.left >= -1 && listRect.right <= innerWidth + 1 && list.scrollWidth >= list.clientWidth),
+        connected: Boolean(activeTabs[0] && panel && activeTabs[0].getAttribute('aria-controls') === panel.id),
+      };
+    })() : null;
     return {
       title: document.title,
       ready: document.readyState,
@@ -278,6 +293,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       modelDetailLayout,
       variantEditorControls,
       salesMonthFilter,
+      fulfillmentProcessTabs,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   let axe = { violations: [], incomplete: [] };
@@ -309,6 +325,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
     ...(checks.variantEditorControls && !checks.variantEditorControls.passed ? [`Checkbox chọn part của biến thể bị kéo sai kích thước (${checks.variantEditorControls.boxes.map(box => `${box.width}×${box.height}`).join(', ') || 'không có control'})`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
+    ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs || checks.fulfillmentProcessTabs.count < 8 || checks.fulfillmentProcessTabs.activeCount !== 1 || checks.fulfillmentProcessTabs.panelCount !== 1 || checks.fulfillmentProcessTabs.tabHeight < 40 || !checks.fulfillmentProcessTabs.scrollsInside || !checks.fulfillmentProcessTabs.connected) ? [`Tab thư mục quy trình gia công thiếu, lệch hoặc mất liên kết (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
     ...checks.blocked.map(item => `Nút bị che: ${item.label} · lớp che: ${item.blocker || '(không rõ)'}${item.blockerId ? `#${item.blockerId}` : ''}`),
