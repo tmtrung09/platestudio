@@ -165,9 +165,10 @@ const results = await page.evaluate(async () => {
   const processTabs = [...document.querySelectorAll('.fulfillment-process-tab[role="tab"]')];
   const processTabIds = processTabs.map(tab => tab.dataset.stage);
   const expectedProcessTabs = ['reprint','missing-parts','handover','part-qc','ready-assembly','assembling','waiting','ready-delivery'];
-  check('Gia công chia mọi trạng thái thành tab thư mục theo đúng luồng', expectedProcessTabs.every((id,index) => processTabIds[index] === id), processTabIds.join(' → '));
-  const folderTabStyle = processTabs[0] ? getComputedStyle(processTabs[0], '::before') : null;
-  check('Tab quy trình dùng primitive thư mục có trạng thái chọn rõ ràng', Boolean(document.querySelector('.fulfillment-process-tablist[role="tablist"]')) && processTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 && fulfillmentProcessTabsHtml.toString().includes('fulfillment-process-panel') && folderTabStyle?.content !== 'none' && folderTabStyle?.height !== 'auto', `${processTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length} tab đang chọn · tai ${folderTabStyle?.height || 'thiếu'}`);
+  const activeProcessTab = processTabs.find(tab => tab.getAttribute('aria-selected') === 'true');
+  const activeProcessStyle = activeProcessTab ? getComputedStyle(activeProcessTab) : null;
+  check('Gia công có đủ mọi trạng thái trong thanh công đoạn', expectedProcessTabs.every(id => processTabIds.includes(id)) && processTabs.length === expectedProcessTabs.length, processTabIds.join(' → '));
+  check('Tab quy trình dùng bìa hồ sơ lớn và chip trạng thái còn lại', Boolean(document.querySelector('.fulfillment-process-tablist[role="tablist"]')) && activeProcessTab === processTabs[0] && processTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 && fulfillmentProcessTabsHtml.toString().includes('const tabs=[active') && Number.parseFloat(activeProcessStyle?.minHeight || '0') >= 56, `${activeProcessTab?.dataset.stage || 'thiếu'} · ${activeProcessStyle?.minHeight || '?'}`);
   const processTabForQc = document.querySelector('.fulfillment-process-tab[data-stage="part-qc"]');
   processTabForQc?.click();
   check('Chọn tab chỉ mở đúng một trạng thái và giữ mốc điều hướng', document.querySelector('.fulfillment-process-tab[data-stage="part-qc"]')?.getAttribute('aria-selected') === 'true' && document.getElementById('fulfillment-stage-part-qc')?.classList.contains('fulfillment-process-panel') && document.querySelectorAll('.fulfillment-process-panel').length === 1, document.querySelector('.fulfillment-process-panel')?.id || 'thiếu panel');
