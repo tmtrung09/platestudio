@@ -719,6 +719,63 @@ const results = await page.evaluate(async () => {
   check('Trang Kiot không tự render vô hạn khi chưa đăng nhập cloud', /!kiotInventoryLedger\.loaded&&sb&&currentUser&&cloudWorkspaceId\(\)&&kiotInventoryLedgerAvailable/.test(renderKiotVietPage.toString()), 'chỉ hydrate ledger cloud khi đã có phiên đăng nhập');
   kiotInventoryLedger = priorInventoryLedger;kiotViet = priorKiotArchive;
 
+  /* Một lượt QC có thể loại nhiều part. Lỗi của Đèn đỏ không được đưa cả
+     Đèn giao thông khỏi tab QC, và hàng in bù phải chỉ rõ từng part lỗi. */
+  const trafficModel = {
+    id: 'qa-traffic-model', name: 'QA · Đèn giao thông', cats: ['QA'], images: [], variants: [],
+    parts: [
+      { id: 'qa-traffic-base', name: 'Đế', qtyPerModel: 1, filamentIds: [] },
+      { id: 'qa-traffic-red', name: 'Đèn đỏ', qtyPerModel: 1, filamentIds: [] },
+      { id: 'qa-traffic-yellow', name: 'Đèn vàng', qtyPerModel: 1, filamentIds: [] },
+      { id: 'qa-traffic-green', name: 'Đèn xanh', qtyPerModel: 1, filamentIds: [] },
+    ],
+  };
+  const trafficOrder = {
+    id: 'qa-traffic-order', note: 'QA · QC nhiều part', status: 'processing', createdAt: stamp,
+    items: [{ id: 'qa-traffic-item', modelId: trafficModel.id, modelName: trafficModel.name, qty: 10 }],
+    assembly: { status: 'in_progress', items: {}, handovers: { 'qa-traffic-item': { handedAt: stamp, handedBy: 'QA', qcStatus: 'pending', qcAcceptedQty: 0, partQcAcceptedQty: 0, assemblyStatus: 'blocked' } } },
+  };
+  models.push(trafficModel); orders.push(trafficOrder);
+  pitems.push(
+    { id: 'qa-traffic-pitem-base', orderId: trafficOrder.id, orderItemId: 'qa-traffic-item', modelId: trafficModel.id, partId: 'qa-traffic-base', partName: 'Đế', qty: 10, qtyDone: 10, qtyRejected: 0 },
+    { id: 'qa-traffic-pitem-red', orderId: trafficOrder.id, orderItemId: 'qa-traffic-item', modelId: trafficModel.id, partId: 'qa-traffic-red', partName: 'Đèn đỏ', qty: 10, qtyDone: 10, qtyRejected: 0 },
+    { id: 'qa-traffic-pitem-yellow', orderId: trafficOrder.id, orderItemId: 'qa-traffic-item', modelId: trafficModel.id, partId: 'qa-traffic-yellow', partName: 'Đèn vàng', qty: 10, qtyDone: 10, qtyRejected: 0 },
+    { id: 'qa-traffic-pitem-green', orderId: trafficOrder.id, orderItemId: 'qa-traffic-item', modelId: trafficModel.id, partId: 'qa-traffic-green', partName: 'Đèn xanh', qty: 10, qtyDone: 9, qtyRejected: 0 },
+  );
+  normalizeOperations(); goPage('fulfillment', { historyMode: 'none' }); renderFulfillmentPage();
+  openWorkshopQualityIssuePicker(trafficOrder.id, 'qa-traffic-item');
+  const trafficSelections = [...document.querySelectorAll('.quality-part-select')];
+  const trafficQtyInputs = trafficSelections.map(input => document.getElementById(`quality-part-qty-${input.dataset.partId}`));
+  trafficSelections.filter(input => ['qa-traffic-pitem-red', 'qa-traffic-pitem-yellow', 'qa-traffic-pitem-green'].includes(input.dataset.partId)).forEach(input => {
+    input.checked = true; syncWorkshopQualityIssuePart(input.dataset.partId);
+  });
+  document.getElementById('quality-part-qty-qa-traffic-pitem-red').value = '2';
+  document.getElementById('quality-part-qty-qa-traffic-pitem-yellow').value = '3';
+  document.getElementById('quality-part-qty-qa-traffic-pitem-green').value = '2';
+  check('QC part cho chọn nhiều part và số lỗi riêng trong một lượt', trafficSelections.length === 4 && trafficQtyInputs.every(input => input) && trafficSelections.filter(input => input.checked).length === 3 && trafficSelections.filter(input => input.checked).every(input => !document.getElementById(`quality-part-qty-${input.dataset.partId}`).disabled), `${trafficSelections.length} part · ${trafficSelections.filter(input => input.checked).length} đã chọn`);
+  const trafficIssueResult = recordWorkshopQualityIssues(trafficOrder, trafficOrder.items[0], [
+    { partId: 'qa-traffic-pitem-red', qty: 2 }, { partId: 'qa-traffic-pitem-yellow', qty: 3 }, { partId: 'qa-traffic-pitem-green', qty: 2 },
+  ], { reason: 'QA', checkedBy: 'QA' });
+  operations.qualityIssues.unshift(...(trafficIssueResult?.issues || [])); closeDialog('dlg-mv');
+  const trafficRow = fulfillmentWorkshopRows().find(row => row.o?.id === trafficOrder.id);
+  const trafficEntries = fulfillmentReprintEntries([trafficRow]);
+  const trafficNeed = getQcReprintNeeds().find(need => need.model?.id === trafficModel.id);
+  check('QC lỗi chỉ giảm đúng part được chọn, giữ part còn lại nguyên vẹn', ['10','8','7','7'].join(',') === ['qa-traffic-pitem-base','qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].map(id => String(pitems.find(part => part.id === id)?.qtyDone)).join(','), ['qa-traffic-pitem-base','qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].map(id => pitems.find(part => part.id === id)?.qtyDone).join(','));
+  check('Part lỗi không kéo cả model rời khỏi QC part', workshopAssemblyStage(trafficRow) === 'part_qc' && workshopNeedsReprint(trafficRow), `${workshopAssemblyStage(trafficRow)} · ${workshopReprintQty(trafficRow)} bộ cần bù`);
+  check('Hàng in bù tách theo đúng part lỗi, không gộp thành thẻ model', trafficEntries.length === 3 && ['Đèn đỏ','Đèn vàng','Đèn xanh'].every(name => trafficEntries.some(entry => entry.partName === name)) && trafficEntries.every(entry => entry.partName !== trafficModel.name), trafficEntries.map(entry => `${entry.partName}:${entry.partQty}`).join(' · '));
+  check('Nhu cầu in bù của một lượt QC nhiều part chỉ tính bộ thiếu lớn nhất', trafficNeed?.productQty === 3, trafficNeed?.productQty ?? 'không có nhu cầu');
+  selectFulfillmentProcessTab('part-qc'); renderFulfillmentPage();
+  const trafficQcCard = [...document.querySelectorAll('#fulfillment-stage-part-qc .workshop-item')].find(card => card.textContent.includes(trafficModel.name));
+  check('Thẻ QC vẫn cho báo lỗi các part tiếp theo sau lượt đầu', Boolean(trafficQcCard?.querySelector('[data-workshop-action="issue"]')), trafficQcCard?.textContent.replace(/\s+/g, ' ').trim() || 'thiếu thẻ QC');
+  selectFulfillmentProcessTab('reprint'); renderFulfillmentPage();
+  const trafficReprintPartIds = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')].map(card => card.dataset.reprintPartId);
+  check('Tab in bù hiển thị thẻ riêng cho từng part lỗi', ['qa-traffic-pitem-red','qa-traffic-pitem-yellow','qa-traffic-pitem-green'].every(id => trafficReprintPartIds.includes(id)), trafficReprintPartIds.join(' · '));
+  orders = orders.filter(order => order.id !== trafficOrder.id);
+  models = models.filter(model => model.id !== trafficModel.id);
+  pitems = pitems.filter(part => part.orderId !== trafficOrder.id);
+  operations.qualityIssues = operations.qualityIssues.filter(issue => issue.orderId !== trafficOrder.id);
+  normalizeOperations();
+
   goPage('inventory', { historyMode: 'none' });
   return rows;
 });

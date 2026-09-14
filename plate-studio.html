@@ -16304,6 +16304,26 @@ function workshopReprintQty(row){
   return [...groups.values()].reduce((sum,qty)=>sum+qty,0);
 }
 function workshopNeedsReprint(row){return workshopReprintIssues(row).length>0;}
+/* Một lỗi QC thuộc về part, không thuộc về toàn bộ model. Tab In bù phải
+   hiển thị từng part để người in biết chính xác cần làm lại gì, trong khi thẻ
+   model vẫn có thể ở QC để tiếp tục ghi nhận part còn lại. */
+function fulfillmentReprintEntries(rows=[]){
+  const entries=[];
+  rows.forEach(row=>{
+    if(row.source==='external'){
+      if(workshopNeedsReprint(row))entries.push({row,partId:row.handover?.qcRejectedPartId||'',partName:row.handover?.qcRejectedPartName||'Part cần in lại',partQty:workshopReprintQty(row),modelQty:workshopReprintQty(row)});
+      return;
+    }
+    const byPart=new Map();
+    workshopReprintIssues(row).forEach(issue=>{
+      const part= row.parts?.find(item=>item.id===issue.partId)||pitems.find(item=>item.id===issue.partId);
+      const key=issue.partId||issue.id,old=byPart.get(key)||{row,partId:issue.partId||'',partName:part?.partName||'Part',partQty:0,modelQty:0};
+      old.partQty+=Math.max(0,Number(issue.qty)||0);old.modelQty=Math.max(old.modelQty,Math.max(0,Number(issue.modelQty??issue.qty)||0));byPart.set(key,old);
+    });
+    entries.push(...byPart.values());
+  });
+  return entries;
+}
 function createAssemblyReprintForShortfall(order,item,acceptedQty,{reason='',note='',by='',targetQty=null}={}){
   const total=Math.min(Math.max(0,Number(item?.qty)||0),Math.max(0,Number(targetQty??item?.qty)||0)),missing=Math.max(0,total-Math.max(0,Number(acceptedQty)||0));
   if(!missing)return 0;
@@ -16684,9 +16704,13 @@ function openWorkshopQualityIssuePicker(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
   const parts=orderItemParts(order,item).filter(part=>(Number(part.qtyDone)||0)>0);
   const ov=document.getElementById('dlg-mv');
-  const rows=parts.map(part=>`<div class="quality-issue-preview"><div style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;margin-top:4px;background:${getFil(part.filamentId)?.hex||'var(--ac)'}"></div><div style="min-width:0;flex:1"><b>${esc(part.partName||'Part')}</b><br/><span style="color:var(--t3)">Đang có ${Number(part.qtyDone)||0}/${Number(part.qty)||0} part đạt chuẩn</span></div><button class="btn btn-danger btn-xs" onclick="openQualityIssueDialog('${orderId}','${itemId}','${part.id}')">Báo lỗi</button></div>`).join('');
-  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Báo part lỗi · ${esc(item.modelName||'Model')}</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5">Chọn part không đạt. Số bị loại sẽ được trả về hàng chờ in bù và báo cho người phụ trách in.</p>${rows||'<div class="empty">Chưa có part đạt chuẩn để báo lỗi.</div>'}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;
+  const rows=parts.map(part=>`<label class="quality-issue-preview" style="cursor:pointer"><input class="quality-part-select" type="checkbox" data-part-id="${esc(part.id)}" onchange="syncWorkshopQualityIssuePart('${esc(part.id)}')" aria-label="Báo lỗi ${esc(part.partName||'Part')}"><div style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;margin-top:4px;background:${getFil(part.filamentId)?.hex||'var(--ac)'}"></div><div style="min-width:0;flex:1"><b>${esc(part.partName||'Part')}</b><br/><span style="color:var(--t3)">Đã in ${Number(part.qtyDone)||0}/${Number(part.qty)||0}</span></div><input id="quality-part-qty-${esc(part.id)}" class="quality-part-qty" type="number" min="1" max="${Math.max(1,Number(part.qtyDone)||0)}" value="1" disabled aria-label="Số lượng lỗi ${esc(part.partName||'Part')}"></label>`).join('');
+  ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Báo part lỗi · ${esc(item.modelName||'Model')}</div><p style="margin:-.35rem 0 14px;color:var(--t2);font-size:13px;line-height:1.5">Tick một hoặc nhiều part, rồi nhập số lỗi riêng cho từng part.</p>${rows||'<div class="empty">Chưa có part đạt chuẩn để báo lỗi.</div>'}<div class="form-grid"><div class="field"><label>Lý do</label><select id="quality-batch-reason"><option>In lỗi / biến dạng</option><option>Thiếu chi tiết</option><option>Sai màu</option><option>Trầy xước / bề mặt không đạt</option><option>Không khớp khi gia công</option><option>Khác</option></select></div><div class="field"><label>Người kiểm định</label><input id="quality-batch-by" value="${esc(currentUser?.email?.split('@')[0]||'')}" placeholder="Tên người kiểm"/></div></div><div class="field"><label>Ghi chú</label><input id="quality-batch-note" placeholder="Ghi chú chung cho lượt QC này"/></div><div class="field"><label>Ảnh xác nhận (tuỳ chọn)</label><input id="quality-batch-photo" type="file" accept="image/*"/></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-danger" ${parts.length?'':'disabled'} onclick="saveWorkshopQualityIssues('${orderId}','${itemId}')">Xác nhận lỗi đã chọn</button></div></div>`;
   ov.style.display='flex';
+}
+function syncWorkshopQualityIssuePart(partId){
+  const checkbox=[...document.querySelectorAll('.quality-part-select')].find(input=>input.dataset.partId===String(partId)),input=document.getElementById(`quality-part-qty-${partId}`);if(!checkbox||!input)return;
+  input.disabled=!checkbox.checked;if(checkbox.checked)input.focus();
 }
 function openPartQcDialog(orderId,itemId){
   const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
@@ -16891,10 +16915,10 @@ function fulfillmentStageHtml(stageId,title,subtitle,rows,empty,renderCard=fulfi
   const toggleLabel=collapsed?'Mở danh sách':'Thu gọn danh sách';
   return `<div class="fulfillment-workshop-stage${collapsed?' is-collapsed':''}"><button type="button" class="fulfillment-workshop-stage-head" onclick="toggleFulfillmentStage('${stageId}')" aria-expanded="${!collapsed}" aria-controls="fulfillment-stage-${stageId}" aria-label="${toggleLabel}: ${title}" title="${toggleLabel}"><strong>${title}</strong><span class="fulfillment-workshop-stage-count">${count}</span><small>${subtitle}</small><span class="fulfillment-workshop-stage-toggle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></span></button><div class="fulfillment-workshop-stage-content" id="fulfillment-stage-${stageId}">${rows.length?`<div class="fulfillment-workshop-grid">${rows.map(renderCard).join('')}</div>`:`<div class="empty">${empty}</div>`}</div></div>`;
 }
-function fulfillmentReprintCard(row){
-  const external=row.source==='external',it=row.it||{},m=row.m||{},qty=workshopReprintQty(row),image=m.images?.[0]||'',source=external?'Mẻ in ngoài đơn':row.o?.note||'Đơn không tên',variant=it.variantName||(it.variantId?((m.variants||[]).find(item=>item.id===it.variantId)?.name||''):'' );
+function fulfillmentReprintCard(entry){
+  const row=entry.row||entry,external=row.source==='external',it=row.it||{},m=row.m||{},qty=Math.max(0,Number(entry.partQty??workshopReprintQty(row))||0),partName=entry.partName||'Part cần in lại',image=m.images?.[0]||'',source=external?'Mẻ in ngoài đơn':row.o?.note||'Đơn không tên',variant=it.variantName||(it.variantId?((m.variants||[]).find(item=>item.id===it.variantId)?.name||''):'' );
   const action=`${external?`<button class="btn btn-sm flow-stage-action" data-workshop-action="detail" onclick="openExternalWorkshopReprintEdit('${row.externalKey}')">Sửa lỗi</button>`:''}<button class="btn btn-sm flow-stage-action" data-workshop-action="reprint" onclick="goPage('progress')">In bù</button>`;
-  return `<article class="card workshop-item is-incomplete is-handed">${image?`<img class="workshop-item-img" src="${esc(image)}" alt=""/>`:'<div class="workshop-item-img" style="display:grid;place-items:center">⚠</div>'}<div style="min-width:0"><b class="workshop-item-title">${esc(it.modelName||m.name||'Model')}</b><div class="workshop-item-meta">${esc(source)}</div>${variant?`<div class="workshop-item-badges"><span class="workshop-item-badge workshop-item-variant">↔ ${esc(variant)}</span></div>`:''}<div class="workshop-item-status"><i style="background:var(--re)"></i><span>${qty} sản phẩm lỗi · chờ in lại</span></div></div><div class="workshop-item-actions">${action}</div></article>`;
+  return `<article class="card workshop-item is-incomplete is-handed" data-reprint-part-id="${esc(entry.partId||'')}">${image?`<img class="workshop-item-img" src="${esc(image)}" alt=""/>`:'<div class="workshop-item-img" style="display:grid;place-items:center">⚠</div>'}<div style="min-width:0"><b class="workshop-item-title">${esc(partName)}</b><div class="workshop-item-meta">${esc(it.modelName||m.name||'Model')} · ${esc(source)}</div>${variant?`<div class="workshop-item-badges"><span class="workshop-item-badge workshop-item-variant">↔ ${esc(variant)}</span></div>`:''}<div class="workshop-item-status"><i style="background:var(--re)"></i><span>${qty} part lỗi · chờ in lại</span></div></div><div class="workshop-item-actions">${action}</div></article>`;
 }
 let fulfillmentSearch='';
 /* Các ô tìm kiếm lọc bằng cách render lại danh sách. Giữ focus/caret để việc
@@ -16932,7 +16956,7 @@ function renderFulfillmentPage(){
   const pending=all.filter(o=>fulfillmentState(o)!=='delivered'),done=all.filter(o=>fulfillmentState(o)==='delivered');
   const receipts=operations.deliveryBatches.filter(fulfillmentReceiptMatches).slice(0,5),waiting=operations.deliveryBatches.filter(d=>['in_transit','partial_received','discrepancy'].includes(d.status));
   const card=o=>{const stage=fulfillmentState(o),img=fulfillmentOrderImage(o),items=orderItemsRaw(o),metrics=orderFulfillmentMetrics(o),issues=activeQualityIssues(o.id);return `<article class="card fulfillment-card"><div class="fulfillment-card-top">${img?`<img class="fulfillment-thumb" src="${esc(img)}" alt=""/>`:`<div class="fulfillment-thumb" style="display:grid;place-items:center">📦</div>`}<div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.note||'Đơn không tên')}</b><div style="font-size:12px;color:var(--t3);margin-top:4px">${items.length} sản phẩm · in đủ bộ ${metrics.printReadyQty}/${metrics.total} · giao xưởng ${metrics.handedItems}/${items.length}</div><span class="fulfillment-stage"><i style="background:${fulfillmentColor(stage)}"></i>${fulfillmentLabel(stage)}</span></div></div><div class="fulfillment-summary">${issues.length?`⚠ ${issues.reduce((n,x)=>n+(Number(x.qty)||0),0)} part không đạt đã quay về hàng chờ in bù.<br/>`:''}In đủ bộ: <b>${metrics.printReadyQty}/${metrics.total}</b> · QC đạt: <b>${metrics.qcAcceptedQty}/${metrics.total}</b> · Gia công xong: <b>${metrics.assembledQty}/${metrics.total}</b> · Cửa hàng nhận: <b>${metrics.receivedQty}/${metrics.total}</b></div><div class="fulfillment-actions">${fulfillmentActionHTML(o,stage)}<button class="btn btn-ghost btn-sm" onclick="openOrderFulfillmentHistory('${o.id}')">Lịch sử</button><button class="btn btn-danger btn-sm" onclick="confirmDeleteFulfillmentOrder('${o.id}')">Xóa đơn</button></div></article>`;};
-  const workshopRows=fulfillmentWorkshopRows().filter(fulfillmentWorkshopMatches),reprintRows=workshopRows.filter(workshopNeedsReprint),allReadyRows=workshopRows.filter(row=>row.ready),readyRows=allReadyRows,qcReadyRows=workshopRows.filter(row=>workshopReadyDeliveryQty(row)>0),partQcRows=workshopRows.filter(row=>row.handed&&workshopAssemblyStage(row)==='part_qc'&&!workshopNeedsReprint(row)),readyToAssembleRows=workshopRows.filter(row=>workshopAssemblyStage(row)==='ready'),inAssemblyRows=workshopRows.filter(row=>workshopAssemblyStage(row)==='in_progress'),readyNotHanded=allReadyRows.filter(row=>!row.handed),waitingRows=inAssemblyRows.filter(row=>workshopWaitStatus(row)?.label),activelyAssemblingRows=inAssemblyRows.filter(row=>!workshopWaitStatus(row)?.label),readyToHandRows=readyNotHanded,incompleteRows=workshopRows.filter(row=>!row.ready&&!row.handed&&!workshopNeedsReprint(row));
+  const workshopRows=fulfillmentWorkshopRows().filter(fulfillmentWorkshopMatches),reprintRows=fulfillmentReprintEntries(workshopRows),allReadyRows=workshopRows.filter(row=>row.ready),readyRows=allReadyRows,qcReadyRows=workshopRows.filter(row=>workshopReadyDeliveryQty(row)>0),partQcRows=workshopRows.filter(row=>row.handed&&workshopAssemblyStage(row)==='part_qc'),readyToAssembleRows=workshopRows.filter(row=>workshopAssemblyStage(row)==='ready'),inAssemblyRows=workshopRows.filter(row=>workshopAssemblyStage(row)==='in_progress'),readyNotHanded=allReadyRows.filter(row=>!row.handed),waitingRows=inAssemblyRows.filter(row=>workshopWaitStatus(row)?.label),activelyAssemblingRows=inAssemblyRows.filter(row=>!workshopWaitStatus(row)?.label),readyToHandRows=readyNotHanded,incompleteRows=workshopRows.filter(row=>!row.ready&&!row.handed&&!workshopNeedsReprint(row));
   /* Mỗi trạng thái là một tab cùng một khung nội dung. Không render đồng thời
      mọi lưới card: thao tác và cuộn trên điện thoại nhẹ hơn, ngữ cảnh rõ hơn. */
   const processStages=[
@@ -17705,23 +17729,51 @@ function openOrderFulfillmentHistory(orderId){
   const deliveryRows=[...batches.map(d=>({d,batch:true})),...legacy.map(d=>({d,batch:false}))].map(({d,batch})=>{const images=batch?(d.receiveImages?.length?d.receiveImages:d.images):d.images;const count=(d.items||[]).filter(x=>batch?x.orderId===orderId:true).reduce((n,x)=>n+(Number(batch?(x.sentQty??x.qty):x.qty)||0),0);const status=batch?(d.status==='received'?'Cửa hàng đã nhận':d.status==='partial_received'?'Nhận thiếu / chênh lệch':'Đang chờ nhận'):(d.kiotVietStatus==='reconciled'?'Đã đối chiếu KiotViet':'Biên bản cũ');return `<div class="quality-issue-preview">${images?.[0]?`<img src="${esc(images[0])}" alt=""/>`:'<span style="font-size:22px">🚚</span>'}<div><b>${esc(d.code||d.destination||'Biên lai giao hàng')}</b> · ${count} sản phẩm<br/><span style="color:var(--t3)">${fmtDate(d.deliveredAt||d.createdAt)} · ${esc(d.deliveredBy||'Chưa rõ người giao')} · ${status}${d.receivedBy?` · nhận bởi ${esc(d.receivedBy)}`:''}</span></div>${batch?`<button class="btn btn-ghost btn-xs" onclick="openReceivingDialog('${d.id}')">Xem</button>`:''}</div>`;}).join('');
   const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Lịch sử hoàn thiện · ${esc(o.note||'Đơn không tên')}</div><div class="card-title">Giao xưởng & QC</div>${workshop||'<div class="empty">Chưa có model trong đơn.</div>'}<div class="card-title" style="margin-top:16px">Part không đạt (${issues.length})</div>${issues.length?issues.map(x=>`<div class="quality-issue-preview">${x.thumb||x.image?`<img src="${esc(x.thumb||x.image)}" alt=""/>`:''}<div><b>${esc(pitems.find(p=>p.id===x.partId)?.partName||'Part')}</b> · ${x.qty} cái<br/><span style="color:var(--t3)">${esc(x.reason||'Không đạt')} · ${fmtDate(x.createdAt)}${x.checkedBy?` · ${esc(x.checkedBy)}`:''}</span></div></div>`).join(''):'<div class="empty">Chưa có part nào bị loại.</div>'}<div class="card-title" style="margin-top:16px">Biên lai giao & nhận hàng</div>${deliveryRows||'<div class="empty">Chưa có đợt giao nào.</div>'}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';
 }
-/* QC luôn gắn ngược vào đúng dòng đã giao xưởng. Khi xưởng loại part, số part
-   đạt giảm và số thành phẩm tương ứng cũng không còn được phép giao tiếp. */
+/* QC luôn gắn ngược vào từng part của dòng đã giao xưởng. Lỗi ở đèn đỏ không
+   được đưa đèn vàng/xanh ra khỏi QC; số bộ khả dụng được tính lại từ part ít
+   nhất sau khi tất cả lựa chọn của lượt QC này đã được áp dụng. */
+function recordWorkshopQualityIssues(order,item,selections,{reason='',note='',checkedBy=''}={}){
+  const valid=(selections||[]).map(selection=>{
+    const part=pitems.find(row=>row.id===selection.partId),qty=Math.min(Math.max(1,parseInt(selection.qty)||0),Number(part?.qtyDone)||0);
+    return part&&qty?{part,qty}:null;
+  }).filter(Boolean);if(!valid.length)return null;
+  const itemId=item.id,modelTotal=Math.max(1,Number(item.qty)||1),at=new Date().toISOString(),groupId=uid(),availableBefore=orderItemCompleteSetQty(order,item);
+  const issues=valid.map(({part,qty})=>{
+    const perModel=orderItemPartPerSet(order,item,part),modelQty=Math.min(modelTotal,Math.ceil(qty/perModel));
+    part.qtyDone=Math.max(0,(Number(part.qtyDone)||0)-qty);part.qtyRejected=(Number(part.qtyRejected)||0)+qty;
+    return {id:uid(),reprintGroupId:groupId,orderId:order.id,itemId,partId:part.id,modelId:item.modelId||'',qty,modelQty,reason,note,checkedBy,createdAt:at,source:'workshop_qc',status:'open',image:'',thumb:''};
+  });
+  const availableAfter=orderItemCompleteSetQty(order,item),lostSets=Math.max(0,availableBefore-availableAfter),handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{},assemblyItems={...(order.assembly?.items||{})},readyBefore=Math.max(0,Number(previous.readyQty??assemblyItems[itemId])||0),wasReady=previous.assemblyStatus==='completed'||readyBefore>0;
+  if(Object.keys(previous).length){
+    const acceptedBefore=Math.max(0,Number(previous.qcAcceptedQty??previous.partQcAcceptedQty)||0),acceptedAfter=Math.min(availableAfter,acceptedBefore),qcStatus=acceptedAfter>=modelTotal?'accepted':acceptedAfter>0?'partial':'pending',rejectedParts={...(previous.qcRejectedParts||{})};
+    issues.forEach(issue=>{const old=rejectedParts[issue.partId]||{qty:0};rejectedParts[issue.partId]={...old,qty:(Number(old.qty)||0)+issue.qty,at,reason:issue.reason};});
+    handovers[itemId]={...previous,qcStatus,qcAcceptedQty:acceptedAfter,partQcAcceptedQty:acceptedAfter,assemblyStatus:wasReady?'completed':(acceptedAfter>0?previous.assemblyStatus||'ready':'blocked'),readyQty:wasReady?Math.max(0,readyBefore-lostSets):previous.readyQty,reprintGroupAt:at,qcRejectedParts:rejectedParts};
+  }
+  if(assemblyItems[itemId]!==undefined)assemblyItems[itemId]=Math.max(0,Number(assemblyItems[itemId]||0)-lostSets);
+  order.assembly={...(order.assembly||{}),status:'blocked',handovers,items:assemblyItems,lastQcIssueAt:at};
+  return {issues,availableBefore,availableAfter,lostSets,readyBefore};
+}
+async function persistWorkshopQualityIssues(order,item,result,file){
+  const {issues,lostSets,readyBefore}=result;operations.qualityIssues.unshift(...issues);
+  if(typeof recordSystemEvent==='function')recordSystemEvent({type:'quality_rejected',actor:issues[0]?.checkedBy||'Xưởng gia công',title:`${issues[0]?.checkedBy||'Xưởng gia công'} báo ${issues.length} part không đạt`,detail:`${issues.map(issue=>`${pitems.find(part=>part.id===issue.partId)?.partName||'Part'} · ${issue.qty} cái`).join(' · ')} của ${order.note||'đơn hàng'} cần in bù.`,permissions:['batches.report'],metadata:{orderId:order.id,itemId:item.id,partIds:issues.map(issue=>issue.partId),issueIds:issues.map(issue=>issue.id)}});
+  sv(K.pitems,pitems);sv(K.orders,orders);saveOperations();closeDialog('dlg-mv');if(curPage==='fulfillment')renderFulfillmentPage();toast(`Đã chuyển ${issues.length} part vào hàng in bù; QC còn lại vẫn giữ trên thẻ model.`);
+  if(file&&sb&&currentUser){try{const media=await uploadBatchReportMedia(file,'quality-'+issues[0].id);issues.forEach(issue=>{issue.image=media.image;issue.thumb=media.thumb;});saveOperations();}catch(error){toast('Đã ghi nhận part lỗi nhưng chưa tải được ảnh: '+error.message,5000);}}
+  return {lostSets,readyBefore};
+}
 async function saveQualityIssue(orderId,itemId,partId){
   if(!requirePermission('assembly.qc','xác nhận QC part'))return;
-  const part=pitems.find(x=>x.id===partId),order=rawOrder(orderId),item=orderItemsRaw(order).find(x=>x.id===itemId);if(!part||!order||!item)return;
-  const qty=Math.min(Math.max(1,parseInt(document.getElementById('quality-qty')?.value)||0),Number(part.qtyDone)||0);if(!qty){toast('Chỉ có thể báo không đạt với part đã được ghi nhận hoàn thành.');return;}
-  const modelTotal=Math.max(1,Number(item.qty)||1),perModel=Math.max(1,Math.ceil((Number(part.qty)||0)/modelTotal)),modelQty=Math.min(modelTotal,Math.ceil(qty/perModel));
-  const issue={id:uid(),reprintGroupId:uid(),orderId,itemId,partId,modelId:item.modelId||'',qty,modelQty,reason:document.getElementById('quality-reason')?.value||'',note:document.getElementById('quality-note')?.value||'',checkedBy:document.getElementById('quality-by')?.value||'',createdAt:new Date().toISOString(),source:'workshop_qc',status:'open',image:'',thumb:''};
-  part.qtyDone=Math.max(0,(Number(part.qtyDone)||0)-qty);part.qtyRejected=(Number(part.qtyRejected)||0)+qty;
-  const handovers={...(order.assembly?.handovers||{})},previous=handovers[itemId]||handoverForItem(order,itemId)||{},assemblyItems={...(order.assembly?.items||{})};
-  const readyBefore=Math.max(0,Number(previous.readyQty??assemblyItems[itemId])||0),wasReady=previous.assemblyStatus==='completed'||readyBefore>0;
-  if(Object.keys(previous).length){handovers[itemId]={...previous,qcStatus:wasReady?'accepted':'rejected',assemblyStatus:wasReady?'completed':(previous.assemblyStatus||'blocked'),readyQty:wasReady?Math.max(0,readyBefore-modelQty):previous.readyQty,reprintGroupAt:issue.createdAt};}
-  if(assemblyItems[itemId]!==undefined)assemblyItems[itemId]=Math.max(0,Number(assemblyItems[itemId]||0)-modelQty);
-  order.assembly={...(order.assembly||{}),status:'blocked',handovers,items:assemblyItems,lastQcIssueAt:issue.createdAt};
-  const file=document.getElementById('quality-photo')?.files?.[0];
-  operations.qualityIssues.unshift(issue);if(typeof recordSystemEvent==='function')recordSystemEvent({type:'quality_rejected',actor:issue.checkedBy||'Xưởng gia công',title:`${issue.checkedBy||'Xưởng gia công'} báo part không đạt`,detail:`${part.partName} · ${qty} cái của ${order.note||'đơn hàng'} cần in bù${issue.reason?` · ${issue.reason}`:''}.`,permissions:['batches.report'],metadata:{orderId,itemId,partId,qty,modelQty,issueId:issue.id}});sv(K.pitems,pitems);sv(K.orders,orders);saveOperations();closeDialog('dlg-mv');if(curPage==='fulfillment')renderFulfillmentPage();toast(`Đã giữ ${Math.max(0,readyBefore-modelQty)} sản phẩm sẵn giao; ${modelQty} sản phẩm lỗi đã quay về hàng chờ in bù.`);
-  if(file&&sb&&currentUser){try{const media=await uploadBatchReportMedia(file,'quality-'+issue.id);issue.image=media.image;issue.thumb=media.thumb;saveOperations();}catch(error){toast('Đã ghi nhận part lỗi nhưng chưa tải được ảnh: '+error.message,5000);}}
+  const order=rawOrder(orderId),item=orderItemsRaw(order).find(x=>x.id===itemId);if(!order||!item)return;
+  const result=recordWorkshopQualityIssues(order,item,[{partId,qty:document.getElementById('quality-qty')?.value}],{reason:document.getElementById('quality-reason')?.value||'',note:document.getElementById('quality-note')?.value||'',checkedBy:document.getElementById('quality-by')?.value||''});
+  if(!result){toast('Chỉ có thể báo không đạt với part đã được ghi nhận hoàn thành.');return;}
+  await persistWorkshopQualityIssues(order,item,result,document.getElementById('quality-photo')?.files?.[0]);
+}
+async function saveWorkshopQualityIssues(orderId,itemId){
+  if(!requirePermission('assembly.qc','xác nhận QC part'))return;
+  const order=rawOrder(orderId),item=orderItemsRaw(order).find(row=>row.id===itemId);if(!order||!item)return;
+  const selections=[...document.querySelectorAll('.quality-part-select:checked')].map(input=>({partId:input.dataset.partId,qty:document.getElementById(`quality-part-qty-${input.dataset.partId}`)?.value}));
+  const result=recordWorkshopQualityIssues(order,item,selections,{reason:document.getElementById('quality-batch-reason')?.value||'',note:document.getElementById('quality-batch-note')?.value||'',checkedBy:document.getElementById('quality-batch-by')?.value||''});
+  if(!result){toast('Chọn ít nhất một part và nhập số lượng hợp lệ.');return;}
+  await persistWorkshopQualityIssues(order,item,result,document.getElementById('quality-batch-photo')?.files?.[0]);
 }
 
 /* ═══════════════════════════════════════
@@ -17966,9 +18018,10 @@ function getQcReprintNeeds(){
   normalizeOperations();const groups=new Map();
   const add=({modelId,variantId='',productQty=0,partId='',partName='',partQty=0,source='',externalKey=''})=>{
     const model=models.find(item=>item.id===modelId);if(!model)return;
-    const key=`${modelId}::${variantId||'base'}`,group=groups.get(key)||{key,model,variantId,productQty:0,productKeys:new Set(),parts:new Map(),sources:new Set(),externalKeys:new Set()};
+    const key=`${modelId}::${variantId||'base'}`,group=groups.get(key)||{key,model,variantId,productQty:0,productQtyBySource:new Map(),parts:new Map(),sources:new Set(),externalKeys:new Set()};
     const productKey=source||`${partId}:${productQty}`;
-    if(!group.productKeys.has(productKey)){group.productKeys.add(productKey);group.productQty+=Math.max(0,Number(productQty)||0);}
+    const nextProductQty=Math.max(0,Number(productQty)||0),previousProductQty=Math.max(0,Number(group.productQtyBySource.get(productKey))||0);
+    if(nextProductQty>previousProductQty){group.productQty+=nextProductQty-previousProductQty;group.productQtyBySource.set(productKey,nextProductQty);}
     if(partName){const part=group.parts.get(partId||partName)||{name:partName,qty:0};part.qty+=Math.max(0,Number(partQty)||0);group.parts.set(partId||partName,part);}
     if(source)group.sources.add(source);if(externalKey)group.externalKeys.add(externalKey);groups.set(key,group);
   };
