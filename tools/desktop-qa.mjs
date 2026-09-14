@@ -116,6 +116,9 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       /* Nút tháng nằm trong strip cuộn ngang có chủ đích; control đó được
          kiểm riêng ở salesMonthFilter thay vì bị tính nhầm là tràn viewport. */
       .filter(element => !element.closest('.sales-month-chips'))
+      /* Tab thư mục là một dãy cuộn ngang có chủ đích. Liên kết và vùng cuộn
+         được kiểm riêng bằng fulfillmentProcessTabs ở dưới. */
+      .filter(element => !element.closest('.fulfillment-process-tablist'))
       .filter(visible);
     const clipped = clickable.filter(element => {
       const rect = element.getBoundingClientRect();
