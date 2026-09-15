@@ -768,6 +768,7 @@ const results = await page.evaluate(async () => {
   selectFulfillmentProcessTab('part-qc'); renderFulfillmentPage();
   const trafficQcCard = [...document.querySelectorAll('#fulfillment-stage-part-qc .workshop-item')].find(card => card.textContent.includes(trafficModel.name));
   check('Thẻ QC vẫn cho báo lỗi các part tiếp theo sau lượt đầu', Boolean(trafficQcCard?.querySelector('[data-workshop-action="issue"]')), trafficQcCard?.textContent.replace(/\s+/g, ' ').trim() || 'thiếu thẻ QC');
+  check('Thẻ QC cảnh báo rõ part đang fail, tách khỏi part còn thiếu', /Part đang fail: Đèn đỏ × 2 · Đèn vàng × 3 · Đèn xanh × 2 · chờ in bù/.test(trafficQcCard?.textContent || '') && Boolean(trafficQcCard?.querySelector('.workshop-item-failed')), trafficQcCard?.textContent.replace(/\s+/g, ' ').trim() || 'thiếu cảnh báo');
   selectFulfillmentProcessTab('reprint'); renderFulfillmentPage();
   const trafficReprintPartIds = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')].map(card => card.dataset.reprintPartId);
   const trafficReprintCards = [...document.querySelectorAll('#fulfillment-stage-reprint [data-reprint-part-id]')];
