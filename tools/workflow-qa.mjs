@@ -207,8 +207,9 @@ const results = await page.evaluate(async () => {
   check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
   const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
-  check('Thanh quy trình nổi bám cạnh trái trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.left) <= 16 && Number.parseFloat(flowStyle.top) > 100), flowStyle ? `trái ${flowStyle.left} · trên ${flowStyle.top}` : 'không có thanh');
+  check('Thanh quy trình nổi bám cạnh trái trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.left) <= 16 && Number.parseFloat(flowStyle.top) > 100 && Number.parseFloat(flowStyle.width) <= 52), flowStyle ? `trái ${flowStyle.left} · trên ${flowStyle.top} · rộng ${flowStyle.width}` : 'không có thanh');
   check('Thanh quy trình nổi xếp dọc theo cạnh màn hình', Boolean(flowStyle && flowStyle.flexDirection === 'column'), flowStyle ? `${flowStyle.flexDirection} · trái ${flowStyle.left}` : 'không có thanh');
+  check('Nhãn rail quy trình được xoay để tiết kiệm bề ngang', [...(flowFloat?.querySelectorAll('button span') || [])].every(label => getComputedStyle(label).transform !== 'none'), flowFloat ? [...flowFloat.querySelectorAll('button span')].map(label => getComputedStyle(label).transform).join(' · ') : 'không có rail');
   check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
   /* jsdom-like file layouts may not allocate a scroll range in headless mode;
      simulate the post-scroll guide position and test the same visibility rule. */

@@ -285,13 +285,14 @@ for (const route of routes) {
       void rail?.offsetWidth;
       const rect = rail?.getBoundingClientRect();
       const buttons = [...(rail?.querySelectorAll('button') || [])].map(button => button.getBoundingClientRect());
+      const rotatedLabels = [...(rail?.querySelectorAll('button span') || [])].every(label => getComputedStyle(label).transform !== 'none');
       const style = rail ? getComputedStyle(rail) : null;
-      const sideRail = Boolean(rail?.classList.contains('is-visible') && rect && style?.left !== 'auto' && rect.left >= -1 && rect.left < 20 && rect.width <= 70 && buttons.length === 5 && buttons.slice(1).every((button, index) => button.top >= buttons[index].bottom - 1));
+      const sideRail = Boolean(rail?.classList.contains('is-visible') && rect && style?.left !== 'auto' && rect.left >= -1 && rect.left < 20 && rect.width <= 52 && buttons.length === 5 && rotatedLabels && buttons.slice(1).every((button, index) => button.top >= buttons[index].bottom - 1));
       if (host) host.scrollTop = previousTop;
       window.syncFulfillmentFlowFloat?.();
       if (wasVisible) rail?.classList.add('is-visible'); else rail?.classList.remove('is-visible');
       if (rail) rail.style.transition = previousTransition;
-      return { sideRail, rect: rect ? { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), right: Math.round(rect.right) } : null, buttonCount: buttons.length, buttonTops: buttons.map(button => Math.round(button.top)) };
+      return { sideRail, rotatedLabels, rect: rect ? { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), right: Math.round(rect.right) } : null, buttonCount: buttons.length, buttonTops: buttons.map(button => Math.round(button.top)) };
     })() : null;
     return {
       title: document.title,
