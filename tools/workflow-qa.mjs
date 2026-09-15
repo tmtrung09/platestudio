@@ -207,8 +207,8 @@ const results = await page.evaluate(async () => {
   check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
   const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
-  check('Thanh quy trình nổi ở phía trên trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.top) <= 24), flowStyle ? `top ${flowStyle.top}` : 'không có thanh');
-  check('Thanh quy trình nổi dàn ngang ở giữa', Boolean(flowStyle && flowStyle.flexDirection === 'row' && flowStyle.left !== 'auto'), flowStyle ? `${flowStyle.flexDirection} · trái ${flowStyle.left}` : 'không có thanh');
+  check('Thanh quy trình nổi bám cạnh trái trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.left) <= 16 && Number.parseFloat(flowStyle.top) > 100), flowStyle ? `trái ${flowStyle.left} · trên ${flowStyle.top}` : 'không có thanh');
+  check('Thanh quy trình nổi xếp dọc theo cạnh màn hình', Boolean(flowStyle && flowStyle.flexDirection === 'column'), flowStyle ? `${flowStyle.flexDirection} · trái ${flowStyle.left}` : 'không có thanh');
   check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
   /* jsdom-like file layouts may not allocate a scroll range in headless mode;
      simulate the post-scroll guide position and test the same visibility rule. */
@@ -246,10 +246,10 @@ const results = await page.evaluate(async () => {
   Object.defineProperty(fulfillmentScrollHost, 'clientHeight', { configurable: true, value: 800 });
   fulfillmentScrollHost.getBoundingClientRect = () => ({ top: 20, bottom: 820, left: 0, right: 390, width: 390, height: 800 });
   if (scrollTarget) scrollTarget.getBoundingClientRect = () => ({ top: 520, bottom: 590, left: 0, right: 360, width: 360, height: 70 });
-  if (flowFloat) { flowFloat.classList.add('is-visible'); flowFloat.getBoundingClientRect = () => ({ top: 18, bottom: 92, left: 20, right: 370, width: 350, height: 74 }); }
+  if (flowFloat) { flowFloat.classList.add('is-visible'); flowFloat.getBoundingClientRect = () => ({ top: 301, bottom: 543, left: 7, right: 69, width: 62, height: 242 }); }
   fulfillmentScrollHost.scrollTo = options => { requestedFlowScroll = options; };
   scrollFulfillmentToTarget(scrollTarget, { behavior: 'auto' });
-  check('Thanh điều hướng cuộn trong đúng container và chừa thanh nổi', Boolean(requestedFlowScroll && requestedFlowScroll.behavior === 'auto' && Math.round(requestedFlowScroll.top) === 594), requestedFlowScroll ? JSON.stringify(requestedFlowScroll) : 'không gọi scroll container');
+  check('Thanh điều hướng cuộn trong đúng container mà không chừa rail dọc', Boolean(requestedFlowScroll && requestedFlowScroll.behavior === 'auto' && Math.round(requestedFlowScroll.top) === 664), requestedFlowScroll ? JSON.stringify(requestedFlowScroll) : 'không gọi scroll container');
   if (originalHostRect) fulfillmentScrollHost.getBoundingClientRect = originalHostRect;
   if (scrollTarget && originalTargetRect) scrollTarget.getBoundingClientRect = originalTargetRect;
   if (flowFloat && originalFloatingRect) flowFloat.getBoundingClientRect = originalFloatingRect;

@@ -4020,7 +4020,10 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 .fulfillment-flow-float button:active{transform:scale(.97)}
 .fulfillment-flow-float button i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--pu) 17%,var(--s2));color:var(--pu);font-style:normal;font-size:10px;font-weight:900}
 .fulfillment-flow-float button[aria-current="step"] i{background:var(--pu);color:#fff;box-shadow:0 4px 10px color-mix(in srgb,var(--pu) 40%,transparent)}
-@media(max-width:860px){.fulfillment-flow-float{top:calc(12px + env(safe-area-inset-top));width:min(348px,calc(100vw - 28px));padding:6px 7px;border-radius:17px}.fulfillment-flow-float-label{display:none}.fulfillment-flow-float button{grid-template-columns:1fr;justify-items:center;gap:1px;min-height:42px;padding:3px 2px;text-align:center;font-size:9px;line-height:1.1}.fulfillment-flow-float button i{width:20px;height:20px;font-size:9px}.fulfillment-flow-float button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+/* Rail bước nổi trên điện thoại: luôn ở cạnh màn hình, không tranh chỗ với
+   header hay thanh điều hướng đáy. Mỗi nút vẫn có số và nhãn ngắn để nhận ra
+   công đoạn trước khi chạm. */
+@media(max-width:860px){.fulfillment-flow-float{top:50%;right:auto;left:calc(7px + env(safe-area-inset-left));flex-direction:column;width:62px;padding:5px;border-radius:17px;transform:translate(-80px,-50%) scale(.96)}.fulfillment-flow-float.is-visible{transform:translate(0,-50%) scale(1)}.fulfillment-flow-float-label{display:none}.fulfillment-flow-float button{grid-template-columns:1fr;justify-items:center;gap:1px;min-height:42px;padding:3px 2px;text-align:center;font-size:8px;line-height:1.1}.fulfillment-flow-float button i{width:20px;height:20px;font-size:9px}.fulfillment-flow-float button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.fulfillment-flow-float{transition:none}.fulfillment-flow-float button{transition:none}}
 /* Trên điện thoại, công đoạn là thanh dọc cạnh nội dung: chọn ở rail trái,
    xem dữ liệu ngay ở cột phải. Desktop vẫn dùng bìa thư mục ngang. */
@@ -16484,7 +16487,10 @@ function scrollFulfillmentToTarget(target,{behavior='smooth'}={}){
   if(!target)return false;
   const host=fulfillmentScrollHost(),hostRect=host===document.scrollingElement||host===document.documentElement?{top:0}:host.getBoundingClientRect();
   const floating=document.getElementById('fulfillment-flow-float'),floatingRect=floating?.classList.contains('is-visible')?floating.getBoundingClientRect():null;
-  const clearance=Math.max(16,(floatingRect?.bottom||hostRect.top)-hostRect.top+14);
+  /* Rail dọc không che cạnh trên của nội dung; chỉ thanh ngang trên desktop
+     mới cần chừa khoảng khi đưa mốc quy trình vào viewport. */
+  const floatingTopBar=Boolean(floatingRect&&floatingRect.width>floatingRect.height&&floatingRect.top<=hostRect.top+80);
+  const clearance=floatingTopBar?Math.max(16,floatingRect.bottom-hostRect.top+14):16;
   const rawTop=host.scrollTop+target.getBoundingClientRect().top-hostRect.top-clearance;
   const maxTop=Math.max(0,(host.scrollHeight||0)-(host.clientHeight||0));
   const top=maxTop?Math.min(maxTop,Math.max(0,rawTop)):Math.max(0,rawTop);
