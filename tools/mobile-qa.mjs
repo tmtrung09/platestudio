@@ -236,7 +236,7 @@ for (const route of routes) {
       };
     })() : null;
     /* Công đoạn xưởng là một họ control riêng: trên điện thoại tab phải là
-       danh sách dọc gọn, đủ rộng để chạm chính xác, và panel bên dưới không
+       rail dọc nằm cạnh panel nội dung, đủ rộng để chạm chính xác và không
        được tràn ngang. Kiểm tra từ DOM/CSS để bảo vệ mọi trạng thái,
        thay vì chỉ nhìn ảnh của một tab đang mở. */
     const fulfillmentProcessTabs = expectedRoute === 'fulfillment' ? (() => {
@@ -250,7 +250,8 @@ for (const route of routes) {
       const tablistStyle = tablist ? getComputedStyle(tablist) : null;
       const tablistRect = tablist?.getBoundingClientRect();
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
-      const verticalStack = Boolean(tablistStyle?.flexDirection === 'column' && tablistRect && tabRects.length && tabRects.every(rect => rect.width >= tablistRect.width - 2) && tabRects.slice(1).every((rect, index) => rect.top >= tabRects[index].bottom - 1));
+      const panelRect = panel?.getBoundingClientRect();
+      const sideRail = Boolean(tablistStyle?.flexDirection === 'column' && tablistRect && panelRect && tabRects.length && tablistRect.left < panelRect.left && Math.abs(tablistRect.top - panelRect.top) <= 2 && tabRects.every(rect => rect.width >= tablistRect.width - 2) && tabRects.slice(1).every((rect, index) => rect.top >= tabRects[index].bottom - 1));
       const alternateTab = tabs.find(tab => !tab.classList.contains('is-active'));
       const alternateStage = alternateTab?.dataset.stage || '';
       /* Selection must remain a direct tap target after the compact mobile
@@ -260,7 +261,7 @@ for (const route of routes) {
       return {
         tabCount: tabs.length,
         activeCount: tabs.filter(tab => tab.classList.contains('is-active')).length,
-        verticalStack,
+        sideRail,
         maxTabHeight: tabHeights.length ? Math.round(Math.max(...tabHeights)) : 0,
         compactTabs: Boolean(tabHeights.length && Math.max(...tabHeights) <= 48),
         noDesktopFolderTail: activeBefore === 'none' && activeAfter === 'none',
@@ -299,7 +300,7 @@ for (const route of routes) {
     ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
-    ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.verticalStack || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Danh sách công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
+    ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.sideRail || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Rail công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),
   ];
