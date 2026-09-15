@@ -173,7 +173,6 @@ const results = await page.evaluate(async () => {
   check('Chọn tab chỉ mở đúng một trạng thái và giữ mốc điều hướng', document.querySelector('.fulfillment-process-tab[data-stage="part-qc"]')?.getAttribute('aria-selected') === 'true' && document.getElementById('fulfillment-stage-part-qc')?.classList.contains('fulfillment-process-panel') && document.querySelectorAll('.fulfillment-process-panel').length === 1, document.querySelector('.fulfillment-process-panel')?.id || 'thiếu panel');
   renderFulfillmentPage();
   const guide = document.getElementById('fulfillment-flow-guide');
-  const flowFloat = document.getElementById('fulfillment-flow-float');
   const searchRow = document.querySelector('.fulfillment-search-row');
   const workshopZone = document.getElementById('fulfillment-workshop-zone');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
@@ -194,7 +193,7 @@ const results = await page.evaluate(async () => {
   applyPageLayout('fulfillment');
   const cleanedLayoutPrefs = pageLayoutPrefs('fulfillment');
   check('Cấu hình bố cục cũ tự loại ID kỹ thuật đã lưu', [...cleanedLayoutPrefs.order, ...cleanedLayoutPrefs.hidden].every(slot => !/(flow-guide|flow-float|workshop-zone)/.test(slot)), JSON.stringify(cleanedLayoutPrefs));
-  check('Khối cố định vẫn hiển thị sau khi dọn cấu hình cũ', !document.querySelector('.fulfillment-page-intro')?.hidden && !document.getElementById('fulfillment-flow-float')?.hidden);
+  check('Khối cố định vẫn hiển thị sau khi dọn cấu hình cũ', !document.querySelector('.fulfillment-page-intro')?.hidden && !document.getElementById('fulfillment-flow-float'));
   const layoutSandbox = document.createElement('main');
   layoutSandbox.id = 'page-layout-qa';
   layoutSandbox.innerHTML = '<section data-layout-internal id="internal-flow"><h2>Luồng nội bộ</h2></section><nav id="floating-nav" aria-label="Đi nhanh">Đi nhanh</nav><section id="unnamed-technical"></section><section data-layout-block="business-card" data-layout-label="Khối nghiệp vụ"><h2>Không dùng tên này</h2></section><section><h2>Tiêu đề nghiệp vụ</h2></section>';
@@ -204,20 +203,9 @@ const results = await page.evaluate(async () => {
   check('Primitive Bố cục loại vùng kỹ thuật trên mọi trang', sandboxLabels.length === 2 && sandboxLabels.includes('Khối nghiệp vụ') && sandboxLabels.includes('Tiêu đề nghiệp vụ'), sandboxLabels.join(' · '));
   delete PAGE_LAYOUT_ROOTS['layout-qa'];
   layoutSandbox.remove();
-  check('Thanh quy trình nổi có đủ 5 bước', Boolean(flowFloat && flowFloat.querySelectorAll('button[data-flow]').length === 5));
-  const flowStyle = flowFloat ? getComputedStyle(flowFloat) : null;
+  check('Bỏ thanh nổi 5 bước, giữ tab công đoạn', !document.getElementById('fulfillment-flow-float') && document.querySelectorAll('.fulfillment-process-tab').length === 8);
   const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
-  check('Thanh quy trình nổi bám cạnh trái trên mobile', Boolean(flowStyle && Number.parseFloat(flowStyle.left) <= 16 && Number.parseFloat(flowStyle.top) > 100 && Number.parseFloat(flowStyle.width) <= 52), flowStyle ? `trái ${flowStyle.left} · trên ${flowStyle.top} · rộng ${flowStyle.width}` : 'không có thanh');
-  check('Thanh quy trình nổi xếp dọc theo cạnh màn hình', Boolean(flowStyle && flowStyle.flexDirection === 'column'), flowStyle ? `${flowStyle.flexDirection} · trái ${flowStyle.left}` : 'không có thanh');
-  check('Nhãn rail quy trình được xoay để tiết kiệm bề ngang', [...(flowFloat?.querySelectorAll('button span') || [])].every(label => getComputedStyle(label).transform !== 'none'), flowFloat ? [...flowFloat.querySelectorAll('button span')].map(label => getComputedStyle(label).transform).join(' · ') : 'không có rail');
   check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
-  /* jsdom-like file layouts may not allocate a scroll range in headless mode;
-     simulate the post-scroll guide position and test the same visibility rule. */
-  const originalGuideRect = guide?.getBoundingClientRect.bind(guide);
-  if (guide) guide.getBoundingClientRect = () => ({ ...originalGuideRect(), bottom: -1 });
-  syncFulfillmentFlowFloat();
-  check('Cuộn qua hướng dẫn thì hiện thanh quy trình nổi', flowFloat?.classList.contains('is-visible'));
-  if (guide) guide.getBoundingClientRect = originalGuideRect;
   /* Every navigation button must resolve to one precise business anchor, never
      the generic workshop wrapper. Add only missing anchors to this isolated
      fixture so the mapping is checked even when that queue happens to be empty. */
@@ -236,7 +224,6 @@ const results = await page.evaluate(async () => {
   const scrollTarget = fulfillmentFlowTarget('qc');
   const originalHostRect = fulfillmentScrollHost.getBoundingClientRect?.bind(fulfillmentScrollHost);
   const originalTargetRect = scrollTarget?.getBoundingClientRect.bind(scrollTarget);
-  const originalFloatingRect = flowFloat?.getBoundingClientRect.bind(flowFloat);
   const originalScrollTo = fulfillmentScrollHost.scrollTo;
   const originalScrollTop = fulfillmentScrollHost.scrollTop;
   const originalScrollHeight = Object.getOwnPropertyDescriptor(fulfillmentScrollHost, 'scrollHeight');
@@ -247,13 +234,11 @@ const results = await page.evaluate(async () => {
   Object.defineProperty(fulfillmentScrollHost, 'clientHeight', { configurable: true, value: 800 });
   fulfillmentScrollHost.getBoundingClientRect = () => ({ top: 20, bottom: 820, left: 0, right: 390, width: 390, height: 800 });
   if (scrollTarget) scrollTarget.getBoundingClientRect = () => ({ top: 520, bottom: 590, left: 0, right: 360, width: 360, height: 70 });
-  if (flowFloat) { flowFloat.classList.add('is-visible'); flowFloat.getBoundingClientRect = () => ({ top: 301, bottom: 543, left: 7, right: 69, width: 62, height: 242 }); }
   fulfillmentScrollHost.scrollTo = options => { requestedFlowScroll = options; };
   scrollFulfillmentToTarget(scrollTarget, { behavior: 'auto' });
   check('Thanh điều hướng cuộn trong đúng container mà không chừa rail dọc', Boolean(requestedFlowScroll && requestedFlowScroll.behavior === 'auto' && Math.round(requestedFlowScroll.top) === 664), requestedFlowScroll ? JSON.stringify(requestedFlowScroll) : 'không gọi scroll container');
   if (originalHostRect) fulfillmentScrollHost.getBoundingClientRect = originalHostRect;
   if (scrollTarget && originalTargetRect) scrollTarget.getBoundingClientRect = originalTargetRect;
-  if (flowFloat && originalFloatingRect) flowFloat.getBoundingClientRect = originalFloatingRect;
   fulfillmentScrollHost.scrollTo = originalScrollTo;
   Object.defineProperty(fulfillmentScrollHost, 'scrollTop', { configurable: true, writable: true, value: originalScrollTop });
   if (originalScrollHeight) Object.defineProperty(fulfillmentScrollHost, 'scrollHeight', originalScrollHeight); else delete fulfillmentScrollHost.scrollHeight;

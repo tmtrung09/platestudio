@@ -135,6 +135,7 @@ async function auditProcessRail(page) {
       const result = await page.evaluate(({width, theme}) => {
         document.documentElement.setAttribute('data-theme', theme);
         selectFulfillmentProcessTab('part-qc');
+        if(document.getElementById('fulfillment-flow-float'))return ['Thanh nổi đã bỏ vẫn còn sau khi đổi công đoạn'];
         const list=document.querySelector('.fulfillment-process-tablist');
         const tabs=[...list.querySelectorAll('button')];
         const failures=[];
@@ -324,31 +325,7 @@ for (const route of routes) {
         selectionWorks,
       };
     })() : null;
-    const fulfillmentFlowRail = expectedRoute === 'fulfillment' ? (() => {
-      const guide = document.getElementById('fulfillment-flow-guide');
-      const rail = document.getElementById('fulfillment-flow-float');
-      const host = document.querySelector('.pg-content') || document.scrollingElement;
-      const previousTop = host?.scrollTop || 0;
-      if (guide && host) host.scrollTop += Math.max(0, guide.getBoundingClientRect().bottom - 6);
-      window.syncFulfillmentFlowFloat?.();
-      /* Vị trí rail cần đúng ngay cả lúc animation vừa bật; ép trạng thái mở
-         ở probe để kiểm tra geometry độc lập với timing của scroll event. */
-      const wasVisible = rail?.classList.contains('is-visible');
-      const previousTransition = rail?.style.transition || '';
-      if (rail) rail.style.transition = 'none';
-      rail?.classList.add('is-visible');
-      void rail?.offsetWidth;
-      const rect = rail?.getBoundingClientRect();
-      const buttons = [...(rail?.querySelectorAll('button') || [])].map(button => button.getBoundingClientRect());
-      const rotatedLabels = [...(rail?.querySelectorAll('button span') || [])].every(label => getComputedStyle(label).transform !== 'none');
-      const style = rail ? getComputedStyle(rail) : null;
-      const sideRail = Boolean(rail?.classList.contains('is-visible') && rect && style?.left !== 'auto' && rect.left >= -1 && rect.left < 20 && rect.width <= 52 && buttons.length === 5 && rotatedLabels && buttons.slice(1).every((button, index) => button.top >= buttons[index].bottom - 1));
-      if (host) host.scrollTop = previousTop;
-      window.syncFulfillmentFlowFloat?.();
-      if (wasVisible) rail?.classList.add('is-visible'); else rail?.classList.remove('is-visible');
-      if (rail) rail.style.transition = previousTransition;
-      return { sideRail, rotatedLabels, rect: rect ? { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), right: Math.round(rect.right) } : null, buttonCount: buttons.length, buttonTops: buttons.map(button => Math.round(button.top)) };
-    })() : null;
+    const fulfillmentFlowRailRemoved = expectedRoute === 'fulfillment' ? !document.querySelector('#fulfillment-flow-float') : true;
     return {
       title: document.title,
       ready: document.readyState,
@@ -362,7 +339,7 @@ for (const route of routes) {
       wizard,
       salesMonthFilter,
       fulfillmentProcessTabs,
-      fulfillmentFlowRail,
+      fulfillmentFlowRailRemoved,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   if (route === routes[0]) {
@@ -384,7 +361,7 @@ for (const route of routes) {
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.sideRail || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Rail công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
-    ...(route === 'fulfillment' && !checks.fulfillmentFlowRail?.sideRail ? [`Thanh chọn bước nổi chưa bám dọc cạnh màn hình (${JSON.stringify(checks.fulfillmentFlowRail)})`] : []),
+    ...(route === 'fulfillment' && !checks.fulfillmentFlowRailRemoved ? ['Thanh nổi 5 bước đã bỏ vẫn còn xuất hiện'] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),
   ];
