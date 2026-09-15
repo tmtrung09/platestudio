@@ -235,6 +235,35 @@ for (const route of routes) {
         stripWithinPage: Boolean(rect && rect.left >= -1 && rect.right <= innerWidth + 1),
       };
     })() : null;
+    /* Công đoạn xưởng là một họ control riêng: trên điện thoại tab phải là
+       dải thao tác gọn, cuộn ngang khi nhiều trạng thái, và panel bên dưới
+       không được tràn ngang. Kiểm tra từ DOM/CSS để bảo vệ mọi trạng thái,
+       thay vì chỉ nhìn ảnh của một tab đang mở. */
+    const fulfillmentProcessTabs = expectedRoute === 'fulfillment' ? (() => {
+      const tablist = document.querySelector('#fulfillment-page .fulfillment-process-tablist');
+      const tabs = [...(tablist?.querySelectorAll('.fulfillment-process-tab') || [])];
+      const activeTab = tablist?.querySelector('.fulfillment-process-tab.is-active');
+      const panel = document.querySelector('#fulfillment-page .fulfillment-process-panel');
+      const tabHeights = tabs.map(tab => tab.getBoundingClientRect().height);
+      const activeBefore = activeTab ? getComputedStyle(activeTab, '::before').display : '';
+      const activeAfter = activeTab ? getComputedStyle(activeTab, '::after').display : '';
+      const tablistScrollable = Boolean(tablist && tablist.scrollWidth > tablist.clientWidth);
+      const alternateTab = tabs.find(tab => !tab.classList.contains('is-active'));
+      const alternateStage = alternateTab?.dataset.stage || '';
+      /* Selection must remain a direct tap target after the compact mobile
+         treatment, not merely look like one. */
+      alternateTab?.click();
+      const selectionWorks = Boolean(alternateStage && document.querySelector(`#fulfillment-page .fulfillment-process-tab.is-active[data-stage="${alternateStage}"]`) && document.querySelector(`#fulfillment-page .fulfillment-process-panel[data-stage="${alternateStage}"]`));
+      return {
+        tabCount: tabs.length,
+        activeCount: tabs.filter(tab => tab.classList.contains('is-active')).length,
+        tablistScrollable,
+        compactTabs: Boolean(tabHeights.length && Math.max(...tabHeights) <= 44),
+        noDesktopFolderTail: activeBefore === 'none' && activeAfter === 'none',
+        panelFits: Boolean(panel && panel.scrollWidth <= panel.clientWidth + 2),
+        selectionWorks,
+      };
+    })() : null;
     return {
       title: document.title,
       ready: document.readyState,
@@ -247,6 +276,7 @@ for (const route of routes) {
       tinyTargets,
       wizard,
       salesMonthFilter,
+      fulfillmentProcessTabs,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
   if (route === routes[0]) {
@@ -265,6 +295,7 @@ for (const route of routes) {
     ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
+    ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.tablistScrollable || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Dải công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
     ...consoleErrors.filter(message => !/failed to fetch|net::err|favicon|chưa tải được thư viện kết nối/i.test(message)),
   ];
