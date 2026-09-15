@@ -4028,15 +4028,19 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 /* Trên điện thoại, công đoạn là thanh dọc cạnh nội dung: chọn ở rail trái,
    xem dữ liệu ngay ở cột phải. Desktop vẫn dùng bìa thư mục ngang. */
 @media(max-width:640px){
-  #fulfillment-page .fulfillment-process-tabs{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:start;gap:8px;margin:0 -2px;padding:8px;border:1px solid var(--b);border-radius:18px;background:var(--s2)}
-  #fulfillment-page .fulfillment-process-tablist{position:sticky;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;align-items:stretch;gap:5px;min-height:0;margin:0;padding:0;overflow:visible;scroll-snap-type:none}
-  #fulfillment-page .fulfillment-process-tab{position:relative;display:block;flex:0 0 auto;width:100%;min-width:0;min-height:38px;padding:8px 26px 8px 9px;border:1px solid transparent;border-radius:11px;background:var(--s3);color:var(--t2);font-size:9.5px;line-height:1.15;text-align:left;box-shadow:none}
+  #fulfillment-page .fulfillment-process-tabs{display:grid;grid-template-columns:48px minmax(0,1fr);align-items:start;gap:6px;margin:0 -2px;padding:6px;border:1px solid var(--b);border-radius:18px;background:var(--s2)}
+  #fulfillment-page .fulfillment-process-tablist{position:sticky;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;align-items:stretch;gap:5px;min-height:0;max-height:65vh;max-height:65dvh;margin:0;padding:2px;overflow-x:hidden;overflow-y:auto;scroll-snap-type:none;scrollbar-width:none}
+  #fulfillment-page .fulfillment-process-tablist::-webkit-scrollbar{display:none}
+  #fulfillment-page .fulfillment-process-tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;width:100%;min-width:0;min-height:76px;padding:10px 4px;border:1px solid transparent;border-radius:11px;background:var(--s3);color:var(--t2);font-size:11px;line-height:1.2;text-align:center;box-shadow:none}
   #fulfillment-page .fulfillment-process-tab::before,#fulfillment-page .fulfillment-process-tab::after{display:none}
-  #fulfillment-page .fulfillment-process-tab span{display:block;max-width:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  #fulfillment-page .fulfillment-process-tab b{position:absolute;top:50%;right:7px;min-width:17px;height:17px;padding:0 3px;transform:translateY(-50%);background:color-mix(in srgb,var(--process-tone) 14%,var(--s));color:var(--process-tone);font-size:8.5px}
-  #fulfillment-page .fulfillment-process-tab.is-active{min-height:40px;padding:8px 26px 8px 9px;border-color:color-mix(in srgb,var(--process-tone) 62%,var(--b));border-radius:11px;background:color-mix(in srgb,var(--process-tone) 14%,var(--s3));color:var(--t);font-size:9.5px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--process-tone) 16%,transparent)}
+  #fulfillment-page .fulfillment-process-tab span{display:block;max-width:none;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);overflow:visible;white-space:nowrap;text-overflow:clip}
+  #fulfillment-page .fulfillment-process-tab b{position:static;flex:none;min-width:20px;height:20px;padding:0 3px;transform:none;background:color-mix(in srgb,var(--process-tone) 14%,var(--s));color:var(--process-tone);font-size:9px}
+  #fulfillment-page .fulfillment-process-tab.is-active{min-height:76px;padding:10px 4px;border-color:color-mix(in srgb,var(--process-tone) 62%,var(--b));border-radius:11px;background:color-mix(in srgb,var(--process-tone) 14%,var(--s3));color:var(--t);font-size:11px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--process-tone) 16%,transparent)}
+  #fulfillment-page .fulfillment-process-tab:focus-visible{outline:2px solid var(--process-tone);outline-offset:-2px}
   #fulfillment-page .fulfillment-process-tab.is-active b{background:var(--process-tone);color:#fff}
-  #fulfillment-page .fulfillment-process-panel{grid-column:2;grid-row:1;min-height:100%;padding:10px;border:0;border-radius:14px;background:var(--s);box-shadow:none}
+  #fulfillment-page .fulfillment-process-panel{grid-column:2;grid-row:1;min-width:0;min-height:100%;padding:8px;border:0;border-radius:14px;background:var(--s);box-shadow:none}
+  #fulfillment-page .fulfillment-process-panel .fulfillment-workshop-grid,#fulfillment-page .fulfillment-process-panel .fulfillment-ready-shelf{grid-template-columns:minmax(0,1fr)}
+  #fulfillment-page .fulfillment-process-panel .empty{min-width:0;padding:24px 8px;white-space:normal;overflow-wrap:anywhere}
   #fulfillment-page .fulfillment-process-panel-title{margin:0 1px 8px;font-size:10px}
   #fulfillment-page .fulfillment-process-panel-title b{min-width:18px;height:18px;font-size:9px}
 }
@@ -16924,7 +16928,13 @@ function fulfillmentProcessTabId(stages){
 }
 function selectFulfillmentProcessTab(stageId,{render=true}={}){
   try{localStorage.setItem(FULFILLMENT_PROCESS_TAB_KEY,stageId);}catch(_){ }
-  if(render&&curPage==='fulfillment')renderFulfillmentPage();
+  if(render&&curPage==='fulfillment'){
+    const list=document.querySelector('.fulfillment-process-tablist'),top=list?.scrollTop||0,left=list?.scrollLeft||0;
+    const hadFocus=Boolean(list?.contains(document.activeElement));
+    renderFulfillmentPage();
+    const next=document.querySelector('.fulfillment-process-tablist');
+    if(next){next.scrollTop=top;next.scrollLeft=left;if(hadFocus)next.querySelector('.is-active')?.focus({preventScroll:true});}
+  }
 }
 function fulfillmentProcessTabsHtml(stages){
   const activeId=fulfillmentProcessTabId(stages),active=stages.find(stage=>stage.id===activeId)||stages[0];

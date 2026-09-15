@@ -127,6 +127,54 @@ async function auditMoreSheetThemes(page) {
     return { light, dark, failures };
   });
 }
+async function auditProcessRail(page) {
+  const failures = [];
+  for (const width of [360, 390, 640, 1024]) {
+    await page.setViewportSize({width, height:844});
+    for (const theme of ['light', 'dark']) {
+      const result = await page.evaluate(({width, theme}) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        selectFulfillmentProcessTab('part-qc');
+        const list=document.querySelector('.fulfillment-process-tablist');
+        const tabs=[...list.querySelectorAll('button')];
+        const failures=[];
+        if(width<=640){
+          for(const tab of tabs){
+            const label=tab.querySelector('span'),badge=tab.querySelector('b');
+            badge.textContent='999';
+            const rect=tab.getBoundingClientRect(),a=label.getBoundingClientRect(),b=badge.getBoundingClientRect();
+            if(a.left<rect.left || a.right>rect.right || a.top<rect.top || a.bottom>b.top || b.right>rect.right || b.bottom>rect.bottom)failures.push(`Nhãn/số bị che: ${label.textContent}`);
+          }
+          list.scrollTop=list.scrollHeight;
+          const before=list.scrollTop;
+          tabs.at(-1).focus({preventScroll:true});
+          tabs.at(-1).click();
+          const next=document.querySelector('.fulfillment-process-tablist');
+          if(Math.abs(next.scrollTop-before)>1 || document.activeElement!==next.querySelector('.is-active'))failures.push('Chọn tab cuối mất vị trí cuộn/focus');
+        }else if(getComputedStyle(tabs[0].querySelector('span')).writingMode!=='horizontal-tb')failures.push('Chữ desktop bị xoay');
+        const panel=document.querySelector('.fulfillment-process-panel');
+        // Representative populated layouts: both workshop queues and ready shelf
+        // must fit the space left by the rail, including long names and actions.
+        for(const className of ['fulfillment-workshop-grid','fulfillment-ready-shelf']){
+          const grid=document.createElement('div');grid.className=className;
+          grid.innerHTML=Array.from({length:2},()=>'<article class="card workshop-item"><div class="workshop-item-img"></div><div><b class="workshop-item-title">Sản phẩm kiểm tra tên dài nhiều phiên bản</b><div class="workshop-item-meta">Phiên bản mẫu · 999 sản phẩm</div></div><div class="workshop-item-actions"><button class="btn btn-ghost">Báo lỗi</button><button class="btn btn-ac">QC part</button></div></article>').join('');
+          panel.append(grid);
+          const bounds=panel.getBoundingClientRect();
+          if([...grid.querySelectorAll('article,button')].some(el=>{const r=el.getBoundingClientRect();return r.left<bounds.left || r.right>bounds.right;}))failures.push(`${className} tràn cạnh nội dung`);
+          grid.remove();
+        }
+        return failures;
+      },{width,theme});
+      failures.push(...result.map(error=>`${width}px/${theme}: ${error}`));
+      if(width===390){
+        await page.locator('.fulfillment-process-tabs').screenshot({path:join(outputDir,`${stamp}-process-rail-${theme}.png`)});
+      }
+    }
+  }
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>{document.documentElement.setAttribute('data-theme','dark');selectFulfillmentProcessTab('part-qc');});
+  return { failures };
+}
 for (const route of routes) {
   const page = await context.newPage();
   const consoleErrors = [];
@@ -251,7 +299,14 @@ for (const route of routes) {
       const tablistRect = tablist?.getBoundingClientRect();
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
       const panelRect = panel?.getBoundingClientRect();
-      const sideRail = Boolean(tablistStyle?.flexDirection === 'column' && tablistRect && panelRect && tabRects.length && tablistRect.left < panelRect.left && Math.abs(tablistRect.top - panelRect.top) <= 2 && tabRects.every(rect => rect.width >= tablistRect.width - 2) && tabRects.slice(1).every((rect, index) => rect.top >= tabRects[index].bottom - 1));
+      const sideRail = Boolean(tablistStyle?.flexDirection === 'column' && tablistRect && panelRect && tabRects.length && tablistRect.left < panelRect.left && Math.abs(tablistRect.top - panelRect.top) <= 2 && tabRects.every(rect => rect.width >= tablistRect.width - 4) && tabRects.slice(1).every((rect, index) => rect.top >= tabRects[index].bottom - 1));
+      const compactTabs = Boolean(tablistRect && tablistRect.width <= 48 && tabRects.every(rect => rect.width >= 44 && rect.height >= 44));
+      const labelsFit = tabs.every(tab => {
+        const label=tab.querySelector('span'),badge=tab.querySelector('b');
+        const box=tab.getBoundingClientRect(),a=label.getBoundingClientRect(),b=badge.getBoundingClientRect();
+        return getComputedStyle(label).writingMode==='vertical-rl' && a.left>=box.left && a.right<=box.right && a.top>=box.top && a.bottom<=b.top && b.bottom<=box.bottom && label.scrollHeight<=label.clientHeight+1;
+      });
+      const panelFits = Boolean(panel && panel.scrollWidth <= panel.clientWidth + 2);
       const alternateTab = tabs.find(tab => !tab.classList.contains('is-active'));
       const alternateStage = alternateTab?.dataset.stage || '';
       /* Selection must remain a direct tap target after the compact mobile
@@ -263,9 +318,9 @@ for (const route of routes) {
         activeCount: tabs.filter(tab => tab.classList.contains('is-active')).length,
         sideRail,
         maxTabHeight: tabHeights.length ? Math.round(Math.max(...tabHeights)) : 0,
-        compactTabs: Boolean(tabHeights.length && Math.max(...tabHeights) <= 48),
+        compactTabs: compactTabs && labelsFit,
         noDesktopFolderTail: activeBefore === 'none' && activeAfter === 'none',
-        panelFits: Boolean(panel && panel.scrollWidth <= panel.clientWidth + 2),
+        panelFits,
         selectionWorks,
       };
     })() : null;
@@ -314,9 +369,11 @@ for (const route of routes) {
     report.themeAudit = await auditQuantityControlThemes(page).catch(error => ({ failures: [`Không kiểm tra theme control: ${error.message}`] }));
     report.moreSheetThemeAudit = await auditMoreSheetThemes(page).catch(error => ({ failures: [`Không kiểm tra được More menu: ${error.message}`] }));
   }
+  if (route === 'fulfillment') report.processRailAudit = await auditProcessRail(page);
   const screenshot = join(outputDir, `${stamp}-${route}.png`);
   await page.screenshot({ path: screenshot, fullPage: true }).catch(() => {});
   const errors = [
+    ...(route === 'fulfillment' ? report.processRailAudit?.failures || [] : []),
     ...(loadError ? [`Không mở được trang: ${loadError}`] : []),
     ...(checks.evaluationError ? [`Không kiểm tra được DOM: ${checks.evaluationError}`] : []),
     ...(checks.actualActive !== `page-${route}` ? [`Sai trang đang mở: ${checks.actualActive || 'không có trang active'}`] : []),
@@ -343,3 +400,4 @@ const latestFile = join(outputDir, 'latest.json');
 writeFileSync(reportFile, JSON.stringify(report, null, 2));
 writeFileSync(latestFile, JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ report: `qa-results/mobile/report-${stamp}.json`, latest: 'qa-results/mobile/latest.json', summary: report.summary, failures: report.routes.filter(row => row.errors.length).map(row => ({ route: row.route, errors: row.errors })) }, null, 2));
+if (report.summary.failed) process.exitCode = 1;
