@@ -27,6 +27,10 @@ try{
     const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
     if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
     if(!s.backgroundImage.includes('linear-gradient'))errors.push('Missing glass edge illumination');
+    const alpha=color=>color.startsWith('rgba')?Number(color.match(/[\d.]+/g).at(-1)):1;
+    if(alpha(s.backgroundColor)>.5)errors.push('Dock glass is too opaque');
+    if(alpha(getComputedStyle(document.querySelector('.more-sheet')).backgroundColor)>.7)errors.push('Menu glass is too opaque');
+    if(alpha(getComputedStyle(document.querySelector('.more-group .more-item')).backgroundColor)>.55)errors.push('Opaque tiles hide the glass behind them');
     if([...nav.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'))errors.push('Nested backdrop filters in dock');
     if(getComputedStyle(nav,'::before').pointerEvents!=='none')errors.push('Glass lens intercepts taps');
     const buttons=[...nav.querySelectorAll('button')];
