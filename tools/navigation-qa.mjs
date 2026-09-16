@@ -26,6 +26,9 @@ try{
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
     const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
     if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
+    if(s.backdropFilter!=='blur(18px) saturate(0.95) brightness(0.94)')errors.push('Navigation backdrop lost its subdued tone');
+    const edgeAlpha=Number(s.borderTopColor.match(/[\d.]+/g)?.at(-1));
+    if(edgeAlpha>.5)errors.push('Navigation glass edge is too bright');
     const alpha=color=>color.startsWith('rgba')?Number(color.match(/[\d.]+/g).at(-1)):1;
     for(const selector of ['#mobile-nav','.more-sheet-ov','.more-sheet','.more-sheet-head','.more-sheet-footer','.more-search','.more-group .more-item','.more-sheet-close','.more-categories button[aria-pressed="false"]']){
      const style=getComputedStyle(document.querySelector(selector));
@@ -70,7 +73,7 @@ try{
    const sheet=document.querySelector('.more-sheet'),nav=document.getElementById('mobile-nav');
    return {blur:getComputedStyle(sheet).backdropFilter,nested:[...sheet.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'),scrim:getComputedStyle(document.getElementById('more-sheet-ov')).backdropFilter,lens:Number(nav.style.getPropertyValue('--mobile-active-index'))=== [...nav.querySelectorAll('button')].findIndex(b=>b.id==='mnav-more')};
   });
-  assert.deepEqual(glass,{blur:'blur(18px) saturate(1.35)',nested:false,scrim:'none',lens:true});
+  assert.deepEqual(glass,{blur:'blur(18px) saturate(0.95) brightness(0.94)',nested:false,scrim:'none',lens:true});
   assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el).backdropFilter),'none','Do not composite a second glass layer behind an open menu');
   assert.equal(await page.locator('#more-search').evaluate(el=>getComputedStyle(el).fontSize),'16px','Search must not trigger iOS focus zoom');
   await page.keyboard.press('Shift+Tab');

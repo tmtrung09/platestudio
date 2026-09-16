@@ -1388,20 +1388,20 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
    no SVG displacement, animated blur or permanently animated specular layers. */
 :root{
   --nav-dock-surface:#242631;--nav-sheet-surface:#20232d;--nav-control-surface:#292d39;--nav-glass-blur:none;
-  --nav-glass-edge:rgba(230,238,255,.23);
+  --nav-glass-edge:rgba(230,238,255,.17);
   --nav-glass-sheen:none;
-  --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.17),inset 0 -1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.22);
-  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.24);
+  --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(255,255,255,.025),0 10px 30px rgba(0,0,0,.22);
+  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.19);
 }
 html[data-theme="light"]{
   --nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;
-  --nav-glass-edge:rgba(255,255,255,.8);
+  --nav-glass-edge:rgba(255,255,255,.48);
   --nav-glass-sheen:none;
-  --nav-glass-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(255,255,255,.45),0 8px 28px rgba(36,43,73,.14),0 0 0 1px rgba(45,53,80,.06);
-  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.9);
+  --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.22),0 8px 28px rgba(36,43,73,.14),0 0 0 1px rgba(45,53,80,.06);
+  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.6);
 }
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  :root{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent;--nav-glass-blur:blur(18px) saturate(135%)}
+  :root{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent;--nav-glass-blur:blur(18px) saturate(95%) brightness(94%)}
   html[data-theme="light"]{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent}
 }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
