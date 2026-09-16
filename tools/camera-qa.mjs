@@ -34,19 +34,28 @@ try{
      await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
      const errors=await page.evaluate(()=>{
        const el=document.getElementById('br-multi-cam'),errors=[];
+       if(Number(getComputedStyle(el.querySelector('.br-multi-cam-top')).zIndex)<=Number(getComputedStyle(el.querySelector('.br-camera-console')).zIndex))errors.push('Landscape blur can cover flash/focus controls');
        if(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)errors.push('Camera overflow');
+       for(const banner of document.querySelectorAll('.cloud-activity,.media-upload-guard,.kiot-sync-popup')){
+         if(Number(getComputedStyle(banner).zIndex)>=Number(getComputedStyle(el).zIndex))errors.push('Background progress can cover camera controls');
+       }
        for(const b of el.querySelectorAll('button')){
          if(!b.getClientRects().length)continue;
          const r=b.getBoundingClientRect();
          if(r.width<44||r.height<44||r.left<0||r.right>innerWidth+1||r.top<0||r.bottom>innerHeight+1)errors.push('Unreachable control '+b.getAttribute('aria-label'));
        }
-       if(getComputedStyle(el.querySelector('video')).objectFit!=='contain')errors.push('Cropped capture preview');
+       const video=el.querySelector('video'),bounds=video.getBoundingClientRect();
+       if(getComputedStyle(video).objectFit!=='cover'||bounds.x!==0||bounds.y!==0||bounds.width!==innerWidth||bounds.height!==innerHeight)errors.push('Camera does not fill the viewport');
        for(const glass of el.querySelectorAll('.br-camera-glass')){
-         const style=getComputedStyle(glass);
-         if(style.backgroundColor!=='rgba(0, 0, 0, 0)'||!style.backdropFilter.includes('blur(18px)'))errors.push('Opaque glass');
+         const style=getComputedStyle(glass),feather=getComputedStyle(glass,'::before');
+         if(style.backgroundColor!=='rgba(0, 0, 0, 0)'||style.backdropFilter!=='none'||style.borderTopWidth!=='0px'||style.boxShadow!=='none')errors.push('Hard glass boundary');
+         if(!feather.backdropFilter.includes('blur(18px)')||!feather.maskImage.includes('linear-gradient')||!feather.maskImage.includes('rgba(0, 0, 0, 0)')||feather.pointerEvents!=='none')errors.push('Blur must fade out without blocking controls');
        }
-       const ring=getComputedStyle(el.querySelector('.br-camera-shutter'),'::before');
+       const shutter=el.querySelector('.br-camera-shutter'),center=getComputedStyle(shutter.querySelector('button'));
+       if(center.borderTopWidth!=='0px'||center.boxShadow!=='none'||center.backgroundColor!=='rgb(247, 248, 252)')errors.push('Dark gap between shutter and ring');
+       const ring=getComputedStyle(shutter,'::before'),light=getComputedStyle(shutter,'::after');
        if(ring.animationName!=='brShutterLight'||ring.pointerEvents!=='none')errors.push('Shutter ring');
+       if(light.animationName!=='brShutterLight'||light.animationDuration!=='2.4s'||light.pointerEvents!=='none')errors.push('Missing moving light');
        return errors;
      });
      assert.deepEqual(errors,[],width+'/'+theme);
@@ -54,6 +63,16 @@ try{
    }
  }
  await page.setViewportSize({width:390,height:844});
+ const frameTests=await page.evaluate(()=>{
+   return [[1920,1080,390,844],[1080,1920,844,390],[1920,1080,1440,900]].every(([sw,sh,vw,vh])=>{
+     const f=batchCameraFrame(sw,sh,vw,vh);
+     return Math.abs(f.width/f.height-vw/vh)<.00001&&f.x>=0&&f.y>=0&&Math.abs(f.x*2+f.width-sw)<.001&&Math.abs(f.y*2+f.height-sh)<.001;
+   });
+ });
+ assert.equal(frameTests,true,'Saved image must match the visible centered frame');
+ const lightBefore=await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform);
+ await page.waitForTimeout(180);
+ assert.notEqual(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform),lightBefore,'Light must actually move');
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
  await page.locator('.br-multi-cam .capture').click();
@@ -65,8 +84,18 @@ try{
  await (await chooser).setFiles([{name:'library-1.png',mimeType:'image/png',buffer:png},{name:'library-2.png',mimeType:'image/png',buffer:png}]);
  await page.waitForFunction(()=>brMultiCameraShots.length===4&&brMultiCameraShots.every(s=>s.state==='uploaded'));
  await page.screenshot({path:join(output,'saved.png')});
+ for(const [width,height] of [[320,568],[844,390]]){
+   await page.setViewportSize({width,height});
+   assert.equal(await page.locator('.br-camera-console').evaluate(el=>{
+     const r=el.getBoundingClientRect(),top=document.querySelector('.br-multi-cam-top').getBoundingClientRect();
+     return r.top>=top.bottom&&r.bottom<=innerHeight+1&&r.right<=innerWidth&&el.scrollHeight<=el.clientHeight+1;
+   }),true,'Populated camera controls fit '+width);
+   await page.screenshot({path:join(output,'saved-'+width+'.png')});
+ }
+ await page.setViewportSize({width:390,height:844});
  await page.emulateMedia({reducedMotion:'reduce'});
  assert.equal(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::before').animationName),'none');
+ assert.equal(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').animationName),'none');
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.getByRole('button',{name:'Đóng camera',exact:true}).focus();
  await page.keyboard.press('Shift+Tab');

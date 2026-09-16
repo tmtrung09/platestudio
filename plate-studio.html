@@ -781,26 +781,31 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-upload-status-row.error{ border-color:color-mix(in srgb,var(--re) 42%,var(--b)); color:var(--re) }
 @keyframes brPulse{ 50%{ opacity:.35; transform:scale(.84) } }
 /* Camera uses the same transparent glass language; the viewfinder stays dark in both themes. */
-.br-multi-cam{--camera-ink:#f4f6fc;--camera-edge:rgba(232,240,255,.42);position:fixed;inset:0;z-index:2100;display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));background:#080a0e;color:var(--camera-ink);isolation:isolate;overflow:auto;overscroll-behavior:contain;color-scheme:dark}
+.br-multi-cam{--camera-ink:#f4f6fc;--camera-edge:rgba(232,240,255,.42);position:fixed;inset:0;z-index:3500;display:flex;flex-direction:column;justify-content:space-between;background:#080a0e;color:var(--camera-ink);isolation:isolate;overflow:hidden;overscroll-behavior:contain;color-scheme:dark}
 .br-multi-cam *{box-sizing:border-box}
-.br-multi-cam .br-camera-glass{background:transparent;border:1px solid var(--camera-edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 6px 24px rgba(0,0,0,.18);-webkit-backdrop-filter:var(--nav-glass-blur);backdrop-filter:var(--nav-glass-blur)}
-.br-multi-cam-top,.br-camera-console{position:relative}
-.br-multi-cam-top::before,.br-camera-console::before{content:"";position:absolute;inset:-1px;padding:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,#c8d5e9,rgba(152,171,201,.25) 26%,#8095b1 54%,rgba(205,222,246,.25) 74%,#dbe7f8);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+/* Only two feathered backdrop layers; never blur the video or the controls themselves. */
+.br-multi-cam .br-camera-glass{position:relative;z-index:1;background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.br-camera-glass::before{content:"";position:absolute;z-index:-1;pointer-events:none;-webkit-backdrop-filter:blur(18px) saturate(.95);backdrop-filter:blur(18px) saturate(.95)}
+.br-multi-cam-top::before{inset:0 0 -90px;background:linear-gradient(to bottom,rgba(8,10,16,.5),rgba(8,10,16,0));-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 25%,rgba(0,0,0,.85) 42%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.15) 82%,transparent);mask-image:linear-gradient(to bottom,#000 0%,#000 25%,rgba(0,0,0,.85) 42%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.15) 82%,transparent)}
+.br-camera-console::before{inset:-100px 0 0;background:linear-gradient(to top,rgba(8,10,16,.58),rgba(8,10,16,0));-webkit-mask-image:linear-gradient(to top,#000 0%,#000 40%,rgba(0,0,0,.85) 55%,rgba(0,0,0,.5) 72%,rgba(0,0,0,.15) 87%,transparent);mask-image:linear-gradient(to top,#000 0%,#000 40%,rgba(0,0,0,.85) 55%,rgba(0,0,0,.5) 72%,rgba(0,0,0,.15) 87%,transparent)}
 .br-multi-cam button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;flex-shrink:0;padding:8px 12px;border:1px solid transparent;border-radius:24px;background:transparent;color:var(--camera-ink);font:600 13px 'Be Vietnam Pro',sans-serif;cursor:pointer;touch-action:manipulation;transition:transform .16s,background .16s;box-shadow:none}
 .br-multi-cam button:focus-visible{outline:2px solid #c2ceff;outline-offset:3px}
 .br-multi-cam button:active:not(:disabled){transform:scale(.95)}
 .br-multi-cam button:disabled{opacity:.42;cursor:default}
 .br-multi-cam button.active{color:#ffe59b;border-color:#ffe59b}
 .br-multi-cam svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.br-multi-cam-top{width:100%;max-width:720px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:32px;padding:4px 6px;flex-shrink:0}
-.br-multi-cam-title{font-size:14px;font-weight:650;letter-spacing:.02em}
-.br-camera-viewfinder{position:relative;flex:1;min-height:120px;width:100%;max-width:900px;overflow:hidden;border-radius:22px;background:#101319}
-.br-multi-cam video{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:contain}
-.br-camera-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-size:13px;color:#dbe1ec;background:#101319}
+.br-multi-cam-top{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;gap:4px;padding:calc(10px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));flex-shrink:0}
+.br-multi-cam .br-multi-cam-top{z-index:2}
+.br-multi-cam .br-multi-cam-top{z-index:2}
+.br-multi-cam-title{font-size:13px;font-weight:650;letter-spacing:.02em;text-shadow:0 1px 5px rgba(0,0,0,.65)}
+.br-camera-viewfinder{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#101319}
+.br-multi-cam video{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:cover;object-position:center}
+.br-camera-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:80px 24px 280px;text-align:center;font-size:13px;color:#dbe1ec;background:#101319}
 .br-camera-message[hidden]{display:none}
 .br-camera-message button{border-color:var(--camera-edge)}
-.br-camera-focus{position:absolute;bottom:12px;right:12px}
-.br-camera-console{flex-shrink:0;width:100%;max-width:600px;border-radius:30px;padding:10px 16px 4px}
+.br-camera-console{flex-shrink:0;width:100%;padding:10px max(20px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+.br-camera-console>*{max-width:560px;margin-left:auto;margin-right:auto}
+.br-multi-cam-count,.br-camera-side span,.br-camera-footer,.br-camera-mode{text-shadow:0 1px 5px rgba(0,0,0,.75)}
 .br-multi-cam-count{font-size:12px;line-height:1.5;min-height:18px;text-align:center;color:#d9e0ee}
 .br-multi-cam-count[data-state="busy"]{color:#ffe59b}
 .br-multi-cam-count[data-state="error"]{color:#ffb4b4}
@@ -819,26 +824,27 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-camera-side span{font-size:10px;color:#d9e0ee}
 .br-multi-cam .br-camera-side button{width:48px;height:48px;border-color:var(--camera-edge);border-radius:16px}
 .br-camera-shutter{position:relative;display:grid;place-items:center;width:88px;height:88px;border-radius:50%;overflow:hidden;isolation:isolate;background:#333947;box-shadow:0 0 18px rgba(170,155,255,.2)}
-.br-camera-shutter::before{content:"";position:absolute;inset:-22px;background:conic-gradient(from 20deg,#92e8ff,#9e98ff,#fca8ef,#ffd9a0,#f4fbff,#92e8ff);animation:brShutterLight 4s linear infinite;pointer-events:none}
-.br-multi-cam .br-camera-shutter button{position:relative;z-index:1;width:78px;height:78px;border:5px solid #131720;border-radius:50%;background:#f7f8fc;padding:0;box-shadow:inset 0 0 0 1px #c4cbd6}
-.br-camera-shutter:has(button:disabled)::before,.br-multi-cam.is-paused .br-camera-shutter::before{animation-play-state:paused}
+.br-camera-shutter::before{content:"";position:absolute;inset:-22px;background:conic-gradient(from 20deg,#79ddff,#8072fb,#ed8fdc,#ffbc7b,#79ddff);animation:brShutterLight 4s linear infinite;pointer-events:none}
+.br-camera-shutter::after{content:"";position:absolute;inset:-22px;z-index:0;background:conic-gradient(from 0deg,transparent 0deg 260deg,rgba(255,255,255,.15) 290deg,#fff 316deg,rgba(255,255,255,.15) 336deg,transparent 360deg);animation:brShutterLight 2.4s linear infinite;pointer-events:none}
+.br-multi-cam .br-camera-shutter button{position:relative;z-index:1;width:78px;height:78px;border:0;border-radius:50%;background:#f7f8fc;padding:0;box-shadow:none}
+.br-camera-shutter:has(button:disabled)::before,.br-camera-shutter:has(button:disabled)::after,.br-multi-cam.is-paused .br-camera-shutter::before,.br-multi-cam.is-paused .br-camera-shutter::after{animation-play-state:paused}
 .br-camera-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .br-multi-cam .br-camera-footer button{font-size:12px;color:#d9e0ee}
 .br-multi-cam .br-camera-footer .send{color:#fff;font-weight:700}
 @keyframes brShutterLight{to{transform:rotate(360deg)}}
 @media(hover:hover){.br-multi-cam button:hover:not(:disabled){background-color:rgba(255,255,255,.1)}.br-multi-cam .br-camera-shutter button:hover:not(:disabled){background:#fff}}
 @media(max-height:540px) and (min-width:600px){
- .br-multi-cam{display:grid;grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:54px minmax(0,1fr);gap:8px}
- .br-multi-cam-top{grid-column:1 / -1;max-width:none}
- .br-camera-viewfinder{height:100%;max-width:none}
- .br-camera-console{padding:6px 10px;max-height:100%;overflow-y:auto}
+ .br-multi-cam .br-camera-console{position:absolute;top:calc(64px + env(safe-area-inset-top));bottom:0;right:0;width:250px;padding:6px max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) 16px;display:flex;flex-direction:column;justify-content:center}
+ .br-camera-console>*{width:100%}
+ .br-camera-console::before{inset:calc(-64px - env(safe-area-inset-top)) 0 0 -100px;background:linear-gradient(to left,rgba(8,10,16,.58),rgba(8,10,16,0));-webkit-mask-image:linear-gradient(to left,#000 0%,#000 40%,rgba(0,0,0,.5) 72%,transparent);mask-image:linear-gradient(to left,#000 0%,#000 40%,rgba(0,0,0,.5) 72%,transparent)}
+ .br-camera-message{padding:80px 270px 24px 24px}
  .br-multi-cam-actions{grid-template-columns:1fr 80px 1fr;gap:4px}
  .br-camera-shutter{width:78px;height:78px}.br-multi-cam .br-camera-shutter button{width:68px;height:68px}
  .br-multi-cam-thumb{width:48px;height:48px;flex-basis:48px}
 }
-@media(prefers-reduced-motion:reduce){.br-camera-shutter::before{animation:none}.br-multi-cam button{transition:none}}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.br-multi-cam .br-camera-glass{background:#20242e}}
-@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.br-multi-cam .br-camera-glass{background:#20242e;backdrop-filter:none;-webkit-backdrop-filter:none}.br-camera-shutter::before{animation:none}}
+@media(prefers-reduced-motion:reduce){.br-camera-shutter::before,.br-camera-shutter::after{animation:none}.br-multi-cam button{transition:none}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.br-camera-glass::before{background:#20242e}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.br-multi-cam .br-camera-glass{background:#20242e}.br-camera-glass::before{display:none}.br-camera-shutter::before,.br-camera-shutter::after{animation:none}}
 
 .br-section-title{ font-size:12px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px }
 .br-pending-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin-bottom:1.4rem }
@@ -12080,12 +12086,12 @@ async function openBatchMultiCamera(){
     <header class="br-multi-cam-top br-camera-glass">
       <button type="button" aria-label="Đóng camera" onclick="closeBatchMultiCamera()">${icon('<path d="m6 6 12 12M18 6 6 18"/>')}</button>
       <span id="br-camera-title" class="br-multi-cam-title">Báo cáo mẻ in</span>
+      <button type="button" class="br-camera-focus" aria-label="Lấy nét" onclick="focusBatchMultiCamera()">${icon('<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>')}</button>
       <button type="button" id="br-multi-flash" aria-label="Bật đèn flash" aria-pressed="false" disabled onclick="toggleBatchMultiFlash()">${icon('<path d="m13 2-9 12h7l-1 8 10-13h-7z"/>')}</button>
     </header>
     <div class="br-camera-viewfinder">
       <video autoplay playsinline muted aria-label="Khung ngắm camera"></video>
       <div class="br-camera-message" role="status"><span>Đang mở camera…</span><button type="button" onclick="startBatchCameraPreview()">Thử mở camera</button></div>
-      <button type="button" class="br-camera-focus br-camera-glass" aria-label="Lấy nét" onclick="focusBatchMultiCamera()">${icon('<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>')}</button>
     </div>
     <section class="br-camera-console br-camera-glass" aria-label="Điều khiển camera">
       <div class="br-multi-cam-count" role="status" aria-live="polite">Ảnh tự lưu sau mỗi lần chụp</div>
@@ -12228,6 +12234,12 @@ async function toggleBatchMultiFlash(){
     const btn=document.getElementById('br-multi-flash');btn?.classList.toggle('active',brMultiCameraTorchOn);btn?.setAttribute('aria-pressed',String(brMultiCameraTorchOn));btn?.setAttribute('aria-label',brMultiCameraTorchOn?'Tắt đèn flash':'Bật đèn flash');
   }catch(error){ brMultiCameraTorchOn=false; toast('Thiết bị hoặc trình duyệt này chưa hỗ trợ bật flash từ web.'); }
 }
+// Match the centered, edge-to-edge viewfinder in portrait and landscape.
+function batchCameraFrame(sourceWidth,sourceHeight,viewWidth,viewHeight){
+  const scale=Math.max(viewWidth/sourceWidth,viewHeight/sourceHeight);
+  const width=viewWidth/scale,height=viewHeight/scale;
+  return {x:(sourceWidth-width)/2,y:(sourceHeight-height)/2,width,height};
+}
 function captureBatchMultiPhoto(){
   const modal=document.getElementById('br-multi-cam');if(!modal||brCameraCaptureBusy)return;
   if(modal.dataset.camera==='fallback'){openBatchMultiFallbackPicker();return;}
@@ -12236,11 +12248,13 @@ function captureBatchMultiPhoto(){
   if(!video?.videoWidth){toast('Camera đang khởi động, hãy chờ một chút.');return;}
   if(brMultiCameraShots.filter(shot=>shot.state!=='uploaded').length>=30){toast('Hãy đợi ảnh đang chờ được lưu trước khi chụp tiếp.');return;}
   brCameraCaptureBusy=true;renderBatchMultiCameraTray();
-  const ratio=Math.min(1,1600/Math.max(video.videoWidth,video.videoHeight));
+  const bounds=video.getBoundingClientRect();
+  const frame=batchCameraFrame(video.videoWidth,video.videoHeight,bounds.width,bounds.height);
+  const ratio=Math.min(1,1600/Math.max(frame.width,frame.height));
   const canvas=document.createElement('canvas');
-  canvas.width=Math.max(1,Math.round(video.videoWidth*ratio));canvas.height=Math.max(1,Math.round(video.videoHeight*ratio));
+  canvas.width=Math.max(1,Math.round(frame.width*ratio));canvas.height=Math.max(1,Math.round(frame.height*ratio));
   try{
-    canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+    canvas.getContext('2d').drawImage(video,frame.x,frame.y,frame.width,frame.height,0,0,canvas.width,canvas.height);
     canvas.toBlob(blob=>{
       brCameraCaptureBusy=false;
       if(!blob){toast('Không tạo được ảnh, hãy thử lại.');renderBatchMultiCameraTray();return;}
