@@ -24,7 +24,11 @@ try{
     if(width>860)return s.display==='none'?[]:['Desktop navigation is not hidden'];
     const r=nav.getBoundingClientRect();
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
-    if(s.backdropFilter!=='none')errors.push('Costly backdrop filter');
+    const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
+    if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
+    if(!s.backgroundImage.includes('linear-gradient'))errors.push('Missing glass edge illumination');
+    if([...nav.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'))errors.push('Nested backdrop filters in dock');
+    if(getComputedStyle(nav,'::before').pointerEvents!=='none')errors.push('Glass lens intercepts taps');
     const buttons=[...nav.querySelectorAll('button')];
     if(buttons.length!==5)errors.push('Expected five destinations');
     for(const b of buttons){const a=b.getBoundingClientRect(),label=b.querySelector('span');
@@ -56,6 +60,12 @@ try{
     focus:document.activeElement===sheet};
   });
   assert.deepEqual(layout,{fits:true,footer:true,animated:false,focus:true});
+  const glass=await page.evaluate(()=>{
+   const sheet=document.querySelector('.more-sheet'),nav=document.getElementById('mobile-nav');
+   return {blur:getComputedStyle(sheet).backdropFilter,nested:[...sheet.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'),scrim:getComputedStyle(document.getElementById('more-sheet-ov')).backdropFilter,lens:Number(nav.style.getPropertyValue('--mobile-active-index'))=== [...nav.querySelectorAll('button')].findIndex(b=>b.id==='mnav-more')};
+  });
+  assert.deepEqual(glass,{blur:'blur(18px) saturate(1.35)',nested:false,scrim:'none',lens:true});
+  assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el).backdropFilter),'none','Do not composite a second glass layer behind an open menu');
   assert.equal(await page.locator('#more-search').evaluate(el=>getComputedStyle(el).fontSize),'16px','Search must not trigger iOS focus zoom');
   await page.keyboard.press('Shift+Tab');
   assert.equal(await page.evaluate(()=>document.activeElement.id),'more-auth-btn');
@@ -119,8 +129,20 @@ try{
  });
  assert.deepEqual(roles.map(x=>x.primary),['Tạo đơn','Gia công','Bao bì','Kiểm hàng','Chụp mẻ']);
  assert.ok(roles.every(x=>x.unique&&x.fits&&x.deniedHidden),JSON.stringify(roles));
+ // Respect OS accessibility choices in both themes, not just reduce animation.
+ const cdp=await page.context().newCDPSession(page);
+ for(const feature of ['prefers-reduced-transparency','prefers-contrast']){
+  await cdp.send('Emulation.setEmulatedMedia',{features:[{name:feature,value:feature==='prefers-contrast'?'more':'reduce'}]});
+  for(const theme of ['light','dark']){
+   await page.evaluate(theme=>document.documentElement.setAttribute('data-theme',theme),theme);
+   const fallback=await page.evaluate(()=>['#mobile-nav','.more-sheet'].map(selector=>{const s=getComputedStyle(document.querySelector(selector));return {blur:s.backdropFilter,opaque:!s.backgroundColor.startsWith('rgba')};}));
+   assert.deepEqual(fallback,[{blur:'none',opaque:true},{blur:'none',opaque:true}],feature+'/'+theme);
+  }
+ }
+ await cdp.send('Emulation.setEmulatedMedia',{features:[]});await cdp.detach();
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.evaluate(()=>toggleMoreSheet());
  assert.equal(await page.locator('.more-sheet').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
- console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, search/categories, gestures, focus, actions, reduced motion.');
+ assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el,'::before').transitionDuration),'0s');
+ console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, search/categories, gestures, focus, actions, bounded glass, reduced transparency/contrast/motion.');
 }finally{await browser.close();}
