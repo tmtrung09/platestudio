@@ -1389,27 +1389,27 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
 :root{
   --nav-dock-surface:#242631;--nav-sheet-surface:#20232d;--nav-control-surface:#292d39;--nav-glass-blur:none;
   --nav-glass-edge:rgba(230,238,255,.23);
-  --nav-glass-sheen:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.025) 38%,rgba(135,160,255,.035) 74%,rgba(255,255,255,.08));
+  --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.17),inset 0 -1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.22);
-  --nav-lens-fill:rgba(225,230,255,.12);--nav-lens-edge:rgba(255,255,255,.24);
+  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.24);
 }
 html[data-theme="light"]{
   --nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;
   --nav-glass-edge:rgba(255,255,255,.8);
-  --nav-glass-sheen:linear-gradient(135deg,rgba(255,255,255,.26),rgba(255,255,255,.015) 40%,rgba(156,179,255,.035) 75%,rgba(255,255,255,.17));
+  --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(255,255,255,.45),0 8px 28px rgba(36,43,73,.14),0 0 0 1px rgba(45,53,80,.06);
-  --nav-lens-fill:rgba(255,255,255,.36);--nav-lens-edge:rgba(255,255,255,.9);
+  --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.9);
 }
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  :root{--nav-dock-surface:rgba(22,25,36,.46);--nav-sheet-surface:rgba(22,25,36,.66);--nav-control-surface:rgba(36,40,53,.46);--nav-glass-blur:blur(18px) saturate(135%)}
-  html[data-theme="light"]{--nav-dock-surface:rgba(247,249,255,.34);--nav-sheet-surface:rgba(246,248,253,.52);--nav-control-surface:rgba(250,251,255,.5)}
+  :root{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent;--nav-glass-blur:blur(18px) saturate(135%)}
+  html[data-theme="light"]{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent}
 }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
   :root{--nav-dock-surface:#242631;--nav-sheet-surface:#20232d;--nav-control-surface:#292d39;--nav-glass-blur:none;--nav-glass-sheen:linear-gradient(transparent,transparent)}
   html[data-theme="light"]{--nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;--nav-glass-blur:none;--nav-glass-sheen:linear-gradient(transparent,transparent)}
 }
 /* Shared navigation sheet: motion only on the sheet/scrim. */
-.more-sheet-ov{display:flex;visibility:hidden;position:fixed;inset:0;z-index:1400;align-items:flex-end;justify-content:center;padding-top:max(12px,env(safe-area-inset-top));background:rgba(8,12,23,.16);opacity:0;pointer-events:none;transition:opacity .18s ease,visibility 0s linear .22s;contain:layout paint style}
+.more-sheet-ov{display:flex;visibility:hidden;position:fixed;inset:0;z-index:1400;align-items:flex-end;justify-content:center;padding-top:max(12px,env(safe-area-inset-top));background:transparent;opacity:0;pointer-events:none;transition:opacity .18s ease,visibility 0s linear .22s;contain:layout paint style}
 .more-sheet-ov.show{visibility:visible;opacity:1;pointer-events:auto;transition-delay:0s}
 body.more-sheet-open{overscroll-behavior:none}
 .more-sheet{width:100%;max-width:560px;height:min(760px,88dvh);max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--nav-glass-sheen),var(--nav-sheet-surface);backdrop-filter:var(--nav-glass-blur);-webkit-backdrop-filter:var(--nav-glass-blur);border:1px solid var(--nav-glass-edge);border-bottom:0;border-radius:26px 26px 0 0;box-shadow:var(--nav-glass-shadow);transform:translateY(100%);transition:transform .22s cubic-bezier(.22,.75,.25,1)}
@@ -1463,6 +1463,8 @@ body.more-sheet-open{overscroll-behavior:none}
 .more-sheet-close,.more-categories button,.more-item svg{box-shadow:inset 0 1px 0 var(--nav-glass-edge)}
 .more-sheet-title-row small,.more-group-title,.more-sheet-footer #more-auth-btn{color:var(--t2)}
 .more-sheet .more-item,.more-sheet .more-search,.more-sheet .more-sheet-close,.more-sheet .more-categories button{background:var(--nav-control-surface)}
+.more-sheet .more-group .more-item{box-shadow:inset 0 0 0 1px var(--nav-glass-edge)}
+.more-sheet .more-group .more-item[aria-current="page"]{box-shadow:inset 0 0 0 1.5px var(--ac)}
 .more-sheet .more-categories button[aria-pressed="true"]{background:var(--ac)}
 .more-sheet .more-item[aria-current="page"]{background:var(--nav-lens-fill);color:var(--t)}
 html[data-theme="light"] .more-item{color:#202633}
@@ -3991,7 +3993,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
   #mobile-nav{left:max(10px,env(safe-area-inset-left))!important;right:max(10px,env(safe-area-inset-right))!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;display:grid;grid-template-columns:repeat(var(--mobile-nav-count,5),minmax(0,1fr));align-items:stretch;gap:3px;min-height:68px;padding:6px!important;border:1px solid var(--nav-glass-edge)!important;border-radius:22px!important;background:var(--nav-glass-sheen),var(--nav-dock-surface)!important;box-shadow:var(--nav-glass-shadow)!important;backdrop-filter:var(--nav-glass-blur);-webkit-backdrop-filter:var(--nav-glass-blur);isolation:isolate}
   #mobile-nav .mnav-btn{position:relative;left:auto;top:auto;transform:none;min-width:0;max-width:none;min-height:54px;height:auto;margin:0;padding:2px 0!important;border:0;border-radius:14px!important;gap:4px;background:transparent!important;color:var(--t2)!important;font:600 11px/1.2 'Be Vietnam Pro',sans-serif;box-shadow:none!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .14s ease}
   #mobile-nav .mnav-icon{display:grid;place-items:center;width:40px;height:30px;border-radius:11px;background:transparent;color:inherit;font-style:normal;transition:transform .16s ease}
-  #mobile-nav::before{content:'';position:absolute;z-index:0;top:6px;bottom:6px;left:6px;width:calc((100% - 12px - (var(--mobile-nav-count,5) - 1)*3px)/var(--mobile-nav-count,5));border:1px solid var(--nav-lens-edge);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.16),transparent 65%),var(--nav-lens-fill);box-shadow:inset 0 1px 0 var(--nav-glass-edge),0 2px 5px rgba(0,0,0,.045);transform:translateX(calc(var(--mobile-active-index,0)*(100% + 3px)));opacity:0;pointer-events:none;transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .16s ease}
+  #mobile-nav::before{content:'';position:absolute;z-index:0;top:6px;bottom:6px;left:6px;width:calc((100% - 12px - (var(--mobile-nav-count,5) - 1)*3px)/var(--mobile-nav-count,5));border:1px solid var(--nav-lens-edge);border-radius:16px;background:var(--nav-lens-fill);box-shadow:inset 0 1px 0 var(--nav-glass-edge),0 2px 5px rgba(0,0,0,.045);transform:translateX(calc(var(--mobile-active-index,0)*(100% + 3px)));opacity:0;pointer-events:none;transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .16s ease}
   #mobile-nav[data-has-active="true"]::before{opacity:1}
   #mobile-nav::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;box-shadow:inset 1px 0 0 rgba(255,255,255,.08),inset -1px 0 0 rgba(255,255,255,.1)}
   #mobile-nav .mnav-btn{z-index:1;transition:transform .2s cubic-bezier(.2,.9,.3,1.25)}

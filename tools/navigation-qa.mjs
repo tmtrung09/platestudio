@@ -26,11 +26,13 @@ try{
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
     const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
     if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
-    if(!s.backgroundImage.includes('linear-gradient'))errors.push('Missing glass edge illumination');
     const alpha=color=>color.startsWith('rgba')?Number(color.match(/[\d.]+/g).at(-1)):1;
-    if(alpha(s.backgroundColor)>.5)errors.push('Dock glass is too opaque');
-    if(alpha(getComputedStyle(document.querySelector('.more-sheet')).backgroundColor)>.7)errors.push('Menu glass is too opaque');
-    if(alpha(getComputedStyle(document.querySelector('.more-group .more-item')).backgroundColor)>.55)errors.push('Opaque tiles hide the glass behind them');
+    for(const selector of ['#mobile-nav','.more-sheet-ov','.more-sheet','.more-sheet-head','.more-sheet-footer','.more-search','.more-group .more-item','.more-sheet-close','.more-categories button[aria-pressed="false"]']){
+     const style=getComputedStyle(document.querySelector(selector));
+     if(alpha(style.backgroundColor)!==0||style.backgroundImage.split(',').some(layer=>layer.trim()!=='none'))errors.push('Tint/gradient masks the blur: '+selector);
+    }
+    const lens=getComputedStyle(nav,'::before');
+    if(alpha(lens.backgroundColor)!==0||lens.backgroundImage!=='none')errors.push('Lens still paints an opaque fill');
     if([...nav.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'))errors.push('Nested backdrop filters in dock');
     if(getComputedStyle(nav,'::before').pointerEvents!=='none')errors.push('Glass lens intercepts taps');
     const buttons=[...nav.querySelectorAll('button')];

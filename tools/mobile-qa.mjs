@@ -120,7 +120,7 @@ async function auditMoreSheetThemes(page) {
     const failures = [];
     if (light.itemBackground !== 'none') failures.push(`More menu light vẫn dùng nền gradient (${light.itemBackground})`);
     if (light.borderWidth !== '0px') failures.push(`Nút More menu light vẫn còn viền (${light.borderWidth})`);
-    if (luminance(light.itemBackgroundColor) === null || luminance(light.itemBackgroundColor) < .82) failures.push(`Nền More menu light chưa đủ sáng và trung tính (${light.itemBackgroundColor})`);
+    if (light.itemBackgroundColor !== 'rgba(0, 0, 0, 0)' || dark.itemBackgroundColor !== 'rgba(0, 0, 0, 0)') failures.push('Ô chức năng phải trong suốt, dùng chung blur của menu');
     if (light.animation !== 'none') failures.push(`More menu light vẫn chạy animation (${light.animation})`);
     if (luminance(light.itemColor) === null || luminance(light.itemColor) < .12) failures.push(`Chữ More menu light thiếu tương phản (${light.itemColor})`);
     if (dark.itemBackground !== 'none' || dark.animation !== 'none') failures.push('Menu dark vẫn chạy nền/hiệu ứng trang trí liên tục');
