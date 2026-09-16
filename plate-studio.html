@@ -768,9 +768,6 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-capture-option svg{ width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round }
 .br-capture-option b{ font-size:13px; color:var(--t) }
 .br-capture-option span{ font-size:11px; text-align:center; color:var(--t3); line-height:1.35 }
-.br-capture-option.br-capture-multi{ grid-column:1 / -1; min-height:82px; flex-direction:row; flex-wrap:wrap; column-gap:8px; }
-.br-capture-option.br-capture-multi svg{ width:22px; height:22px; }
-.br-capture-option.br-capture-multi span{ flex-basis:100%; }
 .br-actor-note{ display:flex; align-items:center; gap:7px; margin:-.4rem 0 1rem; padding:.6rem .75rem; border-radius:var(--r); background:var(--s2); color:var(--t3); font-size:11.5px }
 .br-actor-note b{ color:var(--t2) }
 .br-upload-status{ display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:9px; margin:0 0 1rem }
@@ -783,26 +780,65 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-upload-status-row.success{ border-color:color-mix(in srgb,var(--gr) 42%,var(--b)); color:var(--gr) }
 .br-upload-status-row.error{ border-color:color-mix(in srgb,var(--re) 42%,var(--b)); color:var(--re) }
 @keyframes brPulse{ 50%{ opacity:.35; transform:scale(.84) } }
-.br-multi-cam{ position:fixed; inset:0; z-index:2100; display:flex; flex-direction:column; background:#111; color:#fff; padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
-.br-multi-cam video{ width:100%; flex:1; min-height:0; object-fit:cover; border-radius:18px; background:#222; }
-.br-multi-cam-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-.br-multi-cam-title{ font-size:15px; font-weight:700; }
-.br-multi-cam-top button,.br-multi-cam-actions button{ border:0; border-radius:12px; min-height:44px; padding:0 14px; font:700 13px 'Be Vietnam Pro',sans-serif; cursor:pointer; }
-.br-multi-cam-top button{ background:rgba(255,255,255,.16); color:#fff; }
-.br-multi-cam-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 0}
-.br-multi-cam-tools button{min-height:40px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font:700 12px 'Be Vietnam Pro',sans-serif;cursor:pointer}
-.br-multi-cam-tools button.active{background:#ffd166;color:#1b1b1b;border-color:#ffd166}
-.br-multi-cam-tray{ display:flex; gap:8px; min-height:70px; padding:10px 2px; overflow-x:auto; }
-.br-multi-cam-fallback{display:flex;flex:1;min-height:220px;align-items:center;justify-content:center;padding:22px;border:1px dashed rgba(255,255,255,.25);border-radius:18px;background:rgba(255,255,255,.06);text-align:center;color:rgba(255,255,255,.82);font-size:13px;line-height:1.5}
-.br-multi-cam-thumb{ position:relative; width:62px; height:62px; flex:0 0 62px; border-radius:10px; overflow:hidden; border:2px solid rgba(255,255,255,.5); }
-.br-multi-cam-thumb img{ width:100%; height:100%; object-fit:cover; }
-.br-multi-cam-thumb button{ position:absolute; top:2px; right:2px; width:22px; height:22px; padding:0; border:0; border-radius:50%; color:#fff; background:rgba(0,0,0,.65); cursor:pointer; }
-.br-multi-cam-thumb .br-multi-upload-state{position:absolute;left:3px;bottom:3px;max-width:55px;padding:2px 4px;border-radius:6px;background:rgba(0,0,0,.68);color:#fff;font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.br-multi-cam-thumb.is-error{border-color:#ff6868}.br-multi-cam-thumb.is-uploaded{border-color:#6ee7aa}
-.br-multi-cam-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
-.br-multi-cam-actions .capture{ background:#fff; color:#111; }
-.br-multi-cam-actions .send{ background:var(--ac); color:#fff; }
-.br-multi-cam-actions .send:disabled{ opacity:.42; cursor:not-allowed; }
+/* Camera uses the same transparent glass language; the viewfinder stays dark in both themes. */
+.br-multi-cam{--camera-ink:#f4f6fc;--camera-edge:rgba(232,240,255,.42);position:fixed;inset:0;z-index:2100;display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));background:#080a0e;color:var(--camera-ink);isolation:isolate;overflow:auto;overscroll-behavior:contain;color-scheme:dark}
+.br-multi-cam *{box-sizing:border-box}
+.br-multi-cam .br-camera-glass{background:transparent;border:1px solid var(--camera-edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 6px 24px rgba(0,0,0,.18);-webkit-backdrop-filter:var(--nav-glass-blur);backdrop-filter:var(--nav-glass-blur)}
+.br-multi-cam-top,.br-camera-console{position:relative}
+.br-multi-cam-top::before,.br-camera-console::before{content:"";position:absolute;inset:-1px;padding:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,#c8d5e9,rgba(152,171,201,.25) 26%,#8095b1 54%,rgba(205,222,246,.25) 74%,#dbe7f8);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.br-multi-cam button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;flex-shrink:0;padding:8px 12px;border:1px solid transparent;border-radius:24px;background:transparent;color:var(--camera-ink);font:600 13px 'Be Vietnam Pro',sans-serif;cursor:pointer;touch-action:manipulation;transition:transform .16s,background .16s;box-shadow:none}
+.br-multi-cam button:focus-visible{outline:2px solid #c2ceff;outline-offset:3px}
+.br-multi-cam button:active:not(:disabled){transform:scale(.95)}
+.br-multi-cam button:disabled{opacity:.42;cursor:default}
+.br-multi-cam button.active{color:#ffe59b;border-color:#ffe59b}
+.br-multi-cam svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.br-multi-cam-top{width:100%;max-width:720px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:32px;padding:4px 6px;flex-shrink:0}
+.br-multi-cam-title{font-size:14px;font-weight:650;letter-spacing:.02em}
+.br-camera-viewfinder{position:relative;flex:1;min-height:120px;width:100%;max-width:900px;overflow:hidden;border-radius:22px;background:#101319}
+.br-multi-cam video{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:contain}
+.br-camera-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-size:13px;color:#dbe1ec;background:#101319}
+.br-camera-message[hidden]{display:none}
+.br-camera-message button{border-color:var(--camera-edge)}
+.br-camera-focus{position:absolute;bottom:12px;right:12px}
+.br-camera-console{flex-shrink:0;width:100%;max-width:600px;border-radius:30px;padding:10px 16px 4px}
+.br-multi-cam-count{font-size:12px;line-height:1.5;min-height:18px;text-align:center;color:#d9e0ee}
+.br-multi-cam-count[data-state="busy"]{color:#ffe59b}
+.br-multi-cam-count[data-state="error"]{color:#ffb4b4}
+.br-multi-cam-count[data-state="saved"]{color:#a5edc4}
+.br-multi-cam-tray{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;padding:8px 1px;scrollbar-width:thin}
+.br-multi-cam-tray:empty{display:none}
+.br-multi-cam-thumb{position:relative;flex:0 0 64px;width:64px;height:64px;border:1px solid var(--camera-edge);border-radius:12px;overflow:hidden;background:#171c25}
+.br-multi-cam-thumb img{width:100%;height:100%;object-fit:cover}
+.br-multi-cam-thumb .br-multi-upload-state{position:absolute;bottom:0;left:0;right:0;padding:3px 0;background:rgba(0,0,0,.8);color:#fff;text-align:center;font-size:10px}
+.br-multi-cam-thumb.is-uploaded{border-color:#a5edc4}
+.br-multi-cam-thumb.is-error{border-color:#ffb4b4}
+.br-multi-cam-thumb button{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;background:rgba(0,0,0,.7);font-size:11px;padding:4px}
+.br-camera-mode{text-align:center;color:#ffe59b;font-size:11px;font-weight:700;letter-spacing:.15em;padding:4px}
+.br-multi-cam-actions{display:grid;grid-template-columns:1fr 94px 1fr;align-items:center;justify-items:center;gap:12px;padding:6px 0}
+.br-camera-side{display:flex;align-items:center;flex-direction:column;gap:4px;min-width:0}
+.br-camera-side span{font-size:10px;color:#d9e0ee}
+.br-multi-cam .br-camera-side button{width:48px;height:48px;border-color:var(--camera-edge);border-radius:16px}
+.br-camera-shutter{position:relative;display:grid;place-items:center;width:88px;height:88px;border-radius:50%;overflow:hidden;isolation:isolate;background:#333947;box-shadow:0 0 18px rgba(170,155,255,.2)}
+.br-camera-shutter::before{content:"";position:absolute;inset:-22px;background:conic-gradient(from 20deg,#92e8ff,#9e98ff,#fca8ef,#ffd9a0,#f4fbff,#92e8ff);animation:brShutterLight 4s linear infinite;pointer-events:none}
+.br-multi-cam .br-camera-shutter button{position:relative;z-index:1;width:78px;height:78px;border:5px solid #131720;border-radius:50%;background:#f7f8fc;padding:0;box-shadow:inset 0 0 0 1px #c4cbd6}
+.br-camera-shutter:has(button:disabled)::before,.br-multi-cam.is-paused .br-camera-shutter::before{animation-play-state:paused}
+.br-camera-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.br-multi-cam .br-camera-footer button{font-size:12px;color:#d9e0ee}
+.br-multi-cam .br-camera-footer .send{color:#fff;font-weight:700}
+@keyframes brShutterLight{to{transform:rotate(360deg)}}
+@media(hover:hover){.br-multi-cam button:hover:not(:disabled){background-color:rgba(255,255,255,.1)}.br-multi-cam .br-camera-shutter button:hover:not(:disabled){background:#fff}}
+@media(max-height:540px) and (min-width:600px){
+ .br-multi-cam{display:grid;grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:54px minmax(0,1fr);gap:8px}
+ .br-multi-cam-top{grid-column:1 / -1;max-width:none}
+ .br-camera-viewfinder{height:100%;max-width:none}
+ .br-camera-console{padding:6px 10px;max-height:100%;overflow-y:auto}
+ .br-multi-cam-actions{grid-template-columns:1fr 80px 1fr;gap:4px}
+ .br-camera-shutter{width:78px;height:78px}.br-multi-cam .br-camera-shutter button{width:68px;height:68px}
+ .br-multi-cam-thumb{width:48px;height:48px;flex-basis:48px}
+}
+@media(prefers-reduced-motion:reduce){.br-camera-shutter::before{animation:none}.br-multi-cam button{transition:none}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.br-multi-cam .br-camera-glass{background:#20242e}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.br-multi-cam .br-camera-glass{background:#20242e;backdrop-filter:none;-webkit-backdrop-filter:none}.br-camera-shutter::before{animation:none}}
 
 .br-section-title{ font-size:12px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px }
 .br-pending-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin-bottom:1.4rem }
@@ -2518,7 +2554,6 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
     box-shadow:0 8px 28px rgba(0,0,0,.16);
   }
   body.staff-report-mode #ov-batch-report .br-capture-option{ min-height:82px }
-  body.staff-report-mode #ov-batch-report .br-capture-option.br-capture-multi{ min-height:62px }
 }
 .page-smart-search{position:relative;display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border:1px solid var(--b);border-radius:12px;background:var(--s);box-shadow:0 1px 0 rgba(0,0,0,.02)}
 .page-smart-search svg{width:18px;height:18px;stroke:var(--t3);fill:none;stroke-width:2;flex:0 0 auto}
@@ -11190,7 +11225,8 @@ let brUploadStatus = [];   // [{id,name,state,message}] — phản hồi rõ rà
 let brBulkUploadMode = false;
 let brMultiCameraStream = null;
 let brMultiCameraShots = []; // [{ file, url, state, cancelled, reportId }] — chụp là tải nền
-let brMultiFallbackFiles = []; // Ảnh chụp native được gom lại trước khi gửi một lượt
+let brCameraRequest=0,brCameraFacing='environment',brCameraCaptureBusy=false,brCameraQueueRunning=false;
+let brCameraReturnFocus=null,brCameraInertSiblings=[];
 let brMultiCameraTorchOn = false;
 const brImageHashUploads = new Set(); // chặn cùng ảnh được gửi đồng thời trong một phiên
 const brAiAnalysing = new Set();
@@ -11790,7 +11826,10 @@ function batchActorLabel(actor){
 }
 function setBatchUploadStatus(id, patch){
   const item=brUploadStatus.find(x=>x.id===id);
+  if(item&&Object.hasOwn(patch,'preview')&&item.preview&&item.preview!==patch.preview)URL.revokeObjectURL(item.preview);
   if(item) Object.assign(item,patch);
+  const finished=brUploadStatus.filter(x=>x.state!=='uploading');
+  for(const old of finished.slice(12)){if(old.preview)URL.revokeObjectURL(old.preview);brUploadStatus.splice(brUploadStatus.indexOf(old),1);}
   if(brView==='hub' && document.getElementById('ov-batch-report')?.style.display==='flex') renderBatchHub();
 }
 async function openStaffAccessDialog(){
@@ -11827,8 +11866,7 @@ async function revokeStaffAccessLink(id){
 function openBatchReportHub(){
   if(!canCaptureBatchReports()){toast('Bạn chỉ có quyền xem hoặc chỉnh sửa báo cáo; chưa được cấp quyền chụp ảnh mẻ mới.');return;}
   brView = 'hub'; brCurrentId = null; brMatchQty = {}; brUnifiedSearch=''; brUnifiedScope='all'; brReportDate=localBatchDate();
-  document.getElementById('ov-batch-report').style.display = 'flex';
-  renderBatchReport();
+  return openBatchMultiCamera();
 }
 function closeBatchReport({returnToEvidence=false}={}){
   document.getElementById('ov-batch-report').style.display = 'none';
@@ -11880,9 +11918,8 @@ function renderBatchHub(){
     ${!STAFF_REPORT_MODE&&!canEdit&&canDescribe?'<div class="access-note" style="margin:0 0 12px">📋 Quyền hiện tại: khai báo Model, Part và số lượng đã in. Màu, ngày, tiến độ và ảnh vẫn do quản lý xử lý.</div>':''}
     ${canEdit?`<label class="card" style="display:flex;align-items:center;gap:12px;padding:11px 13px;margin:0 0 12px;cursor:pointer"><span style="font-size:18px">🗓</span><span style="flex:1;min-width:0"><b style="display:block;font-size:13px">Ngày ghi nhận mẻ in</b><span style="display:block;font-size:11px;color:var(--t3);margin-top:2px">Dùng khi tải ảnh cũ hoặc báo cáo mẻ in của ngày trước.</span></span><input aria-label="Ngày ghi nhận mẻ in" type="date" value="${esc(brReportDate)}" max="${localBatchDate()}" onchange="setBatchReportDate(this.value)" style="width:auto;min-width:142px;padding:8px 9px;margin:0" /></label>`:''}
     <div class="br-capture-options">
-      <button class="br-capture-option" onclick="document.getElementById('batch-camera-inp').click()"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>Chụp ảnh</b><span>Mở camera sau</span></button>
+      <button class="br-capture-option" onclick="openBatchMultiCamera()"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>Chụp ảnh</b><span>Chụp liên tiếp, tự lưu</span></button>
       <button class="br-capture-option" onclick="document.getElementById('batch-upload-inp').click()"><svg viewBox="0 0 24 24"><path d="M12 3v12m0-12 4 4m-4-4-4 4M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg><b>Tải ảnh lên</b><span>Chọn từ thư viện / tệp</span></button>
-      <button class="br-capture-option br-capture-multi" onclick="openBatchMultiCamera()"><svg viewBox="0 0 24 24"><path d="M4 7h3l1.5-2h7L17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="3.5"/><path d="M18 3v3m-1.5-1.5h3"/></svg><b>Chụp nhiều ảnh</b><span>Chụp liên tiếp, gửi một lượt</span></button>
     </div>
     <div style="font-size:11.5px;color:var(--t3);margin:-.7rem 0 1.2rem;text-align:center">Có thể dán ảnh trực tiếp bằng Ctrl + V</div>
     ${uploadStatus}
@@ -11910,12 +11947,12 @@ async function createStaffBatchReportFromFile(file){
   try { imageHash=await batchImageHash(file); } catch(error) { console.warn('Không tạo được mã nhận diện ảnh',error); }
   if(imageHash && brImageHashUploads.has(imageHash)) {
     toast('Ảnh này đang được gửi rồi — không tải lại.');
-    return {duplicate:true};
+    return {pending:true};
   }
   if(imageHash) brImageHashUploads.add(imageHash);
   const mediaUploadId=beginMediaUpload('Đang chuẩn bị ảnh mẻ in…');
   const uploadId=uid();
-  brUploadStatus.unshift({id:uploadId,name:file.name||'Ảnh mẻ in',preview:URL.createObjectURL(file),state:'uploading',message:'Đang gửi…'});
+  brUploadStatus.unshift({id:uploadId,name:file.name||'Ảnh mẻ in',preview:document.getElementById('br-multi-cam')?'':URL.createObjectURL(file),state:'uploading',message:'Đang gửi…'});
   setBatchUploadStatus(uploadId,{});
   const actor=ensureBatchActor();
   try {
@@ -11926,6 +11963,7 @@ async function createStaffBatchReportFromFile(file){
       const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
       uploadFile=new File([full],'batch.jpg',{type:'image/jpeg'});
       thumbnailFile=new File([thumb],'batch-thumb.jpg',{type:'image/jpeg'});
+      if(!document.getElementById('br-multi-cam'))setBatchUploadStatus(uploadId,{preview:URL.createObjectURL(thumb)});
     } catch(error) { console.warn('Không nén được ảnh nhân viên, dùng ảnh gốc',error); }
     form.append('token',STAFF_ACCESS_TOKEN);
     form.append('actor',JSON.stringify(actor));
@@ -11939,11 +11977,13 @@ async function createStaffBatchReportFromFile(file){
     const {data,error}=await sb.functions.invoke('staff-batch-report',{body:form});
     if(error) throw error;
     if(data?.duplicate) {
+      if(!data.report?.id)throw new Error('Ảnh đang được xử lý trên server. Hãy thử lại sau.');
       setBatchUploadStatus(uploadId,{state:'success',message:'Ảnh trùng — đã có trên hệ thống'});
       finishMediaUpload(mediaUploadId);
       toast('Ảnh này đã có trên hệ thống, không tải lại.');
       return {...(data.report||{}),duplicate:true};
     }
+    if(!data?.report?.id)throw new Error('Chưa nhận được xác nhận lưu ảnh từ server.');
     setBatchUploadStatus(uploadId,{state:'success',message:'Đã gửi thành công'});
     finishMediaUpload(mediaUploadId);
     toast('✓ Đã gửi báo cáo về xưởng. Cảm ơn bạn!');
@@ -12004,6 +12044,7 @@ async function createBatchReportFromFile(file){
 }
 async function handleBatchCaptureFile(inp){
   const files = [...(inp.files||[])]; if(!files.length) return;
+  if(document.getElementById('br-multi-cam')){inp.value='';queueBatchCameraFiles(files);return;}
   await uploadBatchFiles(files);
   inp.value = '';
 }
@@ -12027,96 +12068,146 @@ async function handleBatchDrop(event){
   await uploadBatchFiles(files,{deferOnly:true});
 }
 
+// One session for live capture, native capture and library imports.
 async function openBatchMultiCamera(){
   if(!canCaptureBatchReports()){toast('Bạn chưa được cấp quyền chụp ảnh báo cáo mẻ.');return;}
-  // Camera stream chỉ hoạt động khi trình duyệt cấp MediaDevices (thường cần HTTPS).
-  // File HTML mở trực tiếp hoặc HTTP trong mạng nội bộ vẫn có thể dùng camera/thư viện
-  // qua input capture, nên không được coi là "thiết bị không hỗ trợ".
-  if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
-    openBatchMultiCameraFallback();
-    return;
-  }
-  closeBatchMultiCamera();
-  brMultiCameraShots=[];
+  if(document.getElementById('br-multi-cam'))return;
+  brCameraReturnFocus=document.activeElement;
   const modal=document.createElement('div');
-  modal.id='br-multi-cam'; modal.className='br-multi-cam';
+  modal.id='br-multi-cam';modal.className='br-multi-cam';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','br-camera-title');
+  const icon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
   modal.innerHTML=`
-    <div class="br-multi-cam-top"><div><div class="br-multi-cam-title">Chụp nhiều ảnh mẻ in</div><div class="br-multi-cam-count">Chưa có ảnh nào</div></div><button type="button" onclick="closeBatchMultiCamera()">Đóng</button></div>
-    <video autoplay playsinline muted></video>
-    <div class="br-multi-cam-tools"><button type="button" onclick="focusBatchMultiCamera()">◎ Lấy nét</button><button type="button" id="br-multi-flash" onclick="toggleBatchMultiFlash()">⚡ Flash</button></div>
-    <div class="br-multi-cam-tray"></div>
-    <div class="br-multi-cam-actions"><button class="capture" type="button" onclick="captureBatchMultiPhoto()">● Chụp thêm</button><button class="send" type="button" onclick="closeBatchMultiCamera()">Xong</button></div>`;
+    <header class="br-multi-cam-top br-camera-glass">
+      <button type="button" aria-label="Đóng camera" onclick="closeBatchMultiCamera()">${icon('<path d="m6 6 12 12M18 6 6 18"/>')}</button>
+      <span id="br-camera-title" class="br-multi-cam-title">Báo cáo mẻ in</span>
+      <button type="button" id="br-multi-flash" aria-label="Bật đèn flash" aria-pressed="false" disabled onclick="toggleBatchMultiFlash()">${icon('<path d="m13 2-9 12h7l-1 8 10-13h-7z"/>')}</button>
+    </header>
+    <div class="br-camera-viewfinder">
+      <video autoplay playsinline muted aria-label="Khung ngắm camera"></video>
+      <div class="br-camera-message" role="status"><span>Đang mở camera…</span><button type="button" onclick="startBatchCameraPreview()">Thử mở camera</button></div>
+      <button type="button" class="br-camera-focus br-camera-glass" aria-label="Lấy nét" onclick="focusBatchMultiCamera()">${icon('<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>')}</button>
+    </div>
+    <section class="br-camera-console br-camera-glass" aria-label="Điều khiển camera">
+      <div class="br-multi-cam-count" role="status" aria-live="polite">Ảnh tự lưu sau mỗi lần chụp</div>
+      <div class="br-multi-cam-tray" aria-label="Ảnh vừa chụp"></div>
+      <div class="br-camera-mode">ẢNH</div>
+      <div class="br-multi-cam-actions">
+        <div class="br-camera-side"><button type="button" aria-label="Chọn ảnh từ thư viện" onclick="document.getElementById('batch-upload-inp').click()">${icon('<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 7"/>')}</button><span>Thư viện</span></div>
+        <div class="br-camera-shutter"><button class="capture" type="button" aria-label="Chụp ảnh" onclick="captureBatchMultiPhoto()"></button></div>
+        <div class="br-camera-side"><button type="button" id="br-camera-flip" aria-label="Đổi camera" onclick="switchBatchCamera()">${icon('<path d="M20 8a8 8 0 0 0-14-2L3 9m0-5v5h5M4 16a8 8 0 0 0 14 2l3-3m0 5v-5h-5"/>')}</button><span>Đổi camera</span></div>
+      </div>
+      <footer class="br-camera-footer"><button type="button" onclick="showBatchCameraReports()">Báo cáo</button><button class="send" type="button" onclick="closeBatchMultiCamera()">Xong</button></footer>
+    </section>`;
   document.body.appendChild(modal);
+  // Isolate the dialog without touching auth, drafts or the page's scroll position.
+  brCameraInertSiblings=[...document.body.children].filter(el=>el!==modal&&!el.inert&&el instanceof HTMLElement&&!el.matches('input,script,style'));
+  brCameraInertSiblings.forEach(el=>el.inert=true);
+  modal.querySelector('button').focus({preventScroll:true});
+  modal.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeBatchMultiCamera();}
+    if(event.key==='Tab'){
+      const buttons=[...modal.querySelectorAll('button:not(:disabled)')].filter(el=>el.getClientRects().length);
+      if(event.shiftKey&&document.activeElement===buttons[0]){event.preventDefault();buttons.at(-1)?.focus();}
+      else if(!event.shiftKey&&document.activeElement===buttons.at(-1)){event.preventDefault();buttons[0]?.focus();}
+    }
+  });
+  renderBatchMultiCameraTray();
+  await startBatchCameraPreview();
+}
+function stopBatchCameraPreview(){
+  brCameraRequest++;
+  brMultiCameraStream?.getTracks().forEach(track=>track.stop());brMultiCameraStream=null;brMultiCameraTorchOn=false;
+  const modal=document.getElementById('br-multi-cam');
+  const video=modal?.querySelector('video');if(video){video.pause();video.srcObject=null;}
+  const flash=modal?.querySelector('#br-multi-flash');if(flash){flash.disabled=true;flash.classList.remove('active');flash.setAttribute('aria-pressed','false');}
+}
+function batchCameraMessage(text){
+  const message=document.querySelector('#br-multi-cam .br-camera-message');
+  if(message){message.hidden=!text;message.querySelector('span').textContent=text;}
+}
+async function startBatchCameraPreview(){
+  const modal=document.getElementById('br-multi-cam');if(!modal)return;
+  stopBatchCameraPreview();
+  const request=brCameraRequest;
+  modal.dataset.camera='loading';modal.classList.remove('is-paused');
+  batchCameraMessage('Đang mở camera… Cho phép truy cập khi được hỏi.');
+  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){
+    modal.dataset.camera='fallback';batchCameraMessage('Dùng nút chụp hoặc chọn ảnh từ thư viện.');return;
+  }
   try{
-    brMultiCameraTorchOn=false;
-    brMultiCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}},audio:false});
-    modal.querySelector('video').srcObject=brMultiCameraStream;
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:brCameraFacing},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    if(request!==brCameraRequest||!modal.isConnected||document.hidden){stream.getTracks().forEach(track=>track.stop());return;}
+    brMultiCameraStream=stream;
+    const video=modal.querySelector('video');video.srcObject=stream;await video.play();
+    if(request!==brCameraRequest||!modal.isConnected)return;
+    modal.dataset.camera='live';batchCameraMessage('');
+    modal.querySelector('#br-multi-flash').disabled=!stream.getVideoTracks()[0]?.getCapabilities?.().torch;
     await focusBatchMultiCamera(true);
-    const caps=brMultiCameraStream.getVideoTracks()[0]?.getCapabilities?.()||{};
-    const flash=modal.querySelector('#br-multi-flash');
-    if(!caps.torch) { flash.disabled=true; flash.title='Thiết bị này không hỗ trợ flash trong trình duyệt'; flash.textContent='⚡ Flash không hỗ trợ'; }
   }catch(error){
-    closeBatchMultiCamera();
-    toast('Không thể mở camera. Hãy cho phép quyền camera hoặc dùng nút Tải ảnh lên.',5000);
+    if(request!==brCameraRequest||!modal.isConnected)return;
+    stopBatchCameraPreview();modal.dataset.camera='fallback';
+    batchCameraMessage('Chưa mở được camera. Bạn vẫn có thể chụp bằng camera thiết bị hoặc chọn Thư viện.');
   }
 }
-function openBatchMultiCameraFallback(){
-  closeBatchMultiCamera();
-  brMultiFallbackFiles=[];
-  const modal=document.createElement('div');
-  modal.id='br-multi-cam'; modal.className='br-multi-cam';
-  modal.innerHTML=`
-    <div class="br-multi-cam-top"><div><div class="br-multi-cam-title">Chụp nhiều ảnh mẻ in</div><div class="br-multi-cam-count">Chưa có ảnh nào</div></div><button type="button" onclick="closeBatchMultiCamera()">Hủy</button></div>
-    <div class="br-multi-cam-fallback">Camera của trình duyệt không khả dụng, nên mỗi lần thiết bị sẽ chụp một ảnh.<br>Ảnh sẽ được giữ trong khay bên dưới để em <b>chụp thêm liên tiếp</b> rồi gửi cùng một lần.</div>
-    <div class="br-multi-cam-tray"></div>
-    <div class="br-multi-cam-actions"><button class="capture" type="button" onclick="openBatchMultiFallbackPicker()">● Chụp thêm</button><button class="send" type="button" onclick="sendBatchMultiFallbackPhotos()" disabled>Gửi ảnh</button></div>`;
-  document.body.appendChild(modal);
-  renderBatchMultiFallbackTray();
-  openBatchMultiFallbackPicker();
+function switchBatchCamera(){
+  brCameraFacing=brCameraFacing==='environment'?'user':'environment';return startBatchCameraPreview();
 }
+function openBatchMultiCameraFallback(){return openBatchMultiCamera();}
 function openBatchMultiFallbackPicker(){
-  const input=document.getElementById('batch-multi-fallback-inp');
-  if(!input){ toast('Không thể mở trình chọn ảnh trên thiết bị này.'); return; }
-  input.value='';
-  input.click();
+  const input=document.getElementById('batch-multi-fallback-inp');if(!input)return;
+  input.value='';input.click();
 }
 function handleBatchMultiFallbackFile(input){
-  const files=[...(input.files||[])].filter(file=>file.type?.startsWith('image/'));
-  input.value='';
-  if(!files.length) return;
-  brMultiFallbackFiles.push(...files.map(file=>({id:uid(),file,url:URL.createObjectURL(file)})));
-  renderBatchMultiFallbackTray();
-  toast(`Đã thêm ${files.length} ảnh. Có thể bấm “Chụp thêm” hoặc gửi cả loạt.`);
+  const files=[...(input.files||[])];input.value='';queueBatchCameraFiles(files);
 }
-function renderBatchMultiFallbackTray(){
-  const modal=document.getElementById('br-multi-cam'); if(!modal) return;
-  const total=brMultiFallbackFiles.length;
-  const count=modal.querySelector('.br-multi-cam-count');
-  if(count) count.textContent=total?`Đã chọn ${total} ảnh · có thể chụp thêm`:'Chưa có ảnh nào';
-  const tray=modal.querySelector('.br-multi-cam-tray');
-  if(tray) tray.innerHTML=brMultiFallbackFiles.map((shot,index)=>`<div class="br-multi-cam-thumb"><img src="${shot.url}" alt="Ảnh ${index+1}"/><button type="button" aria-label="Bỏ ảnh ${index+1}" onclick="removeBatchMultiFallbackPhoto(${index})">×</button></div>`).join('');
-  const send=modal.querySelector('.br-multi-cam-actions .send');
-  if(send){ send.disabled=!total; send.textContent=total?`Gửi ${total} ảnh`:'Gửi ảnh'; }
+function batchCameraHasPending(){return brCameraCaptureBusy||brMultiCameraShots.some(shot=>shot.state==='queued'||shot.state==='uploading');}
+function queueBatchCameraFiles(files){
+  const images=[...files].filter(file=>file.type?.startsWith('image/'));
+  const capacity=Math.max(0,30-brMultiCameraShots.filter(shot=>shot.state!=='uploaded').length);
+  if(images.length>capacity)toast('Tối đa 30 ảnh đang chờ. Hãy đợi lưu xong rồi thêm tiếp.',4500);
+  for(const file of images.slice(0,capacity)){
+    const shot={id:uid(),file,url:URL.createObjectURL(file),state:'queued',cancelled:false,reportId:null};
+    brMultiCameraShots.push(shot);
+  }
+  renderBatchMultiCameraTray();void drainBatchCameraQueue();
 }
-function removeBatchMultiFallbackPhoto(index){
-  const [shot]=brMultiFallbackFiles.splice(index,1);
-  if(shot) URL.revokeObjectURL(shot.url);
-  renderBatchMultiFallbackTray();
+async function drainBatchCameraQueue(){
+  if(brCameraQueueRunning)return;brCameraQueueRunning=true;
+  try{
+    let shot;
+    while((shot=brMultiCameraShots.find(item=>item.state==='queued'))){
+      shot.state='uploading';renderBatchMultiCameraTray();
+      // Downsize the preview separately; keep the original only until upload succeeds.
+      try{
+        const preview=await compressPhotoForStorage(shot.file,160,.65);
+        URL.revokeObjectURL(shot.url);shot.url=URL.createObjectURL(preview);
+      }catch{} // Upload handles unsupported images and keeps the file for retry.
+      try{await uploadBatchMultiPhotoInBackground(shot);}catch(error){shot.state='error';shot.error=error.message;}
+      if(shot.state==='uploaded')shot.file=null;
+      // A long capture session must not retain hundreds of decoded thumbnails.
+      const saved=brMultiCameraShots.filter(item=>item.state==='uploaded');
+      for(const old of saved.slice(0,-12)){URL.revokeObjectURL(old.url);brMultiCameraShots.splice(brMultiCameraShots.indexOf(old),1);}
+      renderBatchMultiCameraTray();
+    }
+  }finally{brCameraQueueRunning=false;renderBatchMultiCameraTray();}
 }
-async function sendBatchMultiFallbackPhotos(){
-  const files=brMultiFallbackFiles.map(shot=>shot.file);
-  if(!files.length){ toast('Hãy chụp hoặc chọn ít nhất một ảnh.'); return; }
-  closeBatchMultiCamera();
-  toast(`Đang gửi ${files.length} ảnh...`);
-  await uploadBatchFiles(files,{deferOnly:true});
+function retryBatchCameraPhoto(index){
+  const shot=brMultiCameraShots[index];if(!shot||shot.state!=='error')return;
+  shot.state='queued';shot.error='';renderBatchMultiCameraTray();void drainBatchCameraQueue();
 }
 function renderBatchMultiCameraTray(){
-  const modal=document.getElementById('br-multi-cam'); if(!modal) return;
-  const total=brMultiCameraShots.length;
-  const waiting=brMultiCameraShots.filter(shot=>shot.state==='uploading').length;
-  modal.querySelector('.br-multi-cam-count').textContent=total ? `Đã chụp ${total} ảnh${waiting?` · đang tải nền ${waiting}`:' · đã tải xong'}` : 'Chưa có ảnh nào';
-  const labels={uploading:'Đang tải…',uploaded:'Đã tải ✓',error:'Tải lỗi'};
-  modal.querySelector('.br-multi-cam-tray').innerHTML=brMultiCameraShots.map((shot,index)=>`<div class="br-multi-cam-thumb ${shot.state==='uploaded'?'is-uploaded':''} ${shot.state==='error'?'is-error':''}"><img src="${shot.url}" alt="Ảnh ${index+1}"/><span class="br-multi-upload-state">${shot.duplicate?'Ảnh trùng — bỏ qua':labels[shot.state]||'Chờ tải'}</span><button type="button" aria-label="Bỏ ảnh ${index+1}" onclick="removeBatchMultiPhoto(${index})">×</button></div>`).join('');
+  const modal=document.getElementById('br-multi-cam');if(!modal)return;
+  const waiting=brMultiCameraShots.filter(shot=>shot.state==='uploading'||shot.state==='queued').length;
+  const errors=brMultiCameraShots.filter(shot=>shot.state==='error').length;
+  const saved=brMultiCameraShots.filter(shot=>shot.state==='uploaded').length;
+  const status=modal.querySelector('.br-multi-cam-count');
+  status.dataset.state=waiting?'busy':errors?'error':saved?'saved':'empty';
+  status.textContent=waiting?`Đang lưu ${waiting} ảnh — đừng thoát ứng dụng`:errors?`${errors} ảnh chưa lưu · bấm ảnh để thử lại`:saved?'Đã lưu ảnh lên cloud ✓':'Ảnh tự lưu sau mỗi lần chụp';
+  const tray=modal.querySelector('.br-multi-cam-tray'),scroll=tray.scrollLeft;
+  const labels={uploading:'Đang lưu',queued:'Chờ lưu',uploaded:'Đã lưu ✓',error:'Thử lại'};
+  tray.innerHTML=brMultiCameraShots.map((shot,index)=>`<div class="br-multi-cam-thumb is-${shot.state}"><img src="${shot.url}" alt="Ảnh ${index+1}" decoding="async"/><span class="br-multi-upload-state">${shot.duplicate?'Đã có ✓':labels[shot.state]}</span>${shot.state==='error'?`<button type="button" aria-label="Thử lưu lại ảnh ${index+1}" onclick="retryBatchCameraPhoto(${index})">↻ Thử lại</button>`:''}</div>`).join('');
+  tray.scrollLeft=scroll;
+  modal.querySelector('.capture').disabled=brCameraCaptureBusy;
 }
 async function focusBatchMultiCamera(silent=false){
   const track=brMultiCameraStream?.getVideoTracks?.()[0]; if(!track) return;
@@ -12134,30 +12225,37 @@ async function toggleBatchMultiFlash(){
     const caps=track.getCapabilities?.()||{}; if(!caps.torch) throw new Error('unsupported');
     brMultiCameraTorchOn=!brMultiCameraTorchOn;
     await track.applyConstraints({advanced:[{torch:brMultiCameraTorchOn}]});
-    const btn=document.getElementById('br-multi-flash'); btn?.classList.toggle('active',brMultiCameraTorchOn); if(btn) btn.textContent=brMultiCameraTorchOn?'⚡ Flash đang bật':'⚡ Flash';
+    const btn=document.getElementById('br-multi-flash');btn?.classList.toggle('active',brMultiCameraTorchOn);btn?.setAttribute('aria-pressed',String(brMultiCameraTorchOn));btn?.setAttribute('aria-label',brMultiCameraTorchOn?'Tắt đèn flash':'Bật đèn flash');
   }catch(error){ brMultiCameraTorchOn=false; toast('Thiết bị hoặc trình duyệt này chưa hỗ trợ bật flash từ web.'); }
 }
 function captureBatchMultiPhoto(){
-  const video=document.querySelector('#br-multi-cam video');
-  if(!video?.videoWidth){ toast('Camera đang khởi động, hãy chờ một chút.'); return; }
-  const ratio=Math.min(1,1600/video.videoWidth);
+  const modal=document.getElementById('br-multi-cam');if(!modal||brCameraCaptureBusy)return;
+  if(modal.dataset.camera==='fallback'){openBatchMultiFallbackPicker();return;}
+  if(modal.classList.contains('is-paused')){void startBatchCameraPreview();return;}
+  const video=modal.querySelector('video');
+  if(!video?.videoWidth){toast('Camera đang khởi động, hãy chờ một chút.');return;}
+  if(brMultiCameraShots.filter(shot=>shot.state!=='uploaded').length>=30){toast('Hãy đợi ảnh đang chờ được lưu trước khi chụp tiếp.');return;}
+  brCameraCaptureBusy=true;renderBatchMultiCameraTray();
+  const ratio=Math.min(1,1600/Math.max(video.videoWidth,video.videoHeight));
   const canvas=document.createElement('canvas');
-  canvas.width=Math.max(1,Math.round(video.videoWidth*ratio)); canvas.height=Math.max(1,Math.round(video.videoHeight*ratio));
-  canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-  canvas.toBlob(blob=>{
-    if(!blob){ toast('Không tạo được ảnh, hãy thử lại.'); return; }
-    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
-    const file=new File([blob],`me-in-${stamp}-${brMultiCameraShots.length+1}.jpg`,{type:'image/jpeg'});
-    const shot={id:uid(),file,url:URL.createObjectURL(blob),state:'uploading',cancelled:false,reportId:null};
-    brMultiCameraShots.push(shot);
-    renderBatchMultiCameraTray();
-    uploadBatchMultiPhotoInBackground(shot);
-  },'image/jpeg',.88);
+  canvas.width=Math.max(1,Math.round(video.videoWidth*ratio));canvas.height=Math.max(1,Math.round(video.videoHeight*ratio));
+  try{
+    canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+    canvas.toBlob(blob=>{
+      brCameraCaptureBusy=false;
+      if(!blob){toast('Không tạo được ảnh, hãy thử lại.');renderBatchMultiCameraTray();return;}
+      const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+      queueBatchCameraFiles([new File([blob],`me-in-${stamp}.jpg`,{type:'image/jpeg'})]);
+    },'image/jpeg',.88);
+  }catch(error){brCameraCaptureBusy=false;renderBatchMultiCameraTray();toast('Chưa chụp được ảnh. Hãy thử lại.');}
 }
 async function uploadBatchMultiPhotoInBackground(shot){
+  let ownedHash=null,reserved=false;
   try{
     if(STAFF_REPORT_MODE){
       const report=await createStaffBatchReportFromFile(shot.file);
+      if(!report?.id)throw new Error('Ảnh chưa được lưu lên cloud. Hãy thử lại.');
+      shot.duplicate=!!report.duplicate;
       if(shot.cancelled && report?.id) await deleteStaffBatchReport(report.id);
       shot.reportId=report?.id||null; shot.state=shot.cancelled?'cancelled':'uploaded';
     }else{
@@ -12165,15 +12263,17 @@ async function uploadBatchMultiPhotoInBackground(shot){
       if(!currentUser || !cloudReady) throw new Error('Chưa kết nối cloud');
       const imageHash=await batchImageHash(shot.file);
       const localDuplicate=findLocalBatchReportByHash(imageHash);
-      if(localDuplicate || (imageHash && brImageHashUploads.has(imageHash))) {
+      if(localDuplicate) {
         shot.reportId=localDuplicate?.id||null; shot.state='uploaded'; shot.duplicate=true; return;
       }
-      if(imageHash) brImageHashUploads.add(imageHash);
+      if(imageHash&&brImageHashUploads.has(imageHash))throw new Error('Ảnh đang được tải ở luồng khác. Hãy thử lại sau.');
+      if(imageHash){brImageHashUploads.add(imageHash);ownedHash=imageHash;}
       const actor=ensureBatchActor();
       const timing=await batchReportTimingForFile(shot.file);
       const draft={id:shot.id,image:null,thumb:null,imageHash,imageHashAlg:imageHash?'SHA-256':null,imageSize:shot.file.size||null,filamentId:null,...timing,status:'uploading',appliedItems:[],capturedBy:actor};
       const cloudDuplicate=await reserveBatchReportImage(draft);
       if(cloudDuplicate) { shot.reportId=cloudDuplicate.id||null; shot.state='uploaded'; shot.duplicate=true; return; }
+      reserved=true;
       const media=await uploadBatchReportMedia(shot.file,shot.id);
       if(shot.cancelled){ await removeBatchReportMedia(media); await releaseReservedBatchReport(shot.id); return; }
       const report={...draft,image:media.image,thumb:media.thumb,status:'pending'};
@@ -12181,42 +12281,39 @@ async function uploadBatchMultiPhotoInBackground(shot){
       batchReports.push(report); sv(K.batchReports,batchReports); recordAudit('create','Báo cáo mẻ','Đã gửi ảnh mẻ in mới',{reportId:report.id}); if(typeof recordSystemEvent==='function'){const actor=getBatchActor?.();recordSystemEvent({type:'batch_reported',actor:actor?.name||'Nhân viên xưởng',title:`${actor?.name||'Nhân viên xưởng'} đã báo cáo mẻ in`,detail:'Đã gửi ảnh mẻ in mới để đối chiếu.',permissions:['batches.report'],metadata:{reportId:report.id}});saveOperations();} updateCamBadge(); shot.reportId=report.id; shot.state='uploaded';
     }
   }catch(error){
-    if(shot?.id) await releaseReservedBatchReport(shot.id);
+    if(reserved)try{await releaseReservedBatchReport(shot.id);}catch{}
     if(!shot.cancelled){ shot.state='error'; shot.error=error.message||'Không tải được'; }
-  }finally{ try { const hash=await batchImageHash(shot.file); if(hash) brImageHashUploads.delete(hash); } catch {} renderBatchMultiCameraTray(); }
-}
-async function removeBatchMultiPhoto(index){
-  const [shot]=brMultiCameraShots.splice(index,1); if(!shot) return;
-  shot.cancelled=true; URL.revokeObjectURL(shot.url);
-  if(shot.reportId){
-    const report=batchReports.find(r=>r.id===shot.reportId);
-    batchReports=batchReports.filter(r=>r.id!==shot.reportId); sv(K.batchReports,batchReports); updateCamBadge();
-    let removed=false;
-    try { removed=STAFF_REPORT_MODE ? (await deleteStaffBatchReport(shot.reportId),true) : await releaseReservedBatchReport(shot.reportId); }
-    catch(error) { console.warn('Không thể bỏ ảnh đã tải',error); }
-    if(!removed){
-      if(report) batchReports.unshift(report);
-      sv(K.batchReports,batchReports);updateCamBadge();
-      toast('Chưa thể bỏ ảnh đã tải. Hãy thử lại.');
-      renderBatchMultiCameraTray();
-      return;
-    }
-    await removeBatchReportMedia(report);
-  }
-  renderBatchMultiCameraTray();
+  }finally{if(ownedHash)brImageHashUploads.delete(ownedHash);renderBatchMultiCameraTray();}
 }
 function closeBatchMultiCamera(){
-  if(brMultiCameraStream) brMultiCameraStream.getTracks().forEach(track=>track.stop());
-  brMultiCameraStream=null;
-  brMultiCameraShots.forEach(shot=>URL.revokeObjectURL(shot.url)); brMultiCameraShots=[];
-  brMultiFallbackFiles.forEach(shot=>URL.revokeObjectURL(shot.url)); brMultiFallbackFiles=[];
-  document.getElementById('br-multi-cam')?.remove();
+  const modal=document.getElementById('br-multi-cam');if(!modal)return true;
+  if(batchCameraHasPending()){toast('Ảnh đang lưu. Hãy chờ thông báo đã lưu lên cloud.',4500);return false;}
+  if(brMultiCameraShots.some(shot=>shot.state==='error')&&!confirm('Có ảnh chưa lưu. Đóng camera sẽ bỏ các ảnh chưa lưu này. Vẫn đóng?'))return false;
+  stopBatchCameraPreview();
+  brMultiCameraShots.forEach(shot=>URL.revokeObjectURL(shot.url));brMultiCameraShots=[];
+  modal.remove();brCameraInertSiblings.forEach(el=>el.inert=false);brCameraInertSiblings=[];
+  if(brCameraReturnFocus?.isConnected)brCameraReturnFocus.focus({preventScroll:true});
+  return true;
 }
-async function sendBatchMultiPhotos(){
-  /* Kept for older inline handlers: multi-camera uploads at capture time now. */
-  closeBatchMultiCamera();
+function showBatchCameraReports(){
+  if(!closeBatchMultiCamera())return;
+  brView='hub';document.getElementById('ov-batch-report').style.display='flex';renderBatchReport();
 }
+function sendBatchMultiPhotos(){return closeBatchMultiCamera();}
+document.addEventListener('visibilitychange',()=>{
+  const modal=document.getElementById('br-multi-cam');if(!modal)return;
+  if(document.hidden){stopBatchCameraPreview();modal.classList.add('is-paused');batchCameraMessage('Camera đã tạm dừng. Bấm nút chụp để tiếp tục.');}
+});
+window.addEventListener('pagehide',stopBatchCameraPreview);
+window.addEventListener('beforeunload',event=>{
+  if(!document.getElementById('br-multi-cam')||(!batchCameraHasPending()&&!brMultiCameraShots.some(shot=>shot.state==='error')))return;
+  event.preventDefault();event.returnValue='Ảnh chưa được lưu hết.';
+});
 document.addEventListener('paste', event => {
+  if(document.getElementById('br-multi-cam')){
+    const files=[...(event.clipboardData?.items||[])].filter(item=>item.type?.startsWith('image/')).map(item=>item.getAsFile()).filter(Boolean);
+    if(files.length){event.preventDefault();queueBatchCameraFiles(files);}return;
+  }
   const batchOverlay = document.getElementById('ov-batch-report');
   if(batchOverlay?.style.display !== 'flex') return;
   const item = [...(event.clipboardData?.items||[])].find(x=>x.type?.startsWith('image/'));
