@@ -76,11 +76,21 @@ try{
   assert.deepEqual(glass,{blur:'blur(18px) saturate(0.95) brightness(0.94)',nested:false,scrim:'none',lens:true});
   assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el).backdropFilter),'none','Do not composite a second glass layer behind an open menu');
   assert.equal(await page.locator('#more-search').evaluate(el=>getComputedStyle(el).fontSize),'16px','Search must not trigger iOS focus zoom');
+  const metal=await page.locator('.more-search').evaluate(el=>{
+   const input=el.querySelector('input'),text=getComputedStyle(input),hint=getComputedStyle(input,'::placeholder'),rim=getComputedStyle(el,'::before');
+   return {color:text.color,hint:hint.color,opacity:hint.opacity,weight:hint.fontWeight,shadow:hint.textShadow,rim:rim.backgroundImage,mask:rim.maskComposite,pointer:rim.pointerEvents,animation:rim.animationName,icon:getComputedStyle(el.querySelector('svg')).stroke};
+  });
+  assert.equal(metal.color,theme==='light'?'rgb(48, 65, 88)':'rgb(237, 242, 250)');
+  assert.equal(metal.hint,metal.color);assert.equal(metal.icon,metal.color);assert.equal(metal.opacity,'1');assert.equal(metal.weight,'600');
+  assert.notEqual(metal.shadow,'none');assert.ok(metal.rim.includes('linear-gradient'));assert.ok(metal.mask.split(',').every(value=>value.trim()==='exclude'));assert.equal(metal.pointer,'none');assert.equal(metal.animation,'none');
   await page.keyboard.press('Shift+Tab');
   assert.equal(await page.evaluate(()=>document.activeElement.id),'more-auth-btn');
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(()=>document.activeElement.className),'more-sheet-close');
   await page.locator('#more-search').fill('DON HANG');
+  assert.equal(await page.locator('.more-search').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+  assert.equal(await page.locator('.more-search').evaluate(el=>getComputedStyle(el).outlineWidth),'2px');
+  assert.equal(await page.locator('#more-search').evaluate(el=>getComputedStyle(el).color),metal.color,'Typed text must stay legible too');
   assert.ok(await page.locator('.more-group .more-item:visible').count()>=2,'Accent-insensitive search');
   await page.locator('#more-search').fill('zz-no-result');
   assert.equal(await page.locator('#more-empty').isVisible(),true);

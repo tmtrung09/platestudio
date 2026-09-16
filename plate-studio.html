@@ -1392,6 +1392,9 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
   --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(255,255,255,.025),0 10px 30px rgba(0,0,0,.22);
   --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.19);
+  --nav-search-text:#edf2fa;--nav-search-edge:#9aaac0;
+  --nav-search-metal:linear-gradient(115deg,#8192aa 0%,#f1f7ff 22%,#a0b0c7 44%,#e9f0fb 67%,#798ba5 84%,#dce6f5 100%);
+  --nav-search-emboss:0 1px 2px rgba(0,0,0,.85),0 -1px 0 rgba(255,255,255,.16);
 }
 html[data-theme="light"]{
   --nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;
@@ -1399,6 +1402,9 @@ html[data-theme="light"]{
   --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.22),0 8px 28px rgba(36,43,73,.14),0 0 0 1px rgba(45,53,80,.06);
   --nav-lens-fill:transparent;--nav-lens-edge:rgba(255,255,255,.6);
+  --nav-search-text:#304158;--nav-search-edge:#64768e;
+  --nav-search-metal:linear-gradient(115deg,#52667f 0%,#ced8e6 22%,#637891 44%,#b0bdce 67%,#52667f 84%,#c4cedb 100%);
+  --nav-search-emboss:0 1px 0 rgba(255,255,255,.95);
 }
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   :root{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent;--nav-glass-blur:blur(18px) saturate(95%) brightness(94%)}
@@ -1421,13 +1427,19 @@ body.more-sheet-open{overscroll-behavior:none}
 .more-sheet-title-row b{font-size:22px;letter-spacing:-.04em;color:var(--t)}
 .more-sheet-title-row small{display:block;margin-top:2px;font-size:11px;color:var(--t3)}
 .more-sheet-close{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-left:auto;padding:0;border:1px solid var(--b);border-radius:14px;background:var(--s2);color:var(--t2);font-size:24px;cursor:pointer}
-.more-search{display:flex;align-items:center;gap:10px;margin-top:14px;padding:0 12px;border:1px solid var(--b);border-radius:14px;background:var(--s2);min-height:46px}
-.more-search svg{width:19px;height:19px;flex:none;fill:none;stroke:var(--t3);stroke-width:1.8}
-.more-search:focus-within{border-color:var(--ac);outline:2px solid var(--ac-d);outline-offset:1px}
-#more-sheet-ov #more-search{min-width:0;flex:1;width:100%;padding:10px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--t);font:inherit;font-size:16px!important;outline:none}
+.more-search{position:relative;display:flex;align-items:center;gap:10px;margin-top:14px;padding:0 12px;border:1px solid var(--nav-search-edge);border-radius:14px;background:var(--s2);min-height:46px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 3px rgba(0,0,0,.12)}
+/* The glass search alone needs this rim: opaque page-search controls already
+   have a contrasting surface. Keep the interior clear and the text solid. */
+@supports ((mask-composite:exclude) or (-webkit-mask-composite:xor)){
+  .more-search::before{content:'';position:absolute;inset:-1px;padding:1px;border-radius:inherit;background:var(--nav-search-metal);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+}
+.more-search svg{width:19px;height:19px;flex:none;fill:none;stroke:var(--nav-search-text);stroke-width:2}
+.more-search:focus-within{outline:2px solid var(--ac);outline-offset:3px}
+#more-sheet-ov #more-search{min-width:0;flex:1;width:100%;padding:10px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--nav-search-text)!important;-webkit-text-fill-color:var(--nav-search-text);caret-color:var(--nav-search-text);text-shadow:var(--nav-search-emboss);font:inherit;font-weight:600;font-size:16px!important;outline:none}
 #more-search::-webkit-search-cancel-button{-webkit-appearance:none}
-#more-search::placeholder{color:var(--t3);font-size:13px}
-.more-search-clear{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-right:-10px;border:0;background:transparent;color:var(--t2);font-size:20px;cursor:pointer}
+#more-sheet-ov #more-search::placeholder{color:var(--nav-search-text);-webkit-text-fill-color:var(--nav-search-text);text-shadow:var(--nav-search-emboss);opacity:1;font-size:13px;font-weight:600}
+.more-search-clear{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-right:-10px;border:0;background:transparent;color:var(--nav-search-text);text-shadow:var(--nav-search-emboss);font-size:20px;cursor:pointer}
+@media(forced-colors:active){.more-search::before{display:none}.more-search{border-color:ButtonText}.more-search svg{stroke:CanvasText}#more-sheet-ov #more-search,#more-sheet-ov #more-search::placeholder{color:CanvasText!important;-webkit-text-fill-color:CanvasText;text-shadow:none}}
 .more-categories{display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
 .more-categories button{flex:0 0 auto;min-height:44px;padding:7px 11px;border:1px solid var(--b);border-radius:12px;background:var(--s);color:var(--t2);font:600 11px var(--font,'Be Vietnam Pro',sans-serif);cursor:pointer}
 .more-categories button[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
