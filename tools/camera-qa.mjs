@@ -34,6 +34,10 @@ try{
      await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
      const errors=await page.evaluate(()=>{
        const el=document.getElementById('br-multi-cam'),errors=[];
+       const zoom=el.querySelector('#br-camera-zoom'),zoomBounds=zoom.getBoundingClientRect();
+       const zoomStyle=getComputedStyle(zoom);
+       if(zoomStyle.backgroundColor!=='rgba(0, 0, 0, 0)'||zoomStyle.backgroundImage!=='none'||zoomStyle.boxShadow!=='none')errors.push('Slider inherited a text-field background');
+       if(zoomBounds.width<80||zoomBounds.height<44||zoomBounds.right>innerWidth)errors.push('Zoom slider touch target');
        if(Number(getComputedStyle(el.querySelector('.br-multi-cam-top')).zIndex)<=Number(getComputedStyle(el.querySelector('.br-camera-console')).zIndex))errors.push('Landscape blur can cover flash/focus controls');
        if(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)errors.push('Camera overflow');
        for(const banner of document.querySelectorAll('.cloud-activity,.media-upload-guard,.kiot-sync-popup')){
@@ -70,11 +74,45 @@ try{
    });
  });
  assert.equal(frameTests,true,'Saved image must match the visible centered frame');
+ // Zoom is shared by the slider, pinch, preview transform and capture crop.
+ await page.locator('#br-camera-zoom').focus();
+ await page.keyboard.press('Home');await page.keyboard.press('ArrowRight');
+ assert.equal(await page.locator('#br-camera-zoom').evaluate(el=>getComputedStyle(el).boxShadow),'none','Range focus must not inherit a text-field fill/glow');
+ assert.equal(await page.evaluate(()=>brCameraZoom),1.05,'Keyboard zoom');
+ await page.getByRole('button',{name:'Đặt zoom về 1×',exact:true}).click();
+ const touch=await page.context().newCDPSession(page);
+ await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:100,y:220,id:1},{x:200,y:220,id:2}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:70,y:220,id:1},{x:230,y:220,id:2}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ assert.equal(await page.evaluate(()=>brCameraZoom),1.6,'Pinch out zooms the image, not the page');
+ assert.equal(await page.evaluate(()=>visualViewport.scale),1);
+ await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:70,y:220,id:1},{x:230,y:220,id:2}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:100,y:220,id:1},{x:200,y:220,id:2}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+ assert.equal(await page.evaluate(()=>brCameraZoom),1,'Pinch in and cancellation');
+ await touch.detach();
+ const zoomBounds=await page.evaluate(()=>{
+   setBatchCameraZoom(99);const max=brCameraZoom;setBatchCameraZoom(-1);const min=brCameraZoom;
+   setBatchCameraZoom(2);
+   const video=document.querySelector('#br-multi-cam video'),view=video.parentElement.getBoundingClientRect();
+   const full=batchCameraFrame(video.videoWidth,video.videoHeight,view.width,view.height);
+   const zoomed=batchCameraFrame(video.videoWidth,video.videoHeight,view.width,view.height,brCameraZoom);
+   window.expectedCameraCrop=zoomed;
+   const draw=CanvasRenderingContext2D.prototype.drawImage;
+   CanvasRenderingContext2D.prototype.drawImage=function(...args){
+     if(args[0] instanceof HTMLVideoElement)window.actualCameraCrop=args.slice(1,5);
+     return draw.apply(this,args);
+   };
+   return {min,max,crop:zoomed.width===full.width/2&&zoomed.height===full.height/2,preview:getComputedStyle(video).transform};
+ });
+ assert.deepEqual(zoomBounds,{min:1,max:4,crop:true,preview:'matrix(2, 0, 0, 2, 0, 0)'});
  const lightBefore=await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform);
  await page.waitForTimeout(180);
  assert.notEqual(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform),lightBefore,'Light must actually move');
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
+ assert.equal(await page.evaluate(()=>JSON.stringify(actualCameraCrop)===JSON.stringify([expectedCameraCrop.x,expectedCameraCrop.y,expectedCameraCrop.width,expectedCameraCrop.height])),true,'Capture must use the same zoom crop as preview');
+ await page.getByRole('button',{name:'Đặt zoom về 1×',exact:true}).click();
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===2&&brMultiCameraShots.every(s=>s.state==='uploaded'));
  assert.equal(await page.evaluate(()=>brMultiCameraShots.every(s=>s.file===null)),true,'Release original files after saved');
@@ -100,11 +138,12 @@ try{
  await page.getByRole('button',{name:'Đóng camera',exact:true}).focus();
  await page.keyboard.press('Shift+Tab');
  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Xong','Trap keyboard focus');
- const oldTrack=await page.evaluate(()=>{window.oldCameraTrack=brMultiCameraStream.getVideoTracks()[0];return oldCameraTrack.readyState;});
+ const oldTrack=await page.evaluate(()=>{setBatchCameraZoom(3);window.oldCameraTrack=brMultiCameraStream.getVideoTracks()[0];return oldCameraTrack.readyState;});
  assert.equal(oldTrack,'live');
  await page.getByRole('button',{name:'Đổi camera',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraStream?.getVideoTracks()[0]!==oldCameraTrack&&document.querySelector('#br-multi-cam')?.dataset.camera==='live');
  assert.equal(await page.evaluate(()=>oldCameraTrack.readyState),'ended');
+ assert.equal(await page.evaluate(()=>brCameraZoom),1,'Switching camera resets zoom');
  await page.evaluate(()=>closeBatchMultiCamera());
  assert.equal(await page.locator('#br-multi-cam').count(),0);
  assert.equal(await page.evaluate(()=>document.getElementById('ov-batch-report').inert),false);
@@ -119,6 +158,7 @@ try{
  // Permission denial retains native capture, library and retry in the same dialog.
  await page.evaluate(()=>{navigator.mediaDevices.getUserMedia=async()=>{throw new Error('denied');};return openBatchReportHub();});
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-camera'),'fallback');
+ assert.equal(await page.locator('#br-camera-zoom').isDisabled(),true,'Native camera manages its own zoom');
  const nativeChooser=page.waitForEvent('filechooser');
  await page.locator('.br-multi-cam .capture').click();
  await (await nativeChooser).setFiles({name:'native.png',mimeType:'image/png',buffer:png});
@@ -183,5 +223,5 @@ try{
  });
  assert.deepEqual(staffResult,{serverAck:true,missing:true,pending:true,unconfirmedDuplicate:true,saved:true});
  await staff.close();
- console.log('Camera QA passed: 8 theme/viewports; direct entry, consecutive capture, library/native, ring, focus, stream cleanup, close guard, retry and upload failure contracts.');
+ console.log('Camera QA passed: 8 theme/viewports; direct entry, pinch/slider/keyboard zoom, matching capture crop, consecutive capture, library/native, ring, focus, stream cleanup, close guard, retry and upload failure contracts.');
 }finally{await browser.close();}
