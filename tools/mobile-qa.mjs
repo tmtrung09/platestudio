@@ -90,8 +90,8 @@ async function auditQuantityControlThemes(page) {
     return { light, dark, failures };
   });
 }
-/* The More sheet is shared mobile navigation. Light mode must stay calm and
-   legible, while dark mode deliberately keeps its expressive aurora treatment. */
+/* Shared navigation stays legible and idle in both themes, without continuous
+   decorative animations consuming frames while the user chooses a destination. */
 async function auditMoreSheetThemes(page) {
   return page.evaluate(() => {
     const root = document.documentElement;
@@ -123,7 +123,8 @@ async function auditMoreSheetThemes(page) {
     if (luminance(light.itemBackgroundColor) === null || luminance(light.itemBackgroundColor) < .82) failures.push(`Nền More menu light chưa đủ sáng và trung tính (${light.itemBackgroundColor})`);
     if (light.animation !== 'none') failures.push(`More menu light vẫn chạy animation (${light.animation})`);
     if (luminance(light.itemColor) === null || luminance(light.itemColor) < .12) failures.push(`Chữ More menu light thiếu tương phản (${light.itemColor})`);
-    if (dark.itemBackground === 'none' || dark.animation === 'none') failures.push('Dark mode đã mất style aurora riêng của menu');
+    if (dark.itemBackground !== 'none' || dark.animation !== 'none') failures.push('Menu dark vẫn chạy nền/hiệu ứng trang trí liên tục');
+    if (luminance(dark.itemBackgroundColor) > .3 || luminance(dark.itemColor) < .65) failures.push('Menu dark không đủ tương phản');
     return { light, dark, failures };
   });
 }
@@ -237,27 +238,16 @@ for (const route of routes) {
          thường, miễn nút vẫn có thể được cuộn lên vùng thao tác. Chỉ báo lỗi
          khi nó bị che cố định cả sau khi đưa chính nút vào trung tâm viewport. */
       if (top.closest?.('.mnav')) {
-        const scrollParent = (() => {
-          for (let node = element.parentElement; node && node !== document.documentElement; node = node.parentElement) {
-            const style = getComputedStyle(node);
-            if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
-          }
-          return null;
-        })();
-        const previousTop = scrollParent?.scrollTop || 0;
-        const previousScrollBehavior = scrollParent?.style.scrollBehavior || '';
-        if (scrollParent) {
-          scrollParent.style.scrollBehavior = 'auto';
-          const parentRect = scrollParent.getBoundingClientRect();
-          const elementRect = element.getBoundingClientRect();
-          scrollParent.scrollTop += elementRect.top - parentRect.top - parentRect.height / 2 + elementRect.height / 2;
+        // Nested scroll areas (e.g. process rail within a page) need both
+        // ancestors moved, just as browser focus/scrollIntoView would do.
+        const ancestors=[];
+        for(let node=element.parentElement;node;node=node.parentElement){
+          ancestors.push({node,top:node.scrollTop,left:node.scrollLeft});
         }
+        element.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
         const moved = element.getBoundingClientRect();
         const movedTop = document.elementFromPoint(moved.left + moved.width / 2, moved.top + moved.height / 2);
-        if (scrollParent) {
-          scrollParent.scrollTop = previousTop;
-          scrollParent.style.scrollBehavior = previousScrollBehavior;
-        }
+        for(const {node,top,left} of ancestors)node.scrollTo({top,left,behavior:'instant'});
         if (movedTop === element || element.contains(movedTop) || movedTop?.contains(element)) return false;
       }
       return true;

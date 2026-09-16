@@ -1384,116 +1384,65 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
   .br-two-col-layout{ grid-template-columns:1fr; gap:14px; }.br-two-col-visual{ position:relative; top:auto; height:auto; min-height:0; aspect-ratio:1/.78; }.br-two-col-visual img{ object-fit:contain; }
 }
 
-.more-sheet-ov {
-  /* Giữ lớp fixed sẵn sàng để mở menu không buộc trình duyệt tính lại layout cả trang. */
-  display:flex; visibility:hidden; position:fixed; inset:0; z-index:1400; background:rgba(8,9,15,.64);
-  align-items:flex-end; justify-content:center; padding-top:max(12px,env(safe-area-inset-top));
-  opacity:0; pointer-events:none; transition:opacity .2s; contain:layout paint style; will-change:opacity;
-  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
-}
-.more-sheet-ov.show { visibility:visible; opacity:1; pointer-events:auto }
-/* Lớp phủ fixed đã chặn chạm phía sau; không khóa overflow body để tránh reflow toàn trang. */
+/* Shared navigation sheet: static surfaces, motion only on the sheet/scrim. */
+.more-sheet-ov{display:flex;visibility:hidden;position:fixed;inset:0;z-index:1400;align-items:flex-end;justify-content:center;padding-top:max(12px,env(safe-area-inset-top));background:rgba(8,12,23,.5);opacity:0;pointer-events:none;transition:opacity .18s ease,visibility 0s linear .22s;contain:layout paint style}
+.more-sheet-ov.show{visibility:visible;opacity:1;pointer-events:auto;transition-delay:0s}
 body.more-sheet-open{overscroll-behavior:none}
-.more-sheet {
-  width:100%; max-width:560px; height:min(720px,calc(100dvh - 12px)); max-height:calc(100dvh - 12px);
-  display:flex; flex-direction:column; min-height:0; overflow:hidden;
-  background:var(--s); border-radius:24px 24px 0 0;
-  padding:0; box-shadow:0 -18px 54px rgba(0,0,0,.34);
-  transform:translateY(100%); transition:transform .28s var(--sp); will-change:transform;
+.more-sheet{width:100%;max-width:560px;height:min(760px,88dvh);max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--s);border:1px solid var(--b);border-bottom:0;border-radius:26px 26px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.18);transform:translateY(100%);transition:transform .22s cubic-bezier(.22,.75,.25,1)}
+.more-sheet-ov.show .more-sheet{transform:translateY(0)}
+.more-sheet:focus{outline:none}
+.more-sheet-head{flex:none;padding:10px 18px 12px;background:var(--s);touch-action:pan-y}
+.more-sheet-handle{width:32px;height:4px;border-radius:9px;background:var(--bm);margin:0 auto 14px}
+.more-sheet-title-row{display:flex;align-items:center;gap:10px}
+.more-sheet-title-row b{font-size:22px;letter-spacing:-.04em;color:var(--t)}
+.more-sheet-title-row small{display:block;margin-top:2px;font-size:11px;color:var(--t3)}
+.more-sheet-close{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-left:auto;padding:0;border:1px solid var(--b);border-radius:14px;background:var(--s2);color:var(--t2);font-size:24px;cursor:pointer}
+.more-search{display:flex;align-items:center;gap:10px;margin-top:14px;padding:0 12px;border:1px solid var(--b);border-radius:14px;background:var(--s2);min-height:46px}
+.more-search svg{width:19px;height:19px;flex:none;fill:none;stroke:var(--t3);stroke-width:1.8}
+.more-search:focus-within{border-color:var(--ac);outline:2px solid var(--ac-d);outline-offset:1px}
+#more-sheet-ov #more-search{min-width:0;flex:1;width:100%;padding:10px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--t);font:inherit;font-size:16px!important;outline:none}
+#more-search::-webkit-search-cancel-button{-webkit-appearance:none}
+#more-search::placeholder{color:var(--t3);font-size:13px}
+.more-search-clear{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-right:-10px;border:0;background:transparent;color:var(--t2);font-size:20px;cursor:pointer}
+.more-categories{display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.more-categories button{flex:0 0 auto;min-height:44px;padding:7px 11px;border:1px solid var(--b);border-radius:12px;background:var(--s);color:var(--t2);font:600 11px var(--font,'Be Vietnam Pro',sans-serif);cursor:pointer}
+.more-categories button[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
+.more-sheet-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 18px 18px;-webkit-overflow-scrolling:touch}
+.more-group+.more-group{margin-top:20px}
+.more-group-title{margin:0 0 9px;color:var(--t3);font-size:10px;line-height:1.4;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.more-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.more-item{--more-tone:var(--ac);width:100%;min-width:0;min-height:60px;display:flex;align-items:center;gap:10px;padding:10px;border:0;border-radius:14px;background:var(--s2);color:var(--t);font:650 12px/1.35 var(--font,'Be Vietnam Pro',sans-serif);text-align:left;cursor:pointer;transition:transform .14s ease;overflow-wrap:anywhere}
+.more-item svg{width:34px;height:34px;padding:8px;flex:0 0 34px;border-radius:11px;background:color-mix(in srgb,var(--more-tone) 12%,var(--s));color:var(--more-tone);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.more-item[data-more-tone="cyan"],.more-item[data-more-tone="blue"],.more-item[data-more-tone="sky"],.more-item[data-more-tone="indigo"]{--more-tone:#3988dc}
+.more-item[data-more-tone="mint"],.more-item[data-more-tone="green"],.more-item[data-more-tone="aqua"]{--more-tone:#209c82}
+.more-item[data-more-tone="amber"],.more-item[data-more-tone="sun"],.more-item[data-more-tone="orange"]{--more-tone:#b87c20}
+.more-item[data-more-tone="pink"],.more-item[data-more-tone="rose"],.more-item[data-more-tone="danger"]{--more-tone:#ca618b}
+.more-item[data-more-tone="violet"]{--more-tone:var(--ac)}
+.more-item[aria-current="page"]{box-shadow:inset 0 0 0 1.5px var(--ac);background:var(--ac-d);color:var(--ac)}
+.more-item:active{transform:scale(.97)}
+.more-item:focus-visible,.more-sheet-close:focus-visible,.more-categories button:focus-visible,.more-search-clear:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+@media(hover:hover){.more-item:hover{background:var(--s3)}}
+.more-sheet-footer{display:flex;gap:8px;flex:none;padding:10px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--b);background:var(--s)}
+.more-sheet-footer .more-item{min-height:44px;justify-content:center;background:transparent;font-size:11px;padding:5px 8px}
+.more-sheet-footer .more-item svg{width:20px;height:20px;flex-basis:20px;padding:0;background:none}
+.more-sheet-footer #more-auth-btn{color:var(--t3)}
+.more-empty{padding:30px 8px;text-align:center;color:var(--t3);font-size:13px}
+@media(max-height:520px){
+  .more-sheet{height:calc(100dvh - 12px)}
+  .more-sheet-head{padding:8px 18px}
+  .more-sheet-handle,.more-sheet-title-row small{display:none}
+  .more-sheet-title-row b{font-size:18px}
+  .more-search,.more-categories{margin-top:6px}
+  .more-sheet-footer{padding:6px 18px calc(6px + env(safe-area-inset-bottom))}
 }
-.more-sheet-ov.show .more-sheet { transform:translateY(0) }
-.more-sheet-head{flex:0 0 auto;padding:9px 14px 10px;border-bottom:1px solid var(--b);background:color-mix(in srgb,var(--s) 94%,transparent);touch-action:pan-y}
-.more-sheet-handle { width:36px; height:4px; background:var(--bm); border-radius:2px; margin:0 auto 8px }
-.more-sheet-title-row{display:flex;align-items:center;gap:10px}.more-sheet-title-row b{font-size:16px}.more-sheet-title-row small{display:block;margin-top:2px;color:var(--t3);font-size:10.5px}.more-sheet-close{display:grid;place-items:center;width:34px;height:34px;margin-left:auto;border:0;border-radius:50%;background:var(--s2);color:var(--t2);font-size:22px;line-height:1;cursor:pointer}
-.more-sheet-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:12px 14px 18px;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
-.more-group+.more-group{margin-top:16px}.more-group-title{margin:0 3px 7px;color:var(--t3);font-size:9.5px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.more-group:nth-child(1) .more-group-title{color:#70d7ff}.more-group:nth-child(2) .more-group-title{color:#ff9bc8}.more-group:nth-child(3) .more-group-title{color:#b99aff}.more-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.more-item {
-  --more-a:#72dfff; --more-b:#8278ff;
-  width:100%; min-width:0; min-height:52px; display:flex; align-items:center; gap:9px; position:relative; isolation:isolate; overflow:hidden;
-  border:1px solid transparent;
-  background:
-    radial-gradient(115% 145% at -12% -42%,color-mix(in srgb,var(--more-a) 32%,transparent),transparent 58%),
-    radial-gradient(105% 145% at 112% 142%,color-mix(in srgb,var(--more-b) 27%,transparent),transparent 60%),
-    linear-gradient(145deg,color-mix(in srgb,var(--s2) 91%,var(--more-a)),color-mix(in srgb,var(--s2) 94%,var(--more-b))) padding-box,
-    linear-gradient(118deg,color-mix(in srgb,#fff 66%,var(--more-a)),var(--more-a) 38%,var(--more-b) 82%,color-mix(in srgb,#fff 55%,var(--more-b))) border-box;
-  background-size:155% 155%,155% 155%,100% 100%,100% 100%;
-  padding:9px 10px; border-radius:14px; font-size:12.5px; line-height:1.25; font-weight:700; color:var(--t); cursor:pointer; text-align:left;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.18),0 7px 14px rgba(0,0,0,.16),0 0 14px color-mix(in srgb,var(--more-a) 18%,transparent);
-  animation:more-tile-aurora 7s ease-in-out infinite;
-  transition:transform .16s ease,filter .18s ease,box-shadow .18s ease;
-}
-.more-item:nth-child(2n){animation-delay:-2.1s}.more-item:nth-child(3n){animation-delay:-4.2s}
-.more-item[data-more-tone="cyan"]{--more-a:#55dcff;--more-b:#547cff}
-.more-item[data-more-tone="violet"]{--more-a:#a678ff;--more-b:#ef79d5}
-.more-item[data-more-tone="blue"]{--more-a:#67baff;--more-b:#736cff}
-.more-item[data-more-tone="amber"]{--more-a:#ffd166;--more-b:#ff855d}
-.more-item[data-more-tone="rose"]{--more-a:#ff7ca6;--more-b:#ff5f72}
-.more-item[data-more-tone="mint"]{--more-a:#55e2bd;--more-b:#4d9dff}
-.more-item[data-more-tone="pink"]{--more-a:#ff91c2;--more-b:#ad72ff}
-.more-item[data-more-tone="indigo"]{--more-a:#7e9cff;--more-b:#57d6ff}
-.more-item[data-more-tone="green"]{--more-a:#5fe09a;--more-b:#40b8ff}
-.more-item[data-more-tone="orange"]{--more-a:#ff9b61;--more-b:#ff668a}
-.more-item[data-more-tone="sky"]{--more-a:#5bcaff;--more-b:#8475ff}
-.more-item[data-more-tone="sun"]{--more-a:#ffd260;--more-b:#bd72ff}
-.more-item[data-more-tone="aqua"]{--more-a:#55e7db;--more-b:#529fff}
-.more-item[data-more-tone="danger"]{--more-a:#ff718d;--more-b:#bf5cff}
-@keyframes more-tile-aurora{0%,100%{background-position:0 0,100% 100%,0 0,0 0}50%{background-position:20% 18%,78% 84%,0 0,0 0}}
-.more-item:hover{filter:brightness(1.1) saturate(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.2),0 10px 18px rgba(0,0,0,.22),0 0 20px color-mix(in srgb,var(--more-a) 28%,transparent)}
-.more-item:active{transform:scale(.975);filter:brightness(1.16) saturate(1.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 4px 10px rgba(0,0,0,.2),0 0 24px color-mix(in srgb,var(--more-a) 36%,transparent)}
-.more-item svg { position:relative; z-index:3; width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; color:var(--more-a); filter:drop-shadow(0 0 6px color-mix(in srgb,var(--more-a) 56%,transparent)) }
-.more-sheet-footer{flex:0 0 auto;padding:10px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--b);background:var(--s)}.more-sheet-footer .more-item{justify-content:center;min-height:42px;color:var(--t2);animation:none;background:radial-gradient(90% 160% at 50% 140%,color-mix(in srgb,var(--more-a) 17%,transparent),transparent 65%),linear-gradient(color-mix(in srgb,var(--s2) 55%,transparent),color-mix(in srgb,var(--s2) 55%,transparent)) padding-box,linear-gradient(110deg,transparent,color-mix(in srgb,var(--more-a) 46%,transparent),transparent) border-box;box-shadow:0 0 14px color-mix(in srgb,var(--more-a) 10%,transparent)}
-@media (hover:hover) and (pointer:fine){
-  .more-item::after{content:'';position:absolute;z-index:2;inset:1px;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(112px circle at var(--pointer-x,50%) var(--pointer-y,50%),rgba(255,255,255,.34) 0,color-mix(in srgb,var(--more-a) 28%,transparent) 24%,color-mix(in srgb,var(--more-b) 18%,transparent) 47%,transparent 73%);mix-blend-mode:screen;transition:opacity .14s ease}
-  .more-item.is-pointer-glowing::after{opacity:1}
-}
-@media (prefers-reduced-motion:reduce){.more-item{animation:none}}
-/* Blur toàn màn hình ngốn texture GPU/RAM trên mobile; lớp nền tối vẫn đủ tách sheet. */
-@media(max-width:860px){.more-sheet-ov{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,9,15,.72)}}
-@media(max-width:360px){.more-group-grid{grid-template-columns:1fr}.more-sheet{height:calc(100dvh - 8px)}.more-sheet-scroll{padding-inline:10px}.more-sheet-head,.more-sheet-footer{padding-inline:10px}}
-
-/* Giao diện sáng dùng một menu tác vụ có nhịp điệu văn phòng: bề mặt trắng,
-   viền trung tính và chỉ một màu nhấn cho trạng thái tương tác. Không để bảng
-   màu aurora của dark mode tràn sang light mode. */
-html[data-theme="light"] .more-sheet-ov,
-html.theme-light .more-sheet-ov{background:rgba(24,28,38,.30);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-html[data-theme="light"] .more-sheet,
-html.theme-light .more-sheet{background:#fff;border:1px solid rgba(29,35,48,.10);box-shadow:0 -14px 40px rgba(22,27,39,.18)}
-html[data-theme="light"] .more-sheet-head,
-html.theme-light .more-sheet-head{background:#fff;border-bottom-color:#e6e8ee}
-html[data-theme="light"] .more-sheet-handle,
-html.theme-light .more-sheet-handle{background:#c5cad4}
-html[data-theme="light"] .more-sheet-title-row b,
-html.theme-light .more-sheet-title-row b{color:#202632}
-html[data-theme="light"] .more-sheet-title-row small,
-html.theme-light .more-sheet-title-row small{color:#707887}
-html[data-theme="light"] .more-sheet-close,
-html.theme-light .more-sheet-close{background:#f2f4f7;color:#4f5868}
-html[data-theme="light"] .more-group-title,
-html[data-theme="light"] .more-group:nth-child(n) .more-group-title,
-html.theme-light .more-group-title,
-html.theme-light .more-group:nth-child(n) .more-group-title{color:#7a8392}
-html[data-theme="light"] .more-group+.more-group,
-html.theme-light .more-group+.more-group{margin-top:18px;padding-top:16px;border-top:1px solid #eef0f4}
-html[data-theme="light"] .more-item,
-html.theme-light .more-item{--more-a:#667085;--more-b:#667085;min-height:50px;border:0!important;background:#f3f4f6!important;color:#303846;box-shadow:none!important;animation:none!important;filter:none!important}
-html[data-theme="light"] .more-item svg,
-html.theme-light .more-item svg{color:#667085;filter:none}
-html[data-theme="light"] .more-item:hover,
-html[data-theme="light"] .more-item:focus-visible,
-html.theme-light .more-item:hover,
-html.theme-light .more-item:focus-visible{background:#e9ebef!important;color:#202733;box-shadow:0 3px 8px rgba(30,38,53,.08)!important;transform:translateY(-1px)}
-html[data-theme="light"] .more-item:active,
-html.theme-light .more-item:active{transform:translateY(0) scale(.985);background:#eef1f5!important;box-shadow:inset 0 1px 2px rgba(30,38,53,.08)!important}
-html[data-theme="light"] .more-item:focus-visible,
-html.theme-light .more-item:focus-visible{outline:2px solid #5964d8;outline-offset:2px}
-html[data-theme="light"] .more-item::after,
-html.theme-light .more-item::after{display:none!important}
-html[data-theme="light"] .more-sheet-footer,
-html.theme-light .more-sheet-footer{background:#fff;border-top-color:#e6e8ee}
-html[data-theme="light"] .more-sheet-footer .more-item,
-html.theme-light .more-sheet-footer .more-item{min-height:42px;background:#f3f4f6!important;border:0!important;color:#a94854;box-shadow:none!important}
-html[data-theme="light"] .more-sheet-footer .more-item svg,
-html.theme-light .more-sheet-footer .more-item svg{color:#b84e59}
+#more-sheet-ov [hidden]{display:none!important}
+html[data-theme="light"] .more-sheet{background:#fff}
+html[data-theme="light"] .more-sheet-head,html[data-theme="light"] .more-sheet-footer{background:#fff}
+html[data-theme="light"] .more-item{background:#f3f4f6;color:#303846}
+html[data-theme="light"] .more-item[aria-current="page"]{background:var(--ac-d);color:var(--ac)}
+html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
+@media(max-width:360px){.more-sheet-head{padding-inline:12px}.more-sheet-scroll,.more-sheet-footer{padding-inline:12px}.more-categories button{padding-inline:8px}.more-item{gap:7px;padding:9px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){.more-sheet-ov,.more-sheet,.more-item{transition:none}}
 
 /* ═══════════════════════════════════════
    RESPONSIVE — thu gọn topbar + sidebar icon-rail thành bottom-nav trên điện thoại/tablet nhỏ
@@ -4010,6 +3959,27 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 .fulfillment-ready-shelf .workshop-item-completed{min-height:0;padding:10px;grid-template-columns:44px minmax(0,1fr);gap:9px;border-radius:16px}.fulfillment-ready-shelf .workshop-item-completed .workshop-item-img{width:44px;height:44px;border-radius:12px}.fulfillment-ready-shelf .workshop-item-ready{margin-top:3px}.fulfillment-ready-shelf .workshop-item-ready b{font-size:16px}.fulfillment-ready-shelf .workshop-completed-evidence{margin-top:3px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fulfillment-ready-shelf .workshop-item-actions{gap:6px;margin-top:1px}.fulfillment-ready-shelf .workshop-item-actions .btn{min-height:30px;padding:5px 8px;font-size:10.5px}
 @media(max-width:640px){.fulfillment-ready-shelf{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px}.fulfillment-ready-shelf .workshop-item-completed{padding:9px;grid-template-columns:40px minmax(0,1fr);gap:8px}.fulfillment-ready-shelf .workshop-item-completed .workshop-item-img{width:40px;height:40px;border-radius:11px}.fulfillment-ready-shelf .workshop-item-title{font-size:12px}.fulfillment-ready-shelf .workshop-item-actions .btn{min-height:29px;padding:4px 6px;font-size:10px}}
 @media(max-width:370px){.fulfillment-ready-shelf{grid-template-columns:1fr}}
+/* Mobile dock: a stable five-slot surface; action stays inside its touch target. */
+@media(max-width:860px){
+  #mobile-nav{left:max(10px,env(safe-area-inset-left))!important;right:max(10px,env(safe-area-inset-right))!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;display:grid;grid-template-columns:repeat(var(--mobile-nav-count,5),minmax(0,1fr));align-items:stretch;gap:3px;min-height:68px;padding:6px!important;border:1px solid var(--b)!important;border-radius:22px!important;background:var(--s)!important;box-shadow:0 6px 24px rgba(0,0,0,.13)!important;backdrop-filter:none;-webkit-backdrop-filter:none;isolation:isolate}
+  html:not([data-theme="light"]) #mobile-nav{background:#20232d!important;border-color:#353948!important;box-shadow:0 6px 22px rgba(0,0,0,.28)!important}
+  #mobile-nav .mnav-btn{position:relative;left:auto;top:auto;transform:none;min-width:0;max-width:none;min-height:54px;height:auto;margin:0;padding:2px 0!important;border:0;border-radius:14px!important;gap:4px;background:transparent!important;color:var(--t2)!important;font:600 11px/1.2 'Be Vietnam Pro',sans-serif;box-shadow:none!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .14s ease}
+  #mobile-nav .mnav-icon{display:grid;place-items:center;width:40px;height:30px;border-radius:11px;background:transparent;color:inherit;font-style:normal;transition:transform .16s ease}
+  #mobile-nav .mnav-btn svg{width:21px;height:21px;stroke-width:1.8}
+  #mobile-nav .mnav-btn>span{display:block;max-width:100%;font-size:11px!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #mobile-nav .mnav-btn.active{color:var(--ac)!important;font-weight:700}
+  #mobile-nav .mnav-btn.active .mnav-icon,#mobile-nav .mnav-btn.is-open .mnav-icon{background:var(--ac-d);color:var(--ac)}
+  #mobile-nav .mnav-primary-action .mnav-icon{background:var(--mnav-primary,var(--ac));color:#fff;border-radius:12px;width:42px;height:32px}
+  #mobile-nav .mnav-primary-action.active .mnav-icon{background:var(--mnav-primary,var(--ac));color:#fff}
+  #mobile-nav .mnav-btn:active{transform:scale(.94)}
+  #mobile-nav .mnav-btn:focus-visible{outline:2px solid var(--ac);outline-offset:-2px}
+  #mobile-nav .mnav-primary-action>span{max-width:100%;font-size:11px!important}
+  body.delivery-receive-only #mobile-nav{max-width:340px;margin-inline:auto}
+  .pg-content{padding-bottom:calc(100px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+  body.more-sheet-open .cam-fab,body.more-sheet-open #global-scroll-top,body.more-sheet-open .delivery-action-dock{pointer-events:none}
+}
+@media(prefers-reduced-motion:reduce){#mobile-nav .mnav-btn,#mobile-nav .mnav-icon{transition:none}}
+@media(max-width:359px){#mobile-nav .mnav-btn>span{font-size:10px!important}}
 /* Trên điện thoại, công đoạn là thanh dọc cạnh nội dung: chọn ở rail trái,
    xem dữ liệu ngay ở cột phải. Desktop vẫn dùng bìa thư mục ngang. */
 @media(max-width:640px){
@@ -4032,32 +4002,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 </style>
 
 <!-- MOBILE BOTTOM NAV (chỉ hiện trên màn hình nhỏ) -->
-<nav class="mnav" id="mobile-nav">
-  <button class="mnav-btn active" id="mnav-dashboard" onclick="goPage('dashboard')">
-    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    <span>Dashboard</span>
-  </button>
-  <button class="mnav-btn" id="mnav-models" onclick="goPage('models')">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    <span>Model</span>
-  </button>
-  <button class="mnav-btn" id="mnav-progress" onclick="goPage('progress')">
-    <svg viewBox="0 0 24 24"><path d="M4 19V5M10 19V9M16 19V3M22 19V12"/></svg>
-    <span>Tiến độ</span>
-  </button>
-  <button class="mnav-btn mnav-create-order" id="mnav-orders" onclick="openOrderForm()" title="Tạo Order mới">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Tạo Order</span>
-  </button>
-  <button class="mnav-btn" id="mnav-plates" onclick="goPage('plates')">
-    <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-    <span>Plate</span>
-  </button>
-  <button class="mnav-btn" id="mnav-more" onclick="toggleMoreSheet()">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-    <span>Thêm</span>
-  </button>
-</nav>
+<nav class="mnav" id="mobile-nav" aria-label="Điều hướng chính"></nav>
 
 <!-- FAB — tạo nhanh -->
 <div class="fab-wrap" id="fab-wrap">
@@ -4083,17 +4028,24 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 <input type="file" id="batch-multi-fallback-inp" accept="image/*" capture="environment" multiple style="display:none" onchange="handleBatchMultiFallbackFile(this)"/>
 
 <!-- MORE — sheet chứa các mục còn lại -->
-<div class="more-sheet-ov" id="more-sheet-ov" onclick="if(event.target===this) closeMoreSheet()">
-  <div class="more-sheet" role="dialog" aria-modal="true" aria-labelledby="more-sheet-title">
+<div class="more-sheet-ov" id="more-sheet-ov" inert onclick="if(event.target===this) closeMoreSheet()">
+  <div class="more-sheet" role="dialog" aria-modal="true" aria-labelledby="more-sheet-title" tabindex="-1">
     <header class="more-sheet-head">
       <div class="more-sheet-handle"></div>
       <div class="more-sheet-title-row">
-        <div><b id="more-sheet-title">Thêm chức năng</b><small>Chọn khu vực cần mở</small></div>
+        <div><b id="more-sheet-title">Menu</b><small>Plate Studio</small></div>
         <button class="more-sheet-close" type="button" onclick="closeMoreSheet()" aria-label="Đóng">×</button>
+      </div>
+      <label class="more-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="more-search" type="search" placeholder="Tìm chức năng…" aria-label="Tìm chức năng" autocomplete="off" oninput="filterMoreNavigation()"><button class="more-search-clear" type="button" aria-label="Xóa tìm kiếm" onclick="clearMoreNavigationSearch()" hidden>×</button></label>
+      <div class="more-categories" role="group" aria-label="Nhóm chức năng">
+        <button type="button" data-more-category="all" aria-pressed="true" onclick="setMoreNavigationCategory('all')">Tất cả</button>
+        <button type="button" data-more-category="production" aria-pressed="false" onclick="setMoreNavigationCategory('production')">Sản xuất</button>
+        <button type="button" data-more-category="delivery" aria-pressed="false" onclick="setMoreNavigationCategory('delivery')">Giao & bán</button>
+        <button type="button" data-more-category="system" aria-pressed="false" onclick="setMoreNavigationCategory('system')">Hệ thống</button>
       </div>
     </header>
     <div class="more-sheet-scroll">
-      <section class="more-group">
+      <section class="more-group" data-more-group="production">
         <div class="more-group-title">Vận hành & sản xuất</div>
         <div class="more-group-grid">
           <button class="more-item" data-more-tone="violet" data-sidebar-permission="orders.manage" onclick="closeMoreSheet();openOrderForm()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo đơn hàng</button>
@@ -4110,7 +4062,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
           <button class="more-item" data-more-tone="rose" data-sidebar-page="reminders" onclick="closeMoreSheet();goPage('reminders')"><svg viewBox="0 0 24 24"><path d="M12 9v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg>Nhắc part còn thiếu</button>
         </div>
       </section>
-      <section class="more-group">
+      <section class="more-group" data-more-group="delivery">
         <div class="more-group-title">Hoàn thiện & bán hàng</div>
         <div class="more-group-grid">
           <button class="more-item" data-more-tone="mint" data-sidebar-page="fulfillment" onclick="closeMoreSheet();goPage('fulfillment')"><svg viewBox="0 0 24 24"><path d="M3 7h12v10H3z"/><path d="M15 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>Gia công & giao hàng</button>
@@ -4122,19 +4074,20 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
           <button class="more-item" data-more-tone="orange" data-sidebar-page="inventory" onclick="closeMoreSheet();goPage('inventory')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Cần in lại</button>
         </div>
       </section>
-      <section class="more-group">
+      <section class="more-group" data-more-group="system">
         <div class="more-group-title">Hệ thống</div>
         <div class="more-group-grid">
           <button class="more-item" data-more-tone="violet" data-sidebar-page="access" data-owner-only="true" onclick="closeMoreSheet();openAccessManagement()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21v-2a7 7 0 0 1 14 0v2M19 8h3M20.5 6.5v3"/></svg>Phân quyền</button>
           <button class="more-item" data-more-tone="sky" data-sidebar-page="devices" onclick="closeMoreSheet();goPage('devices')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị</button>
           <button class="more-item" data-more-tone="aqua" data-sidebar-permission="activity.view" onclick="closeMoreSheet();openActivityLog()"><svg viewBox="0 0 24 24"><path d="M4 19V5M10 19V9M16 19V3M22 19V12"/></svg>Nhật ký hoạt động</button>
           <button class="more-item" data-more-tone="danger" data-sidebar-permission="trash.manage" onclick="closeMoreSheet();openTrash()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v5M14 11v5M9 6V3h6v3"/></svg>Thùng rác</button>
-          <button class="more-item" data-more-tone="sun" onclick="toggleAppTheme()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>Đổi sáng / tối</button>
           <button class="more-item" data-more-tone="aqua" data-sidebar-page="data" onclick="closeMoreSheet();goPage('data')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Dữ liệu</button>
         </div>
       </section>
     </div>
+    <div class="more-empty" id="more-empty" role="status" hidden>Không tìm thấy chức năng.</div>
     <footer class="more-sheet-footer">
+<button class="more-item" data-more-tone="sun" onclick="toggleAppTheme()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>Sáng / tối</button>
       <button class="more-item" data-more-tone="danger" id="more-auth-btn" onclick="closeMoreSheet();signOutCloud()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span id="more-auth-label">Đăng xuất</span></button>
     </footer>
   </div>
@@ -7704,36 +7657,99 @@ function closeFab() {
   document.getElementById('fab-wrap').classList.remove('open');
   document.getElementById('fab-scrim').classList.remove('show');
 }
-function toggleMoreSheet() {
-  const ov = document.getElementById('more-sheet-ov');
-  const open = ov.classList.toggle('show');
-  document.body.classList.toggle('more-sheet-open', open);
-  if(open)requestAnimationFrame(()=>{const scroll=ov.querySelector('.more-sheet-scroll');if(scroll)scroll.scrollTop=0;});
+let moreNavigationCategory='all',moreNavigationReturnFocus=null,moreNavigationActionTimer=0;
+function moreNavigationText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').trim();}
+function moreNavigationAllowed(button){
+  if(button.style.display==='none')return false;
+  if(!currentUser)return true;
+  if(button.hasAttribute('data-owner-only')&&!isWorkspaceOwner())return false;
+  const permission=button.dataset.sidebarPermission||requiredWorkspacePermission(button.dataset.sidebarPage||'');
+  return !permission||canAccess(permission);
 }
-function closeMoreSheet() {
-  const ov=document.getElementById('more-sheet-ov'),sheet=ov?.querySelector('.more-sheet');
+function filterMoreNavigation(){
+  const ov=document.getElementById('more-sheet-ov');if(!ov)return;
+  const input=ov.querySelector('#more-search'),query=moreNavigationText(input?.value);
+  ov.querySelector('.more-search-clear').hidden=!query;
+  let total=0;
+  ov.querySelectorAll('[data-more-group]').forEach(group=>{
+    let count=0,allowed=0;
+    group.querySelectorAll('.more-item').forEach(button=>{
+      const permitted=moreNavigationAllowed(button);if(permitted)allowed++;
+      const text=button.dataset.menuSearch||(button.dataset.menuSearch=moreNavigationText(button.textContent));
+      const match=permitted&&(moreNavigationCategory==='all'||group.dataset.moreGroup===moreNavigationCategory)&&query.split(/\s+/).every(word=>text.includes(word));
+      button.hidden=!match;if(match)count++;
+    });
+    group.hidden=!count;total+=count;
+    const category=ov.querySelector('[data-more-category="'+group.dataset.moreGroup+'"]');if(category)category.hidden=!allowed;
+  });
+  ov.querySelectorAll('[data-more-category]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.moreCategory===moreNavigationCategory)));
+  document.getElementById('more-empty').hidden=total>0;
+}
+function setMoreNavigationCategory(category){moreNavigationCategory=category;filterMoreNavigation();document.querySelector('.more-sheet-scroll').scrollTop=0;}
+function clearMoreNavigationSearch(){const input=document.getElementById('more-search');input.value='';filterMoreNavigation();input.focus();}
+function toggleMoreSheet(){
+  const ov=document.getElementById('more-sheet-ov');
+  if(ov.classList.contains('show')){closeMoreSheet();return;}
+  clearTimeout(moreNavigationActionTimer);
+  moreNavigationReturnFocus=document.activeElement;
+  moreNavigationCategory='all';document.getElementById('more-search').value='';
+  filterMoreNavigation();
+  ov.inert=false;ov.classList.add('show');document.body.classList.add('more-sheet-open');
+  ov.querySelector('.more-sheet-scroll').scrollTop=0;
+  syncMobileNavigationState();
+  // Focus the dialog, not the input: opening Menu should not raise the keyboard.
+  ov.querySelector('.more-sheet').focus({preventScroll:true});
+}
+function closeMoreSheet({restoreFocus=true}={}){
+  const ov=document.getElementById('more-sheet-ov'),sheet=ov?.querySelector('.more-sheet'),wasOpen=ov?.classList.contains('show');
   sheet?.style.removeProperty('transform');sheet?.style.removeProperty('transition');
   ov?.style.removeProperty('opacity');ov?.classList.remove('show');
+  if(ov)ov.inert=true;
   document.body.classList.remove('more-sheet-open');
+  syncMobileNavigationState();
+  if(wasOpen&&restoreFocus&&moreNavigationReturnFocus?.isConnected)moreNavigationReturnFocus.focus({preventScroll:true});
 }
 function installMoreSheetDismissGesture(){
   const ov=document.getElementById('more-sheet-ov'),sheet=ov?.querySelector('.more-sheet'),scroll=ov?.querySelector('.more-sheet-scroll');
   if(!ov||!sheet||sheet.dataset.dismissGestureInstalled)return;sheet.dataset.dismissGestureInstalled='1';
-  let startY=0,lastY=0,startAt=0,tracking=false;
+  let startX=0,startY=0,lastY=0,startAt=0,tracking=false,dragging=false,frame=0;
+  const reset=()=>{cancelAnimationFrame(frame);frame=0;tracking=dragging=false;sheet.style.removeProperty('transition');sheet.style.removeProperty('transform');ov.style.removeProperty('opacity');};
   sheet.addEventListener('touchstart',event=>{
-    if(!ov.classList.contains('show')||(!event.target.closest('.more-sheet-head')&&(scroll?.scrollTop||0)>0))return;
-    startY=lastY=event.touches[0].clientY;startAt=performance.now();tracking=true;
+    if(event.touches.length!==1||!ov.classList.contains('show')||event.target.closest('input,button,a,select,textarea')||(!event.target.closest('.more-sheet-head')&&(scroll?.scrollTop||0)>0))return;
+    startX=event.touches[0].clientX;startY=lastY=event.touches[0].clientY;startAt=performance.now();tracking=true;
   },{passive:true});
   sheet.addEventListener('touchmove',event=>{
-    if(!tracking)return;lastY=event.touches[0].clientY;const distance=Math.max(0,lastY-startY);if(!distance)return;
-    event.preventDefault();sheet.style.transition='none';sheet.style.transform=`translateY(${distance}px)`;ov.style.opacity=String(Math.max(.18,1-distance/360));
+    if(!tracking)return;
+    lastY=event.touches[0].clientY;const distance=lastY-startY,dx=Math.abs(event.touches[0].clientX-startX);
+    if(!dragging){if(dx>Math.abs(distance)||distance<0){reset();return;}if(distance<8)return;dragging=true;sheet.style.transition='none';}
+    if(event.cancelable)event.preventDefault();
+    if(!frame)frame=requestAnimationFrame(()=>{frame=0;const dy=Math.max(0,lastY-startY);sheet.style.transform='translateY('+dy+'px)';ov.style.opacity=String(Math.max(.3,1-dy/600));});
   },{passive:false});
   sheet.addEventListener('touchend',()=>{
-    if(!tracking)return;tracking=false;const distance=Math.max(0,lastY-startY),velocity=distance/Math.max(1,performance.now()-startAt);
-    sheet.style.removeProperty('transition');sheet.style.removeProperty('transform');ov.style.removeProperty('opacity');
-    if(distance>88||velocity>.62)closeMoreSheet();
+    if(!tracking)return;
+    const distance=Math.max(0,lastY-startY),velocity=distance/Math.max(1,performance.now()-startAt),dismiss=dragging&&(distance>88||(distance>24&&velocity>.62));
+    reset();if(dismiss)closeMoreSheet();
   },{passive:true});
-  sheet.addEventListener('touchcancel',()=>{tracking=false;sheet.style.removeProperty('transition');sheet.style.removeProperty('transform');ov.style.removeProperty('opacity');},{passive:true});
+  sheet.addEventListener('touchcancel',reset,{passive:true});
+  ov.addEventListener('keydown',event=>{
+    if(!ov.classList.contains('show'))return;
+    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeMoreSheet();return;}
+    if(event.key!=='Tab')return;
+    const focusable=[...sheet.querySelectorAll('button,input,[tabindex="0"]')].filter(el=>!el.disabled&&el.getClientRects().length&&!el.closest('[hidden]'));
+    const first=focusable[0],last=focusable.at(-1);
+    if(event.shiftKey&&(document.activeElement===first||document.activeElement===sheet)){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&(document.activeElement===last||document.activeElement===sheet)){event.preventDefault();first?.focus();}
+  });
+  ov.addEventListener('click',event=>{
+    const button=event.target.closest('.more-item');
+    if(!button||!ov.classList.contains('show')||!button.getAttribute('onclick')?.includes('closeMoreSheet()'))return;
+    if(!moreNavigationAllowed(button)){event.preventDefault();event.stopImmediatePropagation();return;}
+    // Let the closing transition finish before a large route renderer starts.
+    event.preventDefault();event.stopImmediatePropagation();
+    closeMoreSheet({restoreFocus:false});
+    const run=button.onclick;
+    moreNavigationActionTimer=setTimeout(()=>{moreNavigationActionTimer=0;run?.call(button,event);},matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
+  },true);
 }
 installMoreSheetDismissGesture();
 
@@ -19482,7 +19498,7 @@ function currentMobileNavigationRole(){
 }
 function mobileNavigationIcon(name){
   const paths={
-    dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+    dashboard:'<path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/>',
     models:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
     progress:'<path d="M4 19V5M10 19V9M16 19V3M22 19V12"/>',
     orders:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
@@ -19495,11 +19511,26 @@ function mobileNavigationIcon(name){
     kiot:'<path d="M4 10h16M5 10V7l2-3h10l2 3v3M6 10v10h12V10M9 20v-6h6v6"/>',
     plates:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
     notifications:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
-    more:'<circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/>'
+    more:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>'
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]||paths.more}</svg>`;
 }
 function mobileNavigationItem(page,label,icon,permission,action){return {page,label,icon,permission:permission||requiredWorkspacePermission(page),action:action||`goPage('${page}')`};}
+function syncMobileNavigationState(){
+  const nav=document.getElementById('mobile-nav');if(!nav)return;
+  const page=curPage==='kiotviet-map'?'kiotviet':curPage;
+  const buttons=[...nav.querySelectorAll('.mnav-btn')],direct=buttons.find(button=>button.dataset.mobilePage===page);
+  const open=Boolean(document.getElementById('more-sheet-ov')?.classList.contains('show'));
+  buttons.forEach(button=>{
+    const active=button===direct||(!direct&&button.id==='mnav-more');
+    button.classList.toggle('active',active);
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    if(button.id==='mnav-more'){button.setAttribute('aria-expanded',String(open));button.classList.toggle('is-open',open);}
+  });
+  document.querySelectorAll('#more-sheet-ov [data-sidebar-page]').forEach(button=>{
+    if(button.dataset.sidebarPage===page)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  });
+}
 function renderRoleMobileNavigation(){
   const nav=document.getElementById('mobile-nav');if(!nav)return;
   const role=currentMobileNavigationRole(),permissions=new Set(currentAppPermissions()),has=permission=>!currentUser||isWorkspaceOwner()||permissions.has(permission)||(permission==='batches.view'&&(permissions.has('batches.report')||permissions.has('batches.describe')||permissions.has('batches.manage')));
@@ -19547,16 +19578,20 @@ function renderRoleMobileNavigation(){
   const primaryPage=primary?.page||'',sideKeys=[...(sideOrderByRole[role]||[]),...fallbackOrder];
   const seen=new Set(),sides=[];
   sideKeys.forEach(key=>{const item=items[key];if(!item||seen.has(key)||sides.length>=3)return;seen.add(key);if(item.page&&item.page===primaryPage)return;if(item.permission&&!has(item.permission))return;if(isDeliveryReceiveOnlyAccount()&&item.page==='dashboard')return;sides.push(item);});
-  const navButton=(item,extra='')=>{const id=item.page?`mnav-${item.page==='order-form'?'orders':item.page}`:`mnav-${item.icon}`;return `<button class="mnav-btn ${extra}" id="${id}" data-mobile-page="${esc(item.page||'')}" onclick="${item.action}" title="${esc(item.label)}" aria-label="${esc(item.label)}">${mobileNavigationIcon(item.icon)}<span>${esc(item.label)}</span></button>`;};
-  while(sides.length<3)sides.push(null);
-  const more=isDeliveryReceiveOnlyAccount()?null:{page:'',label:'Thêm',icon:'more',permission:'',action:'toggleMoreSheet()'};
-  const normal=item=>item?navButton(item):'<span class="mnav-spacer" aria-hidden="true"></span>';
+  if(primary?.label==='Tạo Order')primary={...primary,label:'Tạo đơn'};
+  const navButton=(item,extra='')=>{const id=item.page?`mnav-${item.page==='order-form'?'orders':item.page}`:`mnav-${item.icon}`;return `<button type="button" class="mnav-btn ${extra}" id="${id}" data-mobile-page="${esc(item.page||'')}" onclick="${item.action}" title="${esc(item.label)}" aria-label="${esc(item.label)}"${item.icon==='more'?' aria-haspopup="dialog" aria-controls="more-sheet-ov" aria-expanded="false"':''}><i class="mnav-icon" aria-hidden="true">${mobileNavigationIcon(item.icon)}</i><span>${esc(item.label)}</span></button>`;};
+  const more=isDeliveryReceiveOnlyAccount()?null:{page:'',label:'Menu',icon:'more',permission:'',action:'toggleMoreSheet()'};
+  const slots=[sides[0],sides[1],primary,sides[2],more].filter(Boolean);
+  const signature=JSON.stringify({role,slots});
   nav.style.setProperty('--mnav-primary',primary?.tone?.[0]||'var(--ac)');nav.style.setProperty('--mnav-primary-2',primary?.tone?.[1]||'#9689ff');
   nav.setAttribute('aria-label',`Điều hướng ${ACCESS_ROLE_TEMPLATES[role]?.label||'theo quyền tài khoản'}`);
-  nav.innerHTML=`${normal(sides[0])}${normal(sides[1])}${primary?navButton(primary,'mnav-primary-action'):''}${normal(sides[2])}${normal(more)}`;
+  nav.style.setProperty('--mobile-nav-count',slots.length);
+  if(nav.dataset.layoutKey!==signature){
+    nav.innerHTML=slots.map(item=>navButton(item,item===primary?'mnav-primary-action':'')).join('');
+    nav.dataset.layoutKey=signature;
+  }
   document.body.classList.toggle('mobile-primary-batch',primary?.permission==='batches.report');
-  const activePage=curPage==='order-form'?'orders':curPage==='kiotviet-map'?'kiotviet':curPage;
-  nav.querySelector(`#mnav-${CSS.escape(activePage||'')}`)?.classList.add('active');
+  syncMobileNavigationState();
 }
 function applyWorkspaceNavigationPermissions(){
   renderRoleMobileNavigation();
@@ -19586,6 +19621,7 @@ function applyWorkspaceNavigationPermissions(){
     const actions=[...group.querySelectorAll('.more-item')];
     if(actions.length)group.hidden=!actions.some(button=>button.style.display!=='none');
   });
+  if(document.getElementById('more-sheet-ov')?.classList.contains('show'))filterMoreNavigation();
   const denied=requiredWorkspacePermission(curPage);
   if(denied&&!canAccess(denied)&&curPage!=='dashboard')setTimeout(()=>goPage('dashboard'),0);
 }
@@ -19800,7 +19836,7 @@ function openAccessManagement(){
    đồng bộ membership phía server, tránh làm trắng toàn bộ thanh điều hướng. */
 function installPointerControlGlow(){
   if(!window.matchMedia?.('(hover:hover) and (pointer:fine)').matches)return;
-  const selector='.btn,.btn-cfm,.dash-tile,.more-item,.sb-nav-item,.sb-nav-group-toggle,#system-notification-button',radius=145;
+  const selector='.btn,.btn-cfm,.dash-tile,.sb-nav-item,.sb-nav-group-toggle,#system-notification-button',radius=145;
   let frame=0,pointer=null,lit=new Set();
   const clear=control=>{control.classList.remove('is-pointer-glowing');control.style.removeProperty('--pointer-x');control.style.removeProperty('--pointer-y');};
   const light=control=>{

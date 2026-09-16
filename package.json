@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "qa:mobile": "node tools/mobile-qa.mjs",
+    "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs",
     "qa:desktop": "node tools/desktop-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs",
