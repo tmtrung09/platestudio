@@ -26,7 +26,8 @@ try{
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
     const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
     if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
-    if(s.backdropFilter!=='blur(18px) saturate(0.95) brightness(0.94)')errors.push('Navigation backdrop lost its subdued tone');
+    const dockFilter=document.documentElement.dataset.theme==='light'?'blur(18px) saturate(0.85) contrast(0.2) brightness(1.7)':'blur(18px) saturate(0.85) contrast(0.4) brightness(0.48)';
+    if(s.backdropFilter!==dockFilter||(CSS.supports('-webkit-backdrop-filter','blur(1px)')&&s.getPropertyValue('-webkit-backdrop-filter')!==dockFilter))errors.push('Missing theme-aware backdrop contrast guard: '+s.backdropFilter);
     const edgeAlpha=Number(s.borderTopColor.match(/[\d.]+/g)?.at(-1));
     if(edgeAlpha>.5)errors.push('Navigation glass edge is too bright');
     const alpha=color=>color.startsWith('rgba')?Number(color.match(/[\d.]+/g).at(-1)):1;
@@ -52,6 +53,52 @@ try{
   }
  }
  await page.setViewportSize({width:390,height:844});
+ // Sample the actual composited pixels under every label, not just CSS tokens.
+ // Extreme backgrounds and scrolling reproduce the original transparent-dock bug.
+ await page.evaluate(()=>{
+  const fixture=document.createElement('div');fixture.id='nav-contrast-fixture';
+  fixture.style.cssText='position:fixed;inset:0;z-index:1099;overflow:auto;pointer-events:none';
+  for(const background of ['#000','#fff','#f00','#0f0','#00f','repeating-conic-gradient(#000 0% 25%,#fff 0% 50%) 0 0 / 32px 32px','linear-gradient(100deg,#ff0080,#00ff80,#007bff,#ffdf00)']){
+   const section=document.createElement('div');section.style.cssText='height:1000px;background:'+background;fixture.append(section);
+  }
+  document.body.append(fixture);
+ });
+ const luminance=rgb=>rgb.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+ const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+ for(const theme of ['light','dark']){
+  await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
+  for(let background=0;background<7;background++){
+   await page.evaluate(index=>{document.getElementById('nav-contrast-fixture').scrollTop=index*1000+100;},background);
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const labels=await page.evaluate(()=>{
+    const nav=document.getElementById('mobile-nav'),bounds=nav.getBoundingClientRect();
+    return [...nav.querySelectorAll('.mnav-btn>span')].map(label=>{
+     const r=label.getBoundingClientRect();
+     return {text:label.textContent,rgb:getComputedStyle(label).color.match(/[\d.]+/g).slice(0,3).map(Number),x:r.x+r.width/2-bounds.x,y:r.y+r.height/2-bounds.y};
+    });
+   });
+   const hide=await page.addStyleTag({content:'#mobile-nav .mnav-btn{visibility:hidden!important}'});
+   const pixels=await page.locator('#mobile-nav').screenshot();
+   await hide.evaluate(el=>el.remove());
+   const samples=await page.evaluate(async({png,labels})=>{
+    const image=new Image();image.src='data:image/png;base64,'+png;await image.decode();
+    const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+    const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
+    return labels.map(label=>[-8,0,8].map(dx=>[...ctx.getImageData(Math.round(label.x+dx),Math.round(label.y),1,1).data].slice(0,3)));
+   },{png:pixels.toString('base64'),labels});
+   labels.forEach((label,i)=>samples[i].forEach(rgb=>assert.ok(ratio(label.rgb,rgb)>=4.5,`${theme}/background ${background}/${label.text}: ${ratio(label.rgb,rgb).toFixed(2)} contrast`)));
+   if(background===6)await page.screenshot({path:join(output,`contrast-${theme}.png`)});
+  }
+ }
+ await page.locator('#mnav-dashboard').focus();
+ assert.equal(await page.locator('#mnav-dashboard').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+ const scrollMutations=await page.evaluate(async()=>{
+  let count=0;const observer=new MutationObserver(records=>count+=records.length);
+  observer.observe(document.getElementById('mobile-nav'),{subtree:true,attributes:true,childList:true,characterData:true});
+  for(let i=0;i<12;i++){document.getElementById('nav-contrast-fixture').scrollTop=i*400;await new Promise(requestAnimationFrame);}
+  observer.disconnect();document.getElementById('nav-contrast-fixture').remove();return count;
+ });
+ assert.equal(scrollMutations,0,'Backdrop adaptation must not rerender the dock on scroll');
  for(const theme of ['light','dark']){
   await page.evaluate(theme=>{document.documentElement.setAttribute('data-theme',theme);goPage('fulfillment',{historyMode:'none'});},theme);
   await page.waitForTimeout(350);
@@ -141,13 +188,26 @@ try{
     currentMobileNavigationRole=()=>role;currentAppPermissions=()=>grants;isWorkspaceOwner=()=>role==='owner';canAccess=p=>role==='owner'||grants.includes(p);
     renderRoleMobileNavigation();filterMoreNavigation();
     const nav=document.getElementById('mobile-nav'),buttons=[...nav.querySelectorAll('button')];
-    result.push({role,unique:new Set(buttons.map(b=>b.id)).size===buttons.length,primary:nav.querySelector('.mnav-primary-action')?.textContent.trim(),fits:buttons.every(b=>b.getBoundingClientRect().width>=44),deniedHidden:[...document.querySelectorAll('.more-group .more-item')].every(b=>moreNavigationAllowed(b)||b.hidden)});
+    const primary=nav.querySelector('.mnav-primary-action'),iconSamples=[];
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');
+    const rgba=color=>{ctx.clearRect(0,0,1,1);ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data];};
+    const originalTheme=document.documentElement.dataset.theme,wasActive=primary?.classList.contains('active');
+    for(const theme of ['light','dark'])for(const active of [false,true]){
+     document.documentElement.dataset.theme=theme;primary?.classList.toggle('active',active);
+     if(primary){const s=getComputedStyle(primary.querySelector('.mnav-icon'));iconSamples.push({theme,active,ink:rgba(s.color),background:rgba(s.backgroundColor)});}
+    }
+    document.documentElement.dataset.theme=originalTheme;primary?.classList.toggle('active',wasActive);
+    result.push({role,unique:new Set(buttons.map(b=>b.id)).size===buttons.length,primary:primary?.textContent.trim(),fits:buttons.every(b=>b.getBoundingClientRect().width>=44),deniedHidden:[...document.querySelectorAll('.more-group .more-item')].every(b=>moreNavigationAllowed(b)||b.hidden),iconSamples});
    }
   }finally{currentUser=saved.currentUser;currentMobileNavigationRole=saved.currentMobileNavigationRole;currentAppPermissions=saved.currentAppPermissions;isWorkspaceOwner=saved.isWorkspaceOwner;isDeliveryReceiveOnlyAccount=saved.isDeliveryReceiveOnlyAccount;canAccess=saved.canAccess;renderRoleMobileNavigation();}
   return result;
  });
  assert.deepEqual(roles.map(x=>x.primary),['Tạo đơn','Gia công','Bao bì','Kiểm hàng','Chụp mẻ']);
  assert.ok(roles.every(x=>x.unique&&x.fits&&x.deniedHidden),JSON.stringify(roles));
+ for(const role of roles)for(const sample of role.iconSamples){
+  assert.equal(sample.background[3],255,`${role.role}/${sample.theme}/${sample.active}: primary icon needs its own contrast surface`);
+  assert.ok(ratio(sample.ink.slice(0,3),sample.background.slice(0,3))>=3,`${role.role}/${sample.theme}/${sample.active}: primary icon contrast`);
+ }
  // Respect OS accessibility choices in both themes, not just reduce animation.
  const cdp=await page.context().newCDPSession(page);
  for(const feature of ['prefers-reduced-transparency','prefers-contrast']){
@@ -163,5 +223,5 @@ try{
  await page.evaluate(()=>toggleMoreSheet());
  assert.equal(await page.locator('.more-sheet').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
  assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el,'::before').transitionDuration),'0s');
- console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, search/categories, gestures, focus, actions, bounded glass, reduced transparency/contrast/motion.');
+ console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, 7 composited contrast backgrounds, scroll without rerender, primary icon states, search/categories, gestures, focus, actions, bounded glass, reduced transparency/contrast/motion.');
 }finally{await browser.close();}

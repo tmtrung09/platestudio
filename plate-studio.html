@@ -1458,6 +1458,7 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
    no SVG displacement, animated blur or permanently animated specular layers. */
 :root{
   --nav-dock-surface:#242631;--nav-sheet-surface:#20232d;--nav-control-surface:#292d39;--nav-glass-blur:none;
+  --nav-dock-blur:none;--nav-dock-ink:#edf0f7;--nav-dock-active:#ded5ff;
   --nav-glass-edge:rgba(230,238,255,.17);
   --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(255,255,255,.025),0 10px 30px rgba(0,0,0,.22);
@@ -1468,6 +1469,7 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
 }
 html[data-theme="light"]{
   --nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;
+  --nav-dock-ink:#252b3a;--nav-dock-active:#392579;
   --nav-glass-edge:rgba(255,255,255,.48);
   --nav-glass-sheen:none;
   --nav-glass-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.22),0 8px 28px rgba(36,43,73,.14),0 0 0 1px rgba(45,53,80,.06);
@@ -1479,8 +1481,14 @@ html[data-theme="light"]{
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   :root{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent;--nav-glass-blur:blur(18px) saturate(95%) brightness(94%)}
   html[data-theme="light"]{--nav-dock-surface:transparent;--nav-sheet-surface:transparent;--nav-control-surface:transparent}
+  /* The small persistent dock sees arbitrary photos while scrolling. Compress
+     backdrop luminance, not the foreground; no scroll sampling or DOM updates.
+     Keep the larger, modal menu material independent of this contrast guard. */
+  :root{--nav-dock-blur:blur(18px) saturate(85%) contrast(40%) brightness(48%)}
+  html[data-theme="light"]{--nav-dock-blur:blur(18px) saturate(85%) contrast(20%) brightness(170%)}
 }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+  :root,html[data-theme="light"]{--nav-dock-blur:none}
   :root{--nav-dock-surface:#242631;--nav-sheet-surface:#20232d;--nav-control-surface:#292d39;--nav-glass-blur:none;--nav-glass-sheen:linear-gradient(transparent,transparent)}
   html[data-theme="light"]{--nav-dock-surface:#f5f6fb;--nav-sheet-surface:#f7f8fc;--nav-control-surface:#f3f4f6;--nav-glass-blur:none;--nav-glass-sheen:linear-gradient(transparent,transparent)}
 }
@@ -4071,8 +4079,8 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 @media(max-width:370px){.fulfillment-ready-shelf{grid-template-columns:1fr}}
 /* Mobile dock: a stable five-slot surface; action stays inside its touch target. */
 @media(max-width:860px){
-  #mobile-nav{left:max(10px,env(safe-area-inset-left))!important;right:max(10px,env(safe-area-inset-right))!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;display:grid;grid-template-columns:repeat(var(--mobile-nav-count,5),minmax(0,1fr));align-items:stretch;gap:3px;min-height:68px;padding:6px!important;border:1px solid var(--nav-glass-edge)!important;border-radius:22px!important;background:var(--nav-glass-sheen),var(--nav-dock-surface)!important;box-shadow:var(--nav-glass-shadow)!important;backdrop-filter:var(--nav-glass-blur);-webkit-backdrop-filter:var(--nav-glass-blur);isolation:isolate}
-  #mobile-nav .mnav-btn{position:relative;left:auto;top:auto;transform:none;min-width:0;max-width:none;min-height:54px;height:auto;margin:0;padding:2px 0!important;border:0;border-radius:14px!important;gap:4px;background:transparent!important;color:var(--t2)!important;font:600 11px/1.2 'Be Vietnam Pro',sans-serif;box-shadow:none!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .14s ease}
+  #mobile-nav{left:max(10px,env(safe-area-inset-left))!important;right:max(10px,env(safe-area-inset-right))!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;display:grid;grid-template-columns:repeat(var(--mobile-nav-count,5),minmax(0,1fr));align-items:stretch;gap:3px;min-height:68px;padding:6px!important;border:1px solid var(--nav-glass-edge)!important;border-radius:22px!important;background:var(--nav-glass-sheen),var(--nav-dock-surface)!important;box-shadow:var(--nav-glass-shadow)!important;backdrop-filter:var(--nav-dock-blur);-webkit-backdrop-filter:var(--nav-dock-blur);isolation:isolate}
+  #mobile-nav .mnav-btn{position:relative;left:auto;top:auto;transform:none;min-width:0;max-width:none;min-height:54px;height:auto;margin:0;padding:2px 0!important;border:0;border-radius:14px!important;gap:4px;background:transparent!important;color:var(--nav-dock-ink)!important;font:600 11px/1.2 'Be Vietnam Pro',sans-serif;box-shadow:none!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .14s ease}
   #mobile-nav .mnav-icon{display:grid;place-items:center;width:40px;height:30px;border-radius:11px;background:transparent;color:inherit;font-style:normal;transition:transform .16s ease}
   #mobile-nav::before{content:'';position:absolute;z-index:0;top:6px;bottom:6px;left:6px;width:calc((100% - 12px - (var(--mobile-nav-count,5) - 1)*3px)/var(--mobile-nav-count,5));border:1px solid var(--nav-lens-edge);border-radius:16px;background:var(--nav-lens-fill);box-shadow:inset 0 1px 0 var(--nav-glass-edge),0 2px 5px rgba(0,0,0,.045);transform:translateX(calc(var(--mobile-active-index,0)*(100% + 3px)));opacity:0;pointer-events:none;transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .16s ease}
   #mobile-nav[data-has-active="true"]::before{opacity:1}
@@ -4080,13 +4088,13 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
   #mobile-nav .mnav-btn{z-index:1;transition:transform .2s cubic-bezier(.2,.9,.3,1.25)}
   #mobile-nav .mnav-btn svg{width:21px;height:21px;stroke-width:1.8}
   #mobile-nav .mnav-btn>span{display:block;max-width:100%;font-size:11px!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #mobile-nav .mnav-btn.active{color:var(--ac)!important;font-weight:700}
-  #mobile-nav .mnav-btn.active .mnav-icon,#mobile-nav .mnav-btn.is-open .mnav-icon{background:transparent;color:var(--ac)}
-  #mobile-nav .mnav-primary-action .mnav-icon{background:var(--mnav-primary,var(--ac));color:#fff;border-radius:12px;width:42px;height:32px}
-  #mobile-nav .mnav-primary-action.active .mnav-icon{background:var(--mnav-primary,var(--ac));color:#fff}
-  #mobile-nav .mnav-primary-action .mnav-icon{background-image:linear-gradient(145deg,rgba(255,255,255,.25),transparent 70%);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 6px rgba(76,61,154,.18)}
+  #mobile-nav .mnav-btn.active{color:var(--nav-dock-active)!important;font-weight:700}
+  #mobile-nav .mnav-btn.active .mnav-icon,#mobile-nav .mnav-btn.is-open .mnav-icon{background:transparent;color:var(--nav-dock-active)}
+  #mobile-nav .mnav-primary-action .mnav-icon{background:color-mix(in srgb,var(--mnav-primary,var(--ac)) 65%,#18202f);color:#fff;border-radius:12px;width:42px;height:32px}
+  #mobile-nav .mnav-primary-action.active .mnav-icon{background:color-mix(in srgb,var(--mnav-primary,var(--ac)) 65%,#18202f);color:#fff}
+  #mobile-nav .mnav-primary-action .mnav-icon{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 6px rgba(76,61,154,.18)}
   #mobile-nav .mnav-btn:active{transform:scale(.94)}
-  #mobile-nav .mnav-btn:focus-visible{outline:2px solid var(--ac);outline-offset:-2px}
+  #mobile-nav .mnav-btn:focus-visible{outline:2px solid var(--nav-dock-active);outline-offset:-2px}
   #mobile-nav .mnav-primary-action>span{max-width:100%;font-size:11px!important}
   body.delivery-receive-only #mobile-nav{max-width:340px;margin-inline:auto}
   .pg-content{padding-bottom:calc(100px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom))}
@@ -4095,6 +4103,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 }
 @media(prefers-reduced-motion:reduce){#mobile-nav .mnav-btn,#mobile-nav .mnav-icon,#mobile-nav::before{transition:none}}
 @media(max-width:359px){#mobile-nav .mnav-btn>span{font-size:10px!important}}
+@media(forced-colors:active){#mobile-nav{border-color:CanvasText!important}#mobile-nav .mnav-btn{color:ButtonText!important}#mobile-nav .mnav-btn.active{color:Highlight!important}#mobile-nav .mnav-btn:focus-visible{outline-color:Highlight}#mobile-nav .mnav-btn .mnav-icon{color:inherit}#mobile-nav .mnav-primary-action .mnav-icon{background:Highlight;color:HighlightText}}
 /* Trên điện thoại, công đoạn là thanh dọc cạnh nội dung: chọn ở rail trái,
    xem dữ liệu ngay ở cột phải. Desktop vẫn dùng bìa thư mục ngang. */
 @media(max-width:640px){
