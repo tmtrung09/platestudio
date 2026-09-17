@@ -4,10 +4,15 @@
     "qa:desktop": "node tools/desktop-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs",
-    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync"
+    "qa:glass": "node tools/liquid-glass-qa.mjs",
+    "build:glass": "node tools/build-liquidgl.mjs",
+    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:glass"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "supabase": "^2.117.0"
+  },
+  "dependencies": {
+    "liquid-gl": "2.2.4"
   }
 }

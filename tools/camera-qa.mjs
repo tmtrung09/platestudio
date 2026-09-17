@@ -233,6 +233,8 @@ try{
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy');
  const edge=page.locator('.br-camera-upload-edge');
  assert.equal(await edge.evaluate(el=>getComputedStyle(el).pointerEvents),'none','Edge does not intercept camera gestures');
+ // SMIL creates its animated transform on the next paint after resuming.
+ await page.waitForFunction(()=>document.querySelector('.br-camera-upload-edge linearGradient')?.gradientTransform.animVal.numberOfItems>0);
  const angle=await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle);
  await page.waitForTimeout(180);
  assert.notEqual(await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle),angle,'Colors rotate around the whole continuous rim');
