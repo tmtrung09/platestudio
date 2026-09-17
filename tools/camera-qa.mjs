@@ -74,11 +74,22 @@ try{
    });
  });
  assert.equal(frameTests,true,'Saved image must match the visible centered frame');
+ const zoomWork=await page.evaluate(async()=>{
+   const video=document.querySelector('#br-multi-cam video');
+   let writes=0;const observer=new MutationObserver(records=>writes+=records.length);
+   observer.observe(video,{attributes:true,attributeFilter:['style']});
+   for(let i=0;i<100;i++)setBatchCameraZoom(1+i*.00023);
+   const exact=brCameraZoom,queued=brCameraZoomFrame>0;
+   await new Promise(requestAnimationFrame);await Promise.resolve();observer.disconnect();
+   setBatchCameraZoom(1);await new Promise(requestAnimationFrame);
+   return {writes,exact,queued,finished:brCameraZoomFrame===0};
+ });
+ assert.deepEqual(zoomWork,{writes:1,exact:1+99*.00023,queued:true,finished:true},'A burst of gesture events gets one paint, without 0.05× stepping');
  // Zoom is shared by the slider, pinch, preview transform and capture crop.
  await page.locator('#br-camera-zoom').focus();
  await page.keyboard.press('Home');await page.keyboard.press('ArrowRight');
  assert.equal(await page.locator('#br-camera-zoom').evaluate(el=>getComputedStyle(el).boxShadow),'none','Range focus must not inherit a text-field fill/glow');
- assert.equal(await page.evaluate(()=>brCameraZoom),1.05,'Keyboard zoom');
+ assert.equal(await page.evaluate(()=>brCameraZoom),1.01,'Keyboard zoom');
  await page.getByRole('button',{name:'Đặt zoom về 1×',exact:true}).click();
  const touch=await page.context().newCDPSession(page);
  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:100,y:220,id:1},{x:200,y:220,id:2}]});
@@ -91,9 +102,10 @@ try{
  await touch.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
  assert.equal(await page.evaluate(()=>brCameraZoom),1,'Pinch in and cancellation');
  await touch.detach();
- const zoomBounds=await page.evaluate(()=>{
+ const zoomBounds=await page.evaluate(async()=>{
    setBatchCameraZoom(99);const max=brCameraZoom;setBatchCameraZoom(-1);const min=brCameraZoom;
    setBatchCameraZoom(2);
+   await new Promise(requestAnimationFrame);
    const video=document.querySelector('#br-multi-cam video'),view=video.parentElement.getBoundingClientRect();
    const full=batchCameraFrame(video.videoWidth,video.videoHeight,view.width,view.height);
    const zoomed=batchCameraFrame(video.videoWidth,video.videoHeight,view.width,view.height,brCameraZoom);
@@ -111,10 +123,24 @@ try{
  assert.notEqual(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform),lightBefore,'Light must actually move');
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
+ assert.equal(await page.locator('#br-multi-cam').evaluate(el=>el.classList.contains('has-capture-feedback')),true,'Successful capture gives immediate feedback');
+ assert.equal(await page.locator('.br-camera-capture-note').textContent(),'Đã chụp ✓');
+ await page.screenshot({path:join(output,'captured.png')});
+ assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
+ const trayStability=await page.evaluate(()=>{
+   const tray=document.querySelector('.br-multi-cam-tray'),img=tray.querySelector('img');
+   const observer=new MutationObserver(()=>{});observer.observe(tray,{childList:true,subtree:true,attributes:true});
+   for(let i=0;i<25;i++)renderBatchMultiCameraTray();
+   const mutations=observer.takeRecords().length;observer.disconnect();
+   window.firstCameraThumbnail=img;
+   return {same:tray.querySelector('img')===img,mutations};
+ });
+ assert.deepEqual(trayStability,{same:true,mutations:0},'Unchanged upload state must not rebuild or mutate thumbnails');
  assert.equal(await page.evaluate(()=>JSON.stringify(actualCameraCrop)===JSON.stringify([expectedCameraCrop.x,expectedCameraCrop.y,expectedCameraCrop.width,expectedCameraCrop.height])),true,'Capture must use the same zoom crop as preview');
  await page.getByRole('button',{name:'Đặt zoom về 1×',exact:true}).click();
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===2&&brMultiCameraShots.every(s=>s.state==='uploaded'));
+ assert.equal(await page.evaluate(()=>firstCameraThumbnail===document.querySelector('.br-multi-cam-tray img')),true,'Existing photo stays mounted on the next capture');
  assert.equal(await page.evaluate(()=>brMultiCameraShots.every(s=>s.file===null)),true,'Release original files after saved');
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF1sAAAAASUVORK5CYII=','base64');
  const chooser=page.waitForEvent('filechooser');
@@ -132,6 +158,8 @@ try{
  }
  await page.setViewportSize({width:390,height:844});
  await page.emulateMedia({reducedMotion:'reduce'});
+ await page.evaluate(()=>showBatchCameraCaptureFeedback());
+ assert.equal(await page.locator('.br-camera-shutter').evaluate(el=>el.getAnimations().some(a=>a.playState==='running')),false,'Reduced motion skips the capture pulse');
  assert.equal(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::before').animationName),'none');
  assert.equal(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').animationName),'none');
  await page.emulateMedia({reducedMotion:'no-preference'});
@@ -164,15 +192,28 @@ try{
  await (await nativeChooser).setFiles({name:'native.png',mimeType:'image/png',buffer:png});
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
  // Slow upload blocks closing; failed uploads stay retryable, never show saved.
- await page.evaluate(()=>{
+ await page.evaluate(bytes=>{
    uploadBatchMultiPhotoInBackground=shot=>new Promise(resolve=>window.finishCameraUpload=()=>{shot.state='error';resolve();});
-   queueBatchCameraFiles([new File(['x'],'retry.jpg',{type:'image/jpeg'})]);
- });
+   queueBatchCameraFiles([new File([new Uint8Array(bytes)],'retry.png',{type:'image/png'})]);
+ },[...png]);
  await page.waitForFunction(()=>typeof finishCameraUpload==='function');
  assert.equal(await page.evaluate(()=>closeBatchMultiCamera()),false);
  assert.equal(await page.locator('.br-multi-cam-count').getAttribute('data-state'),'busy');
+ assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy');
+ const edge=page.locator('.br-camera-upload-edge');
+ assert.equal(await edge.evaluate(el=>getComputedStyle(el).pointerEvents),'none','Edge does not intercept camera gestures');
+ const dash=await edge.locator('rect').evaluate(el=>getComputedStyle(el).strokeDashoffset);
+ await page.waitForTimeout(180);
+ assert.notEqual(await edge.locator('rect').evaluate(el=>getComputedStyle(el).strokeDashoffset),dash,'Upload light travels around the viewport');
+ await page.screenshot({path:join(output,'uploading.png')});
+ await page.waitForTimeout(1300);
+ assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy','An old success timer must never clear a newer upload');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ assert.equal(await edge.locator('rect').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await page.emulateMedia({reducedMotion:'no-preference'});
  await page.evaluate(()=>finishCameraUpload());
  await page.waitForFunction(()=>document.querySelector('.br-multi-cam-count').dataset.state==='error');
+ assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'error','Failure must not flash green');
  assert.equal(await page.evaluate(()=>brMultiCameraShots.at(-1).file instanceof File),true);
  page.once('dialog',d=>d.dismiss());
  await page.getByRole('button',{name:'Đóng camera',exact:true}).click();
@@ -180,6 +221,11 @@ try{
  await page.evaluate(()=>{uploadBatchMultiPhotoInBackground=async shot=>{shot.state='uploaded';};});
  await page.getByRole('button',{name:'Thử lưu lại ảnh 2',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
+ assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
+ assert.equal(await edge.locator('rect').evaluate(el=>getComputedStyle(el).stroke),'rgb(121, 217, 161)');
+ await page.screenshot({path:join(output,'upload-complete.png')});
+ await page.waitForFunction(()=>document.getElementById('br-multi-cam').dataset.upload==='idle');
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-upload-edge')).opacity==='0');
  await page.evaluate(()=>closeBatchMultiCamera());
  // Exercise the real upload handler with stubbed storage/DB contracts.
  const result=await page.evaluate(async()=>{
