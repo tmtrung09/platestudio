@@ -28,12 +28,23 @@ try{
  await page.waitForFunction(()=>document.querySelector('#br-multi-cam video')?.videoWidth>0);
  assert.notEqual(await page.locator('#ov-batch-report').evaluate(el=>getComputedStyle(el).display),'flex','Entry opens camera directly, not the old picker');
  assert.equal(await page.locator('#br-multi-cam .capture').count(),1);
+ const initialEdge=page.locator('.br-camera-upload-edge');
+ assert.equal(await initialEdge.evaluate(el=>el.animationsPaused()),true,'Idle glow must not consume an animation loop');
+ await page.evaluate(()=>updateBatchCameraUploadState(document.getElementById('br-multi-cam'),'busy'));
+ await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('.br-camera-upload-edge')).opacity)>0);
+ const fadeIn=await initialEdge.evaluate(el=>Number(getComputedStyle(el).opacity));
+ assert.ok(fadeIn>0&&fadeIn<.85,'Full border fades in instead of appearing abruptly');
+ await page.evaluate(()=>updateBatchCameraUploadState(document.getElementById('br-multi-cam'),'empty'));
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-upload-edge')).opacity==='0');
  for(const [width,height] of [[320,568],[390,844],[844,390],[1440,900]]){
    await page.setViewportSize({width,height});
    for(const theme of ['light','dark']){
      await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
      const errors=await page.evaluate(()=>{
        const el=document.getElementById('br-multi-cam'),errors=[];
+       const edge=el.querySelector('.br-camera-upload-edge');
+       if([...edge.querySelectorAll('rect')].some(rect=>getComputedStyle(rect).strokeDasharray!=='none'))errors.push('Upload rim must be continuous on every side');
+       if(edge.querySelectorAll('.br-camera-edge-glow').length!==2||edge.querySelector('feGaussianBlur').getAttribute('stdDeviation')!=='4')errors.push('Missing bounded soft glow');
        const zoom=el.querySelector('#br-camera-zoom'),zoomBounds=zoom.getBoundingClientRect();
        const zoomStyle=getComputedStyle(zoom);
        if(zoomStyle.backgroundColor!=='rgba(0, 0, 0, 0)'||zoomStyle.backgroundImage!=='none'||zoomStyle.boxShadow!=='none')errors.push('Slider inherited a text-field background');
@@ -202,14 +213,17 @@ try{
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy');
  const edge=page.locator('.br-camera-upload-edge');
  assert.equal(await edge.evaluate(el=>getComputedStyle(el).pointerEvents),'none','Edge does not intercept camera gestures');
- const dash=await edge.locator('rect').evaluate(el=>getComputedStyle(el).strokeDashoffset);
+ const angle=await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle);
  await page.waitForTimeout(180);
- assert.notEqual(await edge.locator('rect').evaluate(el=>getComputedStyle(el).strokeDashoffset),dash,'Upload light travels around the viewport');
+ assert.notEqual(await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle),angle,'Colors rotate around the whole continuous rim');
+ assert.ok((await edge.locator('.br-camera-edge-flow .br-camera-edge-core').evaluate(el=>getComputedStyle(el).stroke)).includes('brCameraEdgeGradient'));
+ assert.equal(await edge.locator('.br-camera-edge-flow .br-camera-edge-core').evaluate(el=>getComputedStyle(el).strokeDasharray),'none');
+ assert.ok((await edge.locator('.br-camera-edge-flow .br-camera-edge-glow').evaluate(el=>getComputedStyle(el).filter)).includes('brCameraEdgeGlow'));
  await page.screenshot({path:join(output,'uploading.png')});
  await page.waitForTimeout(1300);
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy','An old success timer must never clear a newer upload');
  await page.emulateMedia({reducedMotion:'reduce'});
- assert.equal(await edge.locator('rect').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await page.waitForFunction(()=>document.querySelector('.br-camera-upload-edge').animationsPaused());
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.evaluate(()=>finishCameraUpload());
  await page.waitForFunction(()=>document.querySelector('.br-multi-cam-count').dataset.state==='error');
@@ -222,9 +236,16 @@ try{
  await page.getByRole('button',{name:'Thử lưu lại ảnh 2',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
- assert.equal(await edge.locator('rect').evaluate(el=>getComputedStyle(el).stroke),'rgb(121, 217, 161)');
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-core')).stroke==='rgb(121, 217, 161)');
+ assert.equal(await edge.getAttribute('data-tone'),'saved');
+ assert.equal(await edge.evaluate(el=>el.animationsPaused()),true);
+ await page.waitForTimeout(480);
  await page.screenshot({path:join(output,'upload-complete.png')});
  await page.waitForFunction(()=>document.getElementById('br-multi-cam').dataset.upload==='idle');
+ await page.waitForTimeout(180);
+ const fading=await edge.evaluate(el=>Number(getComputedStyle(el).opacity));
+ assert.ok(fading>0&&fading<.75,'Green completion glow must fade out');
+ assert.equal(await edge.getAttribute('data-tone'),'saved','Keep green during fade-out');
  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-upload-edge')).opacity==='0');
  await page.evaluate(()=>closeBatchMultiCamera());
  // Exercise the real upload handler with stubbed storage/DB contracts.

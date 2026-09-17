@@ -820,18 +820,21 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-multi-cam-thumb{animation:brCameraThumbIn .22s ease-out}
 .br-camera-capture-note{position:absolute;top:calc(86px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-50%);z-index:3;opacity:0;pointer-events:none;padding:6px 11px;border-radius:20px;background:rgba(12,15,22,.36);color:#fff;font-size:12px;text-shadow:0 1px 3px #000;transition:opacity .14s}
 .br-multi-cam.has-capture-feedback .br-camera-capture-note{opacity:1}
-.br-multi-cam .br-camera-upload-edge{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0;overflow:visible;transition:opacity .4s}
-.br-camera-upload-edge rect{fill:none;stroke:#b3c9ee;stroke-width:2;stroke-linecap:round;stroke-dasharray:14 86}
-.br-multi-cam[data-upload="busy"] .br-camera-upload-edge{opacity:.7}
-.br-multi-cam[data-upload="busy"] .br-camera-upload-edge rect{animation:brCameraUploadOrbit 3s linear infinite}
+.br-multi-cam .br-camera-upload-edge{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0;overflow:visible;transition:opacity .65s ease}
+.br-camera-upload-edge rect{fill:none;stroke-width:2.2;stroke-dasharray:none}
+.br-camera-edge-flow{opacity:1;transition:opacity .45s ease}
+.br-camera-edge-flow rect{stroke:url(#brCameraEdgeGradient)}
+.br-camera-edge-result{opacity:0;transition:opacity .45s ease}
+.br-camera-edge-result rect{stroke:#79d9a1;transition:stroke .4s}
+.br-camera-upload-edge .br-camera-edge-glow{stroke-width:9;opacity:.65;filter:url(#brCameraEdgeGlow)}
+.br-camera-upload-edge[data-tone="saved"] .br-camera-edge-flow,.br-camera-upload-edge[data-tone="error"] .br-camera-edge-flow{opacity:0}
+.br-camera-upload-edge[data-tone="saved"] .br-camera-edge-result,.br-camera-upload-edge[data-tone="error"] .br-camera-edge-result{opacity:1}
+.br-camera-upload-edge[data-tone="error"] .br-camera-edge-result rect{stroke:#e7b777}
+.br-multi-cam[data-upload="busy"] .br-camera-upload-edge{opacity:.85}
 .br-multi-cam[data-upload="saved"] .br-camera-upload-edge{opacity:.75}
-.br-multi-cam[data-upload="saved"] .br-camera-upload-edge rect{stroke:#79d9a1;stroke-dasharray:none}
-.br-multi-cam[data-upload="error"] .br-camera-upload-edge{opacity:.35}
-.br-multi-cam[data-upload="error"] .br-camera-upload-edge rect{stroke:#e7b777;stroke-dasharray:none}
-.br-multi-cam.is-paused .br-camera-upload-edge rect{animation-play-state:paused}
-@keyframes brCameraUploadOrbit{to{stroke-dashoffset:-100}}
+.br-multi-cam[data-upload="error"] .br-camera-upload-edge{opacity:.4}
 @keyframes brCameraThumbIn{from{opacity:0;transform:translateY(5px) scale(.94)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.br-multi-cam .br-camera-upload-edge rect,.br-multi-cam-thumb{animation:none!important}.br-camera-capture-note,.br-multi-cam .br-camera-upload-edge{transition:none}}
+@media(prefers-reduced-motion:reduce){.br-multi-cam-thumb{animation:none!important}.br-camera-capture-note,.br-multi-cam .br-camera-upload-edge,.br-camera-edge-flow,.br-camera-edge-result,.br-camera-edge-result rect{transition:none}}
 .br-multi-cam-thumb button{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;background:rgba(0,0,0,.7);font-size:11px;padding:4px}
 .br-camera-mode{text-align:center;color:#ffe59b;font-size:11px;font-weight:700;letter-spacing:.15em;padding:4px}
 .br-camera-zoom{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:260px}
@@ -12109,7 +12112,17 @@ async function openBatchMultiCamera(){
   modal.id='br-multi-cam';modal.className='br-multi-cam';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','br-camera-title');
   const icon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
   modal.innerHTML=`
-    <svg class="br-camera-upload-edge" aria-hidden="true"><rect x="2" y="2" rx="18" pathLength="100"/></svg>
+    <svg class="br-camera-upload-edge" aria-hidden="true">
+      <defs>
+        <linearGradient id="brCameraEdgeGradient" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect">
+          <stop offset="0" stop-color="#87dcfa"/><stop offset=".3" stop-color="#aaa0fc"/><stop offset=".6" stop-color="#f4acd3"/><stop offset=".82" stop-color="#f5d0a0"/><stop offset="1" stop-color="#87dcfa"/>
+          <animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="5s" repeatCount="indefinite"/>
+        </linearGradient>
+        <filter id="brCameraEdgeGlow" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+      <g class="br-camera-edge-flow"><rect class="br-camera-edge-glow" x="3" y="3" rx="19"/><rect class="br-camera-edge-core" x="3" y="3" rx="19"/></g>
+      <g class="br-camera-edge-result"><rect class="br-camera-edge-glow" x="3" y="3" rx="19"/><rect class="br-camera-edge-core" x="3" y="3" rx="19"/></g>
+    </svg>
     <span class="br-camera-capture-note" role="status"></span>
     <header class="br-multi-cam-top br-camera-glass">
       <button type="button" aria-label="Đóng camera" onclick="closeBatchMultiCamera()">${icon('<path d="m6 6 12 12M18 6 6 18"/>')}</button>
@@ -12133,8 +12146,12 @@ async function openBatchMultiCamera(){
       <footer class="br-camera-footer"><button type="button" onclick="showBatchCameraReports()">Báo cáo</button><button class="send" type="button" onclick="closeBatchMultiCamera()">Xong</button></footer>
     </section>`;
   document.body.appendChild(modal);
-  const edgeRect=modal.querySelector('.br-camera-upload-edge rect');
-  modal._edgeObserver=new ResizeObserver(entries=>{const {width,height}=entries[0].contentRect;edgeRect.setAttribute('width',Math.max(0,width-4));edgeRect.setAttribute('height',Math.max(0,height-4));});
+  const edge=modal.querySelector('.br-camera-upload-edge'),edgeRects=edge.querySelectorAll('rect');
+  edge.pauseAnimations();
+  modal._edgeMotionQuery=matchMedia('(prefers-reduced-motion: reduce)');
+  modal._edgeMotionChange=()=>syncBatchCameraUploadEdge(modal);
+  modal._edgeMotionQuery.addEventListener('change',modal._edgeMotionChange);
+  modal._edgeObserver=new ResizeObserver(entries=>{const {width,height}=entries[0].contentRect;edgeRects.forEach(rect=>{rect.setAttribute('width',Math.max(0,width-6));rect.setAttribute('height',Math.max(0,height-6));});});
   modal._edgeObserver.observe(modal);
   bindBatchCameraZoom(modal);
   // Isolate the dialog without touching auth, drafts or the page's scroll position.
@@ -12172,6 +12189,7 @@ async function startBatchCameraPreview(){
   stopBatchCameraPreview();
   const request=brCameraRequest;
   modal.dataset.camera='loading';modal.classList.remove('is-paused');
+  syncBatchCameraUploadEdge(modal);
   batchCameraMessage('Đang mở camera… Cho phép truy cập khi được hỏi.');
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){
     modal.dataset.camera='fallback';batchCameraMessage('Dùng nút chụp hoặc chọn ảnh từ thư viện.');return;
@@ -12278,14 +12296,22 @@ function retryBatchCameraPhoto(index){
   const shot=brMultiCameraShots[index];if(!shot||shot.state!=='error')return;
   shot.state='queued';shot.error='';renderBatchMultiCameraTray();void drainBatchCameraQueue();
 }
+function syncBatchCameraUploadEdge(modal){
+  const edge=modal.querySelector('.br-camera-upload-edge');if(!edge)return;
+  // Retain the completion color throughout fade-out, instead of flashing back to blue.
+  if(['busy','saved','error'].includes(modal.dataset.upload))edge.dataset.tone=modal.dataset.upload;
+  const moving=modal.dataset.upload==='busy'&&!document.hidden&&!modal.classList.contains('is-paused')&&!modal._edgeMotionQuery?.matches;
+  if(moving)edge.unpauseAnimations();else edge.pauseAnimations();
+}
 function updateBatchCameraUploadState(modal,state){
   if(modal._uploadState===state)return;
   clearTimeout(modal._uploadFadeTimer);
   const previous=modal._uploadState;modal._uploadState=state;
   // Only an upload-to-success transition earns the green confirmation.
   modal.dataset.upload=state==='saved'&&previous!=='busy'?'idle':state;
+  syncBatchCameraUploadEdge(modal);
   if(modal.dataset.upload==='saved')modal._uploadFadeTimer=setTimeout(()=>{
-    if(modal.isConnected&&modal._uploadState==='saved')modal.dataset.upload='idle';
+    if(modal.isConnected&&modal._uploadState==='saved'){modal.dataset.upload='idle';syncBatchCameraUploadEdge(modal);}
   },1200);
 }
 function showBatchCameraCaptureFeedback(){
@@ -12430,6 +12456,7 @@ function closeBatchMultiCamera(){
   stopBatchCameraPreview();
   brMultiCameraShots.forEach(shot=>URL.revokeObjectURL(shot.url));brMultiCameraShots=[];
   clearTimeout(modal._uploadFadeTimer);clearTimeout(modal._captureFeedbackTimer);modal._capturePulse?.cancel();modal._edgeObserver?.disconnect();
+  modal._edgeMotionQuery?.removeEventListener('change',modal._edgeMotionChange);
   modal.remove();brCameraInertSiblings.forEach(el=>el.inert=false);brCameraInertSiblings=[];
   if(brCameraReturnFocus?.isConnected)brCameraReturnFocus.focus({preventScroll:true});
   return true;
@@ -12442,6 +12469,7 @@ function sendBatchMultiPhotos(){return closeBatchMultiCamera();}
 document.addEventListener('visibilitychange',()=>{
   const modal=document.getElementById('br-multi-cam');if(!modal)return;
   if(document.hidden){stopBatchCameraPreview();modal.classList.add('is-paused');batchCameraMessage('Camera đã tạm dừng. Bấm nút chụp để tiếp tục.');}
+  syncBatchCameraUploadEdge(modal);
 });
 window.addEventListener('pagehide',stopBatchCameraPreview);
 window.addEventListener('beforeunload',event=>{
