@@ -44,7 +44,16 @@ try{
        const el=document.getElementById('br-multi-cam'),errors=[];
        const edge=el.querySelector('.br-camera-upload-edge');
        if([...edge.querySelectorAll('rect')].some(rect=>getComputedStyle(rect).strokeDasharray!=='none'))errors.push('Upload rim must be continuous on every side');
-       if(edge.querySelectorAll('.br-camera-edge-glow').length!==2||edge.querySelector('feGaussianBlur').getAttribute('stdDeviation')!=='4')errors.push('Missing bounded soft glow');
+       if(edge.querySelectorAll('.br-camera-edge-glow').length!==2||edge.querySelector('feGaussianBlur').getAttribute('stdDeviation')!=='6')errors.push('Missing bounded soft glow');
+       for(const glow of edge.querySelectorAll('.br-camera-edge-glow')){
+         const style=getComputedStyle(glow);
+         if(style.strokeWidth!=='14px'||Number(style.opacity)<.8)errors.push('Glow must be broad and visible in upload and result states');
+       }
+       for(const stop of edge.querySelectorAll('stop')){
+         const rgb=getComputedStyle(stop).stopColor.match(/[\d.]+/g).slice(0,3).map(Number);
+         const hi=Math.max(...rgb),lo=Math.min(...rgb),lightness=(hi+lo)/510;
+         if(hi-lo<150||lightness>.6)errors.push('Upload spectrum must stay saturated, not pastel');
+       }
        const zoom=el.querySelector('#br-camera-zoom'),zoomBounds=zoom.getBoundingClientRect();
        const zoomStyle=getComputedStyle(zoom);
        if(zoomStyle.backgroundColor!=='rgba(0, 0, 0, 0)'||zoomStyle.backgroundImage!=='none'||zoomStyle.boxShadow!=='none')errors.push('Slider inherited a text-field background');
@@ -236,7 +245,7 @@ try{
  await page.getByRole('button',{name:'Thử lưu lại ảnh 2',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
- await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-core')).stroke==='rgb(121, 217, 161)');
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-core')).stroke==='rgb(34, 201, 117)');
  assert.equal(await edge.getAttribute('data-tone'),'saved');
  assert.equal(await edge.evaluate(el=>el.animationsPaused()),true);
  await page.waitForTimeout(480);

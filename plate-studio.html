@@ -825,11 +825,11 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-camera-edge-flow{opacity:1;transition:opacity .45s ease}
 .br-camera-edge-flow rect{stroke:url(#brCameraEdgeGradient)}
 .br-camera-edge-result{opacity:0;transition:opacity .45s ease}
-.br-camera-edge-result rect{stroke:#79d9a1;transition:stroke .4s}
-.br-camera-upload-edge .br-camera-edge-glow{stroke-width:9;opacity:.65;filter:url(#brCameraEdgeGlow)}
+.br-camera-edge-result rect{stroke:#22c975;transition:stroke .4s}
+.br-camera-upload-edge .br-camera-edge-glow{stroke-width:14;opacity:.82;filter:url(#brCameraEdgeGlow)}
 .br-camera-upload-edge[data-tone="saved"] .br-camera-edge-flow,.br-camera-upload-edge[data-tone="error"] .br-camera-edge-flow{opacity:0}
 .br-camera-upload-edge[data-tone="saved"] .br-camera-edge-result,.br-camera-upload-edge[data-tone="error"] .br-camera-edge-result{opacity:1}
-.br-camera-upload-edge[data-tone="error"] .br-camera-edge-result rect{stroke:#e7b777}
+.br-camera-upload-edge[data-tone="error"] .br-camera-edge-result rect{stroke:#ee980c}
 .br-multi-cam[data-upload="busy"] .br-camera-upload-edge{opacity:.85}
 .br-multi-cam[data-upload="saved"] .br-camera-upload-edge{opacity:.75}
 .br-multi-cam[data-upload="error"] .br-camera-upload-edge{opacity:.4}
@@ -12115,10 +12115,10 @@ async function openBatchMultiCamera(){
     <svg class="br-camera-upload-edge" aria-hidden="true">
       <defs>
         <linearGradient id="brCameraEdgeGradient" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect">
-          <stop offset="0" stop-color="#87dcfa"/><stop offset=".3" stop-color="#aaa0fc"/><stop offset=".6" stop-color="#f4acd3"/><stop offset=".82" stop-color="#f5d0a0"/><stop offset="1" stop-color="#87dcfa"/>
+          <stop offset="0" stop-color="#1769ff"/><stop offset=".25" stop-color="#7928ff"/><stop offset=".5" stop-color="#e51bac"/><stop offset=".7" stop-color="#ff6b16"/><stop offset=".85" stop-color="#00b8df"/><stop offset="1" stop-color="#1769ff"/>
           <animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="5s" repeatCount="indefinite"/>
         </linearGradient>
-        <filter id="brCameraEdgeGlow" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="brCameraEdgeGlow" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="6"/></filter>
       </defs>
       <g class="br-camera-edge-flow"><rect class="br-camera-edge-glow" x="3" y="3" rx="19"/><rect class="br-camera-edge-core" x="3" y="3" rx="19"/></g>
       <g class="br-camera-edge-result"><rect class="br-camera-edge-glow" x="3" y="3" rx="19"/><rect class="br-camera-edge-core" x="3" y="3" rx="19"/></g>
