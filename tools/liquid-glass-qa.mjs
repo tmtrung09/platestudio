@@ -28,6 +28,26 @@ try{
  await boot();await page.evaluate(()=>PlateLiquidGlass.refresh());await page.waitForFunction(()=>window.__liquidGLRenderer__?.hasTexture,{},{timeout:30000});
  assert(imports>0);assert.equal(await page.evaluate(()=>getComputedStyle(window.__liquidGLRenderer__.canvas).filter),'none');
  assert.equal(await page.evaluate(()=>window.__liquidGLRenderer__.lenses[0].options.specular),true);
+ // Nested scroll + lazy content mutations must not force lens layout or rasterization.
+ await page.waitForTimeout(1800);
+ await page.evaluate(()=>{
+  const r=window.__liquidGLRenderer__,nav=document.getElementById('mobile-nav');
+  window.glassScrollProbe={reads:0,captures:0};
+  const rect=nav.getBoundingClientRect.bind(nav),capture=r.captureSnapshot.bind(r);
+  nav.getBoundingClientRect=()=>{glassScrollProbe.reads++;return rect();};
+  r.captureSnapshot=(...args)=>{glassScrollProbe.captures++;return capture(...args);};
+ });
+ for(let i=0;i<8;i++){
+  await page.evaluate(()=>{
+   const host=document.getElementById('pg-content');host.dispatchEvent(new Event('scroll'));
+   const mark=document.createElement('span');host.append(mark);mark.remove();
+  });
+  await page.waitForTimeout(240);
+ }
+ assert.deepEqual(await page.evaluate(()=>glassScrollProbe),{reads:0,captures:0},'No lens layout or background captures during scrolling, even across short pauses');
+ await page.waitForFunction(()=>glassScrollProbe.captures===1,{},{timeout:10000});
+ await page.waitForTimeout(800);
+ assert.deepEqual(await page.evaluate(()=>glassScrollProbe),{reads:0,captures:1},'Coalesce the entire scroll burst into one background refresh');
  await page.screenshot({path:resolve(root,'qa-results/liquid-glass/native-glass.png')});
  await page.locator('#mnav-more').click();await page.waitForTimeout(500);assert(await page.locator('#more-sheet-ov').evaluate(el=>el.classList.contains('show')));
  await page.evaluate(()=>closeMoreSheet());await page.locator('#glass-preference').uncheck();

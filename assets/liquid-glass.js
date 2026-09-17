@@ -2,7 +2,8 @@
 (()=>{
  'use strict';
  const base=new URL('.',document.currentScript.src),key='ps_liquid_gl';
- let enabled=false,loaded=false,pending=false,timer,library;
+ let enabled=false,loaded=false,pending=false,timer,library,idle=0,scrollUntil=0,dirty=false,geometryDirty=true;
+ const settleMs=500;
  try{enabled=localStorage.getItem(key)==='on';}catch{}
  const lenses=new Map();
  function renderSettings(){
@@ -15,36 +16,52 @@
   };
  }
  async function refresh(){
-  if(!enabled||pending||location.protocol==='file:')return;
+  if(!enabled||location.protocol==='file:')return;
+  if(pending||performance.now()<scrollUntil){schedule();return;}
+  if(document.hidden)return;
   const nav=document.getElementById('mobile-nav');
   if(!nav?.getClientRects().length)return;
-  pending=true;
+  pending=true;dirty=false;
   try{
    library ||= (await import(new URL('vendor/liquidGL.js',base))).default;
    for(const el of [nav,document.querySelector('.more-sheet')]){
     if(!el||lenses.has(el))continue;
     const proxy=document.createElement('div');proxy.className='plate-glass-lens';proxy.setAttribute('aria-hidden','true');proxy.setAttribute('data-liquid-ignore','');document.body.append(proxy);
-    const position=()=>{const r=el.getBoundingClientRect();proxy.style.cssText=`position:fixed;pointer-events:none;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:${getComputedStyle(el).borderTopLeftRadius};z-index:1100`;};
+    let previous='';
+    const position=()=>{const r=el.getBoundingClientRect(),next=`position:fixed;pointer-events:none;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:${getComputedStyle(el).borderTopLeftRadius};z-index:1100`;if(next!==previous){proxy.style.cssText=next;previous=next;}};
     position();proxy.id='plate-glass-'+lenses.size;
     library({target:'#'+proxy.id});lenses.set(el,{proxy,position});
    }
+   if(geometryDirty){for(const {position} of lenses.values())position();geometryDirty=false;}
    loaded=true;
    const renderer=window.__liquidGLRenderer__;
    if(renderer){await renderer._backendReady;await renderer.captureSnapshot();
     if(renderer.hasTexture){for(const el of lenses.keys())el.dataset.liquidReady='';}
    }
   }catch(error){console.warn('Liquid Glass unavailable; keeping CSS glass.',error);}
-  finally{pending=false;}
+  finally{pending=false;if(dirty)schedule();}
  }
- function sync(){for(const {position} of lenses.values())position();clearTimeout(timer);timer=setTimeout(refresh,180);}
+ function cancelScheduled(){clearTimeout(timer);if(idle){if(window.cancelIdleCallback)cancelIdleCallback(idle);else clearTimeout(idle);idle=0;}}
+ function schedule(){
+  cancelScheduled();
+  timer=setTimeout(()=>{
+   const run=()=>{idle=0;void refresh();};
+   idle=window.requestIdleCallback?requestIdleCallback(run,{timeout:1500}):setTimeout(run,32);
+  },Math.max(settleMs,scrollUntil-performance.now()));
+ }
+ function sync(){dirty=true;geometryDirty=true;schedule();}
+ // Fixed lenses do not move with nested page scroll. No layout reads or writes here.
+ function onScroll(){dirty=true;scrollUntil=performance.now()+settleMs;schedule();}
  function start(){
   renderSettings();if(!enabled)return;
-  const observer=new MutationObserver(sync);
-  const menu=document.getElementById('more-sheet-ov');if(menu)observer.observe(menu,{attributes:true,attributeFilter:['class']});
-  const nav=document.getElementById('mobile-nav');if(nav)observer.observe(nav,{childList:true});
+  const observer=new MutationObserver(()=>{dirty=true;schedule();});
+  const chromeObserver=new MutationObserver(sync);
+  const menu=document.getElementById('more-sheet-ov');if(menu)chromeObserver.observe(menu,{attributes:true,attributeFilter:['class']});
+  const nav=document.getElementById('mobile-nav');if(nav)chromeObserver.observe(nav,{childList:true});
   document.addEventListener('transitionend',event=>{if(event.target.matches('.more-sheet'))sync();});
   const content=document.getElementById('pg-content');if(content)observer.observe(content,{childList:true,subtree:true});
-  document.addEventListener('scroll',sync,{capture:true,passive:true});
+  document.addEventListener('scroll',onScroll,{capture:true,passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelScheduled();else sync();});
   window.addEventListener('resize',sync,{passive:true});
   const theme=new MutationObserver(sync);theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   sync();
