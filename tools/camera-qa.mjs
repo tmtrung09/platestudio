@@ -45,6 +45,16 @@ try{
        const edge=el.querySelector('.br-camera-upload-edge');
        if([...edge.querySelectorAll('rect')].some(rect=>getComputedStyle(rect).strokeDasharray!=='none'))errors.push('Upload rim must be continuous on every side');
        if(edge.querySelectorAll('.br-camera-edge-glow').length!==2||edge.querySelector('feGaussianBlur').getAttribute('stdDeviation')!=='6')errors.push('Missing bounded soft glow');
+       if(edge.querySelectorAll('rect').length!==2||[...edge.querySelectorAll('rect')].some(rect=>!getComputedStyle(rect).filter.includes('brCameraEdgeGlow')))errors.push('Screen upload light must contain only blurred glow, never a sharp border');
+       const iconButtons=[...el.querySelectorAll('.br-camera-side button,.br-camera-footer button')];
+       if(iconButtons.length!==4||el.querySelector('.br-camera-side span'))errors.push('Camera actions must not repeat their labels');
+       for(const button of iconButtons){
+         if(button.textContent.trim()||!button.getAttribute('aria-label')||!button.getAttribute('title')||!button.querySelector('svg[aria-hidden="true"]'))errors.push('Icon-only action must retain its accessible name');
+       }
+       for(const svg of el.querySelectorAll('button svg')){
+         const style=getComputedStyle(svg);
+         if(style.strokeWidth!=='1.6px'||style.strokeLinecap!=='round'||style.strokeLinejoin!=='round')errors.push('Camera icons must share soft rounded strokes');
+       }
        for(const glow of edge.querySelectorAll('.br-camera-edge-glow')){
          const style=getComputedStyle(glow);
          if(style.strokeWidth!=='14px'||Number(style.opacity)<.8)errors.push('Glow must be broad and visible in upload and result states');
@@ -185,14 +195,15 @@ try{
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.getByRole('button',{name:'Đóng camera',exact:true}).focus();
  await page.keyboard.press('Shift+Tab');
- assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Xong','Trap keyboard focus');
+ assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),'Xong','Trap keyboard focus on the icon-only done action');
+ assert.equal(await page.locator('.br-camera-footer .send').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
  const oldTrack=await page.evaluate(()=>{setBatchCameraZoom(3);window.oldCameraTrack=brMultiCameraStream.getVideoTracks()[0];return oldCameraTrack.readyState;});
  assert.equal(oldTrack,'live');
  await page.getByRole('button',{name:'Đổi camera',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraStream?.getVideoTracks()[0]!==oldCameraTrack&&document.querySelector('#br-multi-cam')?.dataset.camera==='live');
  assert.equal(await page.evaluate(()=>oldCameraTrack.readyState),'ended');
  assert.equal(await page.evaluate(()=>brCameraZoom),1,'Switching camera resets zoom');
- await page.evaluate(()=>closeBatchMultiCamera());
+ await page.getByRole('button',{name:'Xong',exact:true}).click();
  assert.equal(await page.locator('#br-multi-cam').count(),0);
  assert.equal(await page.evaluate(()=>document.getElementById('ov-batch-report').inert),false);
  // Late permission resolution must stop its stream after the dialog has closed.
@@ -225,8 +236,8 @@ try{
  const angle=await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle);
  await page.waitForTimeout(180);
  assert.notEqual(await edge.locator('linearGradient').evaluate(el=>el.gradientTransform.animVal.getItem(0).angle),angle,'Colors rotate around the whole continuous rim');
- assert.ok((await edge.locator('.br-camera-edge-flow .br-camera-edge-core').evaluate(el=>getComputedStyle(el).stroke)).includes('brCameraEdgeGradient'));
- assert.equal(await edge.locator('.br-camera-edge-flow .br-camera-edge-core').evaluate(el=>getComputedStyle(el).strokeDasharray),'none');
+ assert.ok((await edge.locator('.br-camera-edge-flow .br-camera-edge-glow').evaluate(el=>getComputedStyle(el).stroke)).includes('brCameraEdgeGradient'));
+ assert.equal(await edge.locator('.br-camera-edge-flow .br-camera-edge-glow').evaluate(el=>getComputedStyle(el).strokeDasharray),'none');
  assert.ok((await edge.locator('.br-camera-edge-flow .br-camera-edge-glow').evaluate(el=>getComputedStyle(el).filter)).includes('brCameraEdgeGlow'));
  await page.screenshot({path:join(output,'uploading.png')});
  await page.waitForTimeout(1300);
@@ -245,7 +256,7 @@ try{
  await page.getByRole('button',{name:'Thử lưu lại ảnh 2',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
- await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-core')).stroke==='rgb(34, 201, 117)');
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-glow')).stroke==='rgb(34, 201, 117)');
  assert.equal(await edge.getAttribute('data-tone'),'saved');
  assert.equal(await edge.evaluate(el=>el.animationsPaused()),true);
  await page.waitForTimeout(480);
