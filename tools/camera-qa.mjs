@@ -151,10 +151,31 @@ try{
  const lightBefore=await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform);
  await page.waitForTimeout(180);
  assert.notEqual(await page.locator('.br-camera-shutter').evaluate(el=>getComputedStyle(el,'::after').transform),lightBefore,'Light must actually move');
+ await page.evaluate(()=>{
+   window.shutterSounds=0;window.realShutterSound=playBatchShutterSound;
+   playBatchShutterSound=()=>{shutterSounds++;realShutterSound();};
+ });
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
  assert.equal(await page.locator('#br-multi-cam').evaluate(el=>el.classList.contains('has-capture-feedback')),true,'Successful capture gives immediate feedback');
  assert.equal(await page.locator('.br-camera-capture-note').textContent(),'Đã chụp ✓');
+ assert.equal(await page.evaluate(()=>shutterSounds),1,'One boom per successful capture');
+ assert.equal(await page.evaluate(()=>!!batchShutterNoise&&notificationAudioContext.state==='running'),true,'Gesture unlocks actual Web Audio synthesis');
+ const soundSafety=await page.evaluate(()=>{
+   const context=notificationAudioContext,create=context.createOscillator;let oscillators=0;
+   context.createOscillator=function(){oscillators++;return create.call(this);};
+   notificationAudioEnabled=false;realShutterSound();const muted=oscillators===0;notificationAudioEnabled=true;
+   context.createOscillator=create;
+   const noise=batchShutterNoise;realShutterSound();const reused=noise===batchShutterNoise;
+   return {muted,reused};
+ });
+ assert.deepEqual(soundSafety,{muted:true,reused:true},'Mute is respected and repeated shots reuse the tiny noise buffer');
+ await page.evaluate(()=>{
+   const toBlob=HTMLCanvasElement.prototype.toBlob;
+   HTMLCanvasElement.prototype.toBlob=function(callback){callback(null);};
+   captureBatchMultiPhoto();HTMLCanvasElement.prototype.toBlob=toBlob;
+ });
+ assert.equal(await page.evaluate(()=>shutterSounds),1,'Failed encoding must not play a success sound');
  await page.screenshot({path:join(output,'captured.png')});
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
  const trayStability=await page.evaluate(()=>{
@@ -177,6 +198,7 @@ try{
  await page.getByRole('button',{name:'Chọn ảnh từ thư viện',exact:true}).click();
  await (await chooser).setFiles([{name:'library-1.png',mimeType:'image/png',buffer:png},{name:'library-2.png',mimeType:'image/png',buffer:png}]);
  await page.waitForFunction(()=>brMultiCameraShots.length===4&&brMultiCameraShots.every(s=>s.state==='uploaded'));
+ assert.equal(await page.evaluate(()=>shutterSounds),2,'Consecutive captures sound once each; library uploads stay silent');
  await page.screenshot({path:join(output,'saved.png')});
  for(const [width,height] of [[320,568],[844,390]]){
    await page.setViewportSize({width,height});

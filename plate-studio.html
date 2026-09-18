@@ -12438,6 +12438,35 @@ function batchCameraFrame(sourceWidth,sourceHeight,viewWidth,viewHeight,zoom=1){
   const width=viewWidth/scale,height=viewHeight/scale;
   return {x:(sourceWidth-width)/2,y:(sourceHeight-height)/2,width,height};
 }
+let batchShutterNoise=null;
+function prepareBatchShutterSound(){
+  if(!notificationAudioEnabled)return;
+  try{
+    unlockNotificationAudio();
+    if(notificationAudioContext?.state==='suspended')notificationAudioContext.resume().catch(()=>{});
+  }catch(_){} // Sound is optional; it must never interrupt capture.
+}
+function playBatchShutterSound(){
+  const context=notificationAudioContext;
+  if(!notificationAudioEnabled||!context||context.state!=='running')return;
+  try{
+    const now=context.currentTime,body=context.createOscillator(),gain=context.createGain();
+    // A tiny cartoon boom: a falling drum tone and a soft, short puff.
+    body.type='sine';body.frequency.setValueAtTime(210,now);body.frequency.exponentialRampToValueAtTime(48,now+.22);
+    gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.23,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.36);
+    body.connect(gain);gain.connect(context.destination);
+    body.onended=()=>{body.disconnect();gain.disconnect();};body.start(now);body.stop(now+.38);
+    if(!batchShutterNoise||batchShutterNoise.sampleRate!==context.sampleRate){
+      batchShutterNoise=context.createBuffer(1,Math.ceil(context.sampleRate*.24),context.sampleRate);
+      const samples=batchShutterNoise.getChannelData(0);for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+    }
+    const puff=context.createBufferSource(),filter=context.createBiquadFilter(),puffGain=context.createGain();
+    puff.buffer=batchShutterNoise;filter.type='lowpass';filter.frequency.setValueAtTime(1100,now);filter.frequency.exponentialRampToValueAtTime(120,now+.2);
+    puffGain.gain.setValueAtTime(.0001,now);puffGain.gain.exponentialRampToValueAtTime(.12,now+.006);puffGain.gain.exponentialRampToValueAtTime(.0001,now+.23);
+    puff.connect(filter);filter.connect(puffGain);puffGain.connect(context.destination);
+    puff.onended=()=>{puff.disconnect();filter.disconnect();puffGain.disconnect();};puff.start(now);puff.stop(now+.24);
+  }catch(_){}
+}
 function captureBatchMultiPhoto(){
   const modal=document.getElementById('br-multi-cam');if(!modal||brCameraCaptureBusy)return;
   if(modal.dataset.camera==='fallback'){openBatchMultiFallbackPicker();return;}
@@ -12445,6 +12474,7 @@ function captureBatchMultiPhoto(){
   const video=modal.querySelector('video');
   if(!video?.videoWidth){toast('Camera đang khởi động, hãy chờ một chút.');return;}
   if(brMultiCameraShots.filter(shot=>shot.state!=='uploaded').length>=30){toast('Hãy đợi ảnh đang chờ được lưu trước khi chụp tiếp.');return;}
+  prepareBatchShutterSound(); // Unlock on the tap, before asynchronous encoding (iOS).
   syncBatchCameraZoom(); // Flush the latest gesture before taking the matching crop.
   brCameraCaptureBusy=true;renderBatchMultiCameraTray();
   const bounds=modal.querySelector('.br-camera-viewfinder').getBoundingClientRect();
@@ -12457,6 +12487,7 @@ function captureBatchMultiPhoto(){
     canvas.toBlob(blob=>{
       brCameraCaptureBusy=false;
       if(!blob){toast('Không tạo được ảnh, hãy thử lại.');renderBatchMultiCameraTray();return;}
+      playBatchShutterSound();
       showBatchCameraCaptureFeedback();
       const stamp=new Date().toISOString().replace(/[:.]/g,'-');
       queueBatchCameraFiles([new File([blob],`me-in-${stamp}.jpg`,{type:'image/jpeg'})]);
