@@ -12155,6 +12155,7 @@ async function handleBatchDrop(event){
 
 // One session for live capture, native capture and library imports.
 async function openBatchMultiCamera(){
+  prepareBatchShutterSound();
   if(!canCaptureBatchReports()){toast('Bạn chưa được cấp quyền chụp ảnh báo cáo mẻ.');return;}
   if(document.getElementById('br-multi-cam'))return;
   brCameraReturnFocus=document.activeElement;
@@ -12438,33 +12439,31 @@ function batchCameraFrame(sourceWidth,sourceHeight,viewWidth,viewHeight,zoom=1){
   const width=viewWidth/scale,height=viewHeight/scale;
   return {x:(sourceWidth-width)/2,y:(sourceHeight-height)/2,width,height};
 }
-let batchShutterNoise=null;
+let batchShutterBuffer=null,batchShutterLoad=null,batchShutterSource=null;
 function prepareBatchShutterSound(){
   if(!notificationAudioEnabled)return;
   try{
     unlockNotificationAudio();
     if(notificationAudioContext?.state==='suspended')notificationAudioContext.resume().catch(()=>{});
+    if(notificationAudioContext&&!batchShutterBuffer&&!batchShutterLoad){
+      const context=notificationAudioContext;
+      batchShutterLoad=fetch('assets/camera-boom.mp3').then(response=>{
+        if(!response.ok)throw new Error('Sound unavailable');return response.arrayBuffer();
+      }).then(bytes=>context.decodeAudioData(bytes)).then(buffer=>{batchShutterBuffer=buffer;})
+        .catch(()=>{}).finally(()=>{batchShutterLoad=null;});
+    }
   }catch(_){} // Sound is optional; it must never interrupt capture.
 }
 function playBatchShutterSound(){
   const context=notificationAudioContext;
-  if(!notificationAudioEnabled||!context||context.state!=='running')return;
+  if(!notificationAudioEnabled||!context||context.state!=='running'||!batchShutterBuffer)return;
   try{
-    const now=context.currentTime,body=context.createOscillator(),gain=context.createGain();
-    // A tiny cartoon boom: a falling drum tone and a soft, short puff.
-    body.type='sine';body.frequency.setValueAtTime(210,now);body.frequency.exponentialRampToValueAtTime(48,now+.22);
-    gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.23,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.36);
-    body.connect(gain);gain.connect(context.destination);
-    body.onended=()=>{body.disconnect();gain.disconnect();};body.start(now);body.stop(now+.38);
-    if(!batchShutterNoise||batchShutterNoise.sampleRate!==context.sampleRate){
-      batchShutterNoise=context.createBuffer(1,Math.ceil(context.sampleRate*.24),context.sampleRate);
-      const samples=batchShutterNoise.getChannelData(0);for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
-    }
-    const puff=context.createBufferSource(),filter=context.createBiquadFilter(),puffGain=context.createGain();
-    puff.buffer=batchShutterNoise;filter.type='lowpass';filter.frequency.setValueAtTime(1100,now);filter.frequency.exponentialRampToValueAtTime(120,now+.2);
-    puffGain.gain.setValueAtTime(.0001,now);puffGain.gain.exponentialRampToValueAtTime(.12,now+.006);puffGain.gain.exponentialRampToValueAtTime(.0001,now+.23);
-    puff.connect(filter);filter.connect(puffGain);puffGain.connect(context.destination);
-    puff.onended=()=>{puff.disconnect();filter.disconnect();puffGain.disconnect();};puff.start(now);puff.stop(now+.24);
+    batchShutterSource?.stop();
+    const source=context.createBufferSource(),gain=context.createGain();
+    source.buffer=batchShutterBuffer;gain.gain.value=.65;
+    source.connect(gain);gain.connect(context.destination);batchShutterSource=source;
+    source.onended=()=>{source.disconnect();gain.disconnect();if(batchShutterSource===source)batchShutterSource=null;};
+    source.start();
   }catch(_){}
 }
 function captureBatchMultiPhoto(){

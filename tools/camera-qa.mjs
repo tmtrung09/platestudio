@@ -16,6 +16,12 @@ try{
  await page.route(/https?:.*\/(rest|storage|functions)\/v1\//,route=>route.abort());
  await page.goto(pathToFileURL(join(root,'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>typeof openBatchMultiCamera==='function');
+ // Local-file test pages cannot fetch relative files; serve the exact shipped MP3.
+ await page.evaluate(bytes=>{
+   const original=window.fetch;
+   window.fetch=(url,...args)=>String(url)==='assets/camera-boom.mp3'
+     ?Promise.resolve(new Response(new Uint8Array(bytes),{status:200})) :original(url,...args);
+ },[...readFileSync(join(root,'assets','camera-boom.mp3'))]);
  await page.addStyleTag({content:'#auth-ov{display:none!important}'});
  await page.evaluate(()=>{
    canCaptureBatchReports=()=>true;
@@ -160,16 +166,16 @@ try{
  assert.equal(await page.locator('#br-multi-cam').evaluate(el=>el.classList.contains('has-capture-feedback')),true,'Successful capture gives immediate feedback');
  assert.equal(await page.locator('.br-camera-capture-note').textContent(),'Đã chụp ✓');
  assert.equal(await page.evaluate(()=>shutterSounds),1,'One boom per successful capture');
- assert.equal(await page.evaluate(()=>!!batchShutterNoise&&notificationAudioContext.state==='running'),true,'Gesture unlocks actual Web Audio synthesis');
+ assert.equal(await page.evaluate(()=>!!batchShutterBuffer&&notificationAudioContext.state==='running'),true,'Gesture unlocks the supplied MP3');
  const soundSafety=await page.evaluate(()=>{
-   const context=notificationAudioContext,create=context.createOscillator;let oscillators=0;
-   context.createOscillator=function(){oscillators++;return create.call(this);};
+   const context=notificationAudioContext,create=context.createBufferSource;let oscillators=0;
+   context.createBufferSource=function(){oscillators++;return create.call(this);};
    notificationAudioEnabled=false;realShutterSound();const muted=oscillators===0;notificationAudioEnabled=true;
-   context.createOscillator=create;
-   const noise=batchShutterNoise;realShutterSound();const reused=noise===batchShutterNoise;
+   context.createBufferSource=create;
+   const buffer=batchShutterBuffer;realShutterSound();const reused=buffer===batchShutterBuffer;
    return {muted,reused};
  });
- assert.deepEqual(soundSafety,{muted:true,reused:true},'Mute is respected and repeated shots reuse the tiny noise buffer');
+ assert.deepEqual(soundSafety,{muted:true,reused:true},'Mute is respected and repeated shots reuse the decoded MP3');
  await page.evaluate(()=>{
    const toBlob=HTMLCanvasElement.prototype.toBlob;
    HTMLCanvasElement.prototype.toBlob=function(callback){callback(null);};
