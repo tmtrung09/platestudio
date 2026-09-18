@@ -4839,7 +4839,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
       <div class="sect-hd">
         <svg viewBox="0 0 24 24"><path d="M12 9v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg>
         Nhắc part còn thiếu <span class="sect-count" id="cnt-reminders">0</span>
-        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="renderRemindersPage()">↻ Làm mới</button><button class="btn btn-ac btn-sm" onclick="openBatchReportHub()">+ Báo cáo mẻ in</button></div>
+        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="refreshPageFromCloud('reminders')">↻ Làm mới</button><button class="btn btn-ac btn-sm" onclick="openBatchReportHub()">+ Báo cáo mẻ in</button></div>
       </div>
       <div id="reminders-page"></div>
     </div>
@@ -4877,7 +4877,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
       <div class="sect-hd">
         <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
         Đồng bộ KiotViet <span class="sect-count" id="cnt-kiotviet">0</span>
-        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="renderKiotVietPage()">↻ Làm mới</button></div>
+        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="refreshPageFromCloud('kiotviet')">↻ Làm mới</button></div>
       </div>
       <div id="kiotviet-page"></div>
     </div>
@@ -4891,7 +4891,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
       <div class="sect-hd">
         <svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>
         Cần in lại <span class="sect-count" id="cnt-inventory">0</span>
-        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="renderInventoryPage()">↻ Làm mới</button><button class="btn btn-ac btn-sm ai-rainbow" id="inventory-ai-btn" onclick="analyzeKiotInventory()">✦ Phân tích</button></div>
+        <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="refreshPageFromCloud('inventory')">↻ Làm mới</button><button class="btn btn-ac btn-sm ai-rainbow" id="inventory-ai-btn" onclick="analyzeKiotInventory()">✦ Phân tích</button></div>
       </div>
       <div id="inventory-page"></div>
     </div>
@@ -4902,7 +4902,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
     </div>
 
     <div class="page" id="page-devices">
-      <div class="sect-hd"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị <span class="sect-count" id="cnt-devices">0</span><div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="renderDevicesPage()">↻ Làm mới</button><button class="btn btn-ghost btn-sm" onclick="editBatchDeviceProfile()">Sửa thiết bị này</button></div></div>
+      <div class="sect-hd"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị <span class="sect-count" id="cnt-devices">0</span><div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" onclick="refreshPageFromCloud('devices')">↻ Làm mới</button><button class="btn btn-ghost btn-sm" onclick="editBatchDeviceProfile()">Sửa thiết bị này</button></div></div>
       <div id="devices-page"></div>
     </div>
 
@@ -5758,8 +5758,9 @@ function sortedBatchReports(reports){
   });
 }
 
-async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page=1,pageSize=BATCH_CLOUD_PAGE_SIZE}={}) {
-  if(!sb || !currentUser || batchCloudLoading) return [];
+async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page=1,pageSize=BATCH_CLOUD_PAGE_SIZE,canCommit=null}={}) {
+  if(!sb || !currentUser) return [];
+  if(batchCloudLoading)throw new Error('Báo cáo đang tải, vui lòng thử lại.');
   batchCloudLoading=true;
   try {
     const safePage=Math.max(1,Number(page)||1), safeSize=Math.max(1,Math.min(100,Number(pageSize)||BATCH_CLOUD_PAGE_SIZE));
@@ -5807,6 +5808,7 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
       rows=rows.filter(row=>!staleIds.has(row?.id||row?.data?.id));
       if(typeof count==='number')count=Math.max(0,count-staleIds.size);
     }
+    if(canCommit&&!canCommit())throw new Error('Chờ hoàn tất thao tác để cập nhật.');
     rememberBatchCloudDisplayOrder(rows,{reset:true});
     batchReports=rows.map(row=>row.data).filter(Boolean);
     rememberBatchReportCloudSnapshot(batchReports);
@@ -6377,15 +6379,7 @@ function installLocalWorkspaceSyncListeners(){
     queueLocalWorkspaceRefresh(event.key,event.newValue);
   });
 }
-async function refreshRemoteCloudTable(key){
-  if(key==='batchReports'){
-    invalidateFulfillmentCloudManualReports();await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize});
-    refreshCloudSnapshotFingerprint('batchReports');
-    return;
-  }
-  const table=CLOUD_TABLES[key];if(!table)return;
-  const {data,error}=await sb.from(table).select('data').eq('workspace_id',cloudWorkspaceId()).order('updated_at',{ascending:true});
-  if(error)throw error;const rows=(data||[]).map(row=>row.data);
+function refreshRemoteCloudTable(key,rows){
   if(key==='models'){models=rows;migrateModelsSchema();saveLocalValue(K.models,models);}
   else if(key==='fils'){fils=rows;saveLocalValue(K.fils,fils);}
   else if(key==='projects'){projects=rows;saveLocalValue(K.projects,projects);}
@@ -6406,40 +6400,78 @@ async function refreshRemoteCloudTable(key){
 }
 async function applyRemoteDataRefresh(){
   if(!remoteDataRefreshPending||remoteRefreshApplying)return;
-  if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
-  remoteRefreshApplying=true;loadingCloud=true;
+  if(!currentUser||!cloudReady)return;
+  if(loadingCloud||cloudSyncing||cloudOutbox.length||!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
+  remoteRefreshApplying=true;
+  const workspace=cloudWorkspaceId(),userId=currentUser.id,writeAt=lastCloudWriteAt,editVersion=cloudLocalEditVersion;
+  const canCommit=()=>currentUser?.id===userId&&cloudWorkspaceId()===workspace&&!cloudSyncing&&!cloudOutbox.length&&lastCloudWriteAt===writeAt&&cloudLocalEditVersion===editVersion&&canAutoApplyRemoteRefresh();
+  const tables=remoteRefreshTables.size?[...remoteRefreshTables]:Object.keys(CLOUD_TABLES);
+  tables.forEach(key=>remoteRefreshTables.delete(key));
   const scrollTop=window.scrollY||0;
+  const scrolls=[...document.querySelectorAll('.pg-content')].map(element=>[element,element.scrollTop]);
+  const search=document.activeElement?.matches?.('input[type="search"],input[id*="search"]')?document.activeElement:null;
+  let succeeded=false;
   try{
     /* Chỉ lấy dữ liệu cloud khi vùng nhập đã an toàn. Trước đây dữ liệu global
        được thay ngay cả khi form vẫn đang gõ, khiến lần Lưu sau có thể dùng
        nhầm snapshot mới. */
     /* Một thay đổi từ thiết bị khác thường chỉ chạm một bảng. Trước đây lần
        nào cũng tải lại mọi bảng + lịch sử mẻ, gây khựng rõ khi xưởng có dữ liệu lớn. */
-    const tables=[...remoteRefreshTables];remoteRefreshTables.clear();
-    if(tables.length===1)await refreshRemoteCloudTable(tables[0]);
-    else {invalidateFulfillmentCloudManualReports();await loadCloudData();}
+    const entries=await Promise.all(tables.filter(key=>key!=='batchReports').map(async key=>{
+      const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
+      if(error)throw error;return [key,(data||[]).map(row=>row.data)];
+    }));
+    if(!canCommit())return;
+    if(tables.includes('batchReports')){
+      await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit});
+      invalidateFulfillmentCloudManualReports();refreshCloudSnapshotFingerprint('batchReports');
+    }
+    if(!canCommit())return;
+    // Prepared collections are committed synchronously, without network gaps.
+    // Suppress normalization writes only during the synchronous commit, never
+    // across network awaits where a real user edit must still enter the outbox.
+    loadingCloud=true;
+    try{entries.forEach(([key,rows])=>refreshRemoteCloudTable(key,rows));}
+    finally{loadingCloud=false;}
     updateCamBadge();
-    if(!canAutoApplyRemoteRefresh()){scheduleDeferredRemoteRefresh();return;}
-    remoteDataRefreshPending=false;
+    succeeded=true;remoteDataRefreshPending=remoteRefreshTables.size>0;
     document.getElementById('remote-data-refresh-notice')?.remove();
     renderPage(curPage);renderSb();
-    requestAnimationFrame(()=>window.scrollTo({top:scrollTop,left:0,behavior:'instant'}));
+    if(search){const input=document.getElementById(search.id);if(input&&input!==search){input.value=search.value;input.focus({preventScroll:true});input.setSelectionRange?.(search.selectionStart,search.selectionEnd);}}
+    requestAnimationFrame(()=>{window.scrollTo({top:scrollTop,left:0,behavior:'instant'});scrolls.forEach(([element,top])=>element.scrollTop=top);});
     setSyncState('Đã đồng bộ','ok');
   }catch(error){
     console.error('Realtime refresh failed',error);setSyncState('Lỗi đồng bộ','err');
   }finally{
-    remoteRefreshApplying=false;loadingCloud=false;
+    remoteRefreshApplying=false;
+    if(!succeeded&&currentUser?.id===userId&&cloudWorkspaceId()===workspace)tables.forEach(key=>remoteRefreshTables.add(key));
+    remoteDataRefreshPending=remoteRefreshTables.size>0;
     /* Nếu có thông báo Realtime tới trong lúc đang nạp snapshot này, nó vẫn
        phải được xử lý ở lượt sau — không để debounce làm rơi thay đổi mới. */
-    if(remoteRefreshTables.size&&!remoteDataRefreshPending)queueRemoteDataRefresh();
+    if(remoteDataRefreshPending)scheduleDeferredRemoteRefresh(succeeded?350:3000);
   }
+  return succeeded;
+}
+async function refreshPageFromCloud(page=curPage){
+  if(!sb||!currentUser||!cloudReady){toast('Chưa kết nối cloud.');return false;}
+  Object.keys(CLOUD_TABLES).forEach(key=>remoteRefreshTables.add(key));
+  remoteDataRefreshPending=true;
+  setSyncState('Đang làm mới...');
+  const refreshed=await applyRemoteDataRefresh();
+  if(!refreshed){if(!canAutoApplyRemoteRefresh()||cloudOutbox.length)setSyncState('Chờ hoàn tất thao tác');scheduleDeferredRemoteRefresh(3000);}
+  if(refreshed&&['kiotviet','inventory','sales'].includes(page)){
+    try{await loadKiotSalesArchiveIndex({force:true});if(curPage===page)renderPage(page);}
+    catch(error){setSyncState('Chưa tải được báo cáo bán hàng','err');}
+  }
+  return refreshed;
 }
 /* Dữ liệu từ thiết bị khác tự hiện ngay khi chỉ đang xem. Lúc đang gõ, mở form
    hay modal, hệ thống giữ nguyên snapshot hiện tại và tự nạp lại khi thao tác
    kết thúc — không có nút “Cập nhật” bắt người dùng tự xử lý. */
 function canAutoApplyRemoteRefresh(){
   const active=document.activeElement;
-  const isTyping=active?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable="true"]');
+  const isSearch=active?.matches?.('input[type="search"],input[id*="search"]');
+  const isTyping=!isSearch&&active?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable="true"]');
   if(isTyping)return false;
   const protectedOverlays=['ov-batch-report','ov-order-form','ov-print-progress','ov-project-detail','dlg-model','dlg-project','dlg-order-edit','dlg-plate','dlg-fil','dlg-mv','dlg-model-history','dlg-category-assign','dlg-maker','dlg-action','confirm-ov','more-sheet-ov','spotlight-ov'];
   return !protectedOverlays.some(id=>{
@@ -6447,7 +6479,9 @@ function canAutoApplyRemoteRefresh(){
     /* Một số form được gắn sẵn bên trong page để dùng lại layout nên CSS của
        chúng có thể là display:flex dù page cha đang ẩn. Chỉ chặn khi overlay
        thực sự có khung hiển thị trên màn hình. */
-    return element&&!element.hidden&&getComputedStyle(element).display!=='none'&&element.getClientRects().length>0;
+    if(!element||element.hidden||element.closest('[inert]'))return false;
+    const style=getComputedStyle(element);
+    return style.display!=='none'&&style.visibility!=='hidden'&&style.visibility!=='collapse'&&element.getClientRects().length>0;
   });
 }
 function scheduleDeferredRemoteRefresh(delay=350){
@@ -6471,9 +6505,9 @@ async function readCloudRemoteRevisions(){
   const workspace=cloudWorkspaceId();
   if(!workspace||!sb)return {workspace,revisions:[]};
   const revisions=await Promise.all(Object.entries(CLOUD_TABLES).map(async([key,table])=>{
-    const {data,error}=await sb.from(table).select('updated_at').eq('workspace_id',workspace).order('updated_at',{ascending:false}).limit(1);
+    const {data,error,count}=await sb.from(table).select('updated_at',{count:'exact'}).eq('workspace_id',workspace).order('updated_at',{ascending:false}).limit(1);
     if(error)throw error;
-    return [key,data?.[0]?.updated_at||''];
+    return [key,`${data?.[0]?.updated_at||''}:${count??''}`];
   }));
   return {workspace,revisions};
 }
@@ -6565,7 +6599,7 @@ function setupCloudRealtime() {
   Object.entries(CLOUD_TABLES).forEach(([key,table])=>{
     channel.on('postgres_changes',{event:'*',schema:'public',table,filter:`workspace_id=eq.${cloudWorkspaceId()}`},payload=>{
       const workspace=payload.new?.workspace_id || payload.old?.workspace_id;
-      if(workspace===cloudWorkspaceId()) scheduleCloudRefresh(key);
+      if(workspace===cloudWorkspaceId()||payload.eventType==='DELETE') scheduleCloudRefresh(key);
     });
   });
   channel.on('postgres_changes',{event:'*',schema:'public',table:KIOT_SALES_REPORTS_TABLE,filter:`workspace_id=eq.${cloudWorkspaceId()}`},payload=>{
@@ -6576,6 +6610,9 @@ function setupCloudRealtime() {
 }
 async function loadCloudData() {
   const localBatchBackup = [...batchReports];
+  needsCloudBatchSeed=false;
+  // Independent reads start together; keep a handled result on failure.
+  const batchPagePromise=cloudOutbox.length?Promise.resolve({rows:null}):loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize}).then(rows=>({rows}),error=>({error}));
   /* batch_reports được nạp riêng theo cursor phía dưới; các collection khác nhỏ hơn
      nên vẫn nạp đồng thời để các logic Order/Plate luôn nhất quán. */
   const entries = await Promise.all(Object.entries(CLOUD_TABLES).filter(([key])=>key!=='batchReports').map(async ([key, table]) => {
@@ -6584,16 +6621,12 @@ async function loadCloudData() {
     return [key, data.map(row => row.data)];
   }));
   const remote = Object.fromEntries(entries);
+  const batchPage=await batchPagePromise;
   /* batch_reports được nạp riêng để phân trang. Tuy vậy nó vẫn phải được tính
      khi quyết định workspace có dữ liệu hay chưa; nếu không workspace chỉ có
      ảnh báo cáo sẽ bị hiểu nhầm là trống và thư viện hiện rỗng. */
   let remoteEmpty = Object.values(remote).every(list => !list.length);
-  if(remoteEmpty){
-    try {
-      const firstBatchPage=await loadBatchReportsFromCloud({reset:true,page:1,pageSize:batchReportPageSize||BATCH_CLOUD_PAGE_SIZE});
-      if(firstBatchPage.length || batchCloudTotal>0) remoteEmpty=false;
-    } catch(error) { console.warn('Không kiểm tra được lịch sử báo cáo khi mở cloud',error); }
-  }
+  if(remoteEmpty&&(batchPage.rows?.length||batchCloudTotal>0||batchPage.error))remoteEmpty=false;
   // Khi trang được mở lại giữa lúc còn thay đổi chưa được xác nhận, local là nguồn
   // mới hơn cloud. Không được nạp cloud cũ đè lên snapshot đang chờ gửi.
   if(cloudOutbox.length) {
@@ -6614,16 +6647,12 @@ async function loadCloudData() {
   } else {
     models=remote.models; fils=remote.fils; projects=remote.projects;
     orders=remote.orders; plates=remote.plates; pitems=remote.pitems;
-    try {
-      const firstPage=await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize});
-      if(!firstPage.length && localBatchBackup.length) {
-        batchReports=localBatchBackup;
-        needsCloudBatchSeed=true;
-      } else needsCloudBatchSeed=false;
-    } catch(batchError) {
-      console.warn('Không nạp được trang lịch sử báo cáo từ cloud',batchError);
+    needsCloudBatchSeed=false;
+    if(batchPage.error) {
+      console.warn('Không nạp được trang lịch sử báo cáo từ cloud',batchPage.error);
       batchReports=localBatchBackup;
       batchCloudHasMore=false;
+      remoteRefreshTables.add('batchReports');scheduleCloudRefresh('batchReports');
     }
     brands=remote.settings.find(x=>x.id==='brands')?.values || [];
     operations=remote.settings.find(x=>x.id==='operations')?.values || {qualityIssues:[],deliveries:[],deliveryBatches:[]};
@@ -6645,7 +6674,9 @@ async function loadCloudData() {
   if(cloudReady&&typeof announceUnseenSystemEvents==='function')announceUnseenSystemEvents();
   if(cloudReady&&typeof announceDeliveryPhotoRequests==='function')announceDeliveryPhotoRequests();
 }
+let cloudLocalEditVersion=0;
 function scheduleCloudSync() {
+  cloudLocalEditVersion++;
   // Outbox chỉ chứa metadata nhẹ; dữ liệu mới nhất luôn được lưu offline trước.
   // Nhờ vậy tắt tab/mất mạng giữa chừng vẫn không làm mất thay đổi.
   if(!currentUser || !cloudReady || loadingCloud) return;
@@ -6817,7 +6848,16 @@ function syncAuthUI(loggedIn) {
   if(typeof renderSb === 'function') renderSb();
   updateGuideReopenButton?.();
 }
-async function startCloudSession(session) {
+let cloudSessionStartPromise=null,cloudSessionStartUser='';
+function startCloudSession(session){
+  if(cloudSessionStartPromise&&cloudSessionStartUser===session.user.id)return cloudSessionStartPromise;
+  cloudSessionStartUser=session.user.id;
+  const task=loadCloudSession(session);
+  cloudSessionStartPromise=task;
+  task.finally(()=>{if(cloudSessionStartPromise===task)cloudSessionStartPromise=null;});
+  return task;
+}
+async function loadCloudSession(session) {
   if(cloudReady && currentUser?.id === session.user.id) return;
   currentUser = session.user; loadingCloud = true; setCloudLoadingOverlay(true); setCardContentLoading(true); setSyncState('Đang tải dữ liệu...');
   try {
@@ -6831,14 +6871,12 @@ async function startCloudSession(session) {
       return;
     }
     await ensureCloudWorkspace();
-    await registerWorkspaceProfile();
     restoreBatchLibraryView();
-    await loadCloudData();
+    await Promise.all([registerWorkspaceProfile(),loadCloudData()]);
     cloudReady = true;
     announceDeliveryPhotoRequests?.();
-    await processTrashRetention?.({announce:false});
     if(typeof primeSystemNotificationEvents==='function')primeSystemNotificationEvents();
-    await syncLocalAccessControlToWorkspace();
+    // Read authoritative membership; never replay cached roles on every login.
     await loadWorkspaceAccessRows();
     if(requiredWorkspacePermission(curPage)&&!canAccess(requiredWorkspacePermission(curPage)))curPage='dashboard';
     registerBatchDevice();
@@ -6850,7 +6888,7 @@ async function startCloudSession(session) {
       if(curPage==='kiotviet')renderKiotVietPage();
       if(curPage==='sales')renderSalesPage();
       if(curPage==='inventory')renderInventoryPage();
-    });
+    }).catch(error=>console.warn('Không tải được chỉ mục bán hàng',error));
     /* Mốc được ghi sau lần tải đầu tiên, nhờ đó lần đối chiếu nền chỉ nạp lại
        đúng khi cloud đã đổi — không tự dựng lại giao diện vô ích. */
     primeCloudRemoteRevisions();
@@ -6868,6 +6906,11 @@ async function startCloudSession(session) {
        thông báo (đặc biệt Xử lý đơn) bị dựng một lần khi boot và dựng lại ở
        đây; Safari iPhone có thể hết bộ nhớ và tự đóng WebKit. */
     goPage(curPage,{historyMode:'replace'});
+    const sessionUser=currentUser.id;
+    setTimeout(()=>{
+      if(currentUser?.id!==sessionUser||cloudOutbox.length||cloudSyncing||!canAutoApplyRemoteRefresh())return;
+      processTrashRetention({announce:false}).catch(error=>console.warn('Chưa dọn được thùng rác',error));
+    },5000);
     if(STAFF_REPORT_MODE) {
       document.body.classList.add('staff-report-mode');
       setTimeout(()=>{ goPage('batches'); openBatchReportHub(); }, 0);
@@ -6879,7 +6922,7 @@ async function startCloudSession(session) {
     }
   } catch(error) {
     console.error('Cloud load failed', error);
-    setSyncState('Cần tạo database', 'err');
+    setSyncState('Không tải được dữ liệu', 'err');
     showAuth('signin');
     authMessage('Không tải được dữ liệu: '+error.message);
   } finally { loadingCloud = false; setCardContentLoading(false); setCloudLoadingOverlay(false); }
@@ -7407,7 +7450,7 @@ const GUIDE_TOURS={
   ]},
   reminders:{title:'Nhắc part còn thiếu',steps:[
     ['Danh sách việc chưa khép kín','Trang này chỉ ra part còn thiếu sau khi so với yêu cầu của order.', '#reminders-page', 'Đây là danh sách nhắc việc, không phải nơi tạo order mới.'],
-    ['Làm mới khi vừa cập nhật báo cáo','Sau khi có ảnh mẻ hoặc QC part, bấm Làm mới để xem trạng thái mới nhất.', '#page-reminders button[onclick="renderRemindersPage()"]', 'Một part biến mất khỏi đây khi đã đủ theo yêu cầu.'],
+    ['Làm mới','Lấy trạng thái mới nhất từ cloud.', '#page-reminders .gap-row button:first-child', 'Part đủ số lượng sẽ tự rời danh sách.'],
     ['Báo cáo ngay từ đây','Nút Báo cáo mẻ in dẫn tới thao tác bổ sung minh chứng cho part vừa hoàn tất.', '#page-reminders button[onclick="openBatchReportHub()"]', 'Đi theo từng thẻ để tránh bỏ sót part thiếu.']
   ]},
   fulfillment:{title:'Gia công & giao hàng',version:2,steps:[
@@ -7704,13 +7747,13 @@ function workshopContextStatusOptions(row){if(!row)return[];const current=worksh
 function openWorkshopContextQuickStatus(encodedRowKey,next){const rowKey=decodeURIComponent(encodedRowKey),row=fulfillmentWorkshopRows().find(item=>workshopWaitKey(item)===rowKey),meta=WORKSHOP_CONTEXT_STATUS_META[next];if(!row||!meta||!workshopContextStatusOptions(row).includes(next)){toast('Trạng thái này hiện chưa phù hợp với model.');return;}const name=row.it?.modelName||row.m?.name||'Model',available=workshopCompleteSetQty(row),detail=available?`Hiện có ${available} bộ part hoàn chỉnh.`:'Chưa có bộ part hoàn chỉnh.';showActionDialog({title:'Cập nhật trạng thái nhanh',icon:'↯',message:`<b>${esc(name)}</b> sẽ chuyển sang <b>${esc(meta.label)}</b>.`,context:`${detail} Chỉ xác nhận khi đã kiểm tra điều kiện thực tế.`,secondaryLabel:'Huỷ',secondaryAction:'closeActionDialog()',primaryLabel:'✓ Cập nhật',primaryAction:`applyWorkshopContextQuickStatus('${esc(encodedRowKey)}','${next}')`});}
 function applyWorkshopContextQuickStatus(encodedRowKey,next){const rowKey=decodeURIComponent(encodedRowKey),row=fulfillmentWorkshopRows().find(item=>workshopWaitKey(item)===rowKey);if(!row||!workshopContextStatusOptions(row).includes(next)){closeActionDialog();toast('Trạng thái không còn phù hợp; hãy kiểm tra lại model.');return;}closeActionDialog();applyWorkshopQuickStatus(encodedRowKey,next,{confirmed:true});}
 function appContextPageItems(page){
-  const refresh=()=>renderPage(page);
+  const refresh=()=>refreshPageFromCloud(page);
   if(page==='models')return [appContextItem('Thêm Model','＋',()=>openAddModel?.()),appContextItem('Tạo đơn hàng','＋',()=>openOrderForm(),{separator:true}),appContextItem('Làm mới danh sách','↻',refresh)];
   if(page==='fulfillment')return [appContextItem('Thao tác hàng loạt','☷',()=>{if(!fulfillmentBulkMode)toggleFulfillmentBulkMode();else toast('Đang ở chế độ chọn nhiều.');}),appContextItem('Tạo đợt giao','🚚',()=>openDeliveryBatchBuilder(),{separator:true}),appContextItem('Nhận hàng','📥',()=>openReceivingHub()),appContextItem('Làm mới','↻',()=>refreshFulfillmentPage())];
-  if(page==='batches')return [appContextItem('Chụp mẻ in','📷',()=>openBatchReportHub()),appContextItem('Chọn nhiều báo cáo','☷',()=>toggleBatchReportMultiSelect?.(),{separator:true}),appContextItem('Làm mới','↻',()=>renderBatchReportPage?.())];
+  if(page==='batches')return [appContextItem('Chụp mẻ in','📷',()=>openBatchReportHub()),appContextItem('Chọn nhiều báo cáo','☷',()=>toggleBatchReportMultiSelect?.(),{separator:true}),appContextItem('Làm mới','↻',refresh)];
   if(page==='orders'||page==='order-form')return [appContextItem('Tạo đơn hàng','＋',()=>openOrderForm()),appContextItem('Mở tiến độ in','▥',()=>goPage('progress'),{separator:true}),appContextItem('Làm mới','↻',refresh)];
   if(page==='delivery-builder')return [appContextItem('Mở giỏ giao','🛒',()=>openDeliveryCartDialog?.()),appContextItem('Quay về gia công','←',()=>goPage('fulfillment'),{separator:true})];
-  if(page==='inventory')return [appContextItem('Phân tích tồn kho','✦',()=>analyzeKiotInventory?.()),appContextItem('Làm mới','↻',()=>renderInventoryPage?.(),{separator:true})];
+  if(page==='inventory')return [appContextItem('Phân tích tồn kho','✦',()=>analyzeKiotInventory?.()),appContextItem('Làm mới','↻',refresh,{separator:true})];
   return [appContextItem('Làm mới trang','↻',refresh)];
 }
 function appContextItemsForTarget(target){
@@ -17184,7 +17227,7 @@ function markWorkshopItemHanded(orderId,itemId){
 }
 function refreshFulfillmentPage(){
   invalidateFulfillmentCloudManualReports();
-  renderFulfillmentPage();
+  return refreshPageFromCloud('fulfillment');
 }
 const FULFILLMENT_STAGE_COLLAPSE_KEY='ps_fulfillment_collapsed_stages';
 function fulfillmentCollapsedStages(){

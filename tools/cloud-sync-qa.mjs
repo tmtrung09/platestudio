@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright-core';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const source=readFileSync(resolve('plate-studio.html'),'utf8');
+for(const match of source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new Function(match[1]);
+const executablePath=[process.env.CHROME_PATH,'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].filter(Boolean).find(existsSync);
+const browser=await chromium.launch({executablePath,headless:true});
+try{
+  for(const width of [390,1280])for(const theme of ['light','dark']){
+    const context=await browser.newContext({viewport:{width,height:844}});
+    await context.route(/^https?:/,route=>route.abort()); // Never contact production.
+    const page=await context.newPage();
+    await page.goto(pathToFileURL(resolve('plate-studio.html')).href);
+    await page.waitForTimeout(350);
+    const results=await page.evaluate(async theme=>{
+      document.documentElement.dataset.theme=theme;
+      document.getElementById('auth-ov').style.display='none';
+      document.activeElement?.blur();
+      const results=[];const check=(name,ok)=>results.push({name,ok:!!ok});
+      check('closed hidden menu does not block refresh',canAutoApplyRemoteRefresh());
+      const menu=document.getElementById('more-sheet-ov');
+      menu.inert=false;menu.hidden=false;menu.classList.add('show');menu.style.setProperty('visibility','visible','important');menu.style.setProperty('display','flex','important');
+      check('visible menu defers refresh',!canAutoApplyRemoteRefresh());
+      menu.classList.remove('show');menu.style.visibility='hidden';menu.inert=true;
+      const input=document.createElement('input');document.body.append(input);input.focus();
+      check('editing defers refresh',!canAutoApplyRemoteRefresh());
+      input.id='qa-search';input.value='giữ từ tìm';
+      check('search does not indefinitely block sync',canAutoApplyRemoteRefresh());
+      input.blur();input.remove();
+      currentUser={id:'qa-user'};activeWorkspace={workspace_id:'qa-workspace',owner_user_id:'qa-user'};cloudReady=true;loadingCloud=false;cloudOutbox=[];cloudSyncing=false;lastCloudWriteAt=0;
+      renderPage=()=>{};renderSb=()=>{};updateCamBadge=()=>{};
+      const queried=[];let fail=false,whileFetching=null;
+      sb={from(table){queried.push(table);return {select(){return this;},eq(){return this;},order(){if(whileFetching){const action=whileFetching;whileFetching=null;action();}return Promise.resolve(fail?{error:new Error('QA network failure')}:{data:[{data:{id:table+'-new'}}]});}};}};
+      const prepare=(...keys)=>{clearTimeout(remoteRefreshWatchTimer);remoteRefreshTables.clear();keys.forEach(key=>remoteRefreshTables.add(key));remoteDataRefreshPending=true;};
+      prepare('orders','projects');await applyRemoteDataRefresh();
+      check('multiple events fetch only affected tables',queried.length===2&&orders[0]?.id==='orders-new'&&projects[0]?.id==='projects-new');
+      check('successful refresh clears pending',!remoteDataRefreshPending);
+      fail=true;prepare('orders');await applyRemoteDataRefresh();
+      check('failed reads retain table for retry',remoteDataRefreshPending&&remoteRefreshTables.has('orders'));
+      fail=false;await applyRemoteDataRefresh();check('retry recovers',!remoteDataRefreshPending);
+      orders=[{id:'local-edit'}];whileFetching=()=>{cloudLocalEditVersion++;};prepare('orders');await applyRemoteDataRefresh();
+      check('edits during read are never overwritten',orders[0].id==='local-edit'&&remoteRefreshTables.has('orders'));
+      whileFetching=()=>remoteRefreshTables.add('projects');prepare('orders');await applyRemoteDataRefresh();
+      check('events during fetch remain queued',remoteDataRefreshPending&&remoteRefreshTables.has('projects'));
+      prepare('orders');cloudOutbox=[{id:'pending'}];const count=queried.length;await applyRemoteDataRefresh();
+      check('unsent changes block server replacement',queried.length===count&&remoteRefreshTables.has('orders'));cloudOutbox=[];
+      whileFetching=()=>{activeWorkspace={workspace_id:'different'};};prepare('orders');orders=[{id:'new-session'}];await applyRemoteDataRefresh();
+      check('old workspace response ignored',orders[0].id==='new-session');activeWorkspace={workspace_id:'qa-workspace'};
+      let batches=0;loadBatchReportsFromCloud=async()=>{batches++;return [];};prepare();
+      await refreshPageFromCloud('fulfillment');
+      check('manual refresh reads all shared data and batch page',batches===1&&queried.includes('settings')&&queried.includes('models'));
+      check('refresh buttons use cloud handlers',[...document.querySelectorAll('button')].filter(b=>b.textContent.includes('Làm mới')).every(b=>!/^render/.test(b.getAttribute('onclick')||'')));
+      check('startup does not replay cached permissions',!loadCloudSession.toString().includes('await syncLocalAccessControlToWorkspace'));
+      check('maintenance starts after first page render',loadCloudSession.toString().indexOf('goPage(curPage')<loadCloudSession.toString().indexOf('processTrashRetention'));
+      clearTimeout(remoteRefreshWatchTimer);remoteRefreshTables.clear();remoteDataRefreshPending=false;
+      let releaseBatch,batchStarted=false,collectionsStarted=0;
+      loadBatchReportsFromCloud=()=>{batchStarted=true;return new Promise(resolve=>{releaseBatch=()=>{batchReports=[];batchCloudTotal=0;resolve([]);};});};
+      sb={from(){collectionsStarted++;return {select(){return this;},eq(){return this;},order(){return Promise.resolve({data:[]});}};}};
+      cloudReady=false;cloudOutbox=[];batchReports=[{id:'old-cache'}];needsCloudBatchSeed=true;
+      const loading=loadCloudData();
+      check('startup reads batch and collections concurrently',batchStarted&&collectionsStarted===7);
+      releaseBatch();await loading;
+      check('empty remote page never restores or seeds stale cache',batchReports.length===0&&!needsCloudBatchSeed);
+      let releaseSession,starts=0;
+      loadCloudSession=()=>{starts++;return new Promise(resolve=>releaseSession=resolve);};
+      const first=startCloudSession({user:{id:'same-user'}}),second=startCloudSession({user:{id:'same-user'}});
+      check('duplicate auth events share one startup',first===second&&starts===1);releaseSession();await first;
+      let countValue=5;
+      sb={from(){return {select(){return this;},eq(){return this;},order(){return this;},limit(){return Promise.resolve({data:[{updated_at:'unchanged'}],count:countValue});}};}};
+      const revisionBefore=await readCloudRemoteRevisions();countValue=4;const revisionAfter=await readCloudRemoteRevisions();
+      check('deletion detected even when newest timestamp unchanged',revisionBefore.revisions[0][1]!==revisionAfter.revisions[0][1]);
+      clearTimeout(remoteRefreshWatchTimer);clearTimeout(cloudRefreshTimer);clearTimeout(cloudRemoteReconcileTimer);
+      return results;
+    },theme);
+    for(const r of results)assert.equal(r.ok,true,`${width}/${theme}: ${r.name}`);
+    console.log(`PASS cloud sync ${width}/${theme}: ${results.length} checks`);
+    await context.close();
+  }
+}finally{await browser.close();}
