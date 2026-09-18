@@ -1,10 +1,14 @@
 /** Mobile navigation regression: isolated session, no cloud writes. */
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
+const appSource=readFileSync(join(root,'plate-studio.html'),'utf8');
+const manifest=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+assert(!/assets\/liquid-glass\.js|data-liquid-ready/.test(appSource),'Navigation must use CSS glass, not the removed GPU adapter');
+assert(!manifest.dependencies?.['liquid-gl']&&!manifest.dependencies?.['@ybouane/liquidglass'],'Removed glass engines must not return as dependencies');
 const output=join(root,'qa-results','navigation');mkdirSync(output,{recursive:true});
 const executablePath=[process.env.CHROME_PATH,'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].find(p=>p&&existsSync(p));
 const browser=await chromium.launch({executablePath,headless:true});
@@ -12,6 +16,7 @@ try{
  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
  await page.goto(pathToFileURL(join(root,'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>typeof renderRoleMobileNavigation==='function');
+ assert.equal(await page.evaluate(()=>typeof window.PlateLiquidGlass),'undefined','No glass renderer is bootstrapped');
  await page.addStyleTag({content:'#auth-ov{display:none!important}'});
  await page.evaluate(()=>{goPage('dashboard',{historyMode:'none'});renderRoleMobileNavigation();});
  assert.notEqual(await page.locator('#mnav-dashboard svg').innerHTML(),await page.locator('#mnav-more svg').innerHTML(),'Home and Menu need distinct icons');
