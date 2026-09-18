@@ -13,6 +13,6 @@
     "supabase": "^2.117.0"
   },
   "dependencies": {
-    "liquid-gl": "2.2.4"
+    "@ybouane/liquidglass": "1.0.3"
   }
 }
