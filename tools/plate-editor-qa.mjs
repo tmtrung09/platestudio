@@ -29,6 +29,7 @@ try{
    assert.equal(state.overflow,false,`${width}/${theme} dialog fits`);assert.equal(state.bodyOverflow,false,`${width}/${theme} body fits`);assert.equal(state.footerVisible,true,'Save bar stays within viewport');
   };
   await checkLayout();assert.equal(await page.getByRole('button',{name:'Lưu plate'}).isDisabled(),true);
+  await page.evaluate(()=>{window.editorNodes={shell:document.querySelector('.pp-edit-dlg'),search:document.querySelector('.pp-picker-search input'),grid:document.querySelector('.pp-picker-grid'),cards:[...document.querySelectorAll('.pp-picker-card')]};});
   await page.getByRole('searchbox',{name:'Tìm model, part hoặc biến thể'}).fill('Skeleton');
   const searchFocus=await page.locator('.pp-picker-search input').evaluate(input=>{
    const field=getComputedStyle(input),shell=getComputedStyle(input.parentElement);
@@ -49,6 +50,13 @@ try{
   assert.equal(await page.locator('#pp-picker-count').textContent(),'1 model','Result count follows query');
   assert.equal(await page.locator('.pp-picker-card:visible').count(),1);
   await page.locator('.pp-picker-card:visible').click();
+  assert.equal(await page.evaluate(()=>editorNodes.shell===document.querySelector('.pp-edit-dlg')&&editorNodes.search===document.querySelector('.pp-picker-search input')&&editorNodes.grid===document.querySelector('.pp-picker-grid')&&editorNodes.cards.every(card=>card.isConnected)),true,'Selection never remounts dialog, search or catalogue images');
+  await page.getByRole('button',{name:'Tăng số lượng',exact:true}).click();
+  assert.equal(await page.locator('#pp-plan-qty').inputValue(),'2');
+  await page.getByRole('button',{name:'Giảm số lượng',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Giảm số lượng',exact:true}).isDisabled(),true,'Quantity cannot go below one');
+  assert.equal(await page.locator('.pp-picker-add').textContent(),'＋ Thêm vào plate');
+  assert.equal(await page.getByRole('button',{name:'Tăng số lượng',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;}),true,'Stepper has a usable touch target');
   await page.locator('.pp-picker-selected input').fill('3');await page.locator('.pp-picker-add').click();
   assert.equal(await page.locator('.pp-edit-total b').textContent(),'3 part');
   assert.equal(await page.getByRole('button',{name:'Lưu plate'}).isEnabled(),true);
@@ -73,6 +81,28 @@ try{
   assert.equal(await page.evaluate(()=>getNightPrintPlan().machines.lucifer.plate.items[0].modelId),'qa-1','Save preserves the chosen model in the plan');
   await page.evaluate(()=>{models=[];openNightPlanEditor('lucifer');});
   assert.equal(await page.locator('#night-plan-model-picker-empty').isVisible(),true,'Empty catalogue explains the empty state');
+  const dataChecks=await page.evaluate(()=>{
+   models=Array.from({length:3},(_,i)=>({id:'need-'+i,name:'Nhu cầu '+i,parts:[{id:'p',name:'Thân',qtyPerModel:i===2?2:1,filamentIds:['qa-white']}],variants:[]}));
+   orders=[{id:'need-order',items:[{id:'i0',modelId:'need-0',qty:8},{id:'i1',modelId:'need-1',qty:5}]}];
+   pitems=[{id:'pending',orderId:'need-order',itemId:'i0',modelId:'need-0',partId:'p',qty:10,qtyDone:2,filamentId:'qa-white'},{id:'bad',orderId:'need-order',itemId:'i1',modelId:'need-1',partId:'p',partName:'Thân',qty:5,qtyDone:0,filamentId:'qa-white'}];
+   operations={qualityIssues:[{id:'q',orderId:'need-order',itemId:'i1',modelId:'need-1',partId:'bad',qty:2,status:'open'}]};
+   kiotViet={catalog:[{sku:'sku2',name:'Sản phẩm bán',stock:0,minStock:2}],mappings:[{sku:'sku2',modelId:'need-2'}],sales:[{sku:'sku2',qty:4}],salesImports:[{id:'latest',importedAt:'2026-09-19',sales:[{sku:'sku2',name:'Sản phẩm bán',qty:4}]}]};
+   openNightPlanEditor('lucifer');const groups=printPlanEditState.needGroups;
+   return {missing:groups.missing.find(n=>n.modelId==='need-0')?.qty,defects:groups.defects.find(n=>n.modelId==='need-1')?.qty,sold:groups.sold.find(n=>n.modelId==='need-2')?.qty,suggested:groups.suggested.find(n=>n.modelId==='need-2')?.qty};
+  });
+  assert.deepEqual(dataChecks,{missing:8,defects:2,sold:8,suggested:8},'Tabs derive real demand and multiply sales by parts per model');
+  await page.getByRole('tab',{name:/Bù lỗi/}).click();
+  assert.equal(await page.locator('.pp-picker-card:visible').count(),1);
+  await page.locator('.pp-picker-card:visible').click();assert.equal(await page.locator('#pp-plan-qty').inputValue(),'2','Selecting a need prefills its actual quantity');
+  await page.locator('.pp-picker-add').click();assert.equal(await page.locator('.pp-picker-card:visible').count(),0,'Queued need no longer suggested twice');
+  await page.getByRole('tab',{name:/Bù đã bán/}).click();assert.equal(await page.locator('.pp-picker-card:visible').count(),1);
+  await page.getByRole('tab',{name:/Gợi ý thêm/}).click();assert.equal(await page.locator('.pp-picker-card:visible').count(),1);
+  const editedNeeds=await page.evaluate(()=>{
+   saveNightPlanEditor();openNightPlanEditor('lucifer');const before=nightPlanTabNeeds('defects').length;
+   removeNightPlanEditorItem(0);return {before,after:nightPlanTabNeeds('defects')[0]?.qty};
+  });
+  assert.deepEqual(editedNeeds,{before:0,after:2},'Editing and removing an existing planned row restores demand without double subtraction');
+  await checkLayout();
   console.log(`PASS plate editor ${width}/${theme}: layout, search/count, add/merge/remove, filters, persistent actions`);
   await context.close();
  }

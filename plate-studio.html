@@ -3427,6 +3427,8 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
 .pp-picker-empty{padding:28px 12px;color:var(--t2);font-size:13px;text-align:center}
 .pp-edit-footer{display:flex;align-items:center;gap:10px;flex-shrink:0;padding:16px 24px;border-top:1px solid var(--bm);background:var(--s);box-shadow:0 -8px 24px color-mix(in srgb,var(--bg) 12%,transparent)}
 .pp-edit-total{margin-right:auto;min-width:0}.pp-edit-total b,.pp-edit-total small{display:block}.pp-edit-total b{font-size:15px}.pp-edit-total small{color:var(--t2);font-size:11px;margin-top:3px}.pp-edit-footer .btn{min-height:44px}
+.pp-need-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.pp-need-tabs button{display:flex;align-items:center;gap:6px;min-height:40px;padding:8px 11px;border:1px solid var(--bm);border-radius:12px;background:var(--s2);color:var(--t2);font:600 11px var(--font);cursor:pointer}.pp-need-tabs button[aria-selected="true"]{background:var(--acb);border-color:var(--ac);color:var(--ac)}.pp-need-tabs small{display:grid;place-items:center;min-width:18px;padding:2px 4px;border-radius:6px;background:var(--s);font-size:10px}.pp-need-hint{margin:0 0 12px;color:var(--t2);font-size:11px;line-height:1.45}.pp-need-hint:empty{display:none}
+.pp-quantity-field{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}.pp-quantity-control{display:flex;align-items:center;border:1px solid var(--bm);background:var(--s);border-radius:13px;overflow:hidden}.pp-quantity-control:focus-within{outline:2px solid var(--ac);outline-offset:2px}.pp-quantity-control button{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border:0;background:var(--s2);color:var(--t);font:500 23px var(--font);cursor:pointer}.pp-quantity-control button:hover:not(:disabled){background:var(--acb);color:var(--ac)}.pp-quantity-control button:disabled{opacity:.4;cursor:default}#pp-plan-qty{width:76px;min-height:48px;text-align:center;font-size:16px;background:transparent!important;border:0!important;outline:none!important;box-shadow:none!important;border-radius:0;appearance:textfield;-moz-appearance:textfield}#pp-plan-qty::-webkit-inner-spin-button,#pp-plan-qty::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.pp-picker-selected .pp-picker-add{grid-column:1/-1;min-height:46px;width:100%}
 .pp-edit-dlg button:focus-visible,.pp-edit-dlg select:focus-visible,.pp-edit-dlg input:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 /* Composite search controls own their focus ring on the shell, not the input.
    Keep keyboard focus visible without nesting the global field/dialog ring. */
@@ -16208,9 +16210,9 @@ function renderMachineSetupPage(){
   root.innerHTML=`<div class="pp-page"><div class="pp-toolbar"><div class="pp-toolbar-copy"><b>Chuẩn bị máy cho ca đêm</b><small>Xác nhận cuộn nhựa và trạng thái khay.</small></div><input type="date" value="${esc(plan.date)}" onchange="activePrintPlanDate=this.value;renderMachineSetupPage()"/><button class="btn btn-ac" onclick="goPage('print-plans')">← Về kế hoạch in</button></div><div class="ms-machine-grid">${PRINT_MACHINES.map(machine=>{const state=plan.machines[machine.id];return `<article class="ms-machine-card"><h3>🖨️ ${esc(machine.name)} · ${esc(machine.model)}</h3><p>${esc(machine.ams)}${machine.ams.includes('AMS')?' · khay từ trái sang phải':''}</p>${state.slots.map((slot,index)=>`<div class="ms-slot ${slot.offline?'offline':''}"><div class="ms-slot-top"><i class="pp-slot-dot" style="background:${esc(planFilamentHex(slot.filamentId))}"></i><b>${esc(slot.label)}</b><span style="margin-left:auto;color:var(--t3);font-size:10px">${slot.offline?'OFFLINE':slot.confirmed?'Đã xác nhận':'Chưa xác nhận'}</span></div><select ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'filamentId',this.value)">${filamentOptions.replace(`value=\"${esc(slot.filamentId||'')}\"`,`value=\"${esc(slot.filamentId||'')}\" selected`)}</select><div class="ms-slot-controls"><label><input type="checkbox" ${slot.confirmed?'checked':''} ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'confirmed',this.checked)"/> Đã lắp</label><label><input type="checkbox" ${slot.autoRefill?'checked':''} ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'autoRefill',this.checked)"/> Auto refill</label><label style="margin-left:auto"><input type="checkbox" ${slot.offline?'checked':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'offline',this.checked)"/> Khay lỗi</label></div></div>`).join('')}</article>`;}).join('')}</div></div>`;
 }
 function updatePrintPlanSlot(machineId,index,field,value){const plan=getNightPrintPlan(),slot=plan?.machines?.[machineId]?.slots?.[index];if(!slot)return;slot[field]=['offline','autoRefill','confirmed'].includes(field)?!!value:value||null;if(field==='offline'&&slot.offline)slot.confirmed=false;savePrintPlan(plan);}
-function scheduledPrintQtyByKey(){
+function scheduledPrintQtyByKey(exclude={}){
   const total=new Map();
-  (operations.printPlans||[]).forEach(plan=>Object.values(plan?.machines||{}).forEach(machine=>(machine?.plate?.items||[]).forEach(item=>{
+  (operations.printPlans||[]).forEach(plan=>Object.entries(plan?.machines||{}).filter(([id])=>plan.id!==exclude.planId||id!==exclude.machineId).forEach(([,machine])=>(machine?.plate?.items||[]).forEach(item=>{
     const view=planItemView(item),key=planItemKey({...item,filamentId:item.filamentId||view.filamentId});
     total.set(key,(total.get(key)||0)+(Number(item.qty)||0));
   })));
@@ -16230,7 +16232,7 @@ function mergePrintNeedRows(rows){
 /* Nguồn duy nhất cho mọi màn hình “cần in”: cả Order lẫn model đã in dở
    ngoài kế hoạch. Từ đây Nhắc part, Nhắc tồn kho và Kế hoạch in không còn
    tự tính những con số riêng rẽ. */
-function getAllOutstandingPrintNeeds(){
+function getAllOutstandingPrintNeeds(exclude={}){
   const rows=[];
   pitems.forEach(item=>{
     const remaining=Math.max(0,(Number(item.qty)||0)-(Number(item.qtyDone)||0));
@@ -16249,7 +16251,7 @@ function getAllOutstandingPrintNeeds(){
       rows.push({modelId:model.id,modelName:model.name,variantId:null,variantName:'',partId:part.id,partName:part.name||item.partName||'Part',qty:remaining,filamentId:item.filamentId||planPartColorId(model,null,part),source:'outside'});
     });
   });
-  const scheduled=scheduledPrintQtyByKey();
+  const scheduled=scheduledPrintQtyByKey(exclude);
   return mergePrintNeedRows(rows).map(row=>({...row,qty:Math.max(0,row.qty-(scheduled.get(planItemKey(row))||0))})).filter(row=>row.qty>0);
 }
 function getNightPlanCandidates(){return getAllOutstandingPrintNeeds();}
@@ -16408,20 +16410,67 @@ function machinePartColorMatches(model,filamentIds=[]){
   return rows;
 }
 function setNightPlanCompatibleOnly(value){printPlanEditState.compatibleOnly=!!value;renderNightPlanEditor();}
+const NIGHT_PLAN_TABS={all:'Tất cả',missing:'Thiếu part',defects:'Bù lỗi',sold:'Bù đã bán',suggested:'Gợi ý thêm'};
+function nightPlanNeedGroups(){
+  const row=(model,variant,part,qty)=>({modelId:model.id,variantId:variant?.id||null,partId:part.id,filamentId:planPartColorId(model,variant,part),qty:Math.max(0,Math.ceil(qty))});
+  const expand=(need,qty)=>{
+    const model=need.model;if(!model)return [];
+    const variant=model.variants?.find(v=>v.id===need.mapping?.variantId)||null;
+    return partsForVariant(model,variant).map(part=>row(model,variant,part,qty*Math.max(1,Number(part.qtyPerModel)||1)));
+  };
+  const exclude={planId:getNightPrintPlan()?.id,machineId:printPlanEditState.machineId};
+  const scheduled=scheduledPrintQtyByKey(exclude);
+  const defects=mergePrintNeedRows(getQcReprintNeeds().flatMap(need=>need.parts.flatMap(item=>{
+    const record=pitems.find(p=>p.id===item.partId),part=need.model.parts?.find(p=>p.id===(record?.partId||item.partId));
+    if(!part)return []; // An unidentified rejected part must be checked, never guessed.
+    const variant=need.model.variants?.find(v=>v.id===need.variantId)||null;
+    return [row(need.model,variant,part,record?Math.min(item.qty,Math.max(0,Number(record.qty)-Number(record.qtyDone||0))):item.qty)];
+  }))).map(need=>({...need,qty:Math.max(0,need.qty-(scheduled.get(planItemKey(need))||0))})).filter(need=>need.qty>0);
+  const errors=new Map(defects.map(need=>[planItemKey(need),need.qty]));
+  return {
+    missing:getAllOutstandingPrintNeeds(exclude).map(need=>({...need,qty:Math.max(0,need.qty-(errors.get(planItemKey(need))||0))})).filter(need=>need.qty>0),
+    defects,
+    sold:mergePrintNeedRows(getSalesRestockNeeds().flatMap(need=>expand(need,need.suggestedQty))),
+    suggested:mergePrintNeedRows(getInventoryAlerts().flatMap(need=>expand(need,inventorySuggestedQty(need))))
+  };
+}
+function nightPlanTabNeeds(tab=printPlanEditState.needTab){
+  const state=printPlanEditState,added=new Map();
+  state.items.forEach(item=>added.set(planItemKey(item),(added.get(planItemKey(item))||0)+Number(item.qty)));
+  return (state.needGroups?.[tab]||[]).map(row=>({...row,qty:Math.max(0,row.qty-(added.get(planItemKey(row))||0))})).filter(row=>row.qty>0);
+}
+function setNightPlanTab(tab){
+  if(!NIGHT_PLAN_TABS[tab])return;printPlanEditState.needTab=tab;
+  filterNightPlanModels(document.querySelector('.pp-picker-search input')?.value||'');
+}
+function nightPlanTabKeydown(event){
+  const tabs=[...event.currentTarget.querySelectorAll('[role="tab"]')],index=tabs.indexOf(document.activeElement);
+  if(index<0||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  tabs[next].focus();setNightPlanTab(tabs[next].dataset.planTab);
+}
+function setNightPlanQuantity(value){
+  const qty=Math.min(99999,Math.max(1,Math.floor(Number(value)||1)));printPlanEditState.qty=qty;
+  const input=document.getElementById('pp-plan-qty');if(input)input.value=qty;
+  const minus=document.getElementById('pp-plan-minus');if(minus)minus.disabled=qty<=1;
+  const plus=document.getElementById('pp-plan-plus');if(plus)plus.disabled=qty>=99999;
+}
 function openNightPlanEditor(machineId){
   const machine=getPrintMachine(machineId),plan=getNightPrintPlan();if(!machine||!plan)return;
   const existing=(plan.machines[machineId].plate?.items||[]).map(item=>({...item}));
   const seed=existing[0]||{};
   printPlanEditState={machineId,items:existing,modelId:seed.modelId||'',variantId:seed.variantId||'',partId:seed.partId||'',qty:seed.qty||1,compatibleOnly:false};
+  printPlanEditState.needTab='all';printPlanEditState.needGroups=nightPlanNeedGroups();
+  document.querySelector('#dlg-mv .pp-edit-dlg')?.remove();
   renderNightPlanEditor();
 }
 function selectNightPlanModel(modelId){
   const model=models.find(item=>item.id===modelId);if(!model)return;
-  const preferred=machinePartColorMatches(model,machineSelectedFilamentIds(printPlanEditState.machineId))[0]||null;
+  const preferred=nightPlanTabNeeds().find(row=>row.modelId===modelId)||machinePartColorMatches(model,machineSelectedFilamentIds(printPlanEditState.machineId))[0]||null;
   printPlanEditState.modelId=model.id;
-  printPlanEditState.variantId=preferred?.variantId||model.variants?.[0]?.id||'';
+  printPlanEditState.variantId=preferred?(preferred.variantId||''):(model.variants?.[0]?.id||'');
   printPlanEditState.partId=preferred?.partId||model.parts?.[0]?.id||'';
-  printPlanEditState.qty=1;
+  printPlanEditState.qty=preferred?.qty||1;
   renderNightPlanEditor();
   if(matchMedia('(max-width:700px)').matches){
     const body=document.querySelector('.pp-edit-body'),panel=document.querySelector('.pp-edit-workspace');
@@ -16431,13 +16480,23 @@ function selectNightPlanModel(modelId){
 function setNightPlanEditorValue(key,value){
   if(key==='modelId'){selectNightPlanModel(value);return;}
   printPlanEditState[key]=value;
+  const state=printPlanEditState,model=models.find(item=>item.id===state.modelId),variant=model?.variants?.find(item=>item.id===state.variantId)||null,parts=model?partsForVariant(model,variant):[];
+  if(!parts.some(part=>part.id===state.partId))state.partId=parts[0]?.id||'';
+  if(state.needTab&&state.needTab!=='all')state.qty=nightPlanTabNeeds().find(row=>row.modelId===state.modelId&&(row.variantId||'')===(state.variantId||'')&&row.partId===state.partId)?.qty||1;
   renderNightPlanEditor();
 }
 function filterNightPlanModels(value){
   const query=String(value||'').trim(),cards=[...document.querySelectorAll('#night-plan-model-picker [data-plan-search]')];
-  let shown=0;cards.forEach(card=>{const match=fuzzyTextMatch(card.dataset.planSearch||'',query);card.hidden=!match;if(match)shown++;});
+  const state=printPlanEditState,needs=nightPlanTabNeeds(),ids=new Set(needs.map(row=>row.modelId));
+  let shown=0;cards.forEach(card=>{const match=fuzzyTextMatch(card.dataset.planSearch||'',query)&&(state.needTab==='all'||!state.needTab||ids.has(card.dataset.modelId))&&(!state.compatibleOnly||card.dataset.compatible==='true'||!machineSelectedFilamentIds(state.machineId).length);card.hidden=!match;if(match)shown++;});
   const empty=document.getElementById('night-plan-model-picker-empty');if(empty)empty.hidden=shown>0;
   const count=document.getElementById('pp-picker-count');if(count)count.textContent=`${shown} model`;
+  document.querySelectorAll('[data-plan-tab]').forEach(button=>{
+    const tab=button.dataset.planTab,selected=tab===(state.needTab||'all');button.setAttribute('aria-selected',String(selected));
+    const total=tab==='all'?cards.length:new Set(nightPlanTabNeeds(tab).map(row=>row.modelId)).size;
+    button.querySelector('small').textContent=total;
+  });
+  const hint=document.getElementById('pp-need-hint');if(hint)hint.textContent=({missing:'Part còn thiếu, đã trừ kế hoạch in.',defects:'Part bị loại qua QC, chưa in bù đủ.',sold:'Theo kỳ bán gần nhất đã tải · không trừ tồn cửa hàng.',suggested:'Gợi ý bổ sung theo tồn kho; kiểm tra trước khi in.'})[state.needTab]||'';
 }
 function addNightPlanEditorItem(){
   const state=printPlanEditState,model=models.find(item=>item.id===state.modelId),part=model?.parts?.find(item=>item.id===state.partId);
@@ -16458,7 +16517,7 @@ function captureNightPlanEditorView(){
 }
 function renderNightPlanEditor(){
  const previousView=captureNightPlanEditorView();
-  const state=printPlanEditState,machine=getPrintMachine(state.machineId),model=models.find(m=>m.id===state.modelId)||null,parts=model?.parts||[],variants=model?.variants||[];
+  const state=printPlanEditState,machine=getPrintMachine(state.machineId),model=models.find(m=>m.id===state.modelId)||null,variants=model?.variants||[],parts=model?partsForVariant(model,variants.find(v=>v.id===state.variantId)||null):[];
   if(!parts.some(part=>part.id===state.partId))state.partId=parts[0]?.id||'';
   const part=parts.find(item=>item.id===state.partId),variant=variants.find(item=>item.id===state.variantId)||null,filamentId=model&&part?planPartColorId(model,variant,part):null,ov=document.getElementById('dlg-mv');
   const variantOptions=variants.length
@@ -16466,29 +16525,41 @@ function renderNightPlanEditor(){
     : '<option value="">Không có biến thể</option>';
   const partOptions=parts.map(item=>`<option value="${esc(item.id)}" ${item.id===part?.id?'selected':''}>${esc(item.name)}</option>`).join('');
   const candidateModels=models.filter(item=>item.parts?.length),machinePlan=getNightPrintPlan(activePrintPlanDate||localPlanDate()),machineSlots=machinePlan?.machines?.[state.machineId]?.slots||[],slotFilamentIds=machineSelectedFilamentIds(state.machineId),outstandingByModelColor=new Map();
-  getAllOutstandingPrintNeeds().forEach(row=>{const key=`${row.modelId||''}::${row.filamentId||''}`;outstandingByModelColor.set(key,(outstandingByModelColor.get(key)||0)+(Number(row.qty)||0));});
-  const candidateEntries=candidateModels.map(item=>{
+  (state.needGroups?.missing||[]).forEach(row=>{const key=`${row.modelId||''}::${row.filamentId||''}`;outstandingByModelColor.set(key,(outstandingByModelColor.get(key)||0)+(Number(row.qty)||0));});
+  const candidateEntries=state.catalogEntries||(state.catalogEntries=candidateModels.map(item=>{
     const matches=machinePartColorMatches(item,slotFilamentIds),matchingFilaments=[...new Set(matches.map(row=>row.filamentId))];
     const outstanding=matchingFilaments.reduce((sum,id)=>sum+(outstandingByModelColor.get(`${item.id}::${id}`)||0),0);
     return {item,matches,matchingFilaments,compatible:matches.length>0,outstanding};
-  }).sort((a,b)=>Number(b.compatible)-Number(a.compatible)||b.outstanding-a.outstanding||String(a.item.name||'').localeCompare(String(b.item.name||''),'vi'));
-  const visibleEntries=state.compatibleOnly&&slotFilamentIds.length?candidateEntries.filter(entry=>entry.compatible):candidateEntries;
-  const modelCards=visibleEntries.map(({item,matchingFilaments,compatible,outstanding})=>{
+  }).sort((a,b)=>Number(b.compatible)-Number(a.compatible)||b.outstanding-a.outstanding||String(a.item.name||'').localeCompare(String(b.item.name||''),'vi')));
+  const visibleEntries=candidateEntries;
+  const modelCards=state.catalogHtml||(state.catalogHtml=visibleEntries.map(({item,matchingFilaments,compatible,outstanding})=>{
     const searchText=searchFold([item.name,...(item.categories||[]),...(item.parts||[]).map(part=>part.name),...(item.variants||[]).map(variant=>variant.name)].join(' '));
     const image=item.images?.[0]||'';
     const fitLabel=matchingFilaments.map(id=>getFil(id)?.name||'Màu khớp').slice(0,2).join(' · ');
     const fitMeta=compatible?`<span style="position:absolute;top:7px;left:7px;right:7px;z-index:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 6px;border-radius:999px;background:rgba(18,88,58,.88);color:#d7ffe8;font-size:9px;font-weight:800;box-shadow:0 3px 10px rgba(0,0,0,.24)">✓ Khớp khay · ${esc(fitLabel)}${matchingFilaments.length>2?' +':''}</span>`:'';
     const demandMeta=outstanding?`<span style="position:absolute;right:7px;bottom:32px;z-index:2;padding:3px 6px;border-radius:999px;background:rgba(88,61,17,.9);color:#ffe5a1;font-size:9px;font-weight:800">Cần in ${outstanding}</span>`:'';
-    return `<button type="button" class="pp-picker-card ${item.id===model?.id?'selected':''}" aria-pressed="${item.id===model?.id}" data-plan-search="${esc(searchText)}" onclick="selectNightPlanModel('${esc(item.id)}')" title="${esc(item.name)}" style="position:relative;${compatible?'box-shadow:inset 0 0 0 2px rgba(75,220,140,.7);':''}">${fitMeta}${image?`<img src="${esc(image)}" alt="" loading="lazy" onerror="this.remove()">`:'<span class="pp-picker-art">◈</span>'}${demandMeta}<b>${esc(item.name)}</b></button>`;
-  }).join('');
-  const selectedPanel=model?`<div class="pp-picker-selected"><div class="pp-picker-selected-model">${model.images?.[0]?`<img src="${esc(model.images[0])}" alt="">`:'<span class="pp-picker-selected-art">◈</span>'}<span><b>${esc(model.name)}</b><small>Chọn part để thêm vào plate</small></span></div>${variants.length?`<label>Biến thể<select onchange="setNightPlanEditorValue('variantId',this.value)">${variantOptions}</select></label>`:''}<label class="pp-part-field">Part<select onchange="setNightPlanEditorValue('partId',this.value)">${partOptions}</select></label><label>Số lượng<input type="number" min="1" step="1" inputmode="numeric" value="${Number(state.qty)||1}" onchange="printPlanEditState.qty=Math.max(1,parseInt(this.value)||1)"></label><button class="btn btn-ac pp-picker-add" onclick="addNightPlanEditorItem()">＋ Thêm part</button></div>`:`<div class="pp-selection-empty"><span aria-hidden="true">◈</span><b>Chọn một model</b><small>Part và số lượng sẽ hiện ở đây.</small></div>`;
+    return `<button type="button" class="pp-picker-card ${item.id===model?.id?'selected':''}" aria-pressed="${item.id===model?.id}" data-model-id="${esc(item.id)}" data-compatible="${compatible}" data-plan-search="${esc(searchText)}" onclick="selectNightPlanModel('${esc(item.id)}')" title="${esc(item.name)}" style="position:relative;${compatible?'box-shadow:inset 0 0 0 2px rgba(75,220,140,.7);':''}">${fitMeta}${image?`<img src="${esc(image)}" alt="" loading="lazy" onerror="this.remove()">`:'<span class="pp-picker-art">◈</span>'}${demandMeta}<b>${esc(item.name)}</b></button>`;
+  }).join(''));
+  const selectedPanel=model?`<div class="pp-picker-selected"><div class="pp-picker-selected-model">${model.images?.[0]?`<img src="${esc(model.images[0])}" alt="">`:'<span class="pp-picker-selected-art">◈</span>'}<span><b>${esc(model.name)}</b><small>Chọn part để thêm vào plate</small></span></div>${variants.length?`<label>Biến thể<select onchange="setNightPlanEditorValue('variantId',this.value)">${variantOptions}</select></label>`:''}<label class="pp-part-field">Part<select onchange="setNightPlanEditorValue('partId',this.value)">${partOptions}</select></label><div class="pp-quantity-field"><label for="pp-plan-qty">Số lượng</label><div class="pp-quantity-control"><button type="button" id="pp-plan-minus" aria-label="Giảm số lượng" ${state.qty<=1?'disabled':''} onclick="setNightPlanQuantity(printPlanEditState.qty-1)">−</button><input id="pp-plan-qty" type="number" min="1" max="99999" step="1" inputmode="numeric" value="${Number(state.qty)||1}" onchange="setNightPlanQuantity(this.value)"><button type="button" id="pp-plan-plus" aria-label="Tăng số lượng" ${state.qty>=99999?'disabled':''} onclick="setNightPlanQuantity(printPlanEditState.qty+1)">＋</button></div></div><button class="btn btn-ac pp-picker-add" onclick="addNightPlanEditorItem()">＋ Thêm vào plate</button></div>`:`<div class="pp-selection-empty"><span aria-hidden="true">◈</span><b>Chọn một model</b><small>Part và số lượng sẽ hiện ở đây.</small></div>`;
   const colors=[...new Set(state.items.map(item=>item.filamentId).filter(Boolean))];
   const activeSlots=machine?.slotLabels?.length||1;
   const queued=state.items.length?`<div class="pp-plan-items">${state.items.map((item,index)=>`<div class="pp-queued-row">${renderPlanItem(item)}<button type="button" class="pp-remove" aria-label="Bỏ ${esc(item.partName||item.modelName||'part')}" onclick="removeNightPlanEditorItem(${index})">×</button></div>`).join('')}</div>`:'<div class="pp-empty">Chưa có part trong plate</div>';
   const selectedFitsMachine=!filamentId||!slotFilamentIds.length||slotFilamentIds.includes(filamentId);
   const colorAdvice=model&&part?`<i class="pp-slot-dot" style="background:${esc(planFilamentHex(filamentId))}"></i><span>${esc(planFilamentLabel(filamentId))} · ${slotFilamentIds.length?(selectedFitsMachine?'<b class="pp-fit">Khớp khay</b>':'<b class="pp-mismatch">Cần thay cuộn</b>'):'Chưa chọn cuộn'}</span>`:'';
   const slotHint=slotFilamentIds.length?`<div class="pp-slot-hint"><span>Ưu tiên màu đang lắp</span><button class="btn btn-ghost btn-xs" aria-pressed="${!!state.compatibleOnly}" onclick="setNightPlanCompatibleOnly(${!state.compatibleOnly})">${state.compatibleOnly?'Tất cả model':'Chỉ màu khớp'}</button></div>`:'<div class="pp-slot-hint"><span>Chưa chọn cuộn · chưa lọc theo màu</span></div>';
-  ov.innerHTML=`<div class="dlg pp-edit-dlg" role="dialog" aria-modal="true" aria-labelledby="pp-editor-title" onclick="event.stopPropagation()"><header class="pp-edit-head"><div><small>KẾ HOẠCH IN</small><h2 id="pp-editor-title">Xếp plate <span>· ${esc(machine?.name||'Máy')}</span></h2></div><button type="button" class="pp-close" aria-label="Đóng xếp plate" onclick="closeDialog('dlg-mv')">×</button></header><div class="pp-edit-body"><section class="pp-picker" id="night-plan-model-picker"><div class="pp-picker-hd"><b>Chọn model</b><small id="pp-picker-count">${visibleEntries.length} model</small></div><div class="pp-picker-search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Tìm model, part hoặc biến thể" autocomplete="off" placeholder="Tìm model, part, biến thể…" oninput="filterNightPlanModels(this.value)"></div>${slotHint}<div class="pp-picker-grid">${modelCards}</div><div class="pp-picker-empty" id="night-plan-model-picker-empty" hidden>Không tìm thấy model</div></section><aside class="pp-edit-workspace">${selectedPanel}${colorAdvice?`<div class="pp-color-check">${colorAdvice}</div>`:''}<section class="pp-queue"><div class="pp-picker-hd"><b>Trong plate</b><small>${state.items.length} dòng${colors.length?` · ${colors.length}/${activeSlots} màu`:''}</small></div>${queued}</section></aside></div><footer class="pp-edit-footer"><div class="pp-edit-total"><b>${state.items.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} part</b><small>${state.items.length} dòng đã thêm</small></div><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Hủy</button><button class="btn btn-ac" ${state.items.length?'':'disabled'} onclick="saveNightPlanEditor()">Lưu plate <span aria-hidden="true">↗</span></button></footer></div>`;ov.style.display='flex';
+  const workspaceHtml=`${selectedPanel}${colorAdvice?`<div class="pp-color-check">${colorAdvice}</div>`:''}<section class="pp-queue"><div class="pp-picker-hd"><b>Trong plate</b><small>${state.items.length} dòng${colors.length?` · ${colors.length}/${activeSlots} màu`:''}</small></div>${queued}</section>`;
+  const footerHtml=`<div class="pp-edit-total"><b>${state.items.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} part</b><small>${state.items.length} dòng đã thêm</small></div><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Hủy</button><button class="btn btn-ac" ${state.items.length?'':'disabled'} onclick="saveNightPlanEditor()">Lưu plate <span aria-hidden="true">↗</span></button>`;
+  const editorHtml=`<div class="dlg pp-edit-dlg" role="dialog" aria-modal="true" aria-labelledby="pp-editor-title" onclick="event.stopPropagation()"><header class="pp-edit-head"><div><small>KẾ HOẠCH IN</small><h2 id="pp-editor-title">Xếp plate <span>· ${esc(machine?.name||'Máy')}</span></h2></div><button type="button" class="pp-close" aria-label="Đóng xếp plate" onclick="closeDialog('dlg-mv')">×</button></header><div class="pp-edit-body"><section class="pp-picker" id="night-plan-model-picker"><div class="pp-picker-hd"><b>Chọn model</b><small id="pp-picker-count">${visibleEntries.length} model</small></div><div class="pp-need-tabs" role="tablist" aria-label="Nhu cầu in" onkeydown="nightPlanTabKeydown(event)">${Object.entries(NIGHT_PLAN_TABS).map(([key,label])=>`<button type="button" role="tab" data-plan-tab="${key}" aria-selected="${key===(state.needTab||'all')}" onclick="setNightPlanTab('${key}')">${label}<small></small></button>`).join('')}</div><p class="pp-need-hint" id="pp-need-hint"></p><div class="pp-picker-search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Tìm model, part hoặc biến thể" autocomplete="off" placeholder="Tìm model, part, biến thể…" oninput="filterNightPlanModels(this.value)"></div>${slotHint}<div class="pp-picker-grid">${modelCards}</div><div class="pp-picker-empty" id="night-plan-model-picker-empty" hidden>Không tìm thấy model</div></section><aside class="pp-edit-workspace">${workspaceHtml}</aside></div><footer class="pp-edit-footer">${footerHtml}</footer></div>`;ov.style.display='flex';
+  const existingDialog=ov.querySelector('.pp-edit-dlg');
+  if(existingDialog){
+    // The mounted shell, search, grid and images survive every selection.
+    for(const [selector,html] of [['.pp-edit-workspace',workspaceHtml],['.pp-edit-footer',footerHtml]]){
+      const live=existingDialog.querySelector(selector);
+      if(live&&live.innerHTML!==html)live.innerHTML=html;
+    }
+    const slot=existingDialog.querySelector('.pp-slot-hint');if(slot&&slot.outerHTML!==slotHint)slot.outerHTML=slotHint;
+    existingDialog.querySelectorAll('[data-model-id]').forEach(card=>{const selected=card.dataset.modelId===state.modelId;card.classList.toggle('selected',selected);card.setAttribute('aria-pressed',String(selected));});
+  }else ov.innerHTML=editorHtml;
   const pickerSearch=ov.querySelector('#night-plan-model-picker input[type="search"]');
   if(pickerSearch){pickerSearch.value=previousView.query;filterNightPlanModels(previousView.query);}
   const restoredDialog=ov.querySelector('.pp-edit-body');
@@ -18434,7 +18505,7 @@ function getQcReprintNeeds(){
     const productKey=source||`${partId}:${productQty}`;
     const nextProductQty=Math.max(0,Number(productQty)||0),previousProductQty=Math.max(0,Number(group.productQtyBySource.get(productKey))||0);
     if(nextProductQty>previousProductQty){group.productQty+=nextProductQty-previousProductQty;group.productQtyBySource.set(productKey,nextProductQty);}
-    if(partName){const part=group.parts.get(partId||partName)||{name:partName,qty:0};part.qty+=Math.max(0,Number(partQty)||0);group.parts.set(partId||partName,part);}
+    if(partName){const part=group.parts.get(partId||partName)||{partId,name:partName,qty:0};part.qty+=Math.max(0,Number(partQty)||0);group.parts.set(partId||partName,part);}
     if(source)group.sources.add(source);if(externalKey)group.externalKeys.add(externalKey);groups.set(key,group);
   };
   (operations.qualityIssues||[]).filter(issue=>{
