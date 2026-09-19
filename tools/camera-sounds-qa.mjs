@@ -21,6 +21,7 @@ try{
   await page.evaluate(()=>openCameraSoundLibrary());
   assert.equal(await page.locator('.camera-sound-row').count(),1,'Default boom remains available');
   const layout=await page.locator('.camera-sound-dialog').evaluate(el=>{const r=el.getBoundingClientRect();return el.scrollWidth<=el.clientWidth+1&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;});assert.equal(layout,true,`${width}/${theme} library fits`);
+  const alignment=await page.evaluate(()=>{const form=document.querySelector('#camera-sound-form'),name=document.querySelector('#camera-sound-name'),file=document.querySelector('#camera-sound-file'),upload=document.querySelector('.camera-sound-upload'),submit=form.querySelector('[type=submit]');const sameLeft=(a,b)=>Math.abs(a.getBoundingClientRect().left-b.getBoundingClientRect().left)<1;const formBox=form.getBoundingClientRect(),uploadBox=upload.getBoundingClientRect(),submitBox=submit.getBoundingClientRect();return sameLeft(name,file)&&sameLeft(name,upload)&&submitBox.right<=formBox.right+1&&submitBox.left>=uploadBox.left;});assert.equal(alignment,true,`${width}/${theme} audio form uses one alignment grid`);
   await page.locator('#camera-sound-file').setInputFiles({name:'Vui.wav',mimeType:'audio/wav',buffer:wav(1)});
   assert.equal(await page.locator('#camera-sound-name').inputValue(),'Vui');await page.locator('#camera-sound-name').fill('Boom riêng');await page.getByRole('button',{name:'Tải lên cloud',exact:true}).click();
   await page.waitForFunction(()=>!cameraSoundState.busy&&cameraSoundState.items.length===1);
