@@ -3428,6 +3428,10 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
 .pp-edit-footer{display:flex;align-items:center;gap:10px;flex-shrink:0;padding:16px 24px;border-top:1px solid var(--bm);background:var(--s);box-shadow:0 -8px 24px color-mix(in srgb,var(--bg) 12%,transparent)}
 .pp-edit-total{margin-right:auto;min-width:0}.pp-edit-total b,.pp-edit-total small{display:block}.pp-edit-total b{font-size:15px}.pp-edit-total small{color:var(--t2);font-size:11px;margin-top:3px}.pp-edit-footer .btn{min-height:44px}
 .pp-edit-dlg button:focus-visible,.pp-edit-dlg select:focus-visible,.pp-edit-dlg input:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+/* Composite search controls own their focus ring on the shell, not the input.
+   Keep keyboard focus visible without nesting the global field/dialog ring. */
+html body :is(.pp-picker-search,.more-search,.br-manual-model-input)>input:not([type="range"]),
+html body :is(.pp-picker-search,.more-search,.br-manual-model-input)>input:not([type="range"]):is(:focus,:focus-visible){border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important}
 @media(max-width:700px){#dlg-mv .pp-edit-dlg{width:100%;max-width:100%;height:calc(100dvh - 24px);max-height:100%;border-radius:22px!important}.pp-edit-head{padding:16px}.pp-edit-head h2{font-size:21px}.pp-edit-body{display:block}.pp-picker{padding:16px}.pp-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-height:240px}.pp-edit-workspace{padding:16px;border-left:0;border-top:1px solid var(--b)}.pp-edit-footer{gap:8px;padding:12px 14px max(12px,env(safe-area-inset-bottom))}.pp-edit-footer .btn{padding-inline:14px}.pp-edit-total small{display:none}.pp-selection-empty{padding:14px}.pp-selection-empty>span{display:none}.pp-selection-empty b{font-size:13px}.pp-remove{width:44px;height:44px}.pp-queue{margin-top:16px;padding-top:14px}}
 @media(max-width:360px){.pp-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pp-edit-total b{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.pp-picker-card{transition:none}}

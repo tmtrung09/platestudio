@@ -30,6 +30,22 @@ try{
   };
   await checkLayout();assert.equal(await page.getByRole('button',{name:'Lưu plate'}).isDisabled(),true);
   await page.getByRole('searchbox',{name:'Tìm model, part hoặc biến thể'}).fill('Skeleton');
+  const searchFocus=await page.locator('.pp-picker-search input').evaluate(input=>{
+   const field=getComputedStyle(input),shell=getComputedStyle(input.parentElement);
+   return {outline:field.outlineStyle,shadow:field.boxShadow,outerRing:shell.boxShadow!=='none'};
+  });
+  assert.deepEqual(searchFocus,{outline:'none',shadow:'none',outerRing:true},'Composite search has exactly one shell focus ring');
+  if(width===390||width===1440)await page.locator('.pp-picker-search').screenshot({path:`qa-results/plate-editor/focus-${width}-${theme}.png`});
+  const familyFocus=await page.evaluate(()=>{
+   const result=[];
+   for(const name of ['more-search','br-manual-model-input']){
+    const shell=document.createElement('div');shell.className=name;const input=document.createElement('input');shell.append(input);document.querySelector('.pp-edit-dlg').append(shell);input.focus();
+    const inner=getComputedStyle(input),outer=getComputedStyle(shell);
+    result.push(inner.outlineStyle==='none'&&inner.boxShadow==='none'&&(outer.outlineStyle!=='none'||outer.boxShadow!=='none'));shell.remove();
+   }
+   return result;
+  });
+  assert.deepEqual(familyFocus,[true,true],'More-menu and report-picker searches share the single-ring rule');
   assert.equal(await page.locator('#pp-picker-count').textContent(),'1 model','Result count follows query');
   assert.equal(await page.locator('.pp-picker-card:visible').count(),1);
   await page.locator('.pp-picker-card:visible').click();
