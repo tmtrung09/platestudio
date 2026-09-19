@@ -794,7 +794,7 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-multi-cam button:disabled{opacity:.42;cursor:default}
 .br-multi-cam button.active{color:#ffe59b;border-color:#ffe59b}
 .br-multi-cam svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.br-multi-cam-top{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;gap:4px;padding:calc(10px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));flex-shrink:0}
+.br-multi-cam-top{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) repeat(3,44px);align-items:center;gap:4px;padding:calc(10px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));flex-shrink:0}
 .br-multi-cam .br-multi-cam-top{z-index:2}
 .br-multi-cam .br-multi-cam-top{z-index:2}
 .br-multi-cam-title{font-size:13px;font-weight:650;letter-spacing:.02em;text-shadow:0 1px 5px rgba(0,0,0,.65)}
@@ -12524,8 +12524,8 @@ function batchCameraFrame(sourceWidth,sourceHeight,viewWidth,viewHeight,zoom=1){
 let batchShutterBuffer=null,batchShutterLoad=null,batchShutterSource=null,batchShutterKey='';
 const CAMERA_SOUND_BUCKET='camera-sounds';
 let cameraSoundState={scope:'',items:[],selected:null,loadedAt:0,loading:null,busy:false};
-let cameraSoundGeneration=0,cameraSoundReturnFocus=null,cameraSoundCameraWasInert=false;
-function cameraSoundScope(){return currentUser&&cloudWorkspaceId()?`${cloudWorkspaceId()}:${currentUser.id}`:'';}
+let cameraSoundGeneration=0,cameraSoundPreviewToken=0,cameraSoundReturnFocus=null,cameraSoundCameraWasInert=false;
+function cameraSoundScope(){return currentUser&&!currentUser.is_anonymous&&cloudWorkspaceId()?`${cloudWorkspaceId()}:${currentUser.id}`:'';}
 function resetCameraSoundScope(){
   const scope=cameraSoundScope();if(scope===cameraSoundState.scope)return;
   cameraSoundGeneration++;cameraSoundState={scope,items:[],selected:null,loadedAt:0,loading:null,busy:false};
@@ -12533,14 +12533,14 @@ function resetCameraSoundScope(){
 }
 async function loadCameraSounds(force=false){
   resetCameraSoundScope();const state=cameraSoundState,scope=state.scope;if(!scope||!sb)return;
-  if(state.loading)return state.loading;if(!force&&Date.now()-state.loadedAt<60000)return;
+  if(state.loading)return state.loading;if(!force&&(Date.now()-state.loadedAt<60000||Date.now()-(state.failedAt||0)<60000))return;
   const workspace=cloudWorkspaceId(),userId=currentUser.id;
   state.loading=(async()=>{
     const [library,preference]=await Promise.all([sb.from('camera_sounds').select('id,name,storage_path,duration,user_id,created_at').eq('workspace_id',workspace).eq('archived',false).order('created_at',{ascending:false}).limit(200),sb.from('camera_sound_preferences').select('sound_id').eq('workspace_id',workspace).eq('user_id',userId).maybeSingle()]);
     if(library.error||preference.error)throw library.error||preference.error;
     if(cameraSoundScope()!==scope||cameraSoundState!==state)return;
     state.items=library.data||[];state.selected=state.items.some(item=>item.id===preference.data?.sound_id)?preference.data.sound_id:null;state.loadedAt=Date.now();
-  })().finally(()=>{state.loading=null;});return state.loading;
+  })().catch(error=>{state.failedAt=Date.now();throw error;}).finally(()=>{state.loading=null;});return state.loading;
 }
 function selectedCameraSound(){return cameraSoundState.items.find(item=>item.id===cameraSoundState.selected)||null;}
 async function decodeCameraSound(sound,context){
@@ -12592,31 +12592,31 @@ async function openCameraSoundLibrary(){
 }
 function closeCameraSoundLibrary(){
   if(cameraSoundState.busy){cameraSoundStatus('Đang lưu, chờ một chút nhé.');return;}
-  document.getElementById('camera-sound-overlay')?.remove();try{batchShutterSource?.stop();}catch(_){}
+  cameraSoundPreviewToken++;document.getElementById('camera-sound-overlay')?.remove();try{batchShutterSource?.stop();}catch(_){}
   const camera=document.getElementById('br-multi-cam');if(camera)camera.inert=cameraSoundCameraWasInert;
   cameraSoundReturnFocus?.isConnected&&cameraSoundReturnFocus.focus({preventScroll:true});
 }
 function renderCameraSoundList(){
   const list=document.getElementById('camera-sound-list');if(!list)return;
-  const connected=!!(sb&&currentUser&&cloudWorkspaceId()),selected=cameraSoundState.selected;
+  const connected=!!(sb&&cameraSoundScope()),selected=cameraSoundState.selected;
   document.querySelectorAll('#camera-sound-form input,#camera-sound-form button').forEach(el=>el.disabled=!connected||cameraSoundState.busy);
   const rows=[{id:'',name:'Boom',duration:null},...cameraSoundState.items];
   list.innerHTML=rows.map(item=>{const active=(item.id||null)===selected,canRename=item.id&&(item.user_id===currentUser?.id||cloudWorkspaceOwnerId()===currentUser?.id);return `<article class="camera-sound-row"><div><b>${esc(item.name)}</b><small>${item.id?`${Number(item.duration).toFixed(1)} giây`:'Mặc định'}${active?' · Đang dùng':''}</small></div><div class="camera-sound-actions"><button type="button" aria-label="Nghe thử ${esc(item.name)}" onclick="previewCameraSound('${esc(item.id)}')" ${cameraSoundState.busy?'disabled':''}>▶</button>${canRename?`<button type="button" aria-label="Đổi tên ${esc(item.name)}" onclick="renameCameraSound('${esc(item.id)}')" ${cameraSoundState.busy?'disabled':''}>Đổi tên</button>`:''}<button type="button" aria-pressed="${active}" onclick="selectCameraSound('${esc(item.id)}')" ${!connected||cameraSoundState.busy||active?'disabled':''}>${active?'✓ Đang dùng':'Dùng'}</button></div></article>`;}).join('');
 }
 async function refreshCameraSoundLibrary(){
   if(cameraSoundState.busy)return;
-  if(!sb||!currentUser||!cloudWorkspaceId()){cameraSoundStatus('Đăng nhập tài khoản xưởng để lưu âm thanh.');return;}
+  if(!sb||!cameraSoundScope()){cameraSoundStatus('Đăng nhập tài khoản xưởng để lưu âm thanh.');return;}
   cameraSoundStatus('Đang tải thư viện…');
   try{await loadCameraSounds(true);renderCameraSoundList();cameraSoundStatus('');prepareBatchShutterSound();}catch(error){cameraSoundStatus('Chưa tải được thư viện. Bấm Làm mới để thử lại.',true);}
 }
 function suggestCameraSoundName(file){const input=document.getElementById('camera-sound-name');if(input&&file&&!input.value.trim())input.value=file.name.replace(/\.[^.]+$/,'').slice(0,60);}
 async function previewCameraSound(id){
   const sound=id?cameraSoundState.items.find(item=>item.id===id):null;if(id&&!sound)return;
-  const scope=cameraSoundScope();unlockNotificationAudio();
-  try{await notificationAudioContext.resume();cameraSoundStatus('Đang nạp âm thanh…');const buffer=await decodeCameraSound(sound,notificationAudioContext);if(scope!==cameraSoundScope()||!document.getElementById('camera-sound-overlay'))return;playCameraSoundBuffer(buffer);cameraSoundStatus(`Đang nghe: ${sound?.name||'Boom'}`);}catch(error){cameraSoundStatus('Không phát được file này. Thử MP3 hoặc WAV nhé.',true);}
+  const scope=cameraSoundScope(),token=++cameraSoundPreviewToken;unlockNotificationAudio();
+  try{await notificationAudioContext.resume();cameraSoundStatus('Đang nạp âm thanh…');const buffer=await decodeCameraSound(sound,notificationAudioContext);if(token!==cameraSoundPreviewToken||scope!==cameraSoundScope()||!document.getElementById('camera-sound-overlay'))return;playCameraSoundBuffer(buffer);cameraSoundStatus(`Đang nghe: ${sound?.name||'Boom'}`);}catch(error){if(token===cameraSoundPreviewToken)cameraSoundStatus('Không phát được file này. Thử MP3 hoặc WAV nhé.',true);}
 }
 async function selectCameraSound(id){
-  if(cameraSoundState.busy||!sb||!currentUser)return;
+  if(cameraSoundState.busy||!sb||!cameraSoundScope())return;
   if(id&&!cameraSoundState.items.some(item=>item.id===id))return;
   const state=cameraSoundState,scope=cameraSoundScope();state.busy=true;renderCameraSoundList();cameraSoundStatus('Đang lưu lựa chọn…');
   try{const {error}=await sb.from('camera_sound_preferences').upsert({workspace_id:cloudWorkspaceId(),user_id:currentUser.id,sound_id:id||null,updated_at:new Date().toISOString()},{onConflict:'workspace_id,user_id'});if(error)throw error;if(scope!==cameraSoundScope())return;state.selected=id||null;cameraSoundGeneration++;batchShutterLoad=null;batchShutterBuffer=null;batchShutterKey='';prepareBatchShutterSound();cameraSoundStatus('Đã lưu lựa chọn trên cloud.');}catch(error){cameraSoundStatus('Chưa lưu được lựa chọn. Vui lòng thử lại.',true);}finally{state.busy=false;renderCameraSoundList();}
@@ -12627,8 +12627,14 @@ async function renameCameraSound(id){
   const state=cameraSoundState,scope=cameraSoundScope();state.busy=true;renderCameraSoundList();
   try{const {data,error}=await sb.from('camera_sounds').update({name}).eq('workspace_id',cloudWorkspaceId()).eq('id',id).select('id');if(error||!data?.length)throw error||new Error('Không có quyền');if(scope===cameraSoundScope()){item.name=name;cameraSoundStatus('Đã lưu tên trên cloud.');}}catch(error){cameraSoundStatus('Không đổi được tên. Chỉ người tải lên hoặc chủ xưởng được sửa.',true);}finally{state.busy=false;renderCameraSoundList();}
 }
+function cameraSoundFileDuration(file){
+  return new Promise((resolve,reject)=>{const media=new Audio(),url=URL.createObjectURL(file);let timer;
+    const finish=(error)=>{clearTimeout(timer);const duration=media.duration;media.onloadedmetadata=null;media.onerror=null;media.removeAttribute('src');media.load();URL.revokeObjectURL(url);error?reject(error):resolve(duration);};
+    media.preload='metadata';media.onloadedmetadata=()=>finish(Number.isFinite(media.duration)&&media.duration>0&&media.duration<=15?null:new Error('Âm thanh phải dài tối đa 15 giây.'));media.onerror=()=>finish(new Error('Không đọc được file âm thanh. Thử MP3 hoặc WAV nhé.'));timer=setTimeout(()=>finish(new Error('Không đọc được thời lượng file.')),10000);media.src=url;
+  });
+}
 async function uploadCameraSound(){
-  if(cameraSoundState.busy||!sb||!currentUser||!cloudWorkspaceId())return;
+  if(cameraSoundState.busy||!sb||!cameraSoundScope())return;
   const file=document.getElementById('camera-sound-file')?.files?.[0],name=document.getElementById('camera-sound-name')?.value.trim();
   if(!file||!name||name.length>60){cameraSoundStatus('Chọn file và đặt tên từ 1–60 ký tự.',true);return;}
   if(file.size<=0||file.size>5242880){cameraSoundStatus('File cần nhỏ hơn 5 MB.',true);return;}
@@ -12638,6 +12644,7 @@ async function uploadCameraSound(){
   const state=cameraSoundState,scope=cameraSoundScope(),workspace=cloudWorkspaceId(),userId=currentUser.id,id=crypto.randomUUID(),path=`${workspace}/${userId}/${id}`;let uploaded=false,registered=false;
   state.busy=true;renderCameraSoundList();cameraSoundStatus('Đang kiểm tra âm thanh…');unlockNotificationAudio();
   try{
+    await cameraSoundFileDuration(file);
     const buffer=await notificationAudioContext.decodeAudioData(await file.arrayBuffer());if(!Number.isFinite(buffer.duration)||buffer.duration<=0||buffer.duration>15)throw new Error('Âm thanh phải dài tối đa 15 giây.');
     if(scope!==cameraSoundScope())throw new Error('Tài khoản đã thay đổi. Hãy mở lại thư viện.');
     cameraSoundStatus('Đang tải lên cloud…');const {error:uploadError}=await sb.storage.from(CAMERA_SOUND_BUCKET).upload(path,file,{contentType:type,upsert:false});if(uploadError)throw uploadError;uploaded=true;
@@ -20513,7 +20520,7 @@ function ensureSystemNotificationButton(){
   button.innerHTML=`<span class="system-notification-icon" aria-hidden="true">🔔</span><span class="system-notification-label">Thông báo</span>${unread?`<b>${unread>99?'99+':unread}</b>`:''}`;
 }
 function openSystemNotifications(){
-  normalizeOperations();const events=notificationEventsForCurrentUser().slice(0,40);const rows=events.length?events.map(event=>`<article class="system-event ${eventReadByCurrentUser(event)?'':'is-unread'}"><span>${notificationIcon(event)}</span><div><b>${esc(event.title||'Hoạt động hệ thống')}</b><p>${esc(event.detail||'')}</p><small>${fmtDate(event.createdAt)}${eventAudienceLabel(event)?` · ${esc(eventAudienceLabel(event))}`:''}</small>${notificationActionHTML(event)}</div></article>`).join(''):'<div class="empty">Không có thông báo nào cần bạn xử lý.</div>';const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Thông báo dành cho bạn</div><div class="system-event-list">${rows}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="toggleNotificationSound()">${notificationAudioEnabled?'🔊 Âm thanh: bật':'🔇 Âm thanh: tắt'}</button><button class="btn btn-ghost" onclick="markSystemNotificationsRead()">Đánh dấu đã đọc</button><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';}
+  normalizeOperations();const events=notificationEventsForCurrentUser().slice(0,40);const rows=events.length?events.map(event=>`<article class="system-event ${eventReadByCurrentUser(event)?'':'is-unread'}"><span>${notificationIcon(event)}</span><div><b>${esc(event.title||'Hoạt động hệ thống')}</b><p>${esc(event.detail||'')}</p><small>${fmtDate(event.createdAt)}${eventAudienceLabel(event)?` · ${esc(eventAudienceLabel(event))}`:''}</small>${notificationActionHTML(event)}</div></article>`).join(''):'<div class="empty">Không có thông báo nào cần bạn xử lý.</div>';const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">Thông báo dành cho bạn</div><div class="system-event-list">${rows}</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="toggleNotificationSound()">${notificationAudioEnabled?'🔊 Âm thanh: bật':'🔇 Âm thanh: tắt'}</button><button class="btn btn-ghost" onclick="closeDialog(\'dlg-mv\');openCameraSoundLibrary()">Âm thanh chụp</button><button class="btn btn-ghost" onclick="markSystemNotificationsRead()">Đánh dấu đã đọc</button><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';}
 function toggleNotificationSound(){notificationAudioEnabled=!notificationAudioEnabled;localStorage.setItem('ps_notification_sound',notificationAudioEnabled?'1':'0');if(notificationAudioEnabled){unlockNotificationAudio();playNotificationSound();}openSystemNotifications();}
 function markSystemNotificationsRead(){normalizeOperations();const key=notificationUserKey();notificationEventsForCurrentUser().forEach(event=>{event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);});saveOperations();ensureSystemNotificationButton();closeDialog('dlg-mv');}
 
