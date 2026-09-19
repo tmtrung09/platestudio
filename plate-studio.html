@@ -3396,25 +3396,39 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
 </style>
 <style>
 /* Thư viện trực quan khi xếp plate: thay cho select dài, khó nhận diện. */
+.br-plan-review{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:20px;max-width:1280px;margin:auto;padding:16px}
+.br-plan-photo img{width:100%;max-height:72dvh;object-fit:contain;border-radius:16px;background:var(--s2)}
+.br-plan-detail{min-width:0}.br-plan-source{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.br-plan-source label,.br-plan-color{display:grid;gap:5px;min-width:0;font-size:11px;color:var(--t2)}
+.br-plan-review select{max-width:100%;min-width:0;min-height:44px;border:0;border-radius:8px;padding:8px;background:var(--s2);color:var(--t);font:inherit}
+.br-plan-actual{padding:14px;margin-bottom:10px;border-radius:12px;background:var(--s)}
+.br-plan-actual header,.br-plan-actual footer{display:flex;justify-content:space-between;align-items:center;gap:8px}.br-plan-actual header>div{min-width:0}.br-plan-actual header b{font-size:13px;overflow-wrap:anywhere}.br-plan-actual small{display:block;margin-top:4px;color:var(--t2);font-size:11px}.br-plan-actual header>span{flex-shrink:0;font-size:11px;color:var(--t2)}
+.br-plan-color{margin:12px 0}.br-plan-quantities{display:grid;grid-template-columns:1fr 1fr;gap:12px}.br-plan-quantities label{min-width:0;font-size:12px;font-weight:600}
+.br-plan-stepper{display:flex;overflow:hidden;align-items:center;margin-top:6px;border-radius:8px;background:var(--s2)}
+.br-plan-stepper button{flex:0 0 44px;width:44px;height:44px;border:0;background:#353639;color:#fff;font-size:20px}
+.br-plan-stepper input{min-width:0;width:100%;height:44px;padding:4px!important;text-align:center;border:0!important;background:transparent!important;color:var(--t);font-size:16px;appearance:textfield;box-shadow:none!important}.br-plan-stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.br-plan-stepper:focus-within{outline:2px solid var(--t2);outline-offset:2px}.br-plan-stepper input:focus{outline:none!important}
+.br-plan-actual footer{margin-top:12px;font-size:12px;color:var(--t2)}.br-plan-actual .btn,.br-plan-detail>.br-actions .btn{min-height:44px}
+@media(max-width:700px){.br-plan-review{grid-template-columns:1fr;padding:10px;gap:10px}.br-plan-photo img{max-height:180px}.br-plan-actual{padding:10px}.br-plan-quantities{gap:8px}.br-plan-stepper button{flex-basis:44px}.br-plan-source{flex-wrap:wrap}.br-plan-source label{flex:1}.br-plan-detail>.br-actions{position:sticky;bottom:0;padding:10px 0;background:var(--s)}}
 /* Plate editor: bounded shell, one scrolling body, always-visible commit bar. */
 #dlg-mv .pp-edit-dlg{width:min(1100px,calc(100vw - 32px));max-width:1100px;height:min(790px,calc(100dvh - 40px));max-height:calc(100dvh - 40px);padding:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--bm);border-radius:26px;background:var(--s)}
-.pp-edit-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px 18px;border-bottom:1px solid var(--b);flex-shrink:0}
+.pp-edit-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--b);flex-shrink:0}
 .pp-edit-head small{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--ac)}.pp-edit-head h2{font-size:24px;line-height:1.25;margin:5px 0 0}.pp-edit-head h2 span{font-weight:500;color:var(--t2)}
 .pp-close,.pp-remove{display:grid;place-items:center;flex-shrink:0;border:1px solid var(--b);background:var(--s2);color:var(--t2);border-radius:50%;width:44px;height:44px;font:inherit;font-size:23px;cursor:pointer}
 .pp-edit-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);min-height:0;flex:1;overflow:auto;overscroll-behavior:contain}
-.pp-picker{min-width:0;padding:20px 24px;background:var(--s)}
+.pp-picker{min-width:0;padding:14px 18px;background:var(--s)}
 .pp-picker-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.pp-picker-hd b{font-size:14px}.pp-picker-hd small{color:var(--t2);font-size:11px}
 .pp-picker-search{display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--bm);border-radius:14px;background:var(--s2)}
 .pp-picker-search:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--acb)}
 .pp-picker-search span{font-size:22px;color:var(--t2)}.pp-picker-search input{width:100%;min-width:0;height:44px;padding:0!important;border:0!important;outline:0;box-shadow:none!important;background:transparent!important;color:var(--t);font:inherit;font-size:13px}
 .pp-slot-hint{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px;margin:8px 0;color:var(--t2);font-size:11px}.pp-slot-hint .btn{min-height:36px}
-.pp-picker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:420px;overflow:auto;overscroll-behavior:contain;align-content:start;padding:4px}
+.pp-picker-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;max-height:460px;overflow:auto;overscroll-behavior:contain;align-content:start;padding:4px}
 .pp-picker-card{position:relative;display:flex;flex-direction:column;min-width:0;padding:0;overflow:hidden;border:1px solid var(--b);border-radius:16px;background:var(--s2);color:var(--t);text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
 .pp-picker-card:hover{border-color:var(--ac)}.pp-picker-card.selected{outline:2px solid var(--ac);outline-offset:1px;background:var(--acb)}.pp-picker-card[hidden],.pp-picker-empty[hidden]{display:none}
 .pp-picker-card img,.pp-picker-art{width:100%;aspect-ratio:1;object-fit:cover;object-position:center;background:var(--s3);display:block}.pp-picker-art{display:grid;place-items:center;font-size:28px}
 .pp-picker-card b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:43px;padding:8px;overflow:hidden;font-size:11px;line-height:1.3}
-.pp-edit-workspace{min-width:0;padding:20px;background:color-mix(in srgb,var(--s2) 60%,var(--s));border-left:1px solid var(--b)}
-.pp-picker-selected{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:12px;align-items:end}
+.pp-edit-workspace{min-width:0;padding:16px;background:color-mix(in srgb,var(--s2) 60%,var(--s));border-left:1px solid var(--b)}
+.pp-picker-selected{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:10px;align-items:end}
 .pp-picker-selected-model{grid-column:1/-1;display:flex;align-items:center;gap:12px;min-width:0;margin-bottom:6px}.pp-picker-selected-model>span{min-width:0}
 .pp-picker-selected-model img,.pp-picker-selected-art{width:52px;height:52px;flex:0 0 52px;border-radius:13px;object-fit:cover;background:var(--s3)}.pp-picker-selected-art{display:grid;place-items:center;font-size:24px}
 .pp-picker-selected-model b{display:block;font-size:14px;line-height:1.35;overflow-wrap:anywhere}.pp-picker-selected-model small{display:block;margin-top:4px;color:var(--t2);font-size:11px}
@@ -3425,11 +3439,33 @@ body:has(#page-kiotviet.active) .fab-scrim,body:has(#page-sales.active) .fab-scr
 .pp-selection-empty{display:grid;justify-items:center;gap:8px;padding:30px 12px;color:var(--t2);text-align:center}.pp-selection-empty>span{display:grid;place-items:center;width:56px;height:56px;background:var(--acb);color:var(--ac);font-size:32px;border-radius:18px}.pp-selection-empty b{font-size:14px;color:var(--t)}.pp-selection-empty small{font-size:12px}
 .pp-queue{margin-top:22px;padding-top:18px;border-top:1px solid var(--bm)}.pp-queued-row{display:flex;align-items:center;gap:6px;padding:5px;border:1px solid var(--b);border-radius:14px;background:var(--s)}.pp-queued-row .pp-plan-item{flex:1;background:transparent;min-width:0}.pp-queued-row .pp-plan-item-copy b,.pp-queued-row .pp-plan-item-copy small{white-space:normal;overflow-wrap:anywhere}.pp-remove{width:36px;height:36px;font-size:20px;border:0;background:transparent}.pp-remove:hover{color:var(--re);background:var(--s3)}
 .pp-picker-empty{padding:28px 12px;color:var(--t2);font-size:13px;text-align:center}
-.pp-edit-footer{display:flex;align-items:center;gap:10px;flex-shrink:0;padding:16px 24px;border-top:1px solid var(--bm);background:var(--s);box-shadow:0 -8px 24px color-mix(in srgb,var(--bg) 12%,transparent)}
+.pp-edit-footer{display:flex;align-items:center;gap:8px;flex-shrink:0;padding:10px 18px;border-top:1px solid var(--bm);background:var(--s)}
 .pp-edit-total{margin-right:auto;min-width:0}.pp-edit-total b,.pp-edit-total small{display:block}.pp-edit-total b{font-size:15px}.pp-edit-total small{color:var(--t2);font-size:11px;margin-top:3px}.pp-edit-footer .btn{min-height:44px}
-.pp-need-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.pp-need-tabs button{display:flex;align-items:center;gap:6px;min-height:40px;padding:8px 11px;border:1px solid var(--bm);border-radius:12px;background:var(--s2);color:var(--t2);font:600 11px var(--font);cursor:pointer}.pp-need-tabs button[aria-selected="true"]{background:var(--acb);border-color:var(--ac);color:var(--ac)}.pp-need-tabs small{display:grid;place-items:center;min-width:18px;padding:2px 4px;border-radius:6px;background:var(--s);font-size:10px}.pp-need-hint{margin:0 0 12px;color:var(--t2);font-size:11px;line-height:1.45}.pp-need-hint:empty{display:none}
+.pp-need-tabs{display:flex;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px;margin:-4px -4px 6px;scrollbar-width:thin}.pp-need-tabs button{display:flex;flex:0 0 auto;align-items:center;gap:5px;min-height:44px;padding:6px 8px;border:0;border-radius:7px;font-family:inherit;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer}.pp-need-tabs button[aria-selected="true"]{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}.pp-need-tabs small{min-width:12px;background:transparent;font-size:10px;color:inherit;opacity:.8;font-variant-numeric:tabular-nums}.pp-need-hint{margin:0 0 8px;color:var(--t2);font-size:11px;line-height:1.45}.pp-need-hint:empty{display:none}
 .pp-quantity-field{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}.pp-quantity-control{display:flex;align-items:center;border:1px solid var(--bm);background:var(--s);border-radius:13px;overflow:hidden}.pp-quantity-control:focus-within{outline:2px solid var(--ac);outline-offset:2px}.pp-quantity-control button{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border:0;background:var(--s2);color:var(--t);font:500 23px var(--font);cursor:pointer}.pp-quantity-control button:hover:not(:disabled){background:var(--acb);color:var(--ac)}.pp-quantity-control button:disabled{opacity:.4;cursor:default}#pp-plan-qty{width:76px;min-height:48px;text-align:center;font-size:16px;background:transparent!important;border:0!important;outline:none!important;box-shadow:none!important;border-radius:0;appearance:textfield;-moz-appearance:textfield}#pp-plan-qty::-webkit-inner-spin-button,#pp-plan-qty::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.pp-picker-selected .pp-picker-add{grid-column:1/-1;min-height:46px;width:100%}
-.pp-edit-dlg button:focus-visible,.pp-edit-dlg select:focus-visible,.pp-edit-dlg input:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+/* Plate workspace uses a quiet, flat control family, including dark-theme overrides. */
+#dlg-mv .pp-edit-dlg{--pp-button:#353639;--pp-button-hover:#48494d;--pp-button-active:#18191b;--pp-button-text:#fff;--pp-focus:var(--t2)}
+#dlg-mv .pp-edit-dlg :is(.btn,.pp-close,.pp-remove,.pp-need-tabs button,.pp-quantity-control button){background:var(--pp-button)!important;color:var(--pp-button-text)!important;border:0!important;box-shadow:none!important;filter:none!important;animation:none!important;transform:none!important;border-radius:8px!important;font-family:inherit;font-size:12px;min-height:44px;transition:background .12s ease}
+#dlg-mv .pp-edit-dlg :is(.btn,.pp-close,.pp-remove,.pp-need-tabs button,.pp-quantity-control button):hover:not(:disabled){background:var(--pp-button-hover)!important}
+#dlg-mv .pp-edit-dlg :is(.btn,.pp-close,.pp-remove,.pp-need-tabs button,.pp-quantity-control button):active:not(:disabled),#dlg-mv .pp-edit-dlg .pp-need-tabs button[aria-selected="true"]{background:var(--pp-button-active)!important}
+#dlg-mv .pp-edit-dlg .btn::before,#dlg-mv .pp-edit-dlg .btn::after{display:none!important}
+#dlg-mv .pp-edit-dlg .pp-need-tabs button{font-size:11px}
+#dlg-mv .pp-edit-dlg .pp-close{font-size:22px}
+#dlg-mv .pp-edit-dlg .pp-remove{width:44px;font-size:18px}
+#dlg-mv .pp-edit-dlg .pp-edit-head h2{font-size:21px}
+#dlg-mv .pp-edit-dlg .pp-edit-head small{color:var(--t2);font-size:9px}
+#dlg-mv .pp-edit-dlg .pp-picker-selected-model img{width:40px;height:40px;flex-basis:40px;border-radius:10px}
+#dlg-mv .pp-edit-dlg .pp-picker-selected-model small{display:none}
+#dlg-mv .pp-edit-dlg .pp-picker-card{border:0;border-radius:10px;box-shadow:none!important}
+#dlg-mv .pp-edit-dlg .pp-picker-card b{display:-webkit-box;line-height:14px;height:44px;min-height:44px;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#dlg-mv .pp-edit-dlg .pp-picker-card.selected{outline:none;background:var(--pp-button);color:var(--pp-button-text)}
+#dlg-mv .pp-edit-dlg .pp-picker-card.selected::after{content:'✓';position:absolute;right:6px;top:28px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--pp-button-active);color:var(--pp-button-text)}
+#dlg-mv .pp-edit-dlg :is(.pp-picker-search,.pp-quantity-control,.pp-picker-selected select,.pp-color-check,.pp-queued-row){border:0;box-shadow:none;border-radius:9px}
+#dlg-mv .pp-edit-dlg .pp-picker-search:focus-within{box-shadow:0 0 0 2px var(--pp-focus)}
+#dlg-mv .pp-edit-dlg .pp-quantity-control button{width:44px;height:44px;flex-basis:44px;font-size:20px;border-radius:0}
+#dlg-mv .pp-edit-dlg #pp-plan-qty{width:58px;min-height:44px;height:44px}
+.pp-edit-dlg button:focus-visible,.pp-edit-dlg select:focus-visible,.pp-edit-dlg input:focus-visible{outline:2px solid var(--pp-focus);outline-offset:3px}
+#dlg-mv .pp-edit-dlg .pp-picker-card:focus-visible{outline:2px solid var(--pp-focus)}
 /* Composite search controls own their focus ring on the shell, not the input.
    Keep keyboard focus visible without nesting the global field/dialog ring. */
 html body :is(.pp-picker-search,.more-search,.br-manual-model-input)>input:not([type="range"]),
@@ -10543,7 +10579,7 @@ function restoreBatchReportBeforeEditing(report){
 }
 function editCompletedManualBatchReport(reportId){
   if(!canEditBatchReports()){toast('Bạn chưa được cấp quyền chỉnh sửa thông tin ảnh báo cáo mẻ.');return;}
-  const report=stageBatchReportForEditing(reportId); if(!isExternalBatchReport(report)) { toast('Chỉ có thể sửa trực tiếp phần ghi nhận ngoài kế hoạch'); return; }
+  const report=stageBatchReportForEditing(reportId); if(!isExternalBatchReport(report)&&!report?.planReview) { toast('Chỉ có thể sửa trực tiếp phần ghi nhận ngoài kế hoạch'); return; }
   const hasReconciliation=(report.reconciliationDeltas||[]).length || (!(report.manualItems||[]).length && (report.appliedItems||[]).length);
   if(hasReconciliation){
     if(!confirm('Báo cáo này đã được đối chiếu vào Order. Hệ thống sẽ hoàn tác riêng số lượng do báo cáo này đã cộng, rồi mở báo cáo để chỉnh. Tiếp tục?')) return;
@@ -11994,6 +12030,7 @@ function declareBatchReportContents(reportId){
   brView='manual';renderBatchReport();
 }
 function batchBack(){
+  if(brView==='plan-review'){brView='color';renderBatchReport();return;}
   if (brView === 'match') { brView = 'color'; brMatchQty = {}; renderBatchReport(); }
   else if (brView === 'manual') { brView = 'color'; renderBatchReport(); }
   else if (brView === 'color') { brView = 'hub'; renderBatchReport(); }
@@ -12005,6 +12042,7 @@ function renderBatchReport(){
   else if (brView === 'color') renderBatchColorPick();
   else if (brView === 'match') renderBatchMatch();
   else if (brView === 'manual') renderBatchManual();
+  else if (brView === 'plan-review') renderBatchPlanReview();
 }
 function updateCamBadge(){
   const n = operationalBatchReportSource().filter(r=>r.status==='pending').length;
@@ -12611,7 +12649,8 @@ function resumeBatchReport(id){
   /* Đối chiếu Order và mẻ ngoài kế hoạch nay dùng chung một trang kiểm tra.
      Vì vậy báo cáo đang dở chỉ cần mở đúng form ghi nhận Model/Part, không
      còn đi qua màn "Tick sản phẩm đã in" riêng lẻ. */
-  if (!r.filamentId) {
+  if(r.planReview){brView='plan-review';}
+  else if (!r.filamentId) {
     brView = 'color';
   } else {
     brManualItems = (r.manualItems?.length
@@ -12659,6 +12698,7 @@ function saveTrashItems(){
 }
 function moveBatchReportToTrash(report){
   if(!report)return;
+  setPrintPlanResultVoided(report,true);
   trashItems=(Array.isArray(trashItems)?trashItems:[]).filter(item=>!(item.type==='batch-report'&&item.data?.id===report.id));
   trashItems.unshift({id:uid(),type:'batch-report',label:'Ảnh báo cáo mẻ in',data:report,deletedAt:new Date().toISOString(),deletedBy:getBatchActor?.()||null});
   saveTrashItems();
@@ -12706,6 +12746,7 @@ async function restoreTrashItem(itemId){
     sv(K.batchReports,batchReports);updateCamBadge();
     try { await persistBatchReportCloud(report); }
     catch(error) { toast('Chưa thể khôi phục lên cloud: '+error.message,5000); return; }
+    setPrintPlanResultVoided(report,false);
   }else{toast('Loại dữ liệu này chưa hỗ trợ khôi phục.');return;}
   trashItems=trashItems.filter(row=>row.id!==itemId);saveTrashItems();
   recordAudit('restore','Báo cáo mẻ',trashItemLabel(item),{reportId:item.data?.id||''});
@@ -12871,6 +12912,7 @@ function renderBatchColorPick(){
   el.classList.add('br-two-col-content');
   el.innerHTML = `
     <div class="br-two-col-layout"><div class="br-two-col-visual"><img src="${r.image}" alt="Ảnh mẻ in"/>${batchAiImageCornerHtml(r)}</div><div class="br-two-col-detail">
+    ${renderBatchMachinePlanPanel(r)}
     <div class="gap-row" style="margin:0 0 10px"><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="openBatchManualForm()">+ Mẻ ngoài kế hoạch</button></div>
     <div class="br-color-ai-panel">${renderBatchAiCard(r,{compact:true})}</div>
     <div class="br-unified-search"><input id="br-unified-search" type="search" value="${esc(brUnifiedSearch)}" placeholder="Tìm màu, model, part hoặc đơn đang in..." oninput="updateBatchUnifiedSearch(this.value)" autocomplete="off"/><button type="button" class="br-unified-clear" id="br-unified-clear" title="Xóa tìm kiếm" onclick="clearBatchUnifiedSearch()" ${brUnifiedSearch?'':'style="display:none"'}>×</button></div>
@@ -13380,6 +13422,7 @@ function removeBatchManualItem(index){
 }
 function renderBatchManual(){
   const r=batchReports.find(x=>x.id===brCurrentId); if(!r){ brView='hub'; renderBatchHub(); return; }
+  if(r.planReview){brView='plan-review';renderBatchPlanReview();return;}
   const canManage=canEditBatchReports();
   if(!models.length){ toast('Cần có ít nhất một Model để ghi mẻ ngoài kế hoạch'); brView='hub'; renderBatchHub(); return; }
   if(!brManualItems.length) brManualItems=[newManualEntry()];
@@ -13431,6 +13474,7 @@ async function deleteCurrentBatchManualReport(){
 function saveBatchManualReport(){
   if(!canDescribeBatchReports()){toast('Bạn chưa được cấp quyền khai báo Model/Part của mẻ in.');return;}
   const r=batchReports.find(x=>x.id===brCurrentId); if(!r) return;
+  if(!validateBatchPlanReview(r))return;
   /* Đọc trực tiếp checkbox lúc lưu: trên mobile có trường hợp sự kiện change
      bị trì hoãn khi chạm rồi bấm Lưu ngay, khiến tick giao xưởng bị mất. */
   const handoverInput=document.getElementById('br-handover-now');
@@ -13482,6 +13526,7 @@ function saveBatchManualReport(){
   }
   r.status='done'; r.completedAt=completedAt; r.external=items.length>0;if(items.length)r.externalOrigin=true;
   r.completedBy=ensureBatchActor(); r.removedBy=r.completedBy;
+  commitBatchPlanResult(r);
   /* Mẻ ngoài đơn chưa nên tự tick Order. Tuy vậy vẫn giữ chính xác việc cả
      plate đã được giao xưởng, để khi người dùng đối chiếu vào Order sau đó,
      trạng thái giao xưởng có thể đi theo đúng mẻ này. */
@@ -13517,6 +13562,7 @@ function setBatchMatchQty(pitemId, val, remain){
 
 function applyBatchReport(){
   const r = batchReports.find(x=>x.id===brCurrentId); if(!r) return;
+  if(r.planReview){brView='plan-review';renderBatchReport();return;}
   if(!getFil(r.filamentId)){ brView='color'; renderBatchReport(); toast('Hãy khai báo màu thực tế của mẻ trước khi cập nhật tiến độ.'); return; }
   const applied = [];
   Object.entries(brMatchQty).forEach(([pitemId, qty])=>{
@@ -14219,7 +14265,7 @@ function viewBatchReport(id,{keepEvidenceReturn=false}={}){
   const reportDone=isOperationalBatchReport(r);
   const meta=`<div class="batch-report-image-meta"><div class="batch-report-meta-top"><span class="badge ${reportDone?'bg-gr':'bg-am'}">${reportDone?'Đã xử lý':'Chờ xử lý'}</span><b>${esc(fil?fil.brand+' · '+fil.name:'Chưa chọn màu')}</b></div><div class="batch-report-meta-detail">📷 ${esc(batchActorLabel(r.capturedBy))}${r.completedBy||r.removedBy?`<br/>🧹 ${esc(batchActorLabel(r.removedBy||r.completedBy))}`:''}${handover?`<br/>🔧 Đã giao xưởng · ${esc(batchActorLabel(r.workshopHandover.by))}${r.workshopHandover.scope==='whole_plate'?` · ${Number(r.workshopHandover.count)||0} dòng`:''}`:''}</div>${dateControl}</div>`;
   const aiAction=!STAFF_REPORT_MODE&&canEdit&&r.image?`<div class="batch-report-ai-action"><button class="btn btn-ac btn-sm" ${brAiAnalysing.has(r.id)?'disabled':''} onclick="analyzeBatchReportWithAi('${r.id}')">${brAiAnalysing.has(r.id)?'✦ Đang phân tích…':'✦ Phân tích AI'}</button></div>`:'';
-  ov.innerHTML=`<div class="dlg batch-report-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Báo cáo mẻ in</div><div class="batch-report-detail-layout"><div class="batch-report-visual-column"><div class="batch-report-image-stage"><div class="batch-report-detail-media${r.image?'':' is-missing'}">${r.image?`<img src="${esc(r.image)}" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`:''}</div>${meta}${aiAction}</div></div><div class="batch-report-model-column"><div class="card-title" style="margin:0">Model / Part trong mẻ này</div>${batchReportModelProgressHTML(r)}${reconcile.length?`<div class="batch-report-reconcile-note">⚠️ Có ${reconcile.length} Part đã ghi ngoài kế hoạch nhưng vẫn thiếu trong Order.${canEdit?` <button class="btn btn-ac btn-xs" style="margin-left:6px" onclick="openBatchReconciliation('${r.id}')">Đối chiếu ngay</button>`:''}</div>`:''}${showAiDetails?renderBatchAiCard(r,{compact:true,hideAction:true}):''}</div></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button>${canEdit&&isExternalBatchReport(r)?`<button class="btn btn-ghost" onclick="editCompletedManualBatchReport('${r.id}')">Sửa báo cáo</button>`:''}${canEdit&&r.status!=='done'?`<button class="btn btn-ac" onclick="closeDialog('dlg-mv');resumeBatchReport('${r.id}')">Tiếp tục xử lý</button>`:''}</div></div>`;
+  ov.innerHTML=`<div class="dlg batch-report-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Báo cáo mẻ in</div><div class="batch-report-detail-layout"><div class="batch-report-visual-column"><div class="batch-report-image-stage"><div class="batch-report-detail-media${r.image?'':' is-missing'}">${r.image?`<img src="${esc(r.image)}" alt="Ảnh báo cáo mẻ in" onerror="batchReportImageFallback(this)"/>`:''}</div>${meta}${aiAction}</div></div><div class="batch-report-model-column"><div class="card-title" style="margin:0">Model / Part trong mẻ này</div>${batchPlanResultSummary(r)}${batchReportModelProgressHTML(r)}${reconcile.length?`<div class="batch-report-reconcile-note">⚠️ Có ${reconcile.length} Part đã ghi ngoài kế hoạch nhưng vẫn thiếu trong Order.${canEdit?` <button class="btn btn-ac btn-xs" style="margin-left:6px" onclick="openBatchReconciliation('${r.id}')">Đối chiếu ngay</button>`:''}</div>`:''}${showAiDetails?renderBatchAiCard(r,{compact:true,hideAction:true}):''}</div></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button>${canEdit&&(isExternalBatchReport(r)||r.planReview)?`<button class="btn btn-ghost" onclick="editCompletedManualBatchReport('${r.id}')">Sửa báo cáo</button>`:''}${canEdit&&r.status!=='done'?`<button class="btn btn-ac" onclick="closeDialog('dlg-mv');resumeBatchReport('${r.id}')">Tiếp tục xử lý</button>`:''}</div></div>`;
   initBatchReportImageZoom(ov);
   ov.style.display='flex'; ov.onclick=e=>{if(e.target===ov)closeDialog('dlg-mv');};
 }
@@ -16195,8 +16241,8 @@ function renderPlanSlots(machinePlan){return `<div class="pp-slot-grid">${machin
 function renderPlanItem(item){const view=planItemView(item);return `<div class="pp-plan-item">${view.image?`<img src="${esc(view.image)}" alt=""/>`:'<span style="font-size:20px">📦</span>'}<div class="pp-plan-item-copy"><b>${esc(view.name)}</b><small><i class="pp-slot-dot" style="display:inline-block;background:${esc(planFilamentHex(view.filamentId))}"></i> ${esc(view.partName)}${view.variantName?` · ${esc(view.variantName)}`:''}</small></div><span class="pp-plan-item-qty">× ${Number(item.qty)||1}</span></div>`;}
 function renderPlanMachineCard(machine,plan){
   const state=plan.machines[machine.id],plate=state.plate,readySlots=state.slots.filter(slot=>slot.confirmed&&!slot.offline).length;
-  const status=plate?'Đã xếp plate':`${readySlots}/${state.slots.length} khay sẵn sàng`;
-  return `<article class="pp-machine-card"><div class="pp-machine-head"><div class="pp-machine-icon">🖨️</div><div><b>${esc(machine.name)}</b><small>${esc(machine.model)} · ${esc(machine.ams)}</small></div><span class="pp-machine-status">${esc(status)}</span></div>${renderPlanSlots(state)}<div class="pp-plate"><div class="pp-plate-hd"><span>${plate?'🌙 Plate đêm đã dự kiến':'Chưa xếp plate'}</span>${plate?`<button class="btn btn-ghost btn-xs" onclick="clearNightPlanMachine('${machine.id}')">Xóa</button>`:''}</div>${plate?.items?.length?`<div class="pp-plan-items">${plate.items.map(renderPlanItem).join('')}</div>`:'<div class="pp-empty">Chọn part cần in cho máy này. Hệ thống chỉ gợi ý màu khay phù hợp, em là người chốt.</div>'}</div><div class="pp-machine-actions"><button class="btn btn-ghost btn-sm" onclick="goPage('machine-setup')">⚙ Khay nhựa</button><button class="btn btn-ac btn-sm" onclick="openNightPlanEditor('${machine.id}')">${plate?'Chỉnh plate':'＋ Xếp plate'}</button></div></article>`;
+  const status=isReportedPrintPlate(plate)?'Đã báo cáo':plate?'Đã xếp plate':`${readySlots}/${state.slots.length} khay sẵn sàng`;
+  return `<article class="pp-machine-card"><div class="pp-machine-head"><div class="pp-machine-icon">🖨️</div><div><b>${esc(machine.name)}</b><small>${esc(machine.model)} · ${esc(machine.ams)}</small></div><span class="pp-machine-status">${esc(status)}</span></div>${renderPlanSlots(state)}<div class="pp-plate"><div class="pp-plate-hd"><span>${plate?'🌙 Plate đêm đã dự kiến':'Chưa xếp plate'}</span>${plate&&!isReportedPrintPlate(plate)?`<button class="btn btn-ghost btn-xs" onclick="clearNightPlanMachine('${machine.id}')">Xóa</button>`:''}</div>${plate?.items?.length?`<div class="pp-plan-items">${plate.items.map(renderPlanItem).join('')}</div>`:'<div class="pp-empty">Chọn part cần in cho máy này. Hệ thống chỉ gợi ý màu khay phù hợp, em là người chốt.</div>'}</div><div class="pp-machine-actions"><button class="btn btn-ghost btn-sm" onclick="goPage('machine-setup')">⚙ Khay nhựa</button><button class="btn btn-ac btn-sm" onclick="${isReportedPrintPlate(plate)?`openPrintPlanResult('${esc(plate.id)}')`:`openNightPlanEditor('${machine.id}')`}">${isReportedPrintPlate(plate)?'Kết quả mẻ':plate?'Chỉnh plate':'＋ Xếp plate'}</button></div></article>`;
 }
 function renderPrintPlansPage(){
   const root=document.getElementById('print-plans-page');if(!root)return;
@@ -16212,7 +16258,7 @@ function renderMachineSetupPage(){
 function updatePrintPlanSlot(machineId,index,field,value){const plan=getNightPrintPlan(),slot=plan?.machines?.[machineId]?.slots?.[index];if(!slot)return;slot[field]=['offline','autoRefill','confirmed'].includes(field)?!!value:value||null;if(field==='offline'&&slot.offline)slot.confirmed=false;savePrintPlan(plan);}
 function scheduledPrintQtyByKey(exclude={}){
   const total=new Map();
-  (operations.printPlans||[]).forEach(plan=>Object.entries(plan?.machines||{}).filter(([id])=>plan.id!==exclude.planId||id!==exclude.machineId).forEach(([,machine])=>(machine?.plate?.items||[]).forEach(item=>{
+  (operations.printPlans||[]).forEach(plan=>Object.entries(plan?.machines||{}).filter(([id,machine])=>!isReportedPrintPlate(machine.plate)&&(plan.id!==exclude.planId||id!==exclude.machineId)).forEach(([,machine])=>(machine?.plate?.items||[]).forEach(item=>{
     const view=planItemView(item),key=planItemKey({...item,filamentId:item.filamentId||view.filamentId});
     total.set(key,(total.get(key)||0)+(Number(item.qty)||0));
   })));
@@ -16252,7 +16298,9 @@ function getAllOutstandingPrintNeeds(exclude={}){
     });
   });
   const scheduled=scheduledPrintQtyByKey(exclude);
-  return mergePrintNeedRows(rows).map(row=>({...row,qty:Math.max(0,row.qty-(scheduled.get(planItemKey(row))||0))})).filter(row=>row.qty>0);
+  const needs=new Map(mergePrintNeedRows(rows).map(row=>[planItemKey(row),{...row,qty:Math.max(0,row.qty-(scheduled.get(planItemKey(row))||0))}]));
+  mergePrintNeedRows(getPlanRetryNeeds(exclude)).forEach(row=>{const key=planItemKey(row),existing=needs.get(key);if(!existing||existing.qty<row.qty)needs.set(key,row);});
+  return [...needs.values()].filter(row=>row.qty>0);
 }
 function getNightPlanCandidates(){return getAllOutstandingPrintNeeds();}
 /* Các điểm nhắc (tồn kho, part thiếu, tiến độ) đều gọi cùng bộ chọn này.
@@ -16262,7 +16310,7 @@ let printPlanSuggestionState=null;
 let printPlanPartPickerState=null;
 function planDateAdd(date,days){const bits=String(date||localPlanDate()).split('-').map(Number),d=new Date(bits[0]||new Date().getFullYear(),(bits[1]||1)-1,bits[2]||1);d.setDate(d.getDate()+Number(days||0));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function findSavedNightPlan(date){normalizeOperations();return operations.printPlans.find(plan=>plan.date===date&&plan.shift==='night')||null;}
-function machinePlannedColors(plan,machineId){return new Set((plan?.machines?.[machineId]?.plate?.items||[]).map(item=>item.filamentId||planItemView(item).filamentId).filter(Boolean));}
+function machinePlannedColors(plan,machineId){const plate=plan?.machines?.[machineId]?.plate;return new Set((isReportedPrintPlate(plate)?[]:plate?.items||[]).map(item=>item.filamentId||planItemView(item).filamentId).filter(Boolean));}
 function plannedColors(plan){const set=new Set();Object.values(plan?.machines||{}).forEach(machine=>(machine?.plate?.items||[]).forEach(item=>{const color=item.filamentId||planItemView(item).filamentId;if(color)set.add(color);}));return set;}
 function findPlanDestination(filamentId,startDate){
   if(!filamentId)return null;
@@ -16309,8 +16357,9 @@ function applyPrintPlanSuggestion(){
     const plan=getNightPrintPlan(dest.date,true),machine=plan.machines?.[dest.machineId];if(!machine)return;
     if(!machine.plate)machine.plate={id:uid(),source:'reminder',items:[],createdAt:new Date().toISOString()};
     const next={modelId:row.modelId,modelName:row.modelName,variantId:row.variantId||null,variantName:row.variantName||'',partId:row.partId,partName:row.partName,qty:Math.max(1,Number(row.qty)||1),filamentId:row.filamentId};
+    attachPlanRetrySources(next);
     const same=machine.plate.items.find(item=>planItemKey(item)===planItemKey(next));
-    if(same){same.qty=(Number(same.qty)||0)+next.qty;merged++;}else machine.plate.items.push(next);
+    if(same){same.qty=(Number(same.qty)||0)+next.qty;same.retryOf=[...(same.retryOf||[]),...next.retryOf];merged++;}else machine.plate.items.push(next);
     changed.set(plan.id,plan);if(dest.offset>0)future.push(dest.date);
   });
   changed.forEach(plan=>savePrintPlan(plan));activePrintPlanDate=state.date;closeDialog('dlg-mv');printPlanSuggestionState=null;
@@ -16388,7 +16437,7 @@ function suggestNightPlan(){
   const plan=findSavedNightPlan(activePrintPlanDate||localPlanDate()),used=new Set(Object.values(plan?.machines||{}).flatMap(state=>state.plate?.items||[]).map(planItemKey)),candidates=getNightPlanCandidates().filter(item=>!used.has(planItemKey(item))).sort((a,b)=>(Number(b.qty)||0)-(Number(a.qty)||0)).slice(0,48);
   if(!candidates.length){toast('Chưa có part còn thiếu phù hợp để gợi ý.');return;}
   openPrintPlanSuggestion(candidates,'Gợi ý xếp máy','Hệ thống đã gom part đang thiếu từ Order, nhắc tồn kho và mẻ in ngoài đơn. Em duyệt trước khi xếp vào máy.');}
-function clearNightPlanMachine(machineId){const plan=getNightPrintPlan();if(!plan?.machines?.[machineId])return;plan.machines[machineId].plate=null;savePrintPlan(plan);}
+function clearNightPlanMachine(machineId){const plan=getNightPrintPlan();if(!plan?.machines?.[machineId])return;if(isReportedPrintPlate(plan.machines[machineId].plate)){toast('Plate đã báo cáo được giữ lại để đối chiếu.');return;}plan.machines[machineId].plate=null;savePrintPlan(plan);}
 /* Bộ chọn xếp plate phải bám theo cuộn THỰC TẾ đang lắp ở máy.  Không dùng
    cờ "đã xác nhận" tại đây: nhân viên có thể vừa chọn cuộn xong rồi mới xác
    nhận sau, nhưng người xếp vẫn cần thấy gợi ý khớp màu ngay lập tức. */
@@ -16410,7 +16459,7 @@ function machinePartColorMatches(model,filamentIds=[]){
   return rows;
 }
 function setNightPlanCompatibleOnly(value){printPlanEditState.compatibleOnly=!!value;renderNightPlanEditor();}
-const NIGHT_PLAN_TABS={all:'Tất cả',missing:'Thiếu part',defects:'Bù lỗi',sold:'Bù đã bán',suggested:'Gợi ý thêm'};
+const NIGHT_PLAN_TABS={all:'Tất cả',missing:'Thiếu part',defects:'Bù lỗi',retry:'In lại',sold:'Bù đã bán',suggested:'Gợi ý thêm'};
 function nightPlanNeedGroups(){
   const row=(model,variant,part,qty)=>({modelId:model.id,variantId:variant?.id||null,partId:part.id,filamentId:planPartColorId(model,variant,part),qty:Math.max(0,Math.ceil(qty))});
   const expand=(need,qty)=>{
@@ -16427,9 +16476,11 @@ function nightPlanNeedGroups(){
     return [row(need.model,variant,part,record?Math.min(item.qty,Math.max(0,Number(record.qty)-Number(record.qtyDone||0))):item.qty)];
   }))).map(need=>({...need,qty:Math.max(0,need.qty-(scheduled.get(planItemKey(need))||0))})).filter(need=>need.qty>0);
   const errors=new Map(defects.map(need=>[planItemKey(need),need.qty]));
+  const retry=mergePrintNeedRows(getPlanRetryNeeds(exclude));
+  retry.forEach(need=>errors.set(planItemKey(need),(errors.get(planItemKey(need))||0)+need.qty));
   return {
     missing:getAllOutstandingPrintNeeds(exclude).map(need=>({...need,qty:Math.max(0,need.qty-(errors.get(planItemKey(need))||0))})).filter(need=>need.qty>0),
-    defects,
+    defects,retry,
     sold:mergePrintNeedRows(getSalesRestockNeeds().flatMap(need=>expand(need,need.suggestedQty))),
     suggested:mergePrintNeedRows(getInventoryAlerts().flatMap(need=>expand(need,inventorySuggestedQty(need))))
   };
@@ -16456,6 +16507,7 @@ function setNightPlanQuantity(value){
   const plus=document.getElementById('pp-plan-plus');if(plus)plus.disabled=qty>=99999;
 }
 function openNightPlanEditor(machineId){
+  if(isReportedPrintPlate(getNightPrintPlan()?.machines?.[machineId]?.plate)){toast('Plate đã báo cáo. Chọn ngày mới để xếp mẻ tiếp theo.');return;}
   const machine=getPrintMachine(machineId),plan=getNightPrintPlan();if(!machine||!plan)return;
   const existing=(plan.machines[machineId].plate?.items||[]).map(item=>({...item}));
   const seed=existing[0]||{};
@@ -16496,15 +16548,18 @@ function filterNightPlanModels(value){
     const total=tab==='all'?cards.length:new Set(nightPlanTabNeeds(tab).map(row=>row.modelId)).size;
     button.querySelector('small').textContent=total;
   });
-  const hint=document.getElementById('pp-need-hint');if(hint)hint.textContent=({missing:'Part còn thiếu, đã trừ kế hoạch in.',defects:'Part bị loại qua QC, chưa in bù đủ.',sold:'Theo kỳ bán gần nhất đã tải · không trừ tồn cửa hàng.',suggested:'Gợi ý bổ sung theo tồn kho; kiểm tra trước khi in.'})[state.needTab]||'';
+  const hint=document.getElementById('pp-need-hint');if(hint)hint.textContent=({missing:'Part còn thiếu, đã trừ kế hoạch in.',defects:'Part bị loại qua QC, chưa in bù đủ.',retry:'Lỗi hoặc chưa in trong mẻ trước · đã trừ phần xếp in lại.',sold:'Theo kỳ bán gần nhất đã tải · không trừ tồn cửa hàng.',suggested:'Gợi ý bổ sung theo tồn kho; kiểm tra trước khi in.'})[state.needTab]||'';
 }
 function addNightPlanEditorItem(){
   const state=printPlanEditState,model=models.find(item=>item.id===state.modelId),part=model?.parts?.find(item=>item.id===state.partId);
   if(!model||!part){toast('Hãy chọn Model và Part trước.');return;}
   const variant=model.variants?.find(item=>item.id===state.variantId)||null;
   const next={modelId:model.id,modelName:model.name,variantId:variant?.id||null,variantName:variant?.name||'',partId:part.id,partName:part.name,qty:Math.max(1,Number(state.qty)||1),filamentId:planPartColorId(model,variant,part)};
+  const preferred=nightPlanTabNeeds().find(row=>row.modelId===model.id&&(row.variantId||'')===(variant?.id||'')&&row.partId===part.id);
+  if(preferred?.filamentId)next.filamentId=preferred.filamentId;
+  attachPlanRetrySources(next,{planId:getNightPrintPlan()?.id,machineId:state.machineId},state.items);
   const same=state.items.find(item=>planItemKey(item)===planItemKey(next));
-  if(same)same.qty=(Number(same.qty)||0)+next.qty;else state.items.push(next);
+  if(same){same.qty=(Number(same.qty)||0)+next.qty;same.retryOf=[...(same.retryOf||[]),...next.retryOf];}else state.items.push(next);
   renderNightPlanEditor();
 }
 function removeNightPlanEditorItem(index){printPlanEditState.items.splice(index,1);renderNightPlanEditor();}
@@ -16570,19 +16625,117 @@ function renderNightPlanEditor(){
 }
 function saveNightPlanEditor(){
   const state=printPlanEditState,plan=getNightPrintPlan();
+  if(isReportedPrintPlate(plan.machines[state.machineId]?.plate)){toast('Plate này đã báo cáo. Chọn ngày mới để xếp mẻ tiếp theo.');return;}
   if(!state.items.length){toast('Hãy thêm ít nhất một model / part vào plate.');return;}
   plan.machines[state.machineId].plate={id:plan.machines[state.machineId].plate?.id||uid(),source:'manual',items:state.items.map(item=>({...item,qty:Math.max(1,Number(item.qty)||1)})),createdAt:plan.machines[state.machineId].plate?.createdAt||new Date().toISOString()};
   savePrintPlan(plan);closeDialog('dlg-mv');toast('✓ Đã xếp plate vào kế hoạch ca đêm.');
 }
 function reportPlanDate(report){return String(report?.recordedAt||report?.createdAt||report?.completedAt||'').slice(0,10);}
-function batchPlanForMachine(report,machineId){normalizeOperations();const date=reportPlanDate(report);return operations.printPlans.find(plan=>plan.id===report?.printPlanId&&plan.machines?.[machineId])||operations.printPlans.find(plan=>plan.shift==='night'&&plan.date===date&&plan.machines?.[machineId])||null;}
+function printPlanResults(){return operations.printPlanResults||{};}
+function setPrintPlanResultVoided(report,voided){const result=printPlanResults()[report?.planReview?.plateId];if(result?.reportId===report.id){result.voided=voided;saveOperations();}}
+function batchPlanResultSummary(report){
+  const review=report.planReview;if(!review)return '';
+  return `<div class="br-plan-actual"><b>${esc(getPrintMachine(review.machineId)?.name||'Máy in')} · đêm ${esc(fmtDate(review.date))}</b>${review.rows.map(row=>`<p style="font-size:12px;margin:8px 0"><b>${esc(planItemView(row).partName)}</b> · ${row.goodQty} đạt · ${row.failedQty} lỗi · ${row.unprintedQty} chưa in</p>`).join('')}</div>`;
+}
+function openPrintPlanResult(plateId){
+  const result=printPlanResults()[plateId];if(!result||result.voided)return;
+  const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Kết quả mẻ in</div>${batchPlanResultSummary({planReview:result})}<div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';
+}
+function isReportedPrintPlate(plate){return !!(plate?.id&&printPlanResults()[plate.id]&&!printPlanResults()[plate.id].voided);}
+function batchMachinePlans(report,machineId){
+  normalizeOperations();const date=reportPlanDate(report)||localPlanDate(),previous=planDateAdd(date,-1);
+  return operations.printPlans.filter(plan=>plan.shift==='night'&&plan.date<=date&&plan.machines?.[machineId]?.plate?.items?.length).sort((a,b)=>Number(b.date===previous)-Number(a.date===previous)||b.date.localeCompare(a.date));
+}
+function batchPlanForMachine(report,machineId){
+  const plans=batchMachinePlans(report,machineId);
+  return plans.find(plan=>plan.id===report?.printPlanId)||plans.find(plan=>!isReportedPrintPlate(plan.machines[machineId].plate))||null;
+}
 function renderBatchMachinePlanPanel(report,{compact=false}={}){
   const selected=report.machineId||'',plan=selected?batchPlanForMachine(report,selected):null,scheduled=plan?.machines?.[selected]?.plate?.items||[],machine=getPrintMachine(selected);
   if(compact) return `<div class="br-manual-tool br-manual-machine"><span aria-hidden="true">🖨</span><div class="br-manual-tool-copy"><b>Máy in</b><select aria-label="Máy đã in mẻ này" onchange="setBatchReportMachine(this.value)"><option value="">Chưa chọn máy</option>${PRINT_MACHINES.map(item=>`<option value="${esc(item.id)}" ${item.id===selected?'selected':''}>${esc(item.name)} · ${esc(item.model)}</option>`).join('')}</select></div>${selected&&scheduled.length?`<div class="br-machine-plan-note"><span>${scheduled.length} mục KH</span><button class="btn btn-ghost btn-xs" onclick="useBatchMachinePlan()">Dùng</button></div>`:''}</div>`;
   return `<div class="br-machine-plan"><div class="br-machine-plan-hd"><span>🖨 Máy đã in mẻ này</span><span style="color:var(--t3);font-size:10px">Dùng để đối chiếu kế hoạch</span></div><select onchange="setBatchReportMachine(this.value)"><option value="">— Chưa chọn máy —</option>${PRINT_MACHINES.map(item=>`<option value="${esc(item.id)}" ${item.id===selected?'selected':''}>${esc(item.name)} · ${esc(item.model)}</option>`).join('')}</select>${selected?`<div class="br-machine-plan-note">${esc(machine?.ams||'')} · ${scheduled.length?`Kế hoạch có ${scheduled.length} model/part. `:'Không tìm thấy plate đã xếp cho ngày này. '}<button class="btn btn-ghost btn-xs" onclick="useBatchMachinePlan()" ${scheduled.length?'':'disabled'}>Dùng kế hoạch</button></div>`:''}</div>`;
 }
-function setBatchReportMachine(machineId){const report=batchReports.find(item=>item.id===brCurrentId);if(!report)return;report.machineId=machineId||null;const plan=machineId?batchPlanForMachine(report,machineId):null;report.printPlanId=plan?.id||null;report.updatedAt=new Date().toISOString();sv(K.batchReports,batchReports);renderBatchManual();}
-function useBatchMachinePlan(){const report=batchReports.find(item=>item.id===brCurrentId),plan=report?.machineId?batchPlanForMachine(report,report.machineId):null,items=plan?.machines?.[report.machineId]?.plate?.items||[];if(!items.length){toast('Máy này chưa có plate trong kế hoạch.');return;}brManualItems=items.map(item=>newManualEntry(item));renderBatchManual();toast('Đã đưa part từ kế hoạch vào bản báo cáo để em kiểm tra lại.');}
+function setBatchReportMachine(machineId){
+  const report=batchReports.find(item=>item.id===brCurrentId);if(!report||!canDescribeBatchReports())return;
+  if((report.planReview||brView==='manual'&&brManualItems.some(item=>item.modelId))&&!confirm('Đổi máy sẽ thay phần khai báo đang nhập bằng kế hoạch của máy mới. Tiếp tục?')){renderBatchReport();return;}
+  if(report.planReview&&printPlanResults()[report.planReview.plateId]?.reportId===report.id){toast('Báo cáo đã chốt với máy này; chỉ chỉnh số thực tế.');renderBatchReport();return;}
+  delete report.planReview;report.machineId=machineId||null;report.printPlanId=null;
+  const plan=machineId?batchPlanForMachine(report,machineId):null;report.printPlanId=plan?.id||null;
+  if(plan){useBatchMachinePlan();return;}
+  report.updatedAt=new Date().toISOString();sv(K.batchReports,batchReports);renderBatchReport();
+}
+function useBatchMachinePlan(planId){
+  const report=batchReports.find(item=>item.id===brCurrentId);if(!report||!canDescribeBatchReports())return;
+  if(planId)report.printPlanId=planId;
+  const plan=report.machineId?batchPlanForMachine(report,report.machineId):null,plate=plan?.machines?.[report.machineId]?.plate;
+  if(!plate?.items?.length){toast('Không có plate để đối chiếu.');return;}
+  const result=printPlanResults()[plate.id];
+  if(result&&!result.voided&&result.reportId!==report.id){toast('Plate này đã được báo cáo; chọn kế hoạch khác.');return;}
+  if(report.planReview?.plateId!==plate.id){
+    report.planReview={planId:plan.id,plateId:plate.id,machineId:report.machineId,date:plan.date,rows:plate.items.map(item=>({...item,plannedQty:Number(item.qty)||0,goodQty:Number(item.qty)||0,failedQty:0,unprintedQty:0}))};
+  }
+  report.printPlanId=plan.id;report.updatedAt=new Date().toISOString();sv(K.batchReports,batchReports);
+  brView='plan-review';renderBatchReport();
+}
+function changeBatchReviewPlan(planId){
+  const r=batchReports.find(item=>item.id===brCurrentId);if(!r)return;
+  if(printPlanResults()[r.planReview?.plateId]?.reportId===r.id){toast('Báo cáo đã chốt; không thể chuyển sang plate khác.');renderBatchPlanReview();return;}
+  if(!confirm('Thay bản đang nhập bằng kế hoạch được chọn?')){renderBatchPlanReview();return;}
+  useBatchMachinePlan(planId);
+}
+function updateBatchPlanActual(index,field,value){
+  const report=batchReports.find(item=>item.id===brCurrentId),row=report?.planReview?.rows?.[index];if(!row)return;
+  const limit=Math.max(0,row.plannedQty),n=Math.max(0,Math.min(limit,Math.floor(Number(value)||0)));
+  if(field==='goodQty'){row.goodQty=n;row.failedQty=Math.min(row.failedQty,limit-n);}
+  else if(field==='failedQty'){row.failedQty=n;row.goodQty=Math.min(row.goodQty,limit-n);}
+  else if(field==='unprinted'){row.goodQty=0;row.failedQty=0;}
+  else return;
+  row.unprintedQty=limit-row.goodQty-row.failedQty;
+  const card=document.querySelector(`[data-plan-actual="${index}"]`);
+  if(card){card.querySelector('[data-actual-good]').value=row.goodQty;card.querySelector('[data-actual-failed]').value=row.failedQty;card.querySelector('output').textContent=`Chưa in: ${row.unprintedQty}`;}
+  report.updatedAt=new Date().toISOString();sv(K.batchReports,batchReports);
+}
+function renderBatchPlanReview(){
+  const r=batchReports.find(item=>item.id===brCurrentId),review=r?.planReview;if(!review){brView='color';renderBatchReport();return;}
+  document.getElementById('br-title').textContent='Đối chiếu mẻ in';document.getElementById('br-sub').textContent='Chỉ số đạt được ghi vào sản lượng. Lỗi và chưa in sẽ chờ in lại.';
+  document.getElementById('br-back-btn').style.visibility='visible';
+  const plans=batchMachinePlans(r,review.machineId),locked=printPlanResults()[review.plateId]?.reportId===r.id;
+  document.getElementById('br-content').innerHTML=`<div class="br-plan-review"><div class="br-plan-photo"><img src="${esc(r.image||'')}" alt="Ảnh mẻ in"></div><section class="br-plan-detail"><div class="br-plan-source"><b>${esc(getPrintMachine(review.machineId)?.name||review.machineId)}</b><label>Đêm bắt đầu<select aria-label="Kế hoạch cần đối chiếu" onchange="changeBatchReviewPlan(this.value)" ${locked?'disabled':''}>${plans.map(plan=>`<option value="${esc(plan.id)}" ${plan.id===review.planId?'selected':''} ${isReportedPrintPlate(plan.machines[review.machineId].plate)&&plan.id!==review.planId?'disabled':''}>${esc(fmtDate(plan.date))}${isReportedPrintPlate(plan.machines[review.machineId].plate)?' · đã báo cáo':''}</option>`).join('')}</select></label></div>${review.rows.map((row,index)=>{const view=planItemView(row);return `<article class="br-plan-actual" data-plan-actual="${index}"><header><div><b>${esc(view.name)}</b><small>${esc(view.partName)}${view.variantName?' · '+esc(view.variantName):''}</small></div><span>Dự kiến ${row.plannedQty}</span></header><label class="br-plan-color">Màu thực tế<select aria-label="Màu thực tế dòng ${index+1}" onchange="setBatchPlanActualColor(${index},this.value)"><option value="">Chọn màu</option>${fils.map(f=>`<option value="${esc(f.id)}" ${f.id===row.filamentId?'selected':''}>${esc(planFilamentLabel(f.id))}</option>`).join('')}</select></label><div class="br-plan-quantities">${[['goodQty','Đạt','good'],['failedQty','Lỗi','failed']].map(([key,label,attr])=>`<label>${label}<span class="br-plan-stepper"><button type="button" aria-label="Giảm ${label.toLowerCase()} dòng ${index+1}" onclick="updateBatchPlanActual(${index},'${key}',batchReports.find(r=>r.id===brCurrentId).planReview.rows[${index}].${key}-1)">−</button><input type="number" inputmode="numeric" min="0" max="${row.plannedQty}" data-actual-${attr} aria-label="${label} dòng ${index+1}" value="${row[key]}" oninput="updateBatchPlanActual(${index},'${key}',this.value)"><button type="button" aria-label="Tăng ${label.toLowerCase()} dòng ${index+1}" onclick="updateBatchPlanActual(${index},'${key}',batchReports.find(r=>r.id===brCurrentId).planReview.rows[${index}].${key}+1)">+</button></span></label>`).join('')}</div><footer><output>Chưa in: ${row.unprintedQty}</output><button class="btn btn-ghost" onclick="updateBatchPlanActual(${index},'unprinted',0)">Chưa in cả dòng</button></footer></article>`;}).join('')}<div class="br-actions"><button class="btn btn-ghost" onclick="deferBatchReport()">Lưu nháp</button><button class="btn btn-ac" onclick="saveBatchPlanReview()">Xác nhận thực tế</button></div></section></div>`;
+}
+function setBatchPlanActualColor(index,id){const r=batchReports.find(x=>x.id===brCurrentId);if(!r?.planReview?.rows[index])return;r.planReview.rows[index].filamentId=id||null;sv(K.batchReports,batchReports);}
+function validateBatchPlanReview(r){
+  const review=r?.planReview;if(!review)return true;
+  const existing=printPlanResults()[review.plateId];
+  if(existing&&!existing.voided&&existing.reportId!==r.id){toast('Plate đã được báo cáo ở ảnh khác. Không ghi nhận trùng.');return false;}
+  if(!review.rows.length||review.rows.some(row=>![row.plannedQty,row.goodQty,row.failedQty,row.unprintedQty].every(n=>Number.isInteger(n)&&n>=0)||row.goodQty+row.failedQty+row.unprintedQty!==row.plannedQty)){toast('Số đạt + lỗi + chưa in phải bằng dự kiến.');return false;}
+  if(review.rows.some(row=>row.goodQty>0&&!getFil(row.filamentId))){toast('Chọn màu thực tế cho các dòng đạt trước khi xác nhận.');return false;}
+  return true;
+}
+function saveBatchPlanReview(){
+  const r=batchReports.find(x=>x.id===brCurrentId);if(!r?.planReview||!validateBatchPlanReview(r))return;
+  brManualItems=r.planReview.rows.filter(row=>row.goodQty>0).map(row=>({...row,qty:row.goodQty}));
+  saveBatchManualReport();
+}
+function commitBatchPlanResult(r){
+  if(!r.planReview||!canEditBatchReports())return;
+  operations.printPlanResults={...printPlanResults(),[r.planReview.plateId]:JSON.parse(JSON.stringify({...r.planReview,reportId:r.id,confirmedAt:r.completedAt,voided:false}))};
+  saveOperations();
+}
+/* Reservations follow the exact failed/unprinted source. Failed retries become new
+   demand, never a second copy of the original. Kept in cloud operations, not the
+   currently paginated report list. */
+function getPlanRetryNeeds(exclude={}){
+  const results=Object.values(printPlanResults()).filter(result=>!result.voided),reserved=new Map();
+  const reserve=items=>(items||[]).forEach(item=>(item.retryOf||[]).forEach(ref=>reserved.set(ref.id,(reserved.get(ref.id)||0)+Math.max(0,Number(ref.qty)||0))));
+  results.forEach(result=>reserve(result.rows));
+  (operations.printPlans||[]).forEach(plan=>Object.entries(plan.machines||{}).forEach(([machineId,machine])=>{if(!isReportedPrintPlate(machine.plate)&&(plan.id!==exclude.planId||machineId!==exclude.machineId))reserve(machine.plate?.items);}));
+  return results.flatMap(result=>result.rows.map((row,index)=>{const id=`${result.plateId}:${index}`,qty=Math.max(0,row.failedQty+row.unprintedQty-(reserved.get(id)||0));return {...row,qty,source:'plan-retry',retryOf:[{id,qty}],modelName:planItemView(row).name,partName:planItemView(row).partName};})).filter(row=>row.qty>0);
+}
+function attachPlanRetrySources(item,exclude={},draft=[]){
+  let remaining=item.qty;const used=new Map();draft.forEach(row=>(row.retryOf||[]).forEach(ref=>used.set(ref.id,(used.get(ref.id)||0)+ref.qty)));
+  item.retryOf=[];
+  getPlanRetryNeeds(exclude).filter(row=>planItemKey(row)===planItemKey(item)).forEach(row=>{const ref=row.retryOf[0],qty=Math.min(remaining,Math.max(0,ref.qty-(used.get(ref.id)||0)));if(qty>0){item.retryOf.push({id:ref.id,qty});remaining-=qty;}});
+}
 
 /* ── Luồng giao xưởng → QC → giao cửa hàng (bản có biên lai) ───────────
    Bản ghi cũ trong operations.deliveries vẫn được giữ nguyên. Các chuyến

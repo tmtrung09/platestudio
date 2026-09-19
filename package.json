@@ -5,7 +5,7 @@
     "qa:workflow": "node tools/workflow-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs",
     "qa:cloud": "node tools/cloud-sync-qa.mjs",
-    "qa:plate-editor": "node tools/plate-editor-qa.mjs",
+    "qa:plate-editor": "node tools/plate-editor-qa.mjs && node tools/plan-report-qa.mjs",
     "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor"
   },
   "devDependencies": {

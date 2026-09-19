@@ -29,6 +29,10 @@ try{
    assert.equal(state.overflow,false,`${width}/${theme} dialog fits`);assert.equal(state.bodyOverflow,false,`${width}/${theme} body fits`);assert.equal(state.footerVisible,true,'Save bar stays within viewport');
   };
   await checkLayout();assert.equal(await page.getByRole('button',{name:'Lưu plate'}).isDisabled(),true);
+  await page.locator('.pp-edit-dlg').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));
+  const tabStyle=await page.locator('[data-plan-tab="all"]').evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return {border:s.borderTopWidth,image:s.backgroundImage,bg:s.backgroundColor,font:parseFloat(s.fontSize),height:r.height};});
+  assert.equal(tabStyle.border,'0px');assert.equal(tabStyle.image,'none');assert.equal(tabStyle.bg,'rgb(24, 25, 27)');assert.ok(tabStyle.font<=12&&tabStyle.height>=43.5&&tabStyle.height<=46,`Compact tabs retain finger-sized targets: ${JSON.stringify(tabStyle)}`);
+  assert.equal(await page.locator('.pp-need-tabs').evaluate(el=>{const top=el.firstElementChild.offsetTop;return [...el.children].every(child=>child.offsetTop===top);}),true,'Tabs never wrap into a second bulky row');
   await page.evaluate(()=>{window.editorNodes={shell:document.querySelector('.pp-edit-dlg'),search:document.querySelector('.pp-picker-search input'),grid:document.querySelector('.pp-picker-grid'),cards:[...document.querySelectorAll('.pp-picker-card')]};});
   await page.getByRole('searchbox',{name:'Tìm model, part hoặc biến thể'}).fill('Skeleton');
   const searchFocus=await page.locator('.pp-picker-search input').evaluate(input=>{
@@ -56,6 +60,8 @@ try{
   await page.getByRole('button',{name:'Giảm số lượng',exact:true}).click();
   assert.equal(await page.getByRole('button',{name:'Giảm số lượng',exact:true}).isDisabled(),true,'Quantity cannot go below one');
   assert.equal(await page.locator('.pp-picker-add').textContent(),'＋ Thêm vào plate');
+  await page.locator('.pp-picker-add').hover();
+  assert.equal(await page.locator('.pp-picker-add').evaluate(el=>{const s=getComputedStyle(el);return s.borderTopWidth==='0px'&&s.backgroundImage==='none'&&s.boxShadow==='none'&&s.animationName==='none';}),true,'Both themes keep flat buttons, including hover');
   assert.equal(await page.getByRole('button',{name:'Tăng số lượng',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;}),true,'Stepper has a usable touch target');
   await page.locator('.pp-picker-selected input').fill('3');await page.locator('.pp-picker-add').click();
   assert.equal(await page.locator('.pp-edit-total b').textContent(),'3 part');
