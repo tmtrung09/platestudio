@@ -274,6 +274,24 @@ for (const route of routes) {
         stripWithinPage: Boolean(rect && rect.left >= -1 && rect.right <= innerWidth + 1),
       };
     })() : null;
+    /* MakerWorld print information is shared by every model detail dialog.
+       A long profile must wrap inside its own column instead of squeezing the
+       source, metrics, or edit action against the mobile edge. */
+    const modelPrintInfo = expectedRoute === 'models' ? (() => {
+      const originalModels = models;
+      const probe = { id: 'qa-mobile-makerworld', name: 'QA · MakerWorld', cats: [], images: [], variants: [], parts: [], makerWorldId: 'qa', makerWorldPrint: { profileName: '0.2MM LAYER, 2 WALLS, 15% INFILL', durationMinutes: 115, filamentGrams: 30, updatedAt: '2026-09-19T00:00:00.000Z' } };
+      try {
+        models = [probe]; viewModel(probe.id);
+        const info = document.querySelector('#dlg-mv .model-print-info'), profile = info?.querySelector('.model-print-profile'), button = info?.querySelector('button');
+        const box = info?.getBoundingClientRect(), profileBox = profile?.getBoundingClientRect(), buttonBox = button?.getBoundingClientRect();
+        return {
+          present: Boolean(info),
+          fits: Boolean(info && info.scrollWidth <= info.clientWidth + 1 && box.left >= -1 && box.right <= innerWidth + 1),
+          profileFits: Boolean(profile && profile.scrollHeight <= profile.clientHeight + 1 && profileBox.left >= box.left - 1 && profileBox.right <= box.right + 1),
+          actionFits: Boolean(button && buttonBox.left >= box.left - 1 && buttonBox.right <= box.right + 1 && buttonBox.height >= 24),
+        };
+      } finally { closeDialog('dlg-mv'); models = originalModels; }
+    })() : null;
     /* Công đoạn xưởng là một họ control riêng: trên điện thoại tab phải là
        rail dọc nằm cạnh panel nội dung, đủ rộng để chạm chính xác và không
        được tràn ngang. Kiểm tra từ DOM/CSS để bảo vệ mọi trạng thái,
@@ -328,6 +346,7 @@ for (const route of routes) {
       tinyTargets,
       wizard,
       salesMonthFilter,
+      modelPrintInfo,
       fulfillmentProcessTabs,
       fulfillmentFlowRailRemoved,
     };
@@ -350,6 +369,7 @@ for (const route of routes) {
     ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
+    ...(route === 'models' && (!checks.modelPrintInfo?.present || !checks.modelPrintInfo?.fits || !checks.modelPrintInfo?.profileFits || !checks.modelPrintInfo?.actionFits) ? [`Thông số in MakerWorld bị dồn hoặc tràn trên mobile (${JSON.stringify(checks.modelPrintInfo)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.sideRail || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Rail công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...(route === 'fulfillment' && !checks.fulfillmentFlowRailRemoved ? ['Thanh nổi 5 bước đã bỏ vẫn còn xuất hiện'] : []),
     ...checks.blocked.map(item => `Nút bị che: ${item.label || '(không tên)'} · lớp che: ${item.blocker || '(không rõ)'}`),
