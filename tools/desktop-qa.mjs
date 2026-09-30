@@ -250,6 +250,37 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
         models = originalModels;
       }
     })();
+    /* A composite-product recipe uses the same dialog surface in both themes.
+       Verify its model/variant/default-model rows never escape a desktop window. */
+    const compositeProductEditor = (() => {
+      if (expectedRoute !== 'models' || typeof openProductEditor !== 'function') return null;
+      const originalModels = models, originalProducts = operations?.products;
+      const originalTheme = document.documentElement.getAttribute('data-theme');
+      models = [
+        { id: 'qa-desktop-composite-variant', name: 'QA · Model có biến thể', cats: [], images: [], variants: [{ id: 'qa-desktop-v', name: 'Biến thể QA' }], parts: [{ id: 'qa-desktop-part-a', name: 'Part A', qtyPerModel: 1, filamentIds: [] }] },
+        { id: 'qa-desktop-composite-base', name: 'QA · Model mặc định', cats: [], images: [], variants: [], parts: [{ id: 'qa-desktop-part-b', name: 'Part B', qtyPerModel: 1, filamentIds: [] }] },
+      ];
+      normalizeOperations();
+      operations.products = [{ id: 'qa-desktop-composite', name: 'QA · Sản phẩm ghép', components: [
+        { id: 'qa-desktop-component-a', modelId: 'qa-desktop-composite-variant', variantId: 'qa-desktop-v', qty: 1 },
+        { id: 'qa-desktop-component-b', modelId: 'qa-desktop-composite-base', variantId: null, qty: 1 },
+      ] }];
+      try {
+        return ['light', 'dark'].map(theme => {
+          document.documentElement.setAttribute('data-theme', theme);
+          openProductEditor('qa-desktop-composite');
+          const dialog = document.querySelector('#dlg-mv .dlg');
+          const rect = dialog?.getBoundingClientRect();
+          const text = dialog?.textContent || '';
+          closeDialog('dlg-mv');
+          return { theme, inViewport: Boolean(rect && rect.left >= -1 && rect.right <= innerWidth + 1), noOverflow: Boolean(dialog && dialog.scrollWidth <= dialog.clientWidth + 2), showsVariantAndDefault: text.includes('Biến thể QA') && text.includes('Mặc định · không có biến thể') };
+        });
+      } finally {
+        models = originalModels;
+        operations.products = originalProducts;
+        if (originalTheme === null) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', originalTheme);
+      }
+    })();
     const salesMonthFilter = expectedRoute === 'sales' ? (() => {
       const chips = [...document.querySelectorAll('#sales-page .sales-month-chip')];
       const strip = document.querySelector('#sales-page .sales-month-chips');
@@ -295,6 +326,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       chartTooltip,
       modelDetailLayout,
       variantEditorControls,
+      compositeProductEditor,
       salesMonthFilter,
       fulfillmentProcessTabs,
     };
@@ -327,6 +359,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.narrowDesktopStacks ? [`Dialog Model hẹp vẫn giữ hai cột (${checks.modelDetailLayout.tracks.join(' + ')})`] : []),
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
     ...(checks.variantEditorControls && !checks.variantEditorControls.passed ? [`Checkbox chọn part của biến thể bị kéo sai kích thước (${checks.variantEditorControls.boxes.map(box => `${box.width}×${box.height}`).join(', ') || 'không có control'})`] : []),
+    ...(checks.compositeProductEditor?.some(result => !result.inViewport || !result.noOverflow || !result.showsVariantAndDefault) ? [`Trình tạo sản phẩm ghép lệch hoặc thiếu trạng thái biến thể/mặc định (${JSON.stringify(checks.compositeProductEditor)})`] : []),
     ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs || checks.fulfillmentProcessTabs.count < 8 || checks.fulfillmentProcessTabs.activeCount !== 1 || checks.fulfillmentProcessTabs.panelCount !== 1 || checks.fulfillmentProcessTabs.tabHeight < 40 || !checks.fulfillmentProcessTabs.scrollsInside || !checks.fulfillmentProcessTabs.connected) ? [`Tab thư mục quy trình gia công thiếu, lệch hoặc mất liên kết (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),

@@ -88,6 +88,33 @@ const results = await page.evaluate(async () => {
   }]; projects = [];
   operations = { qualityIssues: [], deliveries: [], deliveryBatches: [], events: [], externalWorkshopHandovers: {} };
   normalizeOperations();
+  /* Sản phẩm ghép phải giữ chính xác biến thể đã chốt của từng model, đồng
+     thời chấp nhận model không có biến thể. Khi đưa vào đơn, công thức được
+     bung thành đúng số lượng model để phần còn lại của luồng in dùng chung. */
+  models.push({
+    id: 'qa-model-base', name: 'QA · Model mặc định', cats: ['QA'], images: [], variants: [],
+    parts: [{ id: 'qa-base-main', name: 'Part mặc định', qtyPerModel: 1, filamentIds: [] }],
+  });
+  operations.products = [{
+    id: 'qa-composite-product', name: 'QA · Sản phẩm ghép',
+    components: [
+      { id: 'qa-component-variant', modelId: 'qa-model', variantId: 'qa-size-10', qty: 1 },
+      { id: 'qa-component-base', modelId: 'qa-model-base', variantId: null, qty: 3 },
+    ],
+  }];
+  const compositeLine = { id: 'qa-composite-line', kind: 'product', productId: 'qa-composite-product', qty: 2, note: '' };
+  const compositeExpanded = expandCartLine(compositeLine);
+  check('Sản phẩm ghép bung đúng model, biến thể và số lượng; model không biến thể dùng mặc định',
+    compositeExpanded.length === 2
+      && compositeExpanded.some(line => line.modelId === 'qa-model' && line.variantId === 'qa-size-10' && line.qty === 2)
+      && compositeExpanded.some(line => line.modelId === 'qa-model-base' && !line.variantId && line.qty === 6),
+    compositeExpanded.map(line => `${line.modelId}:${line.variantId || 'mặc định'}×${line.qty}`).join(' · '));
+  openProductEditor('qa-composite-product');
+  const productEditorText = document.getElementById('dlg-mv')?.textContent || '';
+  check('Trình tạo sản phẩm ghép hiển thị biến thể đã chọn và trạng thái model mặc định',
+    productEditorText.includes('Size 10cm') && productEditorText.includes('Mặc định · không có biến thể'),
+    productEditorText.replace(/\s+/g, ' ').trim().slice(0, 220));
+  closeDialog('dlg-mv');
   /* Checkbox trong biểu mẫu biến thể dùng chung primitive .field. Nó phải giữ
      kích thước control thay vì bị rule input 100% kéo ngang cả hàng trên mobile. */
   openEditModel('qa-model');
