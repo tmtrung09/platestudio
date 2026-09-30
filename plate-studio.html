@@ -5939,7 +5939,8 @@ function batchReportHasMedia(report){return Boolean(String(report?.thumb||'').tr
 function staleBatchUploadReservation(row,now=Date.now()){
   const report=row?.data||row;
   if(!report?.id||report.status!=='uploading'||batchReportHasMedia(report))return false;
-  const stamp=Date.parse(report.updatedAt||report.createdAt||row?.updated_at||'');
+  // Ngày chụp/createdAt có thể cũ nhiều năm; chỉ dùng thời gian của lượt upload.
+  const stamp=Date.parse(row?.updated_at||report.uploadStartedAt||report.updatedAt||'');
   return Number.isFinite(stamp)&&now-stamp>BATCH_STALE_UPLOAD_MS;
 }
 async function clearStaleBatchUploadReservations(rows){
@@ -5948,12 +5949,17 @@ async function clearStaleBatchUploadReservations(rows){
   if(!stale.length)return new Set();
   const ids=stale.map(row=>row?.id||row?.data?.id).filter(Boolean);
   if(!ids.length)return new Set();
-  const {error}=await sb.from(CLOUD_TABLES.batchReports).delete().eq('workspace_id',cloudWorkspaceId()).in('id',ids);
+  // Recheck on the server: another device may have finalized since our read.
+  const cutoff=new Date(Date.now()-BATCH_STALE_UPLOAD_MS).toISOString();
+  const {data:deleted,error}=await sb.from(CLOUD_TABLES.batchReports).delete()
+    .eq('workspace_id',cloudWorkspaceId()).in('id',ids)
+    .eq('data->>status','uploading').lte('updated_at',cutoff).select('id');
   if(error){console.warn('Chưa dọn được phiếu upload ảnh bị treo',error);return new Set();}
-  ids.forEach(id=>{batchReportCloudSnapshot.delete(id);batchReportCloudSaveQueue.delete(id);batchReportCloudDeletePending.delete(id);});
+  const deletedIds=(deleted||[]).map(row=>row.id);
+  deletedIds.forEach(id=>{batchReportCloudSnapshot.delete(id);batchReportCloudSaveQueue.delete(id);batchReportCloudDeletePending.delete(id);});
   invalidateBatchReportTimeline();invalidateFulfillmentCloudManualReports();
-  console.info(`Đã dọn ${ids.length} phiếu tải ảnh bị treo.`);
-  return new Set(ids);
+  if(deletedIds.length)console.info(`Đã dọn ${deletedIds.length} phiếu tải ảnh bị treo.`);
+  return new Set(deletedIds);
 }
 
 let cloudActivityForced=false;
@@ -6110,8 +6116,11 @@ async function uploadBatchReportMedia(file, reportId){
     updateMediaUploadStage(uploadId,'Đang tải ảnh lên cloud…');
     const base=`${currentUser.id}/batch-reports/${reportId}`;
     const upload=async(blob,path)=>{const {error}=await sb.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;};
-    const [image,thumbnail]=await Promise.all([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
-    finishMediaUpload(uploadId);return {image,thumb:thumbnail};
+    const [original,thumbnail]=await Promise.allSettled([upload(full,`${base}.jpg`),upload(thumb,`${base}-thumb.jpg`)]);
+    if(original.status==='rejected')throw original.reason;
+    // Thumbnail is optional: never abandon a successfully uploaded original.
+    if(thumbnail.status==='rejected')console.warn('Ảnh thu nhỏ chưa tải được, dùng ảnh gốc',thumbnail.reason);
+    finishMediaUpload(uploadId);return {image:original.value,thumb:thumbnail.status==='fulfilled'?thumbnail.value:original.value};
   }catch(error){finishMediaUpload(uploadId,{ok:false});throw error;}
 }
 /* ── Ảnh chuyển từ điện thoại về bàn nhận hàng ───────────────────────────
@@ -6290,7 +6299,7 @@ async function batchImageHash(file){
   return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
 }
 function findLocalBatchReportByHash(imageHash){
-  return imageHash ? batchReports.find(report=>report.imageHash===imageHash) || null : null;
+  return imageHash ? batchReports.find(report=>report.imageHash===imageHash&&report.status!=='uploading'&&batchReportHasMedia(report)) || null : null;
 }
 async function findCloudBatchReportByHash(imageHash){
   if(!imageHash || !sb || !currentUser) return null;
@@ -6302,25 +6311,28 @@ async function findCloudBatchReportByHash(imageHash){
 async function reserveBatchReportImage(report){
   /* Migration tạo unique index cho imageHash. Bản ghi “đang tải” là khoá nhẹ,
      giúp hai thiết bị cùng gửi một ảnh không tạo hai file Storage. */
+  report.uploadStartedAt=new Date().toISOString();
   if(!report.imageHash || !sb || !currentUser) return null;
   const existing=await findCloudBatchReportByHash(report.imageHash);
-  if(existing) return existing;
+  if(existing){
+    if(existing.status==='uploading'||!batchReportHasMedia(existing))throw new Error('Ảnh này đang được tải ở thiết bị khác. Hãy thử lại sau.');
+    return existing;
+  }
   const {error}=await sb.from(CLOUD_TABLES.batchReports).insert({
     id:report.id,user_id:cloudWorkspaceOwnerId(),workspace_id:cloudWorkspaceId(),data:report,updated_at:new Date().toISOString()
   });
   if(!error) return null;
-  if(error.code==='23505') return await findCloudBatchReportByHash(report.imageHash);
+  if(error.code==='23505'){
+    const duplicate=await findCloudBatchReportByHash(report.imageHash);
+    if(duplicate&&duplicate.status!=='uploading'&&batchReportHasMedia(duplicate))return duplicate;
+  }
   throw error;
 }
 async function finalizeReservedBatchReport(report){
-  if(!report.imageHash || !sb || !currentUser) return;
-  const {error}=await sb.from(CLOUD_TABLES.batchReports)
-    .update({data:report,updated_at:new Date().toISOString()})
-    .eq('workspace_id',cloudWorkspaceId()).eq('id',report.id);
-  if(error) throw error;
-  rememberBatchReportCloudSnapshot([report]);
-  invalidateBatchReportTimeline();
-  invalidateFulfillmentCloudManualReports();
+  if(!sb||!currentUser)throw new Error('Chưa kết nối cloud để lưu báo cáo.');
+  // Update-with-returning, then insert if no reservation remains. A zero-row
+  // UPDATE is not confirmation that the photo has a report in the library.
+  if(!await persistBatchReportCloud(report))throw new Error('Chưa xác nhận lưu báo cáo lên cloud.');
 }
 /* Một thiết bị cũ có thể còn giữ bản ghi “đang tải” trong cache, rồi lưu đè
    lên ảnh đã được thiết bị khác hoàn tất. Không bao giờ cho một lần lưu thiếu
@@ -6358,13 +6370,16 @@ async function persistBatchReportCloud(report){
   return true;
   } finally { batchReportCloudSaveRunning.delete(report.id); }
 }
-async function releaseReservedBatchReport(id){
+async function releaseReservedBatchReport(id,{onlyUploading=false}={}){
   if(!id || !sb || !currentUser) return;
   batchReportCloudDeletePending.add(id);
   batchReportCloudSaveQueue.delete(id);
   while(batchReportCloudSaveRunning.has(id)) await new Promise(resolve=>setTimeout(resolve,20));
-  const {error}=await sb.from(CLOUD_TABLES.batchReports).delete().eq('workspace_id',cloudWorkspaceId()).eq('id',id);
+  let request=sb.from(CLOUD_TABLES.batchReports).delete().eq('workspace_id',cloudWorkspaceId()).eq('id',id);
+  if(onlyUploading)request=request.eq('data->>status','uploading');
+  const {data:deleted,error}=await request.select('id');
   if(error) { batchReportCloudDeletePending.delete(id); console.warn('Không xoá được bản ghi ảnh đang tải',error); return false; }
+  if(onlyUploading&&!(deleted||[]).length){batchReportCloudDeletePending.delete(id);return false;}
   batchReportCloudSnapshot.delete(id);
   batchReportCloudSaveQueue.delete(id);
   invalidateBatchReportTimeline();
@@ -12241,7 +12256,7 @@ async function createBatchReportFromFile(file){
     }
     renderBatchReport();
     toast(!canDescribe?'✓ Đã gửi ảnh. Người có quyền chỉnh sửa sẽ bổ sung thông tin.':!canEdit?'📋 Đã lưu ảnh — khai báo Model/Part đã in.':brBulkUploadMode?'✓ Đã lưu ảnh vào danh sách chờ xử lý':'📸 Đã lưu ảnh — chọn màu để tiếp tục hoặc "Lưu, điền sau"');
-  } catch(error) { await releaseReservedBatchReport(id); toast('Không tải được ảnh mẻ in: '+error.message, 5000); }
+  } catch(error) { await releaseReservedBatchReport(id,{onlyUploading:true}); toast('Không tải được ảnh mẻ in: '+error.message, 5000); }
   finally { if(imageHash) brImageHashUploads.delete(imageHash); }
 }
 async function handleBatchCaptureFile(inp){
@@ -12744,13 +12759,13 @@ async function uploadBatchMultiPhotoInBackground(shot){
       if(cloudDuplicate) { shot.reportId=cloudDuplicate.id||null; shot.state='uploaded'; shot.duplicate=true; return; }
       reserved=true;
       const media=await uploadBatchReportMedia(shot.file,shot.id);
-      if(shot.cancelled){ await removeBatchReportMedia(media); await releaseReservedBatchReport(shot.id); return; }
+      if(shot.cancelled){ await removeBatchReportMedia(media); await releaseReservedBatchReport(shot.id,{onlyUploading:true}); return; }
       const report={...draft,image:media.image,thumb:media.thumb,status:'pending'};
       await finalizeReservedBatchReport(report);
       batchReports.push(report); sv(K.batchReports,batchReports); recordAudit('create','Báo cáo mẻ','Đã gửi ảnh mẻ in mới',{reportId:report.id}); if(typeof recordSystemEvent==='function'){const actor=getBatchActor?.();recordSystemEvent({type:'batch_reported',actor:actor?.name||'Nhân viên xưởng',title:`${actor?.name||'Nhân viên xưởng'} đã báo cáo mẻ in`,detail:'Đã gửi ảnh mẻ in mới để đối chiếu.',permissions:['batches.report'],metadata:{reportId:report.id}});saveOperations();} updateCamBadge(); shot.reportId=report.id; shot.state='uploaded';
     }
   }catch(error){
-    if(reserved)try{await releaseReservedBatchReport(shot.id);}catch{}
+    if(reserved)try{await releaseReservedBatchReport(shot.id,{onlyUploading:true});}catch{}
     if(!shot.cancelled){ shot.state='error'; shot.error=error.message||'Không tải được'; }
   }finally{if(ownedHash)brImageHashUploads.delete(ownedHash);renderBatchMultiCameraTray();}
 }
