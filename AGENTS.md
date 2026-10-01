@@ -75,6 +75,13 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
 4. Khi công việc liên quan một khoảng ngày hoặc lịch sử theo ngày, ưu tiên lịch trực
    quan có thể chọn khoảng và hiển thị rõ ngày đã có dữ liệu/ngày còn thiếu. Không
    chỉ bắt người dùng chọn hai ô ngày rời rạc nếu lịch có thể truyền trạng thái đó.
+5. Bộ lọc lịch sử phải nêu rõ khoảng đang xem, giữ lối trở lại toàn bộ dữ liệu và
+   không xóa hay làm rỗng dữ liệu gốc khi đổi tag. Bộ lọc kết hợp tháng/ngày phải
+   đồng bộ lựa chọn để không tạo trạng thái giao nhau rỗng bất ngờ. Khoảng tùy chọn
+   chọn được trên lịch; các mốc nhanh cần định nghĩa ranh giới nhất quán (tuần bắt đầu thứ Hai,
+   khoảng 7/30 ngày tính cả hôm nay). Biểu đồ nhiều ngày phải cho phép cuộn tới mọi
+   ngày trong khoảng đã chọn, mở ở đoạn mới nhất và cung cấp chuyển động cột tôn
+   trọng cài đặt giảm chuyển động của thiết bị.
 
 ### Quy trình bắt buộc trước khi bàn giao
 

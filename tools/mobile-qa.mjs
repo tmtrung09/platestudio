@@ -197,14 +197,14 @@ for (const route of routes) {
       style.textContent = '#auth-ov{display:none!important;pointer-events:none!important}';
       document.head.append(style);
       /* Kiểm tra sales bằng fixture nhiều tháng để mobile audit phủ đúng control
-         lọc nhanh, thay vì chỉ thấy màn hình chưa có dữ liệu. */
+         lọc khoảng ngày, thay vì chỉ thấy màn hình chưa có dữ liệu. */
       if (targetRoute === 'sales') {
         kiotViet = { ...kiotViet, salesImports: [5, 6, 7, 8].map(month => ({
           id: `qa-mobile-month-${month}`, importedAt: `2026-${String(month).padStart(2, '0')}-12T09:00:00.000Z`, source: 'dated-file',
           period: { from: `2026-${String(month).padStart(2, '0')}-12`, to: `2026-${String(month).padStart(2, '0')}-12` },
           sales: [{ sku: `QA-MOBILE-${month}`, name: `QA tháng ${month}`, category: 'QA', qty: month, revenue: month * 10000 }],
         })) };
-        salesPageReportId = ''; salesPageMonthFilter = 'all';
+        salesPageReportId = ''; salesPageDatePreset = 'all'; salesPageCustomRange = {from:'',to:''}; salesPageRangeDraft = {from:'',to:''}; salesPageCalendarOpen = false;
       }
       window.goPage(targetRoute, { historyMode: 'none' });
     }, route);
@@ -262,16 +262,18 @@ for (const route of routes) {
       const toolbar = document.querySelector('.delivery-product-toolbar');
       return { heroText: hero?.innerText?.trim() || '', stageTop: Math.round(stage?.getBoundingClientRect().top || 0), toolbar: Boolean(toolbar) };
     })() : null;
-    const salesMonthFilter = expectedRoute === 'sales' ? (() => {
-      const chips = [...document.querySelectorAll('#sales-page .sales-month-chip')];
-      const strip = document.querySelector('#sales-page .sales-month-chips');
-      const labels = chips.map(chip => chip.textContent.trim());
+    const salesDateFilter = expectedRoute === 'sales' ? (() => {
+      const chips = [...document.querySelectorAll('#sales-page .sales-date-preset')];
+      const strip = document.querySelector('#sales-page .sales-date-presets');
+      const labels = chips.map(chip => chip.textContent.trim()),calendarButton=document.querySelector('#sales-page .sales-date-calendar-toggle');
       const rect = strip?.getBoundingClientRect();
       return {
         labels,
-        hasAllMonths: ['Tháng 5 · 2026', 'Tháng 6 · 2026', 'Tháng 7 · 2026', 'Tháng 8 · 2026'].every(label => labels.includes(label)),
-        controlHeight: Math.round(chips[0]?.getBoundingClientRect().height || 0),
+        hasPresets: ['Tất cả','Tuần này','Tuần trước','7 ngày trước','Tháng này','Tháng trước','30 ngày trước'].every(label => labels.includes(label)),
+        controlHeight: Math.round(Math.min(...chips.map(chip=>chip.getBoundingClientRect().height),calendarButton?.getBoundingClientRect().height||0)),
+        hasCalendar: Boolean(calendarButton && calendarButton.getAttribute('aria-expanded')==='false'),
         stripWithinPage: Boolean(rect && rect.left >= -1 && rect.right <= innerWidth + 1),
+        stripCanScroll: Boolean(strip && strip.scrollWidth >= strip.clientWidth),
       };
     })() : null;
     /* MakerWorld print information is shared by every model detail dialog.
@@ -345,7 +347,7 @@ for (const route of routes) {
       blocked,
       tinyTargets,
       wizard,
-      salesMonthFilter,
+      salesDateFilter,
       modelPrintInfo,
       fulfillmentProcessTabs,
       fulfillmentFlowRailRemoved,
@@ -368,7 +370,7 @@ for (const route of routes) {
     ...(route === routes[0] ? (report.themeAudit?.failures || []) : []),
     ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
     ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
-    ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
+    ...(route === 'sales' && (!checks.salesDateFilter?.hasPresets || checks.salesDateFilter?.controlHeight < 44 || !checks.salesDateFilter?.hasCalendar || !checks.salesDateFilter?.stripWithinPage || !checks.salesDateFilter?.stripCanScroll) ? [`Bộ lọc khoảng ngày thiếu hoặc lệch layout (${JSON.stringify(checks.salesDateFilter)})`] : []),
     ...(route === 'models' && (!checks.modelPrintInfo?.present || !checks.modelPrintInfo?.fits || !checks.modelPrintInfo?.profileFits || !checks.modelPrintInfo?.actionFits) ? [`Thông số in MakerWorld bị dồn hoặc tràn trên mobile (${JSON.stringify(checks.modelPrintInfo)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.sideRail || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Rail công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...(route === 'fulfillment' && !checks.fulfillmentFlowRailRemoved ? ['Thanh nổi 5 bước đã bỏ vẫn còn xuất hiện'] : []),

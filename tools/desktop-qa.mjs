@@ -77,14 +77,14 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       const style = document.createElement('style');
       style.textContent = '#auth-ov{display:none!important;pointer-events:none!important}';
       document.head.append(style);
-      /* Có dữ liệu nhiều tháng để QA kiểm tra bộ lọc thật thay vì empty state. */
+      /* Có dữ liệu nhiều tháng để QA kiểm tra bộ lọc lịch sử thật thay vì empty state. */
       if (targetRoute === 'sales') {
         kiotViet = { ...kiotViet, salesImports: [5, 6, 7, 8].map(month => ({
           id: `qa-desktop-month-${month}`, importedAt: `2026-${String(month).padStart(2, '0')}-12T09:00:00.000Z`, source: 'dated-file',
           period: { from: `2026-${String(month).padStart(2, '0')}-12`, to: `2026-${String(month).padStart(2, '0')}-12` },
           sales: [{ sku: `QA-DESKTOP-${month}`, name: `QA tháng ${month}`, category: 'QA', qty: month, revenue: month * 10000 }],
         })) };
-        salesPageReportId = ''; salesPageMonthFilter = 'all';
+        salesPageReportId = ''; salesPageDatePreset = 'all'; salesPageCustomRange = {from:'',to:''}; salesPageRangeDraft = {from:'',to:''}; salesPageCalendarOpen = false;
       }
       window.goPage(targetRoute, { historyMode: 'none' });
     }, route);
@@ -113,9 +113,9 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     const active = document.querySelector('.page.active');
     const clickable = [...document.querySelectorAll('button,a,input,select,textarea,[role="button"]')]
       .filter(element => !element.closest('#auth-ov'))
-      /* Nút tháng nằm trong strip cuộn ngang có chủ đích; control đó được
-         kiểm riêng ở salesMonthFilter thay vì bị tính nhầm là tràn viewport. */
-      .filter(element => !element.closest('.sales-month-chips'))
+      /* Chip ngày nằm trong strip cuộn ngang có chủ đích; control đó được
+         kiểm riêng ở salesDateFilter thay vì bị tính nhầm là tràn viewport. */
+      .filter(element => !element.closest('.sales-date-presets'))
       /* Tab thư mục là một dãy cuộn ngang có chủ đích. Liên kết và vùng cuộn
          được kiểm riêng bằng fulfillmentProcessTabs ở dưới. */
       .filter(element => !element.closest('.fulfillment-process-tablist'))
@@ -281,15 +281,17 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
         if (originalTheme === null) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', originalTheme);
       }
     })();
-    const salesMonthFilter = expectedRoute === 'sales' ? (() => {
-      const chips = [...document.querySelectorAll('#sales-page .sales-month-chip')];
-      const strip = document.querySelector('#sales-page .sales-month-chips');
-      const labels = chips.map(chip => chip.textContent.trim());
+    const salesDateFilter = expectedRoute === 'sales' ? (() => {
+      const chips = [...document.querySelectorAll('#sales-page .sales-date-preset')];
+      const strip = document.querySelector('#sales-page .sales-date-presets');
+      const labels = chips.map(chip => chip.textContent.trim()),calendarButton=document.querySelector('#sales-page .sales-date-calendar-toggle');
       return {
         labels,
-        hasAllMonths: ['Tháng 5 · 2026', 'Tháng 6 · 2026', 'Tháng 7 · 2026', 'Tháng 8 · 2026'].every(label => labels.includes(label)),
-        controlHeight: Math.round(chips[0]?.getBoundingClientRect().height || 0),
+        hasPresets: ['Tất cả','Tuần này','Tuần trước','7 ngày trước','Tháng này','Tháng trước','30 ngày trước'].every(label => labels.includes(label)),
+        controlHeight: Math.round(Math.min(...chips.map(chip=>chip.getBoundingClientRect().height),calendarButton?.getBoundingClientRect().height||0)),
+        hasCalendar: Boolean(calendarButton && calendarButton.getAttribute('aria-expanded')==='false'),
         stripWithinPage: Boolean(strip && strip.getBoundingClientRect().right <= innerWidth + 1),
+        stripCanScroll: Boolean(strip && strip.scrollWidth >= strip.clientWidth),
       };
     })() : null;
     const fulfillmentProcessTabs = expectedRoute === 'fulfillment' ? (() => {
@@ -327,7 +329,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
       modelDetailLayout,
       variantEditorControls,
       compositeProductEditor,
-      salesMonthFilter,
+      salesDateFilter,
       fulfillmentProcessTabs,
     };
   }, route).catch(error => ({ evaluationError: error.message }));
@@ -360,7 +362,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
     ...(checks.modelDetailLayout && !checks.modelDetailLayout.darkSurfaceSafe?.passed ? [`Thẻ Model dùng nền quá sáng ở dark mode (${checks.modelDetailLayout.darkSurfaceSafe?.color || 'không đọc được màu'})`] : []),
     ...(checks.variantEditorControls && !checks.variantEditorControls.passed ? [`Checkbox chọn part của biến thể bị kéo sai kích thước (${checks.variantEditorControls.boxes.map(box => `${box.width}×${box.height}`).join(', ') || 'không có control'})`] : []),
     ...(checks.compositeProductEditor?.some(result => !result.inViewport || !result.noOverflow || !result.showsVariantAndDefault) ? [`Trình tạo sản phẩm ghép lệch hoặc thiếu trạng thái biến thể/mặc định (${JSON.stringify(checks.compositeProductEditor)})`] : []),
-    ...(route === 'sales' && (!checks.salesMonthFilter?.hasAllMonths || checks.salesMonthFilter?.controlHeight < 28 || !checks.salesMonthFilter?.stripWithinPage) ? [`Bộ lọc tháng báo cáo thiếu hoặc lệch layout (${JSON.stringify(checks.salesMonthFilter)})`] : []),
+    ...(route === 'sales' && (!checks.salesDateFilter?.hasPresets || checks.salesDateFilter?.controlHeight < 44 || !checks.salesDateFilter?.hasCalendar || !checks.salesDateFilter?.stripWithinPage || !checks.salesDateFilter?.stripCanScroll) ? [`Bộ lọc khoảng ngày thiếu hoặc lệch layout (${JSON.stringify(checks.salesDateFilter)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs || checks.fulfillmentProcessTabs.count < 8 || checks.fulfillmentProcessTabs.activeCount !== 1 || checks.fulfillmentProcessTabs.panelCount !== 1 || checks.fulfillmentProcessTabs.tabHeight < 40 || !checks.fulfillmentProcessTabs.scrollsInside || !checks.fulfillmentProcessTabs.connected) ? [`Tab thư mục quy trình gia công thiếu, lệch hoặc mất liên kết (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
     ...(!checks.chartTooltip?.inside ? [`Nhãn giá trị của cột biểu đồ cao bị cắt (${checks.chartTooltip?.labelTop ?? '?'}px / vùng ${checks.chartTooltip?.viewportHeight ?? '?'}px)`] : []),
     ...checks.clipped.map(item => `Nút bị cắt: ${item.label} (${item.left}→${item.right})`),
