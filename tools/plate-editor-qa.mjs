@@ -57,6 +57,9 @@ try{
   assert.equal(await page.evaluate(()=>editorNodes.shell===document.querySelector('.pp-edit-dlg')&&editorNodes.search===document.querySelector('.pp-picker-search input')&&editorNodes.grid===document.querySelector('.pp-picker-grid')&&editorNodes.cards.every(card=>card.isConnected)),true,'Selection never remounts dialog, search or catalogue images');
   await page.getByRole('button',{name:'Tăng số lượng',exact:true}).click();
   assert.equal(await page.locator('#pp-plan-qty').inputValue(),'2');
+  await page.getByRole('button',{name:'Tăng số lượng',exact:true}).focus();
+  assert.ok(await page.getByRole('button',{name:'Tăng số lượng',exact:true}).evaluate(el=>getComputedStyle(el).outlineStyle==='none'&&getComputedStyle(el.closest('.pp-quantity-control')).outlineStyle!=='none'),'Shared stepper has one shell focus ring');
+  assert.ok(await page.locator('#pp-plan-qty').evaluate(el=>{const s=getComputedStyle(el);return s.borderTopWidth==='0px'&&s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.boxShadow==='none';}),'Shared stepper input has no nested field surface');
   await page.getByRole('button',{name:'Giảm số lượng',exact:true}).click();
   assert.equal(await page.getByRole('button',{name:'Giảm số lượng',exact:true}).isDisabled(),true,'Quantity cannot go below one');
   assert.equal(await page.locator('.pp-picker-add').textContent(),'＋ Thêm vào plate');

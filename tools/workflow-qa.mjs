@@ -129,27 +129,38 @@ const results = await page.evaluate(async () => {
   closeDialog('dlg-model');
   goPage('batches', { historyMode: 'none' });
   renderBatchReportPage();
+  const batchHeader = document.querySelector('#page-batches .batch-library-header');
+  const batchRedundantHeading = batchHeader?.querySelector('.catalog-redundant-heading');
+  check('Thư viện mẻ bỏ tiêu đề lặp, nút chụp lặp và nhãn lọc dư thừa', getComputedStyle(batchRedundantHeading).display === 'none' && !batchHeader?.querySelector('button[onclick="openBatchReportHub()"]') && !/Lọc trạng thái/.test(document.querySelector('.batch-report-status-filters')?.textContent || ''), batchHeader?.textContent.trim() || 'thiếu toolbar');
+  check('Tìm báo cáo thu gọn trong toolbar thay vì chiếm một hàng', Boolean(batchHeader?.querySelector('.batch-library-toolbar .compact-expand-search')) && !document.querySelector('#page-batches > .page-smart-search'), batchHeader?.querySelector('.compact-expand-search')?.className || 'thiếu search');
+  const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
+  document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
+  const batchSearchCompactWidth = batchSearchShell?.getBoundingClientRect().width || 0;
+  batchSearch?.focus(); await new Promise(resolve => setTimeout(resolve, 260));
+  const batchSearchExpandedWidth = batchSearchShell?.getBoundingClientRect().width || 0;
+  check('Tìm báo cáo chỉ bung rộng khi focus', batchSearchCompactWidth <= 54 && batchSearchExpandedWidth > batchSearchCompactWidth + 80, `${Math.round(batchSearchCompactWidth)}px → ${Math.round(batchSearchExpandedWidth)}px`);
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
   const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
-  check('Ảnh thẻ báo cáo mẻ dùng crop tập trung vào nội dung thay vì kéo lệch tự do', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'cover'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
+  check('Ảnh thẻ báo cáo mẻ giữ crop thống nhất và canh tâm', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'cover' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
   const focusHost = document.createElement('div');
   focusHost.className = 'batch-report-media'; focusHost.style.cssText = 'position:fixed;left:-1000px;top:0;width:240px;height:180px';
   const focusImage = document.createElement('img');
   focusImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200"%3E%3Crect width="400" height="200" fill="%23111111"/%3E%3Crect x="22" y="35" width="115" height="130" fill="white"/%3E%3C/svg%3E';
   focusHost.append(focusImage); document.body.append(focusHost); await focusImage.decode();
   applyBatchReportSmartFocus(focusImage);
-  check('Crop ảnh mẻ tự dồn chủ thể lệch tâm về giữa khung', Boolean(focusImage.style.objectPosition && focusImage.style.objectPosition !== '50% 50%'), focusImage.style.objectPosition || 'không có focus');
+  check('Crop ảnh mẻ không tự dịch lệch từng thẻ', focusImage.style.objectPosition === '50% 50%', focusImage.style.objectPosition || 'không có focus');
   focusHost.remove();
   goPage('fulfillment', { historyMode: 'none' });
 
   const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');
-  check('Thanh tìm kiếm gia công tách khỏi cụm giao hàng', Boolean(document.querySelector('.fulfillment-search-row .page-smart-search')) && !document.querySelector('.fulfillment-command'));
+  const fulfillmentSearch = fulfillmentHeader?.querySelector('.fulfillment-command-search');
+  check('Tìm kiếm gia công nằm gọn trong cụm thao tác và bung khi focus', Boolean(fulfillmentSearch?.classList.contains('compact-expand-search') && !document.querySelector('.fulfillment-search-row')));
   const fulfillmentHeaderActions = ['refreshFulfillmentPage()', 'openReceivingHub()', 'openDeliveryBatchBuilder()'];
   check('Thao tác giao hàng nằm trong cụm lệnh riêng', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
   const fulfillmentCommandActions = fulfillmentHeader?.querySelector('.fulfillment-command-actions');
   const createDelivery = fulfillmentHeader?.querySelector('.fulfillment-create-delivery');
   check('Nút tạo đợt giao là hành động chính của cụm lệnh', Boolean(createDelivery && fulfillmentCommandActions?.contains(createDelivery)), createDelivery?.textContent.trim() || 'thiếu nút');
-  check('Tiêu đề trang và cụm thao tác không lặp tên luồng', !/hoàn thiện\s*&\s*giao hàng/i.test(fulfillmentHeader?.querySelector('.fulfillment-command-title')?.textContent || ''), fulfillmentHeader?.querySelector('.fulfillment-command-title')?.textContent.trim() || 'thiếu tiêu đề');
+  check('Cụm thao tác không lặp nhãn "Thao tác nhanh" hay số lượng', !/thao tác nhanh/i.test(fulfillmentHeader?.textContent || '') && !fulfillmentHeader?.querySelector('.fulfillment-command-title'), fulfillmentHeader?.textContent.trim() || 'thiếu cụm thao tác');
   const refreshDelivery = fulfillmentHeader?.querySelector('button[onclick="refreshFulfillmentPage()"]');
   const receiveDelivery = fulfillmentHeader?.querySelector('button[onclick="openReceivingHub()"]');
   const createRect = createDelivery?.getBoundingClientRect(), refreshRect = refreshDelivery?.getBoundingClientRect(), receiveRect = receiveDelivery?.getBoundingClientRect();
@@ -201,10 +212,11 @@ const results = await page.evaluate(async () => {
   renderFulfillmentPage();
   const guide = document.getElementById('fulfillment-flow-guide');
   const searchRow = document.querySelector('.fulfillment-search-row');
+  const compactFulfillmentSearch = document.querySelector('.fulfillment-command-search');
   const workshopZone = document.getElementById('fulfillment-workshop-zone');
   const fulfillmentScrollHost = document.querySelector('.pg-content') || document.scrollingElement;
   const follows = Node.DOCUMENT_POSITION_FOLLOWING;
-  check('Thanh luồng xử lý nằm đầu trang trước tìm kiếm và các khối nghiệp vụ', Boolean(guide?.closest('.fulfillment-page-intro') && searchRow && workshopZone && (guide.compareDocumentPosition(searchRow) & follows) && (guide.compareDocumentPosition(workshopZone) & follows)), guide?.parentElement?.className || 'thiếu thanh');
+  check('Thanh luồng xử lý nằm đầu nội dung, sau tìm kiếm gọn trên toolbar và trước các khối nghiệp vụ', Boolean(guide?.closest('.fulfillment-page-intro') && !searchRow && compactFulfillmentSearch && workshopZone && (guide.compareDocumentPosition(workshopZone) & follows)), guide?.parentElement?.className || 'thiếu thanh');
   /* Page layout is a shared primitive. Only named business blocks may be
      customized; fixed guides, floating navigation and anonymous wrappers must
      never leak into the user's list, including from a stale saved preference. */
@@ -681,6 +693,12 @@ const results = await page.evaluate(async () => {
   check('Bù theo khoảng chỉ xếp các ngày chưa có báo cáo', JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')) === JSON.stringify(['2026-09-02', '2026-09-03']), JSON.stringify(kiotSalesMissingDays('2026-09-01', '2026-09-03')));
   const rangeDialogSource = `${openKiotSalesRangeDialog} ${startKiotSalesRangeSync} ${refreshKiotSalesRangeAutomation} ${previewKiotSalesRange}`;
   check('Bù khoảng ngày kiểm tra bridge, gửi đúng ngày thiếu và không phụ thuộc bản ghi RAM', /kiotSalesRangeAutomation\.ready/.test(rangeDialogSource) && /\/health/.test(rangeDialogSource) && /\/range\/run/.test(rangeDialogSource) && /days:missing/.test(rangeDialogSource) && !/\/recording/.test(refreshKiotSalesRangeAutomation.toString()), rangeDialogSource.includes('/range/run') ? 'có health check và hàng chờ' : 'thiếu hàng chờ');
+  await openKiotSalesRangeDialog();
+  const rangeCalendar = document.querySelector('#kiot-sales-range-calendar .kiot-sales-calendar');
+  check('Bù báo cáo chọn khoảng trên lịch và nhận biết ngày có/thiếu dữ liệu', Boolean(rangeCalendar?.querySelector('.kiot-sales-calendar-day.is-recorded') && rangeCalendar?.querySelector('.kiot-sales-calendar-day.is-missing') && !document.querySelector('#kiot-sales-range-from[type="date"]')), rangeCalendar?.textContent.trim() || 'thiếu lịch');
+  selectKiotSalesRangeDay('2026-09-01'); selectKiotSalesRangeDay('2026-09-03');
+  check('Lịch khoảng ngày ghi lại hai mốc theo thứ tự và chỉ tính ngày thiếu', document.getElementById('kiot-sales-range-from')?.value === '2026-09-01' && document.getElementById('kiot-sales-range-to')?.value === '2026-09-03' && kiotSalesMissingDays('2026-09-01','2026-09-03').length === 2, `${document.getElementById('kiot-sales-range-from')?.value} → ${document.getElementById('kiot-sales-range-to')?.value}`);
+  closeDialog('dlg-mv');
   /* Bộ chọn kỳ báo cáo là một họ control dùng lại ở trang Bán hàng và hộp
      quản lý lịch sử. Dữ liệu nhiều tháng phải có lối lọc nhanh, đồng thời chỉ
      đổi danh sách kỳ/biểu đồ chứ không làm mất báo cáo đang xem. */
@@ -705,6 +723,10 @@ const results = await page.evaluate(async () => {
   setSalesHistoryMonthFilter('2026-08');
   const historyRowsAfterMonthFilter = [...document.querySelectorAll('#dlg-mv .kiot-sales-history-row')].map(row => row.textContent.trim());
   check('Quản lý lịch sử dùng cùng bộ lọc tháng', historyRowsAfterMonthFilter.length === 1 && /14\/08\/2026/.test(historyRowsAfterMonthFilter[0] || ''), historyRowsAfterMonthFilter.join(' | '));
+  check('Quản lý lịch sử cũng có lịch phân biệt ngày đã có dữ liệu', Boolean(document.querySelector('#dlg-mv .kiot-sales-calendar .kiot-sales-calendar-day.is-recorded')), document.querySelector('#dlg-mv .kiot-sales-calendar')?.textContent.trim() || 'thiếu lịch');
+  selectKiotSalesHistoryDay('2026-08-14');
+  const historyRowsAfterDaySelect = [...document.querySelectorAll('#dlg-mv .kiot-sales-history-row')].map(row => row.textContent.trim());
+  check('Chọn ngày trên lịch lọc đúng lịch sử ngày đó', historyRowsAfterDaySelect.length === 1 && /14\/08\/2026/.test(historyRowsAfterDaySelect[0] || ''), historyRowsAfterDaySelect.join(' | '));
   closeDialog('dlg-mv');
   salesPageReportId = priorSalesPageReportId; salesPageMonthFilter = priorSalesPageMonthFilter; salesHistoryMonthFilter = priorSalesHistoryMonthFilter;
   kiotViet = priorKiotArchive;kiotSalesArchiveReadyForSettings = priorKiotArchiveReady;
