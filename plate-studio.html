@@ -4076,32 +4076,22 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 @media(max-width:370px){.page-heading h1{font-size:27px!important}.page.active{padding-left:6px!important;padding-right:6px!important}.page-heading,.page-smart-search,#page-models .model-category-wrap,#page-models .model-grid{margin-left:6px!important;margin-right:6px!important}}
 </style>
 <style>
-.model-library-switch{display:flex;flex:1 0 100%;order:-2;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.model-library-switch button{min-height:44px;padding:9px 14px;border:0;border-radius:12px;background:var(--s2);color:var(--t2);font:inherit;font-size:13px;cursor:pointer}
-.model-library-switch button[aria-pressed="true"]{background:var(--acb);color:var(--t);box-shadow:inset 0 0 0 1px var(--ac)}
-.model-library-switch button:hover{filter:brightness(1.1)}
-.model-library-switch button:active{transform:scale(.98)}
-.model-library-switch button:focus-visible,.product-library-card button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
-.model-library-switch span{margin-left:5px;font-size:11px}
-#model-products-panel{grid-column:1/-1;grid-row:3;min-width:0}
-#model-products-panel[hidden]{display:none!important}
-#page-models.products-view>#model-grid,#page-models.products-view>#filters-models,#page-models.products-view .model-library-actions,#page-models.products-view .model-toolbar-search,#page-models.products-view #ftbtn-models,#page-models.products-view .model-category-toggle{display:none!important}
-.product-library-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.product-library-toolbar .field{flex:1;min-width:180px;margin:0}
-.product-library-toolbar .field>span{display:block;margin-bottom:6px;color:var(--t2);font-size:12px}
-.product-library-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:14px}
-.product-library-card{min-width:0;padding:18px;border-radius:18px;background:var(--s);color:var(--t);box-shadow:var(--ss);display:flex;flex-direction:column;gap:12px}
-.product-library-card h3{font-size:16px;margin:0;overflow-wrap:anywhere}
+.product-library-card{min-width:0;cursor:default}
+.product-library-card .model-body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.product-library-card .model-img{position:relative}
+.product-kind-mark{position:absolute;top:10px;left:10px;padding:5px 9px;border-radius:999px;background:var(--s);color:var(--t);font-size:12px;font-weight:700;line-height:1.2;box-shadow:var(--ss)}
+.product-library-card .model-name{margin:0;overflow-wrap:anywhere}
+.product-library-card button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 .product-library-card ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .product-library-card li{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--t2)}
 .product-library-card li span{min-width:0;overflow-wrap:anywhere}.product-library-card li b{flex-shrink:0;color:var(--t)}
 .product-library-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:auto;padding-top:4px}
-.product-library-toolbar .btn,.product-library-actions .btn,.product-editor .btn{min-height:44px!important}
+.product-library-actions .btn,.product-editor .btn{min-height:44px!important}
 .product-editor input,.product-editor select{min-height:44px}
 .product-component-row{padding:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 88px 44px;gap:10px;align-items:end}
 .product-component-row select,.product-component-row input{width:100%;max-width:100%;min-width:0;min-height:44px;padding:8px;font:inherit}
 .product-component-row>label{min-width:0}
-@media(max-width:600px){#model-products-panel{margin:0 8px}.product-library-card{padding:14px}.product-component-row{grid-template-columns:minmax(0,1fr) 76px 44px}.product-component-row>label:first-child{grid-column:1/-1}.product-editor{overflow-x:hidden}.product-library-toolbar{align-items:stretch}.product-library-toolbar>.btn{align-self:end}}
+@media(max-width:600px){.product-component-row{grid-template-columns:minmax(0,1fr) 76px 44px}.product-component-row>label:first-child{grid-column:1/-1}.product-editor{overflow-x:hidden}}
 </style>
 </head>
 <body>
@@ -4812,7 +4802,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
       <div class="sect-hd">
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Model 3D <span class="sect-count" id="cnt-models">0</span>
-        <div class="model-library-switch" role="group" aria-label="Thư viện Model"><button type="button" data-model-library="models" aria-pressed="true" onclick="setModelLibraryView('models')">Model</button><button type="button" data-model-library="products" aria-pressed="false" onclick="setModelLibraryView('products')">Sản phẩm ghép <span id="model-product-count">0</span></button></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-add-product" onclick="openProductEditor()">+ Tạo bộ ghép</button>
         <button class="filter-toggle-btn" id="ftbtn-models" onclick="toggleFilterBars('models')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
         <button class="btn btn-ghost btn-sm model-category-toggle" id="model-category-toggle" type="button" onclick="toggleModelCategoryDrawer()" aria-controls="filters-models" aria-expanded="false" title="Mở danh mục">Danh mục</button>
         <div class="page-smart-search model-toolbar-search" title="Tìm theo tên, danh mục, part, biến thể, màu nhựa, ghi chú hoặc link MakerWorld">
@@ -4826,10 +4816,6 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
       <div class="model-category-drawer-tools" style="display:flex;justify-content:flex-end;margin:0 0 5px"><button class="btn btn-ghost btn-xs model-category-pin" id="btn-pin-model-categories" onclick="toggleModelCategoriesPin()" title="Ghim danh mục trên màn hình">&#128204; Ghim danh mục</button><button class="btn btn-ghost btn-xs model-category-close" type="button" onclick="closeModelCategoryDrawer()" title="Đóng danh mục">&#215; Đóng</button></div>
       <div class="filter-bar-row"><div class="filter-bar" id="model-filter-cat"></div></div>
       </div>
-      <section id="model-products-panel" aria-label="Sản phẩm ghép" hidden>
-        <div class="product-library-toolbar"><label class="field"><span>Tìm sản phẩm</span><input id="product-library-search" type="search" placeholder="Tên sản phẩm, model, biến thể…" oninput="renderProductLibrary()"></label><button type="button" class="btn btn-ac" onclick="openProductEditor()">+ Tạo sản phẩm</button></div>
-        <div id="product-library-list" class="product-library-list"></div>
-      </section>
       <div id="model-grid" class="model-grid"></div>
     </div>
 
@@ -7298,7 +7284,7 @@ function modelCategoryCardsHTML(items, activeVal) {
     const theme = it.val==='all' ? { key:'all', accent:'#24211e', soft:'#f4f0e9', emoji:'✦' } : getModelCategoryTheme(it.val);
     const active = String(it.val)===String(activeVal);
     const value = esc(JSON.stringify(it.val));
-    return `<button class="model-category-card${active?' active':''}" onclick="setModelFilterCat(${value})" style="--cat-accent:${theme.accent};--cat-soft:${theme.soft}" title="Lọc ${esc(it.label)}">
+    return `<button class="model-category-card${active?' active':''}" data-model-category="${esc(it.val)}" aria-pressed="${active}" onclick="setModelFilterCat(${value})" style="--cat-accent:${theme.accent};--cat-soft:${theme.soft}" title="Lọc ${esc(it.label)}">
       ${theme.art ? `<img class="model-category-art" src="${theme.art}" alt=""/>` : ''}
       ${theme.art ? '<span class="model-category-wash"></span>' : `<span class="model-category-emoji">${theme.emoji}</span>`}
       <span class="model-category-info"><span class="model-category-name">${esc(it.label)}</span><span class="model-category-count">${it.count}</span></span>
@@ -9659,7 +9645,7 @@ function endModelCategoryDrag(event) {
   draggingModelIds = [];
 }
 function dragOverModelCategory(event, category) {
-  if(!draggingModelIds.length || category === 'all' || category === '— Chưa phân loại —') return;
+  if(!draggingModelIds.length || !isAssignableModelCategory(category)) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = 'copy';
   event.currentTarget.classList.add('drag-target');
@@ -9679,7 +9665,7 @@ function dropModelIntoCategory(event, category) {
   const modelIds = [...new Set(draggingModelIds.length ? draggingModelIds : fallbackIds)];
   draggingModelId = null;
   draggingModelIds = [];
-  if(!modelIds.length || category === 'all' || category === '— Chưa phân loại —') return;
+  if(!modelIds.length || !isAssignableModelCategory(category)) return;
   let changed = 0;
   models.forEach(model => {
     if(!modelIds.includes(model.id)) return;
@@ -9707,7 +9693,7 @@ function enableModelCategoryDropTargets(categories) {
   const cards = document.querySelectorAll('#model-filter-cat .model-category-card');
   categories.forEach((item, index) => {
     const card = cards[index];
-    const canDrop = item.val !== 'all' && item.val !== '— Chưa phân loại —' && item.val !== MODEL_INFO_MISSING_CATEGORY;
+    const canDrop = isAssignableModelCategory(item.val);
     if(!card || !canDrop) { if(card) card.classList.add('drop-disabled'); return; }
     card.insertAdjacentHTML('beforeend', `<span class="category-drop-actions" aria-hidden="true"><span class="category-drop-zone" data-drop-mode="replace">Thay thế<br>nhãn cũ</span><span class="category-drop-zone" data-drop-mode="add">Thêm nhãn</span></span>`);
     card.title = `Kéo model vào ${item.label} hoặc bấm để lọc`;
@@ -9719,6 +9705,8 @@ function enableModelCategoryDropTargets(categories) {
 
 // Danh mục thông minh: không lưu thành nhãn thật mà tự tính từ dữ liệu model.
 const MODEL_INFO_MISSING_CATEGORY = '__model_info_missing__';
+const MODEL_PRODUCTS_CATEGORY = '__composite_products__';
+function isAssignableModelCategory(category){return Boolean(category&&!['all','— Chưa phân loại —',MODEL_INFO_MISSING_CATEGORY,MODEL_PRODUCTS_CATEGORY].includes(category));}
 function modelMissingInfo(model) {
   const missing=[];
   if(!(model.parts||[]).length) missing.push('part');
@@ -9729,12 +9717,12 @@ function modelMissingInfo(model) {
 function modelNeedsMoreInfo(model) { return modelMissingInfo(model).length>0; }
 
 function renderModels() {
-  renderModelLibraryView();
   const el = document.getElementById('model-grid'); if(!el) return;
-  document.getElementById('cnt-models').textContent = models.length;
+  const products=productCatalog(),productEntries=new Set(products);
+  document.getElementById('cnt-models').textContent = models.length+products.length;
   const addToCategoryBtn = document.getElementById('btn-add-to-model-category');
   const removeFromCategoryBtn = document.getElementById('btn-remove-from-model-category');
-  const canAssignCategory = FILTERS.models.cat && FILTERS.models.cat !== 'all' && FILTERS.models.cat !== '— Chưa phân loại —' && FILTERS.models.cat !== MODEL_INFO_MISSING_CATEGORY;
+  const canAssignCategory = isAssignableModelCategory(FILTERS.models.cat);
   if(addToCategoryBtn) {
     addToCategoryBtn.style.display = canAssignCategory ? '' : 'none';
     addToCategoryBtn.textContent = canAssignCategory ? `+ Thêm vào ${FILTERS.models.cat}` : '+ Thêm vào danh mục';
@@ -9751,7 +9739,7 @@ function renderModels() {
     cs.forEach(c => { catCounts[c] = (catCounts[c]||0)+1; });
   });
   const incompleteCount=models.filter(modelNeedsMoreInfo).length;
-  const catChips = [{val:'all', label:'Tất cả', count:models.length}]
+  const catChips = [{val:'all', label:'Tất cả', count:models.length+products.length},{val:MODEL_PRODUCTS_CATEGORY,label:'Sản phẩm ghép',count:products.length}]
     .concat(incompleteCount ? [{val:MODEL_INFO_MISSING_CATEGORY,label:'⚠ Chưa đủ thông tin',count:incompleteCount}] : [])
     .concat(Object.keys(catCounts).sort().map(c => ({val:c, label:c, count:catCounts[c]})));
   document.getElementById('model-filter-cat').innerHTML =
@@ -9760,20 +9748,22 @@ function renderModels() {
   updateModelCategoriesPin();
   applyModelCategoryTheme(FILTERS.models.cat);
 
-  let list = FILTERS.models.cat === 'all' ? models
+  let list = FILTERS.models.cat === 'all' ? [...models,...products]
+    : FILTERS.models.cat === MODEL_PRODUCTS_CATEGORY ? products
     : FILTERS.models.cat === MODEL_INFO_MISSING_CATEGORY ? models.filter(modelNeedsMoreInfo)
     : models.filter(m => (m.cats?.length ? m.cats : ['— Chưa phân loại —']).includes(FILTERS.models.cat));
   const query=(FILTERS.models.search||'').trim();
   if(query) list=list.filter(m=>{
+    if(productEntries.has(m))return fuzzyTextMatch(`${m.name} ${productComponentSummary(m)}`,query);
     const searchable=[m.name,m.desc,m.makerWorldId,(m.cats||[]).join(' '),(m.links||[]).map(x=>`${x.name||''} ${x.url||''}`).join(' '),
       ...(m.parts||[]).flatMap(p=>[p.name,p.note,(p.filamentIds||[]).map(id=>{const f=getFil(id);return f?`${f.brand} ${f.name} ${f.hex} ${f.mat||''}`:'';}).join(' ')]),
       ...(m.variants||[]).flatMap(v=>[v.name,v.note,(v.parts||[]).map(p=>p.name||'').join(' ')])].join(' ');
     return fuzzyTextMatch(searchable,query);
   });
   const sort=FILTERS.models.sort||'created_desc';
-  const orderCount=m=>orders.filter(o=>o.items?.some(i=>i.modelId===m.id)).length;
+  const orderCount=m=>orders.filter(o=>o.items?.some(i=>productEntries.has(m)?i.productId===m.id:i.modelId===m.id)).length;
   const kiotMetricCache=new Map();
-  const kiotMetric=m=>{if(!kiotMetricCache.has(m.id))kiotMetricCache.set(m.id,getModelKiotMetrics(m.id));return kiotMetricCache.get(m.id);};
+  const kiotMetric=m=>{if(productEntries.has(m))return {sold:0,shopStock:0,firstDate:null};if(!kiotMetricCache.has(m.id))kiotMetricCache.set(m.id,getModelKiotMetrics(m.id));return kiotMetricCache.get(m.id);};
   list=[...list].sort((a,b)=>{
     if(sort==='created_asc') return new Date(a.createdAt||0)-new Date(b.createdAt||0);
     if(sort==='name_asc') return a.name.localeCompare(b.name,'vi');
@@ -9793,12 +9783,13 @@ function renderModels() {
   if (!list.length && ppViewMode !== 'external') {
     el.innerHTML = `<div class="empty" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      ${models.length ? 'Không có model nào khớp bộ lọc' : 'Chưa có model — thêm Model 3D đầu tiên'}</div>`;
+      ${FILTERS.models.cat===MODEL_PRODUCTS_CATEGORY&&!products.length?'Chưa có sản phẩm ghép.':models.length||products.length ? 'Không có mục nào khớp bộ lọc' : 'Chưa có model — thêm Model 3D đầu tiên'}</div>`;
     updateModelSelectionControls();
     return;
   }
 
   el.innerHTML = list.map(m => {
+    if(productEntries.has(m))return productLibraryCardHTML(m);
     const imgHTML = m.images?.length
       ? `<div class="model-img"><img src="${esc(m.images[0])}" alt="${esc(m.name)}" onerror="this.onerror=null;this.src='https://image.thum.io/get/width/900/crop/900/noanimate/'+encodeURIComponent('${esc((m.links||[]).find(l=>makerWorldIdFromUrl(l.url))?.url||'')}');this.parentElement.classList.add('model-thumb-fallback')"/></div>`
       : `<div class="model-img">📦</div>`;
@@ -9879,7 +9870,7 @@ let categoryAssignSource = 'unclassified';
 let categoryAssignSelected = new Set();
 function openCategoryAssignDialog() {
   const category = FILTERS.models.cat;
-  if(!category || category === 'all' || category === '— Chưa phân loại —') {
+  if(!isAssignableModelCategory(category)) {
     toast('Hãy mở một danh mục cụ thể trước'); return;
   }
   categoryAssignSource = 'unclassified';
@@ -9957,6 +9948,7 @@ function renderCategoryAssignList() {
 }
 function saveCategoryAssignments() {
   const category = FILTERS.models.cat;
+  if(!isAssignableModelCategory(category))return;
   if(!categoryAssignSelected.size) { toast('Chọn ít nhất một model'); return; }
   let added = 0;
   models.forEach(m => {
@@ -9974,7 +9966,7 @@ function saveCategoryAssignments() {
 let categoryRemoveSelected = new Set();
 function openCategoryRemoveDialog() {
   const category = FILTERS.models.cat;
-  if(!category || category==='all' || category==='— Chưa phân loại —') { toast('Hãy mở một danh mục cụ thể trước'); return; }
+  if(!isAssignableModelCategory(category)) { toast('Hãy mở một danh mục cụ thể trước'); return; }
   categoryRemoveSelected = new Set();
   const ov = document.getElementById('dlg-category-assign');
   ov.style.display = 'flex';
@@ -15345,24 +15337,11 @@ function goBack(){
 /* ═══════════ SẢN PHẨM GHÉP ═══════════
    Một sản phẩm là công thức gồm nhiều model. Mỗi thành phần chốt model và
    biến thể ngay tại đây; model không có biến thể luôn được giữ là mặc định. */
-let editingProductId=null,productDraft=[],modelLibraryView='models';
-function setModelLibraryView(view){
-  modelLibraryView=view==='products'?'products':'models';
-  closeModelCategoryDrawer();renderModels();
-}
-function renderModelLibraryView(){
-  const isProducts=modelLibraryView==='products';
-  document.getElementById('page-models')?.classList.toggle('products-view',isProducts);
-  const panel=document.getElementById('model-products-panel');if(panel)panel.hidden=!isProducts;
-  document.querySelectorAll('[data-model-library]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.modelLibrary===(isProducts?'products':'models'))));
-  const count=document.getElementById('model-product-count');if(count)count.textContent=productCatalog().length;
-  if(isProducts)renderProductLibrary();
-}
-function renderProductLibrary(){
-  const host=document.getElementById('product-library-list');if(!host)return;
-  const query=document.getElementById('product-library-search')?.value.trim()||'';
-  const all=productCatalog(),list=all.filter(product=>!query||fuzzyTextMatch(`${product.name} ${productComponentSummary(product)}`,query));
-  host.innerHTML=list.length?list.map(product=>`<article class="product-library-card" data-product-id="${esc(product.id)}"><h3>${esc(product.name)}</h3><ul>${(product.components||[]).map(component=>`<li><span>${esc(productComponentLabel(component))}</span><b>×${Math.max(1,Number(component.qty)||1)}</b></li>`).join('')}</ul><div class="product-library-actions"><button type="button" class="btn btn-ghost" data-product-id="${esc(product.id)}" onclick="openProductEditor(this.dataset.productId)">Sửa</button><button type="button" class="btn btn-danger" data-product-id="${esc(product.id)}" onclick="deleteCompositeProduct(this.dataset.productId)">Xóa</button></div></article>`).join(''):`<div class="empty">${all.length?'Không có sản phẩm khớp tìm kiếm.':'Chưa có sản phẩm ghép. Chọn “Tạo sản phẩm” để thêm.'}</div>`;
+let editingProductId=null,productDraft=[];
+function productLibraryCardHTML(product){
+  const firstModel=models.find(model=>model.id===product.components?.[0]?.modelId);
+  const preview=firstModel?.images?.[0]?`<img src="${esc(firstModel.images[0])}" alt="${esc(product.name)}" onerror="this.replaceWith(document.createTextNode('📦'))"/>`:'📦';
+  return `<article class="model-card product-library-card" data-product-id="${esc(product.id)}"><div class="model-img">${preview}<span class="product-kind-mark">Ghép</span></div><div class="model-body"><h3 class="model-name">${esc(product.name)}</h3><ul>${(product.components||[]).map(component=>`<li><span>${esc(productComponentLabel(component))}</span><b>×${Math.max(1,Number(component.qty)||1)}</b></li>`).join('')}</ul><div class="product-library-actions"><button type="button" class="btn btn-ghost" data-product-id="${esc(product.id)}" onclick="openProductEditor(this.dataset.productId)">Sửa</button><button type="button" class="btn btn-danger" data-product-id="${esc(product.id)}" onclick="deleteCompositeProduct(this.dataset.productId)">Xóa</button></div></div></article>`;
 }
 function productCatalog(){normalizeOperations();return operations.products;}
 function productById(id){return productCatalog().find(product=>product.id===id)||null;}
@@ -15378,7 +15357,7 @@ function productComponentSummary(product){
 }
 function openProductLibrary(){
   if(!requirePermission('models.manage','quản lý sản phẩm ghép'))return;
-  closeDialog('dlg-mv');modelLibraryView='products';goPage('models');renderModels();
+  closeDialog('dlg-mv');goPage('models');renderModels();
 }
 function openProductEditor(productId=''){
   if(!requirePermission('models.manage','quản lý sản phẩm ghép'))return;
@@ -15435,7 +15414,9 @@ function saveCompositeProduct(){
   const index=operations.products.findIndex(item=>item.id===product.id);
   if(index>=0)operations.products[index]=product;else operations.products.push(product);
   recordAudit(index>=0?'update':'create','Sản phẩm ghép',name,{productId:product.id,componentCount:components.length});
-  editingProductId=null;productDraft=[];openProductLibrary();
+  editingProductId=null;productDraft=[];
+  if(!['all',MODEL_PRODUCTS_CATEGORY].includes(FILTERS.models.cat))FILTERS.models.cat='all';
+  FILTERS.models.search='';openProductLibrary();
   if(document.getElementById('ov-order-form')?.style.display==='flex'){renderGrid();renderCart();}
 }
 function deleteCompositeProduct(productId){
