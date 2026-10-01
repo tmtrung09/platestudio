@@ -135,10 +135,10 @@ const results = await page.evaluate(async () => {
   check('Tìm báo cáo thu gọn trong toolbar thay vì chiếm một hàng', Boolean(batchHeader?.querySelector('.batch-library-toolbar .compact-expand-search')) && !document.querySelector('#page-batches > .page-smart-search'), batchHeader?.querySelector('.compact-expand-search')?.className || 'thiếu search');
   const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
   document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
-  const batchSearchCompactWidth = batchSearchShell?.getBoundingClientRect().width || 0;
-  batchSearch?.focus(); await new Promise(resolve => setTimeout(resolve, 260));
+  const batchSearchCompactRect = batchSearchShell?.getBoundingClientRect(), batchSearchCompactWidth = batchSearchCompactRect?.width || 0;
+  batchSearchShell?.click(); await new Promise(resolve => setTimeout(resolve, 260));
   const batchSearchExpandedWidth = batchSearchShell?.getBoundingClientRect().width || 0;
-  check('Tìm báo cáo chỉ bung rộng khi focus', batchSearchCompactWidth <= 54 && batchSearchExpandedWidth > batchSearchCompactWidth + 80, `${Math.round(batchSearchCompactWidth)}px → ${Math.round(batchSearchExpandedWidth)}px`);
+  check('Nhấn vỏ tìm báo cáo thu gọn đưa focus vào ô nhập và bung rộng', document.activeElement === batchSearch && batchSearchCompactWidth >= 44 && (batchSearchCompactRect?.height || 0) >= 44 && batchSearchCompactWidth <= 56 && batchSearchExpandedWidth > batchSearchCompactWidth + 80, `${Math.round(batchSearchCompactWidth)}×${Math.round(batchSearchCompactRect?.height || 0)}px → ${Math.round(batchSearchExpandedWidth)}px`);
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
   const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
   check('Ảnh thẻ báo cáo mẻ giữ crop thống nhất và canh tâm', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'cover' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
@@ -155,6 +155,10 @@ const results = await page.evaluate(async () => {
   const fulfillmentHeader = document.querySelector('#page-fulfillment .fulfillment-command-bar');
   const fulfillmentSearch = fulfillmentHeader?.querySelector('.fulfillment-command-search');
   check('Tìm kiếm gia công nằm gọn trong cụm thao tác và bung khi focus', Boolean(fulfillmentSearch?.classList.contains('compact-expand-search') && !document.querySelector('.fulfillment-search-row')));
+  const fulfillmentSearchInput = fulfillmentSearch?.querySelector('input');
+  document.activeElement?.blur(); fulfillmentSearch?.click(); await new Promise(resolve => requestAnimationFrame(resolve));
+  const fulfillmentSearchRect = fulfillmentSearch?.getBoundingClientRect();
+  check('Nhấn vỏ tìm kiếm gia công luôn đưa focus vào input', document.activeElement === fulfillmentSearchInput && (fulfillmentSearchRect?.width || 0) >= 44 && (fulfillmentSearchRect?.height || 0) >= 44, fulfillmentSearchRect ? `${Math.round(fulfillmentSearchRect.width)}×${Math.round(fulfillmentSearchRect.height)}px` : 'thiếu search');
   const fulfillmentHeaderActions = ['refreshFulfillmentPage()', 'openReceivingHub()', 'openDeliveryBatchBuilder()'];
   check('Thao tác giao hàng nằm trong cụm lệnh riêng', fulfillmentHeaderActions.every(action => Boolean(fulfillmentHeader?.querySelector(`button[onclick="${action}"]`))));
   const fulfillmentCommandActions = fulfillmentHeader?.querySelector('.fulfillment-command-actions');

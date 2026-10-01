@@ -66,6 +66,9 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
 2. Thanh tìm kiếm nằm trong vùng làm việc lớn chỉ chiếm diện tích khi cần: ở trạng
    thái nghỉ dùng phiên bản gọn; khi focus/nhập thì bung rộng để tìm. Việc chuyển
    trạng thái không được đẩy nội dung, làm mất truy vấn/focus, hoặc che control.
+   Toàn bộ vỏ của trạng thái gọn là vùng chạm tối thiểu 44×44px và nhấn/click bất kỳ
+   chỗ nào trên vỏ (kể cả icon) phải chuyển focus vào input; không để input rộng 0
+   khiến icon nhìn thấy nhưng không bấm được.
 3. Lưới ảnh phải dùng khung tỷ lệ thống nhất, ảnh canh giữa bằng `object-fit` phù hợp
    và không có viền/nền sáng tạo cảm giác đứt đoạn ở dark mode. Quy tắc này áp dụng
    cho mọi card ảnh của cùng thư viện, kể cả ảnh dọc, ngang, thiếu hoặc lỗi.
