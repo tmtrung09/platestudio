@@ -168,6 +168,7 @@ try{
  assert.equal(await page.locator('#br-multi-cam').evaluate(el=>el.classList.contains('has-capture-feedback')),true,'Successful capture gives immediate feedback');
  assert.equal(await page.locator('.br-camera-capture-note').textContent(),'Đã chụp ✓');
  assert.equal(await page.evaluate(()=>shutterSounds),1,'One boom per successful capture');
+ await page.waitForFunction(()=>!!batchShutterBuffer,undefined,{timeout:5000});
  assert.equal(await page.evaluate(()=>!!batchShutterBuffer&&notificationAudioContext.state==='running'),true,'Gesture unlocks the supplied MP3');
  const soundSafety=await page.evaluate(()=>{
    const context=notificationAudioContext,create=context.createBufferSource;let oscillators=0;

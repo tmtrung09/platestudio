@@ -12748,12 +12748,20 @@ function prepareBatchShutterSound(){
     if(notificationAudioContext?.state==='suspended')notificationAudioContext.resume().catch(()=>{});
     if(notificationAudioContext&&!batchShutterLoad){
       const context=notificationAudioContext,generation=cameraSoundGeneration,scope=cameraSoundScope();
-      const loading=(async()=>{
-        try{await loadCameraSounds();}catch(_){} // Offline: keep the last selection in this session.
-        if(generation!==cameraSoundGeneration||scope!==cameraSoundScope())return;
-        const sound=selectedCameraSound(),key=sound?.id||'default';if(batchShutterBuffer&&batchShutterKey===key)return;
+      /* Âm thanh mặc định là asset local và phải sẵn sàng dù truy vấn thư viện
+         tùy chọn trên cloud chậm/offline. Nạp metadata song song, rồi thay bằng
+         tiếng người dùng chọn nếu nó có sẵn. */
+      const libraryLoad=loadCameraSounds().catch(()=>null);
+      const decodeAndStore=async sound=>{
+        const key=sound?.id||'default';if(batchShutterBuffer&&batchShutterKey===key)return;
         let buffer;try{buffer=await decodeCameraSound(sound,context);}catch(error){if(!sound)throw error;buffer=await decodeCameraSound(null,context);}
         if(generation===cameraSoundGeneration&&scope===cameraSoundScope()){batchShutterBuffer=buffer;batchShutterKey=key;}
+      };
+      const loading=(async()=>{
+        await decodeAndStore(selectedCameraSound());
+        await libraryLoad; // Offline: keep the local/previous sound already ready.
+        if(generation!==cameraSoundGeneration||scope!==cameraSoundScope())return;
+        await decodeAndStore(selectedCameraSound());
       })().catch(()=>{}).finally(()=>{if(batchShutterLoad===loading)batchShutterLoad=null;});
       batchShutterLoad=loading;
     }

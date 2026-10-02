@@ -201,3 +201,26 @@ ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên re
    trước commit để chỉ đưa phần local-first/camera lên remote. Nếu lỗi `1909` vẫn xảy
    ra với cả PowerShell và `cmd.exe`, phải mở khóa/đăng nhập lại phiên Windows chạy
    Codex trước khi thử deploy tiếp; không được báo đã triển khai khi chưa có xác nhận.
+9. Âm thanh chụp là tùy chọn, không được chặn camera hoặc âm mặc định local vì đang
+   chờ metadata/thư viện âm thanh cloud. Nạp asset mặc định độc lập; nếu tài khoản có
+   âm riêng thì chuyển sang âm đó sau khi tải xong. QA phải mô phỏng truy vấn cloud
+   chậm/không phản hồi và chờ buffer theo trạng thái bất đồng bộ, không kiểm tra đồng bộ.
+
+## Nhập báo cáo bán hàng KiotViet (mandatory)
+
+1. Không coi việc có bản ghi theo ngày là đã nhập thành công: ngày chỉ được
+   hoàn tất nếu báo cáo có chi tiết bán hoặc metadata tổng hợp xác nhận SKU/số
+   lượng/doanh thu lớn hơn 0. Báo cáo rỗng phải hiển thị riêng và có thể đưa vào
+   luồng bù ngày.
+2. Trước khi lưu file từ Chrome cho một ngày được yêu cầu, đối chiếu kỳ ghi bên
+   trong file với ngày của job. Nếu không khớp, dừng và giữ nguyên báo cáo cũ;
+   không âm thầm gắn file của ngày khác vào ngày đang xử lý.
+3. Luồng bù chỉ thay bản ghi cùng ngày sau khi file đúng kỳ được parse có dòng
+   bán hợp lệ và thao tác lưu hoàn tất. Ngày đã có doanh số hợp lệ không bị lấy
+   lại/ghi đè tự động; ngày thiếu hoặc bản ghi rỗng được phép chạy lại.
+4. QA phải bao gồm ngày chưa nhập, ngày có báo cáo rỗng, ngày có doanh số hợp
+   lệ, file sai kỳ và file rỗng; kiểm tra rằng bù ngày rỗng không xóa dữ liệu
+   tốt, không cộng lặp biến động tồn kho và chỉ xác nhận lượt sau khi lưu xong.
+5. Parser báo cáo phải nhận diện header hàng hóa theo tiền tố/biến thể KiotViet
+   (ví dụ “Mã hàng hóa”, “Tên hàng hóa”), không phụ thuộc đúng một cách viết;
+   vẫn phải loại trừ dòng tổng và chỉ lưu SKU có số lượng bán hợp lệ.
