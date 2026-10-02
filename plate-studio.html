@@ -4077,6 +4077,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 @media(max-width:480px){.kiot-sales-calendar{padding:10px}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:31px}.kiot-sales-calendar>footer{gap:7px}.kiot-sales-calendar>footer .btn{margin-left:0}}
 .kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:44px!important}.kiot-sales-calendar>header .btn,.kiot-sales-calendar>footer .btn{min-width:44px;min-height:44px}.sales-month-chip{min-height:48px!important}
 .sales-date-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;margin-top:10px}.sales-date-presets{display:flex;gap:6px;min-width:0;overflow-x:auto;padding:3px 2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}.sales-date-preset,.sales-date-calendar-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:44px;padding:7px 11px;border:1px solid var(--b);border-radius:999px;background:var(--s2);color:var(--t2);font:750 11px/1.15 var(--font);white-space:nowrap;cursor:pointer}.sales-date-preset:hover,.sales-date-calendar-toggle:hover{border-color:var(--ac);color:var(--t)}.sales-date-preset.active,.sales-date-calendar-toggle[aria-expanded="true"]{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 15%,var(--s2));color:var(--t)}.sales-date-calendar-wrap{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr);gap:7px}.sales-date-range-note{color:var(--t3);font-size:11px}.sales-chart-scroll-actions{display:flex;justify-content:flex-end;gap:6px;margin:-3px 0 5px}.sales-chart-scroll-actions button{min-width:44px;min-height:44px}.sales-chart-bars{scroll-snap-type:x proximity;overscroll-behavior-x:contain;touch-action:pan-x;cursor:grab}.sales-chart-bars:active{cursor:grabbing}.sales-chart-bar{flex:0 0 54px;scroll-snap-align:start}.sales-chart-bar i{transform-origin:bottom;animation:sales-bar-rise .5s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(min(var(--bar-index),24) * 18ms)}@keyframes sales-bar-rise{from{height:0;opacity:.45}to{height:var(--bar-height);opacity:1}}@media(prefers-reduced-motion:reduce){.sales-chart-bar i{animation:none;transition:none}.sales-date-preset,.sales-date-calendar-toggle{transition:none}}
+@media(max-width:600px){.sales-date-controls{grid-template-columns:minmax(0,1fr)}.sales-date-calendar-toggle{justify-self:start}}
 /* Chế độ thao tác hàng loạt chỉ cho phép chọn model đang in đủ part và chưa
    giao xưởng; nhờ vậy một thao tác không thể nhảy qua bước QC/gia công. */
 .fulfillment-workshop-tools{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;flex-wrap:wrap}.fulfillment-bulk-tools{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.fulfillment-bulk-count{padding:6px 9px;border-radius:999px;background:color-mix(in srgb,var(--pu) 13%,var(--s2));color:var(--pu);font-size:11px;font-weight:850;white-space:nowrap}.workshop-item{position:relative}.workshop-bulk-select{position:absolute;z-index:3;top:9px;right:9px;display:flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid color-mix(in srgb,var(--pu) 42%,var(--b));border-radius:999px;background:color-mix(in srgb,var(--s) 92%,transparent);color:var(--pu);font-size:9px;font-weight:850;box-shadow:var(--ss);cursor:pointer}.workshop-bulk-select input{accent-color:var(--pu)}.workshop-item.is-bulk-selected{outline:2px solid var(--pu);box-shadow:0 0 0 4px color-mix(in srgb,var(--pu) 14%,transparent),var(--sm)}
@@ -19321,6 +19322,7 @@ function kvNum(value){
   const parsed=Number(normalized);return Number.isFinite(parsed)?sign*parsed:0;
 }
 function kvField(row,aliases){const keys=Object.keys(row||{}), names=aliases.map(kvNorm);const found=keys.find(k=>names.includes(kvNorm(k)))||keys.find(k=>names.some(n=>kvNorm(k).includes(n)));return found===undefined?'':row[found];}
+function kiotSalesHeaderRow(row){return (Array.isArray(row)?row:[]).some(cell=>{const key=kvNorm(cell);return key==='sku'||key.startsWith('ma hang')||key.startsWith('ma san pham')||key.startsWith('ten hang')||key.startsWith('ten san pham');});}
 const KIOT_SALES_QTY_FIELDS=['Số lượng bán','SL bán','Tổng SL bán','Số lượng'];
 const KIOT_SALES_REVENUE_FIELDS=['Doanh thu','Tổng doanh thu','Doanh thu thuần','Tổng tiền','Thành tiền','Tổng thành tiền','Giá trị bán','Tổng giá trị','Doanh số'];
 function kiotSalesQuantityForRow(row){return kvNum(kvField(row,KIOT_SALES_QTY_FIELDS));}
@@ -19331,7 +19333,7 @@ async function kvReadRows(file){
   return wb.SheetNames.flatMap(sheet=>{
     const matrix=xlsx.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:'',raw:true});
     // File báo cáo KiotViet thường có tiêu đề lớn ở đầu sheet; tìm hàng chứa cột dữ liệu thật.
-    const headerAt=matrix.findIndex(row=>row.some(cell=>['ma hang','sku','ma san pham','ten hang','ten san pham'].includes(kvNorm(cell))));
+    const headerAt=matrix.findIndex(kiotSalesHeaderRow);
     if(headerAt<0)return [];
     const headers=matrix[headerAt].map((cell,i)=>String(cell||`Cột ${i+1}`).trim());
     return matrix.slice(headerAt+1).filter(row=>row.some(cell=>String(cell??'').trim()!==''))
@@ -19359,6 +19361,7 @@ function kiotSalesImportMetrics(entry){
   const savedSku=Math.max(0,Number(entry?.skuCount)||0),savedQty=Math.max(0,Number(entry?.qtyTotal)||0),savedRevenue=Math.max(0,Number(entry?.revenueTotal)||0);
   return {sku:sku||savedSku,qty:qty||savedQty,revenue:revenue||savedRevenue};
 }
+function kiotSalesImportHasSales(entry){const metrics=kiotSalesImportMetrics(entry);return metrics.qty>0||metrics.sku>0||metrics.revenue>0;}
 function kiotSalesImportPeriodLabel(entry){const period=entry?.period;if(period?.from&&period?.to)return `${fmtDate(period.from)} – ${fmtDate(period.to)}`;return 'Chưa xác định kỳ';}
 function kiotSalesImportKey(entry){const period=entry?.period;return period?.from&&period?.to?`${period.from}:${period.to}`:'';}
 function sortKiotSalesImports(){kiotViet.salesImports=(kiotViet.salesImports||[]).sort((a,b)=>String(b?.period?.to||b?.period?.from||b?.importedAt||'').localeCompare(String(a?.period?.to||a?.period?.from||a?.importedAt||'')));}
@@ -19439,8 +19442,11 @@ function kiotSalesRangeDays(from,to){
   while(cursor<=end&&days.length<=730){days.push(cursor.toISOString().slice(0,10));cursor.setUTCDate(cursor.getUTCDate()+1);}return days;
 }
 function kiotSalesMissingDays(from,to){
-  const recorded=new Set((kiotViet.salesImports||[]).map(kiotSalesReportDay).filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)));
-  return kiotSalesRangeDays(from,to).filter(day=>!recorded.has(day));
+  /* Báo cáo rỗng/0 SKU không chứng minh ngày đã được nhập thành công. Cho phép
+     chạy bù lại các ngày này; chỉ một báo cáo có tổng đã lưu hoặc dòng bán mới
+     được coi là hoàn tất. */
+  const complete=new Set((kiotViet.salesImports||[]).filter(kiotSalesImportHasSales).map(kiotSalesReportDay).filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)));
+  return kiotSalesRangeDays(from,to).filter(day=>!complete.has(day));
 }
 let kiotSalesRangeAutomation={checked:false,ready:false,detail:'Đang kiểm tra extension…'};
 let kiotSalesRangeCalendarMonth='';
@@ -19449,14 +19455,14 @@ let kiotSalesHistoryDay='';
 function kiotSalesCalendarMonth(day){return /^\d{4}-\d{2}-\d{2}$/.test(day||'')?day.slice(0,7):kiotSalesRangeToday().slice(0,7);}
 function kiotSalesShiftCalendarMonth(month,delta){const [year,value]=String(month||'').split('-').map(Number),date=new Date(year||new Date().getFullYear(),(value||1)-1+(Number(delta)||0),1);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;}
 function kiotSalesCalendarGrid({month,from='',to='',onSelect,previous,next,clear='',label='Lịch báo cáo bán'}={}){
-  const [year,monthNumber]=String(month||'').split('-').map(Number),first=new Date(year,Math.max(0,(monthNumber||1)-1),1),days=new Date(first.getFullYear(),first.getMonth()+1,0).getDate(),offset=(first.getDay()+6)%7,today=kiotSalesRangeToday(),recorded=new Set((kiotViet.salesImports||[]).map(kiotSalesReportDay));
+  const [year,monthNumber]=String(month||'').split('-').map(Number),first=new Date(year,Math.max(0,(monthNumber||1)-1),1),days=new Date(first.getFullYear(),first.getMonth()+1,0).getDate(),offset=(first.getDay()+6)%7,today=kiotSalesRangeToday(),recorded=new Set((kiotViet.salesImports||[]).filter(kiotSalesImportHasSales).map(kiotSalesReportDay));
   const cells=Array.from({length:offset+days},(_,index)=>{
     if(index<offset)return '<span class="kiot-sales-calendar-gap" aria-hidden="true"></span>';
-    const day=`${first.getFullYear()}-${String(first.getMonth()+1).padStart(2,'0')}-${String(index-offset+1).padStart(2,'0')}`,hasData=recorded.has(day),future=day>today,inRange=from&&to&&day>=from&&day<=to,selected=day===from||day===to,state=hasData?'recorded':future?'future':'missing';
-    return `<button type="button" class="kiot-sales-calendar-day is-${state}${selected?' is-selected':''}${inRange?' is-in-range':''}" ${future?'disabled':''} aria-label="${fmtDate(day)} · ${hasData?'đã có dữ liệu':'chưa có dữ liệu'}" title="${fmtDate(day)} · ${hasData?'đã có dữ liệu':'chưa có dữ liệu'}" onclick="${onSelect}('${day}')"><time datetime="${day}">${index-offset+1}</time><i aria-hidden="true"></i></button>`;
+    const day=`${first.getFullYear()}-${String(first.getMonth()+1).padStart(2,'0')}-${String(index-offset+1).padStart(2,'0')}`,hasData=recorded.has(day),hasImport=(kiotViet.salesImports||[]).some(entry=>kiotSalesReportDay(entry)===day),future=day>today,inRange=from&&to&&day>=from&&day<=to,selected=day===from||day===to,state=hasData?'recorded':future?'future':'missing',status=hasData?'đã có dữ liệu bán':hasImport?'báo cáo rỗng · cần bù':'chưa có báo cáo';
+    return `<button type="button" class="kiot-sales-calendar-day is-${state}${hasImport&&!hasData?' is-empty-report':''}${selected?' is-selected':''}${inRange?' is-in-range':''}" ${future?'disabled':''} aria-label="${fmtDate(day)} · ${status}" title="${fmtDate(day)} · ${status}" onclick="${onSelect}('${day}')"><time datetime="${day}">${index-offset+1}</time><i aria-hidden="true"></i></button>`;
   }).join('');
   const monthTitle=new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric'}).format(first);
-  return `<section class="kiot-sales-calendar" aria-label="${esc(label)}"><header><button type="button" class="btn btn-ghost btn-xs" aria-label="Tháng trước" onclick="${previous}()">←</button><b>${esc(monthTitle)}</b><button type="button" class="btn btn-ghost btn-xs" aria-label="Tháng sau" onclick="${next}()">→</button></header><div class="kiot-sales-calendar-weekdays" aria-hidden="true"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div><div class="kiot-sales-calendar-grid">${cells}</div><footer><span><i class="is-recorded"></i>Đã có dữ liệu</span><span><i class="is-missing"></i>Chưa có dữ liệu</span>${clear?`<button type="button" class="btn btn-ghost btn-xs" onclick="${clear}">Bỏ chọn</button>`:''}</footer></section>`;
+  return `<section class="kiot-sales-calendar" aria-label="${esc(label)}"><header><button type="button" class="btn btn-ghost btn-xs" aria-label="Tháng trước" onclick="${previous}()">←</button><b>${esc(monthTitle)}</b><button type="button" class="btn btn-ghost btn-xs" aria-label="Tháng sau" onclick="${next}()">→</button></header><div class="kiot-sales-calendar-weekdays" aria-hidden="true"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div><div class="kiot-sales-calendar-grid">${cells}</div><footer><span><i class="is-recorded"></i>Đã có bán</span><span><i class="is-missing"></i>Chưa có hoặc báo cáo rỗng</span>${clear?`<button type="button" class="btn btn-ghost btn-xs" onclick="${clear}">Bỏ chọn</button>`:''}</footer></section>`;
 }
 function renderKiotSalesRangeCalendar(){const target=document.getElementById('kiot-sales-range-calendar');if(!target)return;const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'';if(!kiotSalesRangeCalendarMonth)kiotSalesRangeCalendarMonth=kiotSalesCalendarMonth(to||from);target.innerHTML=kiotSalesCalendarGrid({month:kiotSalesRangeCalendarMonth,from,to,onSelect:'selectKiotSalesRangeDay',previous:'previousKiotSalesRangeMonth',next:'nextKiotSalesRangeMonth',clear:'clearKiotSalesRangeDays()',label:'Chọn khoảng ngày cần bù báo cáo'});const summary=document.getElementById('kiot-sales-range-chosen');if(summary)summary.textContent=from&&to?`${fmtDate(from)} – ${fmtDate(to)}`:'Chọn ngày bắt đầu và ngày kết thúc';}
 function selectKiotSalesRangeDay(day){const fromInput=document.getElementById('kiot-sales-range-from'),toInput=document.getElementById('kiot-sales-range-to');if(!fromInput||!toInput)return;const from=fromInput.value,to=toInput.value;if(!from||to){fromInput.value=day;toInput.value='';}else if(day<from){toInput.value=from;fromInput.value=day;}else toInput.value=day;renderKiotSalesRangeCalendar();previewKiotSalesRange();}
@@ -19476,8 +19482,8 @@ async function refreshKiotSalesRangeAutomation(){
 function previewKiotSalesRange(){
   const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'',missing=kiotSalesMissingDays(from,to),summary=document.getElementById('kiot-sales-range-summary'),button=document.getElementById('kiot-sales-range-start');
   const rangeValid=Boolean(from&&to&&from<=to),canStart=rangeValid&&missing.length>0&&kiotSalesRangeAutomation.ready;
-  if(summary)summary.textContent=!rangeValid?'Chọn một khoảng ngày hợp lệ.':!kiotSalesRangeAutomation.checked?'Đang kiểm tra mẫu thao tác extension…':missing.length?`Còn thiếu ${missing.length} ngày: ${missing.slice(0,5).map(fmtDate).join(', ')}${missing.length>5?'…':''}`:'Khoảng này đã đủ báo cáo.';
-  if(button){button.disabled=!canStart;button.textContent=canStart?`Lấy ${missing.length} ngày thiếu`:kiotSalesRangeAutomation.checked?kiotSalesRangeAutomation.detail:'Đang kiểm tra extension…';}
+  if(summary)summary.textContent=!rangeValid?'Chọn một khoảng ngày hợp lệ.':!kiotSalesRangeAutomation.checked?'Đang kiểm tra mẫu thao tác extension…':missing.length?`Còn ${missing.length} ngày chưa có doanh số hợp lệ (gồm ngày chưa nhập và báo cáo rỗng): ${missing.slice(0,5).map(fmtDate).join(', ')}${missing.length>5?'…':''}`:'Khoảng này đã có báo cáo bán hợp lệ.';
+  if(button){button.disabled=!canStart;button.textContent=canStart?`Bù ${missing.length} ngày`:kiotSalesRangeAutomation.checked?kiotSalesRangeAutomation.detail:'Đang kiểm tra extension…';}
 }
 async function startKiotSalesRangeSync(){
   const from=document.getElementById('kiot-sales-range-from')?.value||'',to=document.getElementById('kiot-sales-range-to')?.value||'',missing=kiotSalesMissingDays(from,to);
@@ -19496,7 +19502,7 @@ async function openKiotSalesRangeDialog(){
   await loadKiotSalesArchiveIndex();
   const to=kiotSalesRangeDayBefore(kiotSalesRangeToday()),from=kiotSalesRangeDayBefore(to),ov=document.getElementById('dlg-mv');
   kiotSalesRangeAutomation={checked:false,ready:false,detail:'Đang kiểm tra extension…'};kiotSalesRangeCalendarMonth=kiotSalesCalendarMonth(to);
-  ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Bù báo cáo bán theo khoảng</div><p class="manual-sales-note">Chọn trực tiếp trên lịch. Mỗi ngày cho biết đã có dữ liệu hay còn thiếu; Chrome chỉ lấy các ngày thiếu.</p><input id="kiot-sales-range-from" type="hidden" value="${esc(from)}"><input id="kiot-sales-range-to" type="hidden" value="${esc(to)}"><div class="kiot-sales-range-chosen"><span>Khoảng đã chọn</span><b id="kiot-sales-range-chosen"></b></div><div id="kiot-sales-range-calendar"></div><div id="kiot-sales-range-summary" class="manual-sales-note" style="margin-top:12px"></div><div class="kv-note" style="margin-top:10px">Chrome giữ đúng ngày đang lấy; nếu một file không nhập được, hàng chờ dừng ở ngày đó để không bỏ qua dữ liệu.</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button id="kiot-sales-range-start" class="btn btn-ac" type="button" disabled onclick="startKiotSalesRangeSync()">Đang kiểm tra extension…</button></div></div>`;
+  ov.innerHTML=`<div class="dlg manual-sales-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Bù báo cáo bán theo khoảng</div><p class="manual-sales-note">Chọn ngày chưa có doanh số hợp lệ; ngày đã có báo cáo nhưng rỗng cũng được đưa vào lượt bù.</p><input id="kiot-sales-range-from" type="hidden" value="${esc(from)}"><input id="kiot-sales-range-to" type="hidden" value="${esc(to)}"><div class="kiot-sales-range-chosen"><span>Khoảng đã chọn</span><b id="kiot-sales-range-chosen"></b></div><div id="kiot-sales-range-calendar"></div><div id="kiot-sales-range-summary" class="manual-sales-note" style="margin-top:12px"></div><div class="kv-note" style="margin-top:10px">Ngày chỉ được đánh dấu hoàn tất khi file đúng kỳ và có ít nhất một dòng bán. Nếu KiotViet trả nhầm kỳ hoặc file rỗng, dữ liệu hiện có được giữ và lượt dừng để thử lại.</div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Đóng</button><button id="kiot-sales-range-start" class="btn btn-ac" type="button" disabled onclick="startKiotSalesRangeSync()">Đang kiểm tra extension…</button></div></div>`;
   ov.style.display='flex';ov.onclick=event=>{if(event.target===ov)closeDialog('dlg-mv');};renderKiotSalesRangeCalendar();previewKiotSalesRange();await refreshKiotSalesRangeAutomation();
 }
 async function importKiotSalesFileForDate(input){
@@ -19710,9 +19716,11 @@ async function importKiotSalesFile(input,source='manual',periodOverride=null,not
   const file=input.files?.[0];input.value='';if(!file)return;
   try{
     const [rows,period]=await Promise.all([kvReadRows(file),kvReadSalesReportPeriod(file)]);
+    const useOverride=/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.from||'')&&/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.to||'');
+    if(useOverride&&period?.from&&period?.to&&(period.from!==periodOverride.from||period.to!==periodOverride.to))throw new Error(`File KiotViet là kỳ ${fmtDate(period.from)} – ${fmtDate(period.to)}, không phải ngày yêu cầu ${fmtDate(periodOverride.from)}. Báo cáo cũ được giữ nguyên; hãy thử bù lại.`);
     const sales=rows.map(row=>{const sku=String(kvField(row,['Mã hàng','SKU','Mã sản phẩm'])).trim(),name=String(kvField(row,['Tên hàng','Tên sản phẩm','Tên'])).trim()||sku,qty=kiotSalesQuantityForRow(row),revenue=kiotSalesRevenueForRow(row),sale={sku,name,qty,revenue,category:String(kvField(row,['Nhóm hàng','Danh mục'])).trim()};return kiotSalesProductRow(sale)?sale:null;}).filter(Boolean);
     if(!sales.length) throw new Error('Không nhận diện được dữ liệu bán hàng. Hãy chọn báo cáo “Bán hàng theo hàng hóa / nhóm hàng” có Mã hàng.');
-    const useOverride=/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.from||'')&&/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.to||''),reportPeriod=useOverride?{from:periodOverride.from,to:periodOverride.to}:period;
+    const reportPeriod=useOverride?{from:periodOverride.from,to:periodOverride.to}:period;
     const importedAt=new Date().toISOString();kiotViet.salesImports=Array.isArray(kiotViet.salesImports)?kiotViet.salesImports:[];const entry={id:uid(),importedAt,fileName:file.name,source,period:reportPeriod,note:String(note||''),sales},key=kiotSalesImportKey(entry),existingIndex=key?kiotViet.salesImports.findIndex(row=>kiotSalesImportKey(row)===key):-1;
     /* Khi schema mới đã có, mỗi ngày là một báo cáo độc lập trên server. File
        được parse xong rồi bỏ; không dồn hàng trăm ngày SKU vào settings JSON. */
