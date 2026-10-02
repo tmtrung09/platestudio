@@ -6,6 +6,15 @@ import { pathToFileURL } from 'node:url';
 
 const source=readFileSync(resolve('plate-studio.html'),'utf8');
 for(const match of source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new Function(match[1]);
+const manifestMigration=readFileSync(resolve('supabase/migrations/202610020001_workspace_sync_manifest.sql'),'utf8');
+const serviceWorkerSource=readFileSync(resolve('push-sw.js'),'utf8');
+const webManifest=JSON.parse(readFileSync(resolve('manifest.webmanifest'),'utf8'));
+assert.match(manifestMigration,/get_workspace_sync_manifest/);
+assert.match(manifestMigration,/is_workspace_member\(p_workspace_id\)/,'Manifest RPC must enforce workspace membership');
+assert.match(source,/cachedManifest&&hasCompleteCloudCache/,'Startup must reuse a complete local cache');
+assert.match(source,/changed\.filter\(key=>key!==['"]batchReports['"]\)/,'Startup must fetch only changed collections');
+assert.match(serviceWorkerSource,/plate-studio-shell-v2/,'Service worker caches the app shell');
+assert.equal(webManifest.shortcuts?.[0]?.url,'./plate-studio.html?capture=1','Installed app exposes the direct camera shortcut');
 const executablePath=[process.env.CHROME_PATH,'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].filter(Boolean).find(existsSync);
 const browser=await chromium.launch({executablePath,headless:true});
 try{

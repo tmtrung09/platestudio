@@ -1,4 +1,24 @@
-/* Plate Studio — service worker cho thông báo đẩy. */
+/* Plate Studio — app shell local-first + thông báo đẩy. */
+const APP_SHELL_CACHE='plate-studio-shell-v2';
+const APP_SHELL=['./','./index.html','./plate-studio.html','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3'];
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(APP_SHELL_CACHE).then(cache=>Promise.allSettled(APP_SHELL.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('plate-studio-shell-')&&key!==APP_SHELL_CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',event=>{
+  const request=event.request;if(request.method!=='GET')return;
+  const url=new URL(request.url);if(url.origin!==self.location.origin)return;
+  if(request.mode==='navigate'){
+    event.respondWith(fetch(request).then(response=>{const copy=response.clone();caches.open(APP_SHELL_CACHE).then(cache=>cache.put(request,copy));return response;}).catch(async()=>await caches.match(request)||await caches.match('./plate-studio.html')));
+    return;
+  }
+  event.respondWith(caches.match(request).then(cached=>{
+    const network=fetch(request).then(response=>{if(response.ok)caches.open(APP_SHELL_CACHE).then(cache=>cache.put(request,response.clone()));return response;});
+    return cached||network;
+  }));
+});
 self.addEventListener('push', event => {
   let data={title:'Plate Studio',body:'Có cập nhật mới.',url:'./'};
   try{data={...data,...event.data.json()};}catch(_){if(event.data)data.body=event.data.text();}

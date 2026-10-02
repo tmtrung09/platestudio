@@ -25,6 +25,7 @@ try{
  await page.addStyleTag({content:'#auth-ov{display:none!important}'});
  await page.evaluate(()=>{
    canCaptureBatchReports=()=>true;
+   currentUser={id:'camera-qa'};activeWorkspace={workspace_id:'camera-qa-workspace',owner_user_id:'camera-qa'};cloudReady=true;
    window.realCameraUploader=uploadBatchMultiPhotoInBackground;
    window.realGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
    window.cameraUploads=[];
@@ -163,6 +164,7 @@ try{
  });
  await page.locator('.br-multi-cam .capture').click();
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
+ assert.equal(await page.evaluate(()=>Number.isFinite(__psPerformance.cameraPreviewMs)&&Number.isFinite(__psPerformance.lastCaptureLocalMs)&&Number.isFinite(__psPerformance.lastPhotoUploadMs)),true,'Camera timings remain observable');
  assert.equal(await page.locator('#br-multi-cam').evaluate(el=>el.classList.contains('has-capture-feedback')),true,'Successful capture gives immediate feedback');
  assert.equal(await page.locator('.br-camera-capture-note').textContent(),'Đã chụp ✓');
  assert.equal(await page.evaluate(()=>shutterSounds),1,'One boom per successful capture');
@@ -250,13 +252,17 @@ try{
  await page.locator('.br-multi-cam .capture').click();
  await (await nativeChooser).setFiles({name:'native.png',mimeType:'image/png',buffer:png});
  await page.waitForFunction(()=>brMultiCameraShots.length===1&&brMultiCameraShots[0].state==='uploaded');
- // Slow upload blocks closing; failed uploads stay retryable, never show saved.
+ // A shot is durable before upload: camera can close while the network continues.
  await page.evaluate(bytes=>{
    uploadBatchMultiPhotoInBackground=shot=>new Promise(resolve=>window.finishCameraUpload=()=>{shot.state='error';resolve();});
    queueBatchCameraFiles([new File([new Uint8Array(bytes)],'retry.png',{type:'image/png'})]);
  },[...png]);
  await page.waitForFunction(()=>typeof finishCameraUpload==='function');
- assert.equal(await page.evaluate(()=>closeBatchMultiCamera()),false);
+ assert.equal(await page.evaluate(()=>brMultiCameraShots.at(-1).localSaved),true,'Image reaches IndexedDB before upload');
+ assert.equal(await page.evaluate(()=>closeBatchMultiCamera()),true,'Durable upload may continue after camera closes');
+ assert.equal(await page.locator('#br-multi-cam').count(),0);
+ await page.evaluate(()=>openBatchReportHub());
+ await page.waitForSelector('#br-multi-cam');
  assert.equal(await page.locator('.br-multi-cam-count').getAttribute('data-state'),'busy');
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'busy');
  const edge=page.locator('.br-camera-upload-edge');
@@ -279,11 +285,12 @@ try{
  await page.waitForFunction(()=>document.querySelector('.br-multi-cam-count').dataset.state==='error');
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'error','Failure must not flash green');
  assert.equal(await page.evaluate(()=>brMultiCameraShots.at(-1).file instanceof File),true);
- page.once('dialog',d=>d.dismiss());
  await page.getByRole('button',{name:'Đóng camera',exact:true}).click();
- assert.equal(await page.locator('#br-multi-cam').count(),1);
+ assert.equal(await page.locator('#br-multi-cam').count(),0,'Failed upload remains safe in IndexedDB after closing');
+ await page.evaluate(()=>openBatchReportHub());
+ await page.waitForSelector('#br-multi-cam');
  await page.evaluate(()=>{uploadBatchMultiPhotoInBackground=async shot=>{shot.state='uploaded';};});
- await page.getByRole('button',{name:'Thử lưu lại ảnh 2',exact:true}).click();
+ await page.getByRole('button',{name:'Thử lưu lại ảnh 1',exact:true}).click();
  await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-glow')).stroke==='rgb(34, 201, 117)');
@@ -340,5 +347,5 @@ try{
  });
  assert.deepEqual(staffResult,{serverAck:true,missing:true,pending:true,unconfirmedDuplicate:true,saved:true});
  await staff.close();
- console.log('Camera QA passed: 8 theme/viewports; direct entry, pinch/slider/keyboard zoom, matching capture crop, consecutive capture, library/native, ring, focus, stream cleanup, close guard, retry and upload failure contracts.');
+ console.log('Camera QA passed: 8 theme/viewports; direct entry, durable local queue, background close, pinch/slider/keyboard zoom, matching capture crop, retry and upload failure contracts.');
 }finally{await browser.close();}

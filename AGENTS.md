@@ -154,3 +154,50 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 Một sửa lỗi UI chỉ hoàn tất khi đã có: sửa ở nguồn dùng chung hoặc lý do rõ ràng cho
 ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên remote theo quyền đã
 được người dùng cấp. Quy tắc này áp dụng cho mọi thay đổi tương lai trong repository.
+
+## Hiệu năng khởi động, đồng bộ và chụp ảnh (mandatory)
+
+1. Ứng dụng phải ưu tiên local-first: khi reload, dựng giao diện và dữ liệu đọc gần
+   nhất từ cache cục bộ trước, rồi đồng bộ phần thay đổi từ server ở nền; không chặn
+   thao tác ban đầu chỉ để tải lại toàn bộ dữ liệu đã biết. Cache phải có version,
+   migration và trạng thái độ mới rõ ràng; server vẫn là nguồn xác nhận cuối cùng.
+2. Realtime không được ghi đè mù dữ liệu local. Mỗi bản ghi đồng bộ phải có định danh
+   ổn định, version/revision hoặc mốc server, cơ chế cập nhật có điều kiện, tombstone
+   cho xóa và idempotency key cho thao tác gửi lại. Thay đổi khi offline được lưu vào
+   outbox bền vững, retry an toàn và có trạng thái chờ/lỗi/xung đột để người dùng biết.
+3. Luồng camera là fast path độc lập: phải có đường vào trực tiếp và mở được camera
+   mà không đợi tải toàn bộ thư viện, lịch sử hay ảnh. Cho phép chụp liên tiếp và lưu
+   ảnh/blob cùng metadata tối thiểu vào local ngay; việc nén, tạo thumbnail, upload và
+   liên kết bản ghi chạy nền, có hàng đợi bền vững và không làm mất ảnh khi reload,
+   mất mạng hoặc đóng ứng dụng giữa chừng.
+4. Upload ảnh phải tách trạng thái “đã chụp/lưu trên máy”, “đang tải”, “đã lên
+   Storage” và “đã gắn vào bản ghi nghiệp vụ”. Không buộc người dùng đợi upload xong
+   mới chụp ảnh tiếp; có retry/resume, chống upload trùng và chỉ dọn bản local sau khi
+   server xác nhận đầy đủ. Tối ưu kích thước/thumbnail ở worker khi phù hợp, nhưng
+   không tự làm giảm chất lượng bản gốc ngoài chính sách đã được thống nhất.
+5. Tải dữ liệu theo delta/cursor và chỉ lấy field cần cho màn hình; tránh chuỗi request
+   tuần tự, giới hạn/phân trang thư viện lớn, cache thumbnail và lazy-load ảnh ngoài
+   viewport. App shell và route camera cần được cache/preload phù hợp để reload hoặc
+   mở lại nhanh, kể cả mạng yếu; dữ liệu nền không được tranh băng thông ưu tiên của
+   upload ảnh đang chờ.
+6. Mọi thay đổi hiệu năng phải có đo trước/sau và regression guard cho ít nhất: thời
+   gian tới giao diện tương tác được từ cache, thời gian mở camera, thời gian từ bấm
+   chụp tới khi có thể chụp ảnh kế tiếp, thời gian đồng bộ nền/upload ở mạng chậm, và
+   tính đúng khi offline → reload → online, hai thiết bị cùng sửa, retry và xóa.
+7. Kiến trúc đã thống nhất cho Plate Studio: app shell dùng service worker theo hướng
+   network-first khi online và cache fallback khi offline; PWA có shortcut mở thẳng
+   `?capture=1`. Reload dùng RPC manifest một lượt để so revision + số bản ghi rồi chỉ
+   tải collection thay đổi, nhưng phải fallback an toàn về REST khi migration chưa có.
+   Ảnh camera được ghi vào IndexedDB theo workspace + user trước khi upload, giữ cùng
+   `reportId`/image hash khi resume và chỉ xóa blob local sau xác nhận server. Người
+   dùng được đóng camera ngay khi ảnh đã bền vững trên máy; queue tự tiếp tục khi có
+   mạng hoặc lần mở sau, không hiện cảnh báo rời trang cho ảnh đã được IndexedDB giữ.
+8. Lượt triển khai local-first/camera nhanh ngày 2026-10-02 chỉ được coi là bàn giao
+   xong sau khi runner Windows hoạt động lại, QA được chạy lại trên diff cuối, migration
+   `202610020001_workspace_sync_manifest.sql` được đẩy lên Supabase, và commit chọn lọc
+   được push lên remote. Không gộp nhầm các thay đổi KiotViet đang tồn tại song song;
+   lỗi runner `CreateProcessWithLogonW 1909` là trạng thái hạ tầng, không phải QA pass.
+   Khi tiếp tục deploy, phải xác nhận migration đã áp dụng và kiểm tra nội dung staged
+   trước commit để chỉ đưa phần local-first/camera lên remote. Nếu lỗi `1909` vẫn xảy
+   ra với cả PowerShell và `cmd.exe`, phải mở khóa/đăng nhập lại phiên Windows chạy
+   Codex trước khi thử deploy tiếp; không được báo đã triển khai khi chưa có xác nhận.
