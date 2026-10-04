@@ -198,13 +198,25 @@ ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên re
    được push lên remote. Không gộp nhầm các thay đổi KiotViet đang tồn tại song song;
    lỗi runner `CreateProcessWithLogonW 1909` là trạng thái hạ tầng, không phải QA pass.
    Khi tiếp tục deploy, phải xác nhận migration đã áp dụng và kiểm tra nội dung staged
-   trước commit để chỉ đưa phần local-first/camera lên remote. Nếu lỗi `1909` vẫn xảy
-   ra với cả PowerShell và `cmd.exe`, phải mở khóa/đăng nhập lại phiên Windows chạy
-   Codex trước khi thử deploy tiếp; không được báo đã triển khai khi chưa có xác nhận.
+   trước commit để chỉ đưa phần local-first/camera lên remote. Lỗi `CreateProcessWithLogonW
+   1909` có thể thuộc tài khoản sandbox riêng của Codex (`CodexSandboxOffline`), không
+   chứng minh màn hình hay tài khoản người dùng đang bị khóa. Khi gặp lỗi này, thử lại và
+   kiểm tra runner/tài khoản sandbox trước; chỉ đề nghị đăng nhập lại hoặc khởi động lại
+   Codex khi lỗi còn kéo dài sau kiểm tra, và không được báo đã triển khai khi chưa xác nhận.
 9. Âm thanh chụp là tùy chọn, không được chặn camera hoặc âm mặc định local vì đang
    chờ metadata/thư viện âm thanh cloud. Nạp asset mặc định độc lập; nếu tài khoản có
    âm riêng thì chuyển sang âm đó sau khi tải xong. QA phải mô phỏng truy vấn cloud
    chậm/không phản hồi và chờ buffer theo trạng thái bất đồng bộ, không kiểm tra đồng bộ.
+10. Mỗi lần mở web phải tự quét IndexedDB để khôi phục mọi ảnh camera chưa được server
+   xác nhận và tự tải nền, không phụ thuộc người dùng mở lại giao diện camera hoặc bấm
+   “Thử lại”. Lỗi tạm thời phải retry có backoff và được đánh thức khi online/quay lại
+   tab; nút thử lại chỉ là đường chủ động dự phòng. Giữ tương thích với hàng chờ đã có,
+   không đổi ID/blob và không xóa bản local cho tới khi server xác nhận bản ghi nghiệp vụ.
+11. Nếu ảnh mới đồng loạt không gửi được trên nhiều thiết bị, coi đây là sự cố đường tải
+   dùng chung chứ không chỉ là lỗi retry phía client: phải kiểm tra Edge Function, hiệu
+   lực token nhân viên, Storage và bước ghi `batch_reports`. Không yêu cầu chụp lại hoặc
+   xóa dữ liệu trình duyệt; hàng local phải tiếp tục được giữ và thử lại sau khi dịch vụ
+   được sửa. Không báo đã khắc phục chỉ bằng thay đổi client khi bản deploy chưa xác nhận.
 
 ## Nhập báo cáo bán hàng KiotViet (mandatory)
 

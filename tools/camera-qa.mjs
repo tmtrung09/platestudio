@@ -306,6 +306,36 @@ try{
  assert.equal(await edge.getAttribute('data-tone'),'saved','Keep green during fade-out');
  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-upload-edge')).opacity==='0');
  await page.evaluate(()=>closeBatchMultiCamera());
+ // A fresh app session must discover durable photos and retry in the background,
+ // even when the browser was already online and the camera UI is never opened.
+ await page.evaluate(async bytes=>{
+   clearTimeout(brCameraRetryTimer);brCameraRetryTimer=0;brMultiCameraShots=[];
+   const file=new File([new Uint8Array(bytes)],'startup-recovery.png',{type:'image/png'});
+   const seeded={id:'startup-recovery',file,createdAt:new Date().toISOString(),localSaved:false,localKey:''};
+   await saveBatchCameraShotLocal(seeded);
+   window.startupRetryAttempts=0;window.startupRetryIds=[];
+   batchCameraRetryDelay=()=>800;
+   uploadBatchMultiPhotoInBackground=async shot=>{
+     startupRetryAttempts++;startupRetryIds.push(shot.id);
+     if(startupRetryAttempts===1){shot.state='error';shot.error='temporary network failure';return;}
+     shot.state='uploaded';shot.reportId='saved-after-retry';
+   };
+   await restoreBatchCameraQueue();
+ },[...png]);
+ await page.waitForFunction(()=>startupRetryAttempts===1&&brMultiCameraShots[0]?.state==='error');
+ const retainedAfterFailure=await page.evaluate(async()=>{
+   const db=await openBatchCameraDb();
+   return await new Promise((resolve,reject)=>{const request=db.transaction(BATCH_CAMERA_STORE,'readonly').objectStore(BATCH_CAMERA_STORE).get(brMultiCameraShots[0].localKey);request.onsuccess=()=>resolve(!!request.result?.blob);request.onerror=()=>reject(request.error);});
+ });
+ assert.equal(retainedAfterFailure,true,'A transient startup failure keeps the original IndexedDB blob');
+ assert.equal(await page.locator('#br-multi-cam').count(),0,'Background recovery never requires opening the camera UI');
+ await page.waitForFunction(()=>startupRetryAttempts===2&&brMultiCameraShots[0]?.state==='uploaded',undefined,{timeout:3000});
+ const startupRecovery=await page.evaluate(async()=>{
+   const shot=brMultiCameraShots[0],db=await openBatchCameraDb();
+   const retained=await new Promise((resolve,reject)=>{const request=db.transaction(BATCH_CAMERA_STORE,'readonly').objectStore(BATCH_CAMERA_STORE).get(`${batchCameraQueueScope()}:startup-recovery`);request.onsuccess=()=>resolve(!!request.result);request.onerror=()=>reject(request.error);});
+   return {ids:startupRetryIds,reportId:shot.reportId,fileReleased:shot.file===null,retained};
+ });
+ assert.deepEqual(startupRecovery,{ids:['startup-recovery','startup-recovery'],reportId:'saved-after-retry',fileReleased:true,retained:false},'Startup recovery retries automatically with the same identity and only then clears local data');
  // Exercise the real upload handler with stubbed storage/DB contracts.
  const result=await page.evaluate(async()=>{
    currentUser={id:'camera-qa'};cloudReady=true;
@@ -327,6 +357,18 @@ try{
  await staff.route(/https?:.*\/(rest|storage|functions)\/v1\//,route=>route.abort());
  await staff.goto(pathToFileURL(join(root,'plate-studio.html')).href+'?staff=camera-qa',{waitUntil:'domcontentloaded'});
  await staff.waitForFunction(()=>typeof uploadBatchMultiPhotoInBackground==='function');
+ const staffStartup=await staff.evaluate(async()=>{
+   let workspaceBoots=0,restores=0,drains=0,opened=0;
+   ensureCloudWorkspace=async()=>{workspaceBoots++;throw new Error('Staff startup must not require a manager workspace');};
+   restoreBatchCameraQueue=async()=>{restores++;return 1;};
+   drainBatchCameraQueue=async()=>{drains++;};
+   goPage=()=>{};openBatchReportHub=()=>{opened++;};
+   cloudReady=false;currentUser=null;
+   await loadCloudSession({user:{id:'staff-startup-qa',is_anonymous:true}});
+   await new Promise(resolve=>setTimeout(resolve,0));
+   return {workspaceBoots,restores,drains,opened,cloudReady,staffMode:document.body.classList.contains('staff-report-mode'),authHidden:document.getElementById('auth-ov').style.display==='none'};
+ });
+ assert.deepEqual(staffStartup,{workspaceBoots:0,restores:1,drains:1,opened:1,cloudReady:true,staffMode:true,authHidden:true},'Staff camera startup bypasses manager workspace bootstrap and resumes its durable queue');
  const staffResult=await staff.evaluate(async()=>{
    const original=createStaffBatchReportFromFile;
    currentUser={id:'staff-qa'};cloudReady=true;
@@ -348,5 +390,5 @@ try{
  });
  assert.deepEqual(staffResult,{serverAck:true,missing:true,pending:true,unconfirmedDuplicate:true,saved:true});
  await staff.close();
- console.log('Camera QA passed: 8 theme/viewports; direct entry, durable local queue, background close, pinch/slider/keyboard zoom, matching capture crop, retry and upload failure contracts.');
+ console.log('Camera QA passed: 8 theme/viewports; direct entry, durable local queue, automatic startup retry, background close, pinch/slider/keyboard zoom, matching capture crop, retry and upload failure contracts.');
 }finally{await browser.close();}

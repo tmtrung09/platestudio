@@ -7069,6 +7069,20 @@ async function loadCloudSession(session) {
       setTimeout(()=>{ goPage('delivery-receive'); loadStaffDeliveryReceivingData(); }, 0);
       return;
     }
+    if(STAFF_REPORT_MODE) {
+      /* Link camera dùng Edge Function + staff token để xác định workspace. Phiên
+         anonymous không được đi qua bootstrap workspace của tài khoản quản lý:
+         nếu bước đó lỗi thì toàn bộ hàng ảnh local sẽ bị kẹt trước khi upload. */
+      cloudReady = true;
+      document.getElementById('auth-ov').style.display = 'none';
+      document.body.classList.add('staff-report-mode');
+      syncAuthUI(true);
+      setSyncState('Sẵn sàng gửi ảnh', 'ok');
+      try{await restoreBatchCameraQueue();}catch(error){console.warn('Chưa khôi phục được hàng chờ camera',error);}
+      void drainBatchCameraQueue();
+      setTimeout(()=>{ goPage('batches'); openBatchReportHub(); }, 0);
+      return;
+    }
     await ensureCloudWorkspace();
     recordPerformanceMetric('workspaceReadyMs',performance.now()-startupBegan);
     restoreBatchLibraryView();
@@ -7118,10 +7132,6 @@ async function loadCloudSession(session) {
       if(currentUser?.id!==sessionUser||cloudOutbox.length||cloudSyncing||!canAutoApplyRemoteRefresh())return;
       processTrashRetention({announce:false}).catch(error=>console.warn('Chưa dọn được thùng rác',error));
     },5000);
-    if(STAFF_REPORT_MODE) {
-      document.body.classList.add('staff-report-mode');
-      setTimeout(()=>{ goPage('batches'); openBatchReportHub(); }, 0);
-    }
     setSyncState('Đã đồng bộ', 'ok');
     if(cloudOutbox.length) {
       setSyncState(`Chờ đồng bộ (${cloudOutbox.length})`);
@@ -11523,7 +11533,7 @@ let brUploadStatus = [];   // [{id,name,state,message}] — phản hồi rõ rà
 let brBulkUploadMode = false;
 let brMultiCameraStream = null;
 let brMultiCameraShots = []; // [{ file, url, state, cancelled, reportId }] — chụp là tải nền
-let brCameraRequest=0,brCameraFacing='environment',brCameraCaptureBusy=false,brCameraQueueRunning=false;
+let brCameraRequest=0,brCameraFacing='environment',brCameraCaptureBusy=false,brCameraQueueRunning=false,brCameraRetryTimer=0;
 let brCameraZoom=1,brCameraZoomFrame=0;
 let brCameraReturnFocus=null,brCameraInertSiblings=[];
 let brMultiCameraTorchOn = false;
@@ -11554,15 +11564,46 @@ async function removeBatchCameraShotLocal(shot){
   await new Promise((resolve,reject)=>{const tx=db.transaction(BATCH_CAMERA_STORE,'readwrite');tx.objectStore(BATCH_CAMERA_STORE).delete(shot.localKey);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
   shot.localKey='';shot.localSaved=false;
 }
+async function updateBatchCameraShotLocal(shot,patch){
+  if(!shot?.localKey||!shot.localSaved)return;const db=await openBatchCameraDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction(BATCH_CAMERA_STORE,'readwrite'),store=tx.objectStore(BATCH_CAMERA_STORE),request=store.get(shot.localKey);
+    request.onsuccess=()=>{if(request.result)store.put({...request.result,...patch});};
+    request.onerror=()=>reject(request.error);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Không cập nhật được hàng chờ ảnh'));
+  });
+}
 async function restoreBatchCameraQueue(){
   const scope=batchCameraQueueScope();if(!scope)return 0;const db=await openBatchCameraDb();
   const rows=await new Promise((resolve,reject)=>{const tx=db.transaction(BATCH_CAMERA_STORE,'readonly'),request=tx.objectStore(BATCH_CAMERA_STORE).index('scope').getAll(scope);request.onsuccess=()=>resolve(request.result||[]);request.onerror=()=>reject(request.error);});
   rows.sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt))).forEach(row=>{
-    if(brMultiCameraShots.some(shot=>shot.id===row.id))return;
+    const existing=brMultiCameraShots.find(shot=>shot.id===row.id);
+    if(existing){
+      if(existing.localSaved&&existing.state==='error'){existing.state='queued';existing.error='';existing.nextRetryAt=0;}
+      return;
+    }
     const file=new File([row.blob],row.name,{type:row.type,lastModified:row.lastModified});
-    brMultiCameraShots.push({id:row.id,file,url:URL.createObjectURL(file),state:'queued',cancelled:false,reportId:null,createdAt:row.createdAt,localKey:row.key,localSaved:true,recovered:true});
+    brMultiCameraShots.push({id:row.id,file,url:URL.createObjectURL(file),state:'queued',cancelled:false,reportId:null,createdAt:row.createdAt,localKey:row.key,localSaved:true,recovered:true,retryAttempts:Number(row.retryAttempts)||0,nextRetryAt:0});
   });
   renderBatchMultiCameraTray();void drainBatchCameraQueue();return rows.length;
+}
+function batchCameraRetryDelay(attempts){return Math.min(5*60*1000,5000*(2**Math.min(Math.max(0,attempts-1),6)));}
+function scheduleBatchCameraRetry(){
+  clearTimeout(brCameraRetryTimer);brCameraRetryTimer=0;
+  if(!currentUser||!cloudReady||navigator.onLine===false)return;
+  const retryable=brMultiCameraShots.filter(shot=>shot.localSaved&&shot.state==='error'&&!shot.cancelled);
+  if(!retryable.length)return;
+  const next=Math.min(...retryable.map(shot=>Number(shot.nextRetryAt)||Date.now()));
+  brCameraRetryTimer=setTimeout(()=>resumeBatchCameraQueue(),Math.max(0,next-Date.now()));
+}
+function resumeBatchCameraQueue({force=false}={}){
+  const now=Date.now();let resumed=0;
+  brMultiCameraShots.forEach(shot=>{
+    if(!shot.localSaved||shot.state!=='error'||shot.cancelled)return;
+    if(!force&&Number(shot.nextRetryAt)>now)return;
+    shot.state='queued';shot.error='';shot.nextRetryAt=0;resumed++;
+  });
+  if(resumed)renderBatchMultiCameraTray();
+  void drainBatchCameraQueue();scheduleBatchCameraRetry();return resumed;
 }
 const brImageHashUploads = new Set(); // chặn cùng ảnh được gửi đồng thời trong một phiên
 const brAiAnalysing = new Set();
@@ -12279,8 +12320,11 @@ function renderBatchHub(){
   `;
 }
 
-async function createStaffBatchReportFromFile(file){
-  if(!currentUser || !cloudReady) { toast('Đang kết nối chế độ nhân viên, hãy thử lại sau vài giây.',4000); return; }
+async function createStaffBatchReportFromFile(file,{background=false,throwOnError=false}={}){
+  if(!currentUser || !cloudReady) {
+    const error=new Error('Đang kết nối chế độ nhân viên, hãy thử lại sau vài giây.');
+    if(!background)toast(error.message,4000);if(throwOnError)throw error;return;
+  }
   let imageHash='';
   try { imageHash=await batchImageHash(file); } catch(error) { console.warn('Không tạo được mã nhận diện ảnh',error); }
   if(imageHash && brImageHashUploads.has(imageHash)) {
@@ -12288,20 +12332,22 @@ async function createStaffBatchReportFromFile(file){
     return {pending:true};
   }
   if(imageHash) brImageHashUploads.add(imageHash);
-  const mediaUploadId=beginMediaUpload('Đang chuẩn bị ảnh mẻ in…');
-  const uploadId=uid();
-  brUploadStatus.unshift({id:uploadId,name:file.name||'Ảnh mẻ in',preview:document.getElementById('br-multi-cam')?'':URL.createObjectURL(file),state:'uploading',message:'Đang gửi…'});
-  setBatchUploadStatus(uploadId,{});
+  const mediaUploadId=background?0:beginMediaUpload('Đang chuẩn bị ảnh mẻ in…');
+  const uploadId=background?'':uid();
+  if(uploadId){
+    brUploadStatus.unshift({id:uploadId,name:file.name||'Ảnh mẻ in',preview:document.getElementById('br-multi-cam')?'':URL.createObjectURL(file),state:'uploading',message:'Đang gửi…'});
+    setBatchUploadStatus(uploadId,{});
+  }
   const actor=ensureBatchActor();
   try {
     const timing=await batchReportTimingForFile(file),form=new FormData();
     let uploadFile=file, thumbnailFile=null;
     try {
-      updateMediaUploadStage(mediaUploadId,'Đang nén ảnh mẻ in…');
+      if(mediaUploadId)updateMediaUploadStage(mediaUploadId,'Đang nén ảnh mẻ in…');
       const [full,thumb]=await Promise.all([compressPhotoForStorage(file,1920,.78),compressPhotoForStorage(file,480,.62)]);
       uploadFile=new File([full],'batch.jpg',{type:'image/jpeg'});
       thumbnailFile=new File([thumb],'batch-thumb.jpg',{type:'image/jpeg'});
-      if(!document.getElementById('br-multi-cam'))setBatchUploadStatus(uploadId,{preview:URL.createObjectURL(thumb)});
+      if(uploadId&&!document.getElementById('br-multi-cam'))setBatchUploadStatus(uploadId,{preview:URL.createObjectURL(thumb)});
     } catch(error) { console.warn('Không nén được ảnh nhân viên, dùng ảnh gốc',error); }
     form.append('token',STAFF_ACCESS_TOKEN);
     form.append('actor',JSON.stringify(actor));
@@ -12310,27 +12356,28 @@ async function createStaffBatchReportFromFile(file){
     form.append('image',uploadFile,'batch.jpg');
     if(imageHash) form.append('imageHash',imageHash);
     if(thumbnailFile) form.append('thumbnail',thumbnailFile,'batch-thumb.jpg');
-    updateMediaUploadStage(mediaUploadId,'Đang gửi ảnh mẻ in lên cloud…');
-    toast('Đang gửi ảnh mẻ in...');
+    if(mediaUploadId)updateMediaUploadStage(mediaUploadId,'Đang gửi ảnh mẻ in lên cloud…');
+    if(!background)toast('Đang gửi ảnh mẻ in...');
     const {data,error}=await sb.functions.invoke('staff-batch-report',{body:form});
     if(error) throw error;
     if(data?.duplicate) {
       if(!data.report?.id)throw new Error('Ảnh đang được xử lý trên server. Hãy thử lại sau.');
-      setBatchUploadStatus(uploadId,{state:'success',message:'Ảnh trùng — đã có trên hệ thống'});
-      finishMediaUpload(mediaUploadId);
-      toast('Ảnh này đã có trên hệ thống, không tải lại.');
+      if(uploadId)setBatchUploadStatus(uploadId,{state:'success',message:'Ảnh trùng — đã có trên hệ thống'});
+      if(mediaUploadId)finishMediaUpload(mediaUploadId);
+      if(!background)toast('Ảnh này đã có trên hệ thống, không tải lại.');
       return {...(data.report||{}),duplicate:true};
     }
     if(!data?.report?.id)throw new Error('Chưa nhận được xác nhận lưu ảnh từ server.');
-    setBatchUploadStatus(uploadId,{state:'success',message:'Đã gửi thành công'});
-    finishMediaUpload(mediaUploadId);
-    toast('✓ Đã gửi báo cáo về xưởng. Cảm ơn bạn!');
+    if(uploadId)setBatchUploadStatus(uploadId,{state:'success',message:'Đã gửi thành công'});
+    if(mediaUploadId)finishMediaUpload(mediaUploadId);
+    if(!background)toast('✓ Đã gửi báo cáo về xưởng. Cảm ơn bạn!');
     return data?.report || null;
   } catch(error) {
     const message=error.message||'Lỗi kết nối';
-    setBatchUploadStatus(uploadId,{state:'error',message:'Gửi thất bại'});
-    finishMediaUpload(mediaUploadId,{ok:false});
-    toast('Không thể gửi ảnh: '+message,5000);
+    if(uploadId)setBatchUploadStatus(uploadId,{state:'error',message:'Gửi thất bại'});
+    if(mediaUploadId)finishMediaUpload(mediaUploadId,{ok:false});
+    if(!background)toast('Không thể gửi ảnh: '+message,5000);
+    if(throwOnError)throw error;
   } finally { if(imageHash) brImageHashUploads.delete(imageHash); }
 }
 async function deleteStaffBatchReport(reportId){
@@ -12586,7 +12633,7 @@ function queueBatchCameraFiles(files){
   renderBatchMultiCameraTray();
 }
 async function drainBatchCameraQueue(){
-  if(brCameraQueueRunning||!cloudReady||!currentUser)return;brCameraQueueRunning=true;
+  if(brCameraQueueRunning||!cloudReady||!currentUser||navigator.onLine===false){scheduleBatchCameraRetry();return;}brCameraQueueRunning=true;
   try{
     let shot;
     while((shot=brMultiCameraShots.find(item=>item.state==='queued'))){
@@ -12602,17 +12649,23 @@ async function drainBatchCameraQueue(){
         if(shot.state==='uploaded')recordPerformanceMetric('lastPhotoUploadMs',performance.now()-shot.uploadStartedAtPerformance);
         try{await removeBatchCameraShotLocal(shot);}catch(error){console.warn('Chưa dọn được ảnh local đã gửi',error);}
         shot.file=null;
+      }else if(shot.state==='error'&&shot.localSaved){
+        shot.retryAttempts=(Number(shot.retryAttempts)||0)+1;
+        shot.nextRetryAt=Date.now()+batchCameraRetryDelay(shot.retryAttempts);
+        try{await updateBatchCameraShotLocal(shot,{retryAttempts:shot.retryAttempts,nextRetryAt:shot.nextRetryAt,lastError:String(shot.error||'Không tải được'),lastAttemptAt:new Date().toISOString()});}catch(error){console.warn('Chưa lưu được trạng thái thử lại của ảnh',error);}
       }
       // A long capture session must not retain hundreds of decoded thumbnails.
       const saved=brMultiCameraShots.filter(item=>item.state==='uploaded');
       for(const old of saved.slice(0,-12)){URL.revokeObjectURL(old.url);brMultiCameraShots.splice(brMultiCameraShots.indexOf(old),1);}
       renderBatchMultiCameraTray();
     }
-  }finally{brCameraQueueRunning=false;renderBatchMultiCameraTray();}
+  }finally{brCameraQueueRunning=false;renderBatchMultiCameraTray();scheduleBatchCameraRetry();}
 }
 function retryBatchCameraPhoto(index){
   const shot=brMultiCameraShots[index];if(!shot||shot.state!=='error')return;
-  shot.state='queued';shot.error='';renderBatchMultiCameraTray();void drainBatchCameraQueue();
+  shot.state='queued';shot.error='';shot.retryAttempts=0;shot.nextRetryAt=0;
+  void updateBatchCameraShotLocal(shot,{retryAttempts:0,nextRetryAt:0,lastError:''}).catch(error=>console.warn('Chưa cập nhật được hàng chờ ảnh',error));
+  renderBatchMultiCameraTray();void drainBatchCameraQueue();
 }
 function syncBatchCameraUploadEdge(modal){
   const edge=modal.querySelector('.br-camera-upload-edge');if(!edge)return;
@@ -12719,10 +12772,9 @@ function resetCameraSoundScope(){
   cameraSoundGeneration++;cameraSoundState={scope,items:[],selected:null,loadedAt:0,loading:null,busy:false};
   batchShutterBuffer=null;batchShutterKey='';batchShutterLoad=null;try{batchShutterSource?.stop();}catch(_){}
 }
-window.addEventListener('online',()=>{
-  brMultiCameraShots.filter(shot=>shot.state==='error'&&shot.localSaved).forEach(shot=>{shot.state='queued';shot.error='';});
-  void drainBatchCameraQueue();
-});
+window.addEventListener('online',()=>resumeBatchCameraQueue({force:true}));
+window.addEventListener('focus',()=>resumeBatchCameraQueue());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeBatchCameraQueue();});
 async function loadCameraSounds(force=false){
   resetCameraSoundScope();const state=cameraSoundState,scope=state.scope;if(!scope||!sb)return;
   if(state.loading)return state.loading;if(!force&&(Date.now()-state.loadedAt<60000||Date.now()-(state.failedAt||0)<60000))return;
@@ -12886,7 +12938,7 @@ async function uploadBatchMultiPhotoInBackground(shot){
   let ownedHash=null,reserved=false;
   try{
     if(STAFF_REPORT_MODE){
-      const report=await createStaffBatchReportFromFile(shot.file);
+      const report=await createStaffBatchReportFromFile(shot.file,{background:true,throwOnError:true});
       if(!report?.id)throw new Error('Ảnh chưa được lưu lên cloud. Hãy thử lại.');
       shot.duplicate=!!report.duplicate;
       if(shot.cancelled && report?.id) await deleteStaffBatchReport(report.id);
