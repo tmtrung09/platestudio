@@ -217,6 +217,10 @@ ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên re
    lực token nhân viên, Storage và bước ghi `batch_reports`. Không yêu cầu chụp lại hoặc
    xóa dữ liệu trình duyệt; hàng local phải tiếp tục được giữ và thử lại sau khi dịch vụ
    được sửa. Không báo đã khắc phục chỉ bằng thay đổi client khi bản deploy chưa xác nhận.
+12. Sự cố camera nhân viên ngày 2026-10-05 đã phát hành ở commit `efb62c2`: phiên staff
+   phải bỏ qua bootstrap workspace quản lý, khôi phục hàng IndexedDB và tự retry nền.
+   Khi kiểm tra lại sự cố này, đối chiếu `release.json` đúng revision trước khi yêu cầu
+   nhân viên mở lại link camera trên chính thiết bị đã chụp; không yêu cầu chụp lại ảnh.
 
 ## Nhập báo cáo bán hàng KiotViet (mandatory)
 
