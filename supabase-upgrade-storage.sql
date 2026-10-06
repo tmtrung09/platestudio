@@ -30,6 +30,10 @@ values ('plate-media', 'plate-media', true)
 on conflict (id) do update set public = true;
 
 do $$ begin
+  if not exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Plate media users read own files') then
+    create policy "Plate media users read own files" on storage.objects for select to authenticated
+      using (bucket_id='plate-media' and (storage.foldername(name))[1]=(select auth.uid())::text);
+  end if;
   if not exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Plate media users upload own files') then
     create policy "Plate media users upload own files" on storage.objects for insert to authenticated
       with check (bucket_id='plate-media' and (storage.foldername(name))[1]=auth.uid()::text);
