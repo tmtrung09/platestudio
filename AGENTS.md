@@ -62,6 +62,10 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
    neo, và `Ctrl` + `Shift` + click cộng thêm dải. Dải chọn tính theo thứ tự mục đang
    hiển thị sau lọc/sắp xếp; thao tác có phím bổ trợ không được đồng thời mở chi tiết.
    Trên thiết bị cảm ứng vẫn giữ nút/chế độ “Chọn nhiều” rõ ràng, không phụ thuộc bàn phím.
+8. Khi người dùng đang chọn nhiều mục trong một danh sách dài, thanh hiển thị số mục
+   đã chọn và các thao tác hàng loạt phải ghim trong vùng cuộn, luôn nhìn thấy khi lướt.
+   Thanh cần có nền/độ nổi đủ tách khỏi nội dung phía sau, không che header an toàn,
+   và trên mobile phải bọc nút thay vì tràn ngang.
 
 ### Mật độ thông tin, ảnh và thời gian
 

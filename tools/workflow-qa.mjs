@@ -154,6 +154,15 @@ const results = await page.evaluate(async () => {
   firstBatchCard?.dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}));
   const selectedBatchCard=document.querySelector('.batch-report-card.is-selected');
   check('Ctrl + click tự mở chế độ chọn nhiều và không mở chi tiết', batchReportMultiSelect && batchReportSelectedIds.size===1 && selectedBatchCard?.getAttribute('aria-selected')==='true' && document.querySelector('.batch-report-selection-bar')?.textContent.includes('Ctrl'), `${batchReportSelectedIds.size} mục`);
+  const batchSelectionBar=document.querySelector('.batch-report-selection-bar');
+  const batchScrollRoot=document.querySelector('.pg-content');
+  const scrollBefore=batchScrollRoot?.scrollTop||0;
+  const scrollBehaviorBefore=batchScrollRoot?.style.scrollBehavior||'';
+  const stickySpacer=document.createElement('div');stickySpacer.style.height='1100px';document.getElementById('batch-report-page')?.append(stickySpacer);
+  batchScrollRoot.style.scrollBehavior='auto';batchScrollRoot.scrollTo({top:420,behavior:'instant'});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  const batchRootRect=batchScrollRoot?.getBoundingClientRect(),batchBarRect=batchSelectionBar?.getBoundingClientRect();
+  check('Thanh thao tác chọn nhiều ghim khi lướt danh sách', batchScrollRoot.scrollTop>=400 && getComputedStyle(batchSelectionBar).position==='sticky' && batchBarRect?.top>=batchRootRect?.top+7 && batchBarRect?.top<=batchRootRect?.top+28, `${Math.round(batchBarRect?.top||0)}px / ${Math.round(batchRootRect?.top||0)}px · cuộn ${Math.round(batchScrollRoot.scrollTop)}px`);
+  stickySpacer.remove();batchScrollRoot.scrollTo({top:scrollBefore,behavior:'instant'});batchScrollRoot.style.scrollBehavior=scrollBehaviorBefore;
   const batchSelectBox=document.querySelector('.batch-report-select-box');
   const batchSelectBoxRect=batchSelectBox?.getBoundingClientRect();
   check('Ô chọn ảnh có vùng chạm tối thiểu 44px', Boolean(batchSelectBoxRect?.width>=44 && batchSelectBoxRect?.height>=44), batchSelectBoxRect ? `${Math.round(batchSelectBoxRect.width)}×${Math.round(batchSelectBoxRect.height)}px` : 'thiếu control');
