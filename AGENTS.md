@@ -166,6 +166,9 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
    ngang; vẫn giữ được số lượng, trạng thái thực và hành động đó trên desktop lẫn mobile.
 5. Khi rút gọn copy, quét cả họ component và mọi breakpoint; thêm regression check
    cho nguyên tắc mới thay vì chỉ cắt chữ ở ảnh người dùng gửi.
+6. Các control là anh em trong cùng toolbar phải dùng cùng chiều cao, bán kính bo và
+   vùng chạm; không trộn kích thước mặc định của select, button, menu ba chấm và ô tìm
+   kiếm. Khi có chip/trạng thái nền chen vào toolbar, khung bao của nó cũng theo chuẩn đó.
 
 ## Định nghĩa hoàn tất
 

@@ -140,6 +140,9 @@ const results = await page.evaluate(async () => {
   const batchAiQueue=document.querySelector('.batch-ai-queue');
   const batchAiQueueRect=batchAiQueue?.getBoundingClientRect(), batchToolbarRect=batchHeader?.querySelector('.batch-library-toolbar')?.getBoundingClientRect();
   check('Hàng chờ Gemini nằm gọn trong toolbar, không chiếm hàng riêng', Boolean(batchAiQueue?.closest('#batch-ai-queue-slot')) && !document.querySelector('#batch-report-page > .batch-ai-queue') && batchAiQueueRect.width < batchToolbarRect.width && batchAiQueue?.textContent.includes(`${queuedBatchIds.length} ảnh chờ phân tích`) && Boolean(batchAiQueue?.querySelector('button[onclick="startBatchAiQueue()"]')), `${Math.round(batchAiQueueRect?.width||0)}px / toolbar ${Math.round(batchToolbarRect?.width||0)}px`);
+  const batchToolbarControls=[batchHeader?.querySelector('.compact-expand-search'),document.getElementById('batch-report-sort'),document.getElementById('btn-batch-multi-select'),batchHeader?.querySelector('.batch-library-more summary'),batchAiQueue].filter(control=>control&&getComputedStyle(control).display!=='none');
+  const batchToolbarControlStyles=batchToolbarControls.map(control=>({height:Math.round(control.getBoundingClientRect().height),radius:getComputedStyle(control).borderTopLeftRadius}));
+  check('Control đang hiện trong toolbar báo cáo đồng bộ 44px và bo góc', batchToolbarControlStyles.length>=4 && batchToolbarControlStyles.every(style=>style.height===44&&style.radius==='14px'), batchToolbarControlStyles.map(style=>`${style.height}px/${style.radius}`).join(' · '));
   const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
   document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
   const batchSearchCompactRect = batchSearchShell?.getBoundingClientRect(), batchSearchCompactWidth = batchSearchCompactRect?.width || 0;
