@@ -2918,7 +2918,7 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
 .batch-report-card.batch-done{outline:2px solid rgba(63,195,123,.92);outline-offset:0;box-shadow:0 0 0 4px rgba(63,195,123,.11),0 14px 32px rgba(19,94,54,.24)!important}
 .batch-report-card.batch-skipped{outline:2px solid rgba(142,151,162,.72);outline-offset:0;box-shadow:0 0 0 4px rgba(142,151,162,.09),0 14px 32px rgba(0,0,0,.2)!important;filter:saturate(.62)}
 .batch-report-status-filters .status-filter-btn.skipped.active{background:#58616d!important;color:#fff!important}
-.batch-report-card.is-selected{outline-color:var(--ac)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--ac) 30%,transparent),0 16px 34px rgba(38,25,110,.3)!important}.batch-report-select-box{position:absolute;z-index:6;top:9px;right:9px;width:27px;height:27px;border:1px solid rgba(255,255,255,.7);border-radius:9px;background:rgba(14,16,27,.82);color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 5px 13px rgba(0,0,0,.3);cursor:pointer}.batch-report-select-box.is-selected{background:var(--ac);border-color:var(--ac)}.batch-report-selection-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 14px;border-color:color-mix(in srgb,var(--ac) 42%,var(--line))!important}.batch-report-selection-bar b{margin-right:auto}
+.batch-report-card.is-selected{outline-color:var(--ac)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--ac) 30%,transparent),0 16px 34px rgba(38,25,110,.3)!important}.batch-report-card:focus-visible{outline:3px solid var(--ac)!important;outline-offset:3px}.batch-report-select-box{position:absolute;z-index:6;top:9px;right:9px;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:12px;background:rgba(14,16,27,.82);color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 5px 13px rgba(0,0,0,.3);cursor:pointer}.batch-report-select-box.is-selected{background:var(--ac);border-color:var(--ac)}.batch-report-selection-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 14px;border-color:color-mix(in srgb,var(--ac) 42%,var(--line))!important}.batch-report-selection-bar b{margin-right:auto}.batch-report-selection-hint{font-size:11px;color:var(--t3);width:100%}
 .batch-report-status-chip{position:absolute;z-index:4;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:850;line-height:1;letter-spacing:.02em;text-transform:uppercase;box-shadow:0 5px 14px rgba(0,0,0,.3);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);pointer-events:none}
 .batch-report-status-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor}.batch-report-status-chip.is-pending{background:rgba(166,35,45,.88);color:#ffd0d0}.batch-report-status-chip.is-done{background:rgba(19,122,69,.9);color:#c5ffe0}.batch-report-status-chip.is-skipped{background:rgba(71,77,87,.92);color:#e2e5e9}
 .batch-report-status-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:11px 13px}.batch-report-status-filters .status-filter-label{font-size:12px;font-weight:760;color:var(--t3);margin-right:2px}.batch-report-status-filters .status-filter-btn{border:0!important;box-shadow:0 5px 13px rgba(0,0,0,.16)!important}.batch-report-status-filters .status-filter-btn.active{background:var(--ac)!important;color:#fff!important;box-shadow:0 8px 18px color-mix(in srgb,var(--ac) 36%,transparent)!important}.batch-report-status-filters .status-filter-btn.pending.active{background:#bd3b43!important}.batch-report-status-filters .status-filter-btn.done.active{background:#218551!important}
@@ -4019,7 +4019,7 @@ html:not([data-theme="light"]) .sb-nav-item:hover{transform:none!important}
 </style>
 <style>
 /* Thư viện báo cáo: một dải điều khiển nhỏ, các bộ lọc phụ chỉ mở khi cần. */
-.batch-library-toolbar{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.batch-library-toolbar .batch-sort-select{min-width:122px;max-width:156px;padding:7px 10px}.batch-library-more{position:relative}.batch-library-more summary{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--s2);color:var(--t2);font-weight:900;letter-spacing:1px;cursor:pointer;list-style:none}.batch-library-more summary::-webkit-details-marker{display:none}.batch-library-more[open] summary{background:var(--ac);color:#fff}.batch-library-more:not([open])>div{display:none}.batch-library-more[open]>div{position:absolute;z-index:120;right:0;top:calc(100% + 7px);display:grid;gap:6px;min-width:145px;padding:8px;border-radius:14px;background:var(--s);box-shadow:var(--sl)}.batch-library-more>div .btn{justify-content:flex-start;white-space:nowrap}.batch-report-status-filters{padding:7px 9px!important;margin:0 0 8px!important;border-radius:15px!important;background:var(--s2)!important;box-shadow:none!important}.batch-report-status-filters .status-filter-label{font-size:11px!important}.batch-report-status-filters .status-filter-btn{padding:6px 9px!important;font-size:11px!important;box-shadow:none!important}.batch-library-pager{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:8px 0 12px;padding:0;font-size:12px}.batch-library-pager .btn{padding:6px 9px}.batch-library-pager .inp{min-width:56px!important;padding:4px 6px!important}.batch-ai-queue{display:flex;align-items:center;gap:9px;margin:0 0 8px;padding:9px 11px;border-radius:16px;background:var(--s2);box-shadow:var(--ss)}.batch-ai-queue-copy{min-width:0;flex:1}.batch-ai-queue-copy b,.batch-ai-queue-copy small{display:block}.batch-ai-queue-copy b{font-size:12px}.batch-ai-queue-copy small{margin-top:2px;color:var(--t3);font-size:11px}.batch-ai-queue-stats{display:flex;gap:5px;flex-wrap:wrap}.batch-ai-queue-stats .badge{font-size:10px;padding:4px 6px}.batch-timeline{margin:0 0 8px;border-radius:16px;background:var(--s2);box-shadow:var(--ss)}.batch-timeline summary{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;list-style:none;font-size:12px;font-weight:760}.batch-timeline summary::-webkit-details-marker{display:none}.batch-timeline summary::after{content:'⌄';margin-left:auto;color:var(--t3);font-size:16px}.batch-timeline[open] summary::after{transform:rotate(180deg)}.batch-timeline-body{padding:0 12px 11px}.batch-timeline-body>div:first-child{height:40px!important}.batch-timeline-label{color:var(--t3);font-weight:600}.page-smart-search:has(#batch-smart-search){margin-bottom:8px!important}.page-smart-search:has(#batch-smart-search) .search-hint{display:none}@media(max-width:760px){.batch-library-toolbar{width:100%;margin:8px 0 0}.batch-library-toolbar .batch-sort-select{flex:1;max-width:none}.batch-library-toolbar>#btn-batch-multi-select{display:none}.batch-report-status-filters{gap:6px!important}.batch-report-status-filters .status-filter-label{display:none}.batch-ai-queue{align-items:flex-start;flex-wrap:wrap}.batch-ai-queue .btn{margin-left:auto}.batch-ai-queue-stats{width:100%}.batch-library-pager{justify-content:flex-start}.batch-library-pager label{margin-left:auto}}
+.batch-library-toolbar{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.batch-library-toolbar .batch-sort-select{min-width:122px;max-width:156px;padding:7px 10px}.batch-library-more{position:relative}.batch-library-more summary{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--s2);color:var(--t2);font-weight:900;letter-spacing:1px;cursor:pointer;list-style:none}.batch-library-more summary::-webkit-details-marker{display:none}.batch-library-more[open] summary{background:var(--ac);color:#fff}.batch-library-more:not([open])>div{display:none}.batch-library-more[open]>div{position:absolute;z-index:120;right:0;top:calc(100% + 7px);display:grid;gap:6px;min-width:145px;padding:8px;border-radius:14px;background:var(--s);box-shadow:var(--sl)}.batch-library-more>div .btn{justify-content:flex-start;white-space:nowrap}.batch-report-status-filters{padding:7px 9px!important;margin:0 0 8px!important;border-radius:15px!important;background:var(--s2)!important;box-shadow:none!important}.batch-report-status-filters .status-filter-label{font-size:11px!important}.batch-report-status-filters .status-filter-btn{padding:6px 9px!important;font-size:11px!important;box-shadow:none!important}.batch-library-pager{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:8px 0 12px;padding:0;font-size:12px}.batch-library-pager .btn{padding:6px 9px}.batch-library-pager .inp{min-width:56px!important;padding:4px 6px!important}.batch-ai-queue{display:flex;align-items:center;gap:9px;margin:0 0 8px;padding:9px 11px;border-radius:16px;background:var(--s2);box-shadow:var(--ss)}.batch-ai-queue-copy{min-width:0;flex:1}.batch-ai-queue-copy b,.batch-ai-queue-copy small{display:block}.batch-ai-queue-copy b{font-size:12px}.batch-ai-queue-copy small{margin-top:2px;color:var(--t3);font-size:11px}.batch-ai-queue-stats{display:flex;gap:5px;flex-wrap:wrap}.batch-ai-queue-stats .badge{font-size:10px;padding:4px 6px}.page-smart-search:has(#batch-smart-search){margin-bottom:8px!important}.page-smart-search:has(#batch-smart-search) .search-hint{display:none}@media(max-width:760px){.batch-library-toolbar{width:100%;margin:8px 0 0}.batch-library-toolbar .batch-sort-select{flex:1;max-width:none}.batch-library-toolbar>#btn-batch-multi-select{display:none}.batch-report-status-filters{gap:6px!important}.batch-report-status-filters .status-filter-label{display:none}.batch-ai-queue{align-items:flex-start;flex-wrap:wrap}.batch-ai-queue .btn{margin-left:auto}.batch-ai-queue-stats{width:100%}.batch-library-pager{justify-content:flex-start}.batch-library-pager label{margin-left:auto}}
 </style>
 <style>
 /* Native popup của select không tự kế thừa nền glass. Ép bảng chọn của Chrome
@@ -5672,11 +5672,6 @@ let batchCloudQuery = '';
 let batchServerSearchAvailable = true;
 let batchServerPagingAvailable = true;
 let batchCloudServerPaged = false;
-/* Timeline lấy theo ngày từ server, không suy ra từ các thẻ của trang đang mở. */
-let batchCloudTimeline = [];
-let batchCloudTimelineKey = '';
-let batchCloudTimelineLoading = false;
-let batchServerTimelineAvailable = true;
 /* Các màn hình vận hành cần dữ liệu độc lập với trang đang xem trong thư viện:
    toàn bộ mẻ chờ xử lý và mẻ ngoài đơn đã hoàn tất. */
 let fulfillmentCloudManualReports = [];
@@ -5760,40 +5755,6 @@ function ensureOperationalManualReports(){
   }).catch(error=>console.warn('Không tải được dữ liệu part thiếu từ cloud',error))
     .finally(()=>{if(fulfillmentOperationalRefreshWorkspace===workspace)fulfillmentOperationalRefreshWorkspace='';});
 }
-function batchReportTimelineRequestKey(){
-  return JSON.stringify({workspace:cloudWorkspaceId(),query:String(FILTERS?.batches?.search||'').trim(),status:FILTERS?.batches?.status||'all'});
-}
-async function loadBatchReportTimelineFromCloud(){
-  if(!sb || !currentUser || !batchServerTimelineAvailable) return [];
-  const key=batchReportTimelineRequestKey();
-  if(key===batchCloudTimelineKey && !batchCloudTimelineLoading) return batchCloudTimeline;
-  if(batchCloudTimelineLoading) return batchCloudTimeline;
-  batchCloudTimelineLoading=true;
-  try {
-    const {data,error}=await sb.rpc('get_batch_report_timeline',{
-      p_workspace_id:cloudWorkspaceId(),
-      p_query:String(FILTERS?.batches?.search||'').trim()||null,
-      p_status:FILTERS?.batches?.status||'all'
-    });
-    if(error){
-      if(error.code==='PGRST202' || /get_batch_report_timeline/i.test(error.message||'')) {
-        batchServerTimelineAvailable=false;
-        console.warn('Timeline server chưa có migration',error.message);
-        return [];
-      }
-      throw error;
-    }
-    /* Chỉ nhận kết quả nếu điều kiện lọc vẫn là điều kiện đã gửi. */
-    if(key!==batchReportTimelineRequestKey()) return batchCloudTimeline;
-    batchCloudTimeline=(data||[]).map(row=>({
-      day:String(row.recorded_day||'').slice(0,10),
-      count:Math.max(0,Number(row.report_count)||0)
-    })).filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.day));
-    batchCloudTimelineKey=key;
-    return batchCloudTimeline;
-  } finally { batchCloudTimelineLoading=false; }
-}
-function invalidateBatchReportTimeline(){ batchCloudTimelineKey=''; }
 /* Ảnh báo cáo được lưu theo từng bản ghi. Snapshot này chỉ dùng để nhận ra
    bản ghi nào trong trang hiện tại đã sửa, tuyệt đối không suy ra bản ghi nào
    ở trang khác đã bị xoá. */
@@ -5895,7 +5856,7 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
     if(batchServerPagingAvailable) {
       const {data,error}=await sb.rpc('get_batch_reports_page',{
         p_workspace_id:cloudWorkspaceId(), p_query:String(query||'').trim()||null,
-        p_status:FILTERS.batches.status||'all', p_recorded_day:batchTimelineDay||null,
+        p_status:FILTERS.batches.status||'all',
         p_sort:FILTERS.batches.sort||'recorded_desc', p_page:safePage, p_page_size:safeSize
       });
       if(error) {
@@ -5969,7 +5930,7 @@ async function clearStaleBatchUploadReservations(rows){
   if(error){console.warn('Chưa dọn được phiếu upload ảnh bị treo',error);return new Set();}
   const deletedIds=(deleted||[]).map(row=>row.id);
   deletedIds.forEach(id=>{batchReportCloudSnapshot.delete(id);batchReportCloudSaveQueue.delete(id);batchReportCloudDeletePending.delete(id);});
-  invalidateBatchReportTimeline();invalidateFulfillmentCloudManualReports();
+  invalidateFulfillmentCloudManualReports();
   if(deletedIds.length)console.info(`Đã dọn ${deletedIds.length} phiếu tải ảnh bị treo.`);
   return new Set(deletedIds);
 }
@@ -6376,11 +6337,10 @@ async function persistBatchReportCloud(report){
     .update({data:row.data,updated_at:row.updated_at})
     .eq('workspace_id',cloudWorkspaceId()).eq('id',report.id).select('id');
   if(updateError) throw updateError;
-  if((updated||[]).length) { rememberBatchReportCloudSnapshot([report]); invalidateBatchReportTimeline(); invalidateFulfillmentCloudManualReports(); return true; }
+  if((updated||[]).length) { rememberBatchReportCloudSnapshot([report]); invalidateFulfillmentCloudManualReports(); return true; }
   const {error:insertError}=await sb.from(CLOUD_TABLES.batchReports).insert(row);
   if(insertError) throw insertError;
   rememberBatchReportCloudSnapshot([report]);
-  invalidateBatchReportTimeline();
   invalidateFulfillmentCloudManualReports();
   return true;
   } finally { batchReportCloudSaveRunning.delete(report.id); }
@@ -6397,7 +6357,6 @@ async function releaseReservedBatchReport(id,{onlyUploading=false}={}){
   if(onlyUploading&&!(deleted||[]).length){batchReportCloudDeletePending.delete(id);return false;}
   batchReportCloudSnapshot.delete(id);
   batchReportCloudSaveQueue.delete(id);
-  invalidateBatchReportTimeline();
   invalidateFulfillmentCloudManualReports();
   batchReportCloudDeletePending.delete(id);
   return true;
@@ -13022,7 +12981,7 @@ function resumeBatchReport(id){
   brCurrentId = id; brMatchQty = {}; brUnifiedSearch=''; brUnifiedScope='all';
   if(r.status==='skipped'){
     r.status='pending';delete r.skippedAt;delete r.skippedBy;
-    sv(K.batchReports,batchReports);invalidateBatchReportTimeline();
+    sv(K.batchReports,batchReports);
     recordAudit('update','Báo cáo mẻ','Đã mở lại mẻ bị bỏ qua',{reportId:id});
   }
   /* Đối chiếu Order và mẻ ngoài kế hoạch nay dùng chung một trang kiểm tra.
@@ -13048,7 +13007,7 @@ function skipBatchReport(id){
   if(!canManageBatchReports()){toast('Chỉ quản lý mới được phân loại hoặc bỏ qua báo cáo mẻ.');return;}
   const report=stageBatchReportForEditing(id);if(!report||report.status==='done')return;
   report.status='skipped';report.skippedAt=new Date().toISOString();report.skippedBy=ensureBatchActor();
-  sv(K.batchReports,batchReports);invalidateBatchReportTimeline();
+  sv(K.batchReports,batchReports);
   recordAudit('update','Báo cáo mẻ','Đã bỏ qua mẻ chưa cần đối chiếu',{reportId:id});
   updateCamBadge();if(curPage==='batches')renderBatchReportPage();
   toast('Đã chuyển mẻ vào mục Bỏ qua. Có thể mở lại để xử lý sau.');
@@ -13270,7 +13229,7 @@ async function recoverOrphanedBatchReports(){
     try{await persistBatchReportCloud(report);restored++;}
     catch(error){failed++;console.warn('Không khôi phục được ảnh báo cáo',candidate.report_id,error);}
   }
-  batchMediaRecoveryCandidates=[];invalidateBatchReportTimeline();batchTimelineDay='';batchReportCurrentPage=1;persistBatchLibraryView();
+  batchMediaRecoveryCandidates=[];batchReportCurrentPage=1;persistBatchLibraryView();
   try{await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:1,pageSize:batchReportPageSize});}catch(error){console.warn('Không tải lại thư viện sau khi khôi phục',error);}
   closeDialog('dlg-mv');renderBatchReportPage();updateCamBadge();
   if(restored)recordAudit('restore','Báo cáo mẻ',`Khôi phục ${restored} ảnh từ Storage`,{restored,failed});
@@ -14042,14 +14001,13 @@ let batchReportPaginationMeta = {matched:0,totalPages:1};
 let batchReportMultiSelect = false;
 let batchReportSelectedIds = new Set();
 let batchReportVisibleIds = [];
-/* Mốc ngày đang xem trên timeline. Rỗng = toàn bộ lịch sử. */
-let batchTimelineDay = '';
+let batchReportSelectionAnchorId = null;
 const BATCH_LIBRARY_VIEW_STATE_VERSION = 1;
 let batchLibraryViewRestoredKey = '';
 function batchLibraryViewStorageKey(){ return `ps_batch_library_view:${cloudWorkspaceId()||currentUser?.id||'local'}`; }
 function persistBatchLibraryView(){
   try{
-    const state={version:BATCH_LIBRARY_VIEW_STATE_VERSION,page:Math.max(1,Number(batchReportCurrentPage)||1),pageSize:Math.max(1,Number(batchReportPageSize)||24),search:String(FILTERS.batches.search||''),sort:String(FILTERS.batches.sort||'recorded_desc'),status:String(FILTERS.batches.status||'all'),day:String(batchTimelineDay||'')};
+    const state={version:BATCH_LIBRARY_VIEW_STATE_VERSION,page:Math.max(1,Number(batchReportCurrentPage)||1),pageSize:Math.max(1,Number(batchReportPageSize)||24),search:String(FILTERS.batches.search||''),sort:String(FILTERS.batches.sort||'recorded_desc'),status:String(FILTERS.batches.status||'all')};
     localStorage.setItem(batchLibraryViewStorageKey(),JSON.stringify(state));
   }catch(error){ console.debug('Không lưu được vị trí thư viện báo cáo',error); }
 }
@@ -14065,53 +14023,92 @@ function restoreBatchLibraryView(){
     FILTERS.batches.search=String(state.search||'');
     FILTERS.batches.sort=allowedSort.has(state.sort)?state.sort:'recorded_desc';
     FILTERS.batches.status=allowedStatus.has(state.status)?state.status:'all';
-    batchTimelineDay=/^\d{4}-\d{2}-\d{2}$/.test(String(state.day||''))?state.day:'';
   }catch(error){ console.debug('Không khôi phục được vị trí thư viện báo cáo',error); }
 }
+/* Ngày ghi nhận vẫn là dữ liệu nghiệp vụ của từng báo cáo. Hai helper này chỉ
+   dùng để hiển thị/chỉnh ngày trong chi tiết, không tạo bộ lọc thư viện. */
 function batchReportDayKey(value){
   const date=new Date(value);
   if(Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
-function batchDayNumber(day){ return Math.floor(Date.parse(`${day}T00:00:00Z`)/86400000); }
 function batchDayLabel(day){
-  if(!day) return 'Toàn bộ thời gian';
+  if(!day) return '';
   const [year,month,date]=day.split('-');
   return `${date}/${month}/${year}`;
-}
-function previewBatchTimelineDay(offset,minDay){
-  const label=document.getElementById('batch-timeline-date');
-  if(label) label.textContent=batchDayLabel(new Date((Number(minDay)+Number(offset))*86400000).toISOString().slice(0,10));
-}
-function setBatchTimelineDayByOffset(offset,minDay){
-  setBatchTimelineDay(new Date((Number(minDay)+Number(offset))*86400000).toISOString().slice(0,10));
-}
-function setBatchTimelineDay(day){
-  batchTimelineDay=day||'';
-  batchReportCurrentPage=1;
-  persistBatchLibraryView();
-  refreshBatchReportServerPage();
-}
-function clearBatchTimelineDay(){
-  batchTimelineDay='';
-  batchReportCurrentPage=1;
-  persistBatchLibraryView();
-  refreshBatchReportServerPage();
 }
 function toggleBatchReportMultiSelect(){
   if(!canEditBatchReports()){toast('Bạn chưa được cấp quyền chỉnh sửa thông tin ảnh báo cáo mẻ.');return;}
   batchReportMultiSelect=!batchReportMultiSelect;
-  if(!batchReportMultiSelect) batchReportSelectedIds.clear();
+  if(!batchReportMultiSelect){batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;}
   renderBatchReportPage();
+}
+function resolveWindowsSelection(orderedIds,selectedIds,anchorId,targetId,{ctrlKey=false,shiftKey=false,toggleWithoutModifier=false}={}){
+  const ids=Array.isArray(orderedIds)?orderedIds:[];
+  const next=new Set(selectedIds||[]);
+  const targetIndex=ids.indexOf(targetId),anchorIndex=ids.indexOf(anchorId);
+  if(shiftKey&&targetIndex>=0&&anchorIndex>=0){
+    if(!ctrlKey)next.clear();
+    const start=Math.min(anchorIndex,targetIndex),end=Math.max(anchorIndex,targetIndex);
+    ids.slice(start,end+1).forEach(id=>next.add(id));
+    return {selectedIds:next,anchorId};
+  }
+  if(ctrlKey||toggleWithoutModifier){
+    if(next.has(targetId))next.delete(targetId);else next.add(targetId);
+  }else{
+    next.clear();next.add(targetId);
+  }
+  return {selectedIds:next,anchorId:targetId};
+}
+function batchReportSelectionModifiers(event){return {ctrlKey:Boolean(event?.ctrlKey||event?.metaKey),shiftKey:Boolean(event?.shiftKey)};}
+function syncBatchReportSelectionUI(focusId=null){
+  const root=document.getElementById('batch-report-page');if(!root)return;
+  root.querySelectorAll('.batch-report-card').forEach(card=>{
+    const selected=batchReportSelectedIds.has(card.dataset.batchReportId);
+    card.classList.toggle('is-selected',selected);card.setAttribute('aria-selected',String(selected));
+    const control=card.querySelector('.batch-report-select-box');
+    if(control){control.classList.toggle('is-selected',selected);control.textContent=selected?'✓':'';control.setAttribute('aria-label',`${selected?'Bỏ chọn':'Chọn'} ảnh báo cáo`);}
+  });
+  const selectedReports=batchReportVisibleIds.map(id=>batchReports.find(report=>report.id===id)).filter(report=>report&&batchReportSelectedIds.has(report.id));
+  const selectedAiCount=selectedReports.filter(report=>report.image&&!report.aiAnalysis?.generatedAt&&report.status!=='uploading').length;
+  const bar=root.querySelector('.batch-report-selection-bar');
+  if(bar){
+    const count=bar.querySelector('b');if(count)count.textContent=`Đã chọn ${selectedReports.length}/${batchReportVisibleIds.length} ảnh`;
+    const view=bar.querySelector('[data-selection-action="view"]');if(view)view.disabled=selectedReports.length!==1;
+    const ai=bar.querySelector('[data-selection-action="ai"]');if(ai){ai.disabled=!selectedAiCount;ai.textContent=`✦ Phân tích AI (${selectedAiCount})`;}
+    const remove=bar.querySelector('[data-selection-action="delete"]');if(remove){remove.disabled=!selectedReports.length;remove.textContent=`Xoá (${selectedReports.length})`;}
+  }
+  if(focusId)root.querySelector(`.batch-report-card[data-batch-report-id="${CSS.escape(focusId)}"]`)?.focus({preventScroll:true});
+}
+function applyBatchReportSelection(id,event,{toggleWithoutModifier=false}={}){
+  const modifiers=batchReportSelectionModifiers(event);
+  if(!canEditBatchReports())return false;
+  if(!batchReportMultiSelect&&!modifiers.ctrlKey&&!modifiers.shiftKey)return false;
+  const enteringMultiSelect=!batchReportMultiSelect;
+  batchReportMultiSelect=true;
+  const result=resolveWindowsSelection(batchReportVisibleIds,batchReportSelectedIds,batchReportSelectionAnchorId,id,{...modifiers,toggleWithoutModifier});
+  batchReportSelectedIds=result.selectedIds;batchReportSelectionAnchorId=result.anchorId;
+  const focusCard=event?.currentTarget?.classList?.contains('batch-report-card');
+  if(enteringMultiSelect)renderBatchReportPage();
+  syncBatchReportSelectionUI(focusCard?id:null);
+  return true;
 }
 function toggleBatchReportSelection(id,event){
   event?.preventDefault();event?.stopPropagation();
   if(!batchReportMultiSelect)return;
-  if(batchReportSelectedIds.has(id))batchReportSelectedIds.delete(id);else batchReportSelectedIds.add(id);
-  renderBatchReportPage();
+  applyBatchReportSelection(id,event,{toggleWithoutModifier:!event?.ctrlKey&&!event?.metaKey&&!event?.shiftKey});
 }
-function clearBatchReportSelection(){batchReportSelectedIds.clear();renderBatchReportPage();}
-function selectAllVisibleBatchReports(){batchReportVisibleIds.forEach(id=>batchReportSelectedIds.add(id));renderBatchReportPage();}
+function handleBatchReportCardClick(id,event){
+  if(applyBatchReportSelection(id,event,{toggleWithoutModifier:batchReportMultiSelect})){event?.preventDefault();event?.stopPropagation();return;}
+  viewBatchReport(id);
+}
+function handleBatchReportCardKeydown(id,event){
+  if(event?.target!==event?.currentTarget)return;
+  if(!['Enter',' '].includes(event?.key))return;
+  event.preventDefault();handleBatchReportCardClick(id,event);
+}
+function clearBatchReportSelection(){batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;syncBatchReportSelectionUI();}
+function selectAllVisibleBatchReports(){batchReportVisibleIds.forEach(id=>batchReportSelectedIds.add(id));syncBatchReportSelectionUI();}
 function selectedBatchReportsOnPage(){return batchReports.filter(report=>batchReportSelectedIds.has(report.id));}
 function viewSelectedBatchReport(){const [report]=selectedBatchReportsOnPage();if(report)viewBatchReport(report.id);}
 function queueSelectedBatchReportsForAi(){
@@ -14134,6 +14131,7 @@ async function deleteSelectedBatchReports(){
   trashItems=[...removed.map(report=>({id:uid(),type:'batch-report',label:'Ảnh báo cáo mẻ in',data:report,deletedAt:new Date().toISOString(),deletedBy:getBatchActor?.()||null})),...(Array.isArray(trashItems)?trashItems:[]).filter(item=>!removedIds.has(item.data?.id))];
   sv(K.batchReports,batchReports);saveTrashItems();
   removedIds.forEach(id=>batchReportSelectedIds.delete(id));
+  if(removedIds.has(batchReportSelectionAnchorId))batchReportSelectionAnchorId=null;
   recordAudit('delete','Báo cáo mẻ',`Chuyển ${removed.length} ảnh vào thùng rác`,{reportIds:[...removedIds]});
   updateCamBadge();renderBatchReportPage();renderBatchHub();
   toast(removed.length===reports.length?`Đã chuyển ${removed.length} ảnh vào thùng rác.`:`Đã chuyển ${removed.length}/${reports.length} ảnh vào thùng rác.`);
@@ -14202,7 +14200,7 @@ async function goBatchReportPage(page){
   if(wanted===batchReportCurrentPage) return;
   batchReportPageLoading=true;
   try{
-    batchReportSelectedIds.clear();
+    batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;
     batchReportCurrentPage=wanted;
     persistBatchLibraryView();
     if(currentUser && sb) {
@@ -14221,8 +14219,8 @@ async function goBatchReportPage(page){
   }
 }
 function refreshBatchReportServerPage(){
+  batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;
   if(!currentUser || !sb) { renderBatchReportPage(); return; }
-  batchReportSelectedIds.clear();
   const page=batchReportCurrentPage, query=(FILTERS.batches.search||'').trim();
   setSyncState('Đang tải báo cáo...');
   loadBatchReportsFromCloud({reset:true,query,page,pageSize:batchReportPageSize})
@@ -14344,7 +14342,7 @@ function renderBatchReportPage(){
   const el=document.getElementById('batch-report-page'); if(!el) return;
   const canEdit=canEditBatchReports();
   const canDescribe=canDescribeBatchReports();
-  if(!canEdit&&batchReportMultiSelect){batchReportMultiSelect=false;batchReportSelectedIds.clear();}
+  if(!canEdit&&batchReportMultiSelect){batchReportMultiSelect=false;batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;}
   /* Khi RPC đã sẵn sàng, batchReports chính là một trang đã được lọc + sắp
      xếp ở Supabase. Không lọc hay cắt lần nữa ở browser. */
   const serverPaged=batchCloudServerPaged && !!currentUser && !!sb;
@@ -14362,7 +14360,7 @@ function renderBatchReportPage(){
   }
   if(!list.length){
     batchReportVisibleIds=[];
-    const filtered=serverPaged && ((FILTERS.batches.search||'').trim() || FILTERS.batches.status!=='all' || batchTimelineDay);
+    const filtered=serverPaged && ((FILTERS.batches.search||'').trim() || FILTERS.batches.status!=='all');
     el.innerHTML=filtered?`<div class="empty">Không có báo cáo phù hợp.</div>`:`<div class="empty"><div style="font-size:28px;margin-bottom:8px">📷</div>Chưa có báo cáo mẻ in.</div>`;
     return;
   }
@@ -14385,7 +14383,7 @@ function renderBatchReportPage(){
      “Tất cả”. Lọc tại client vẫn cần quy tắc này khi dùng cache hoặc khi cloud
      chưa bật phân trang server. */
   const statusMatched=serverPaged ? textMatched : (reportStatus==='pending' ? textMatched.filter(r=>r.status!=='done'&&r.status!=='skipped') : reportStatus==='done' ? textMatched.filter(r=>r.status==='done') : reportStatus==='skipped' ? textMatched.filter(r=>r.status==='skipped') : textMatched.filter(r=>r.status!=='skipped'));
-  const matched=serverPaged ? statusMatched : (batchTimelineDay ? statusMatched.filter(r=>batchReportDayKey(r.createdAt)===batchTimelineDay) : statusMatched);
+  const matched=statusMatched;
   const pending=matched.filter(r=>r.status!=='done'&&r.status!=='skipped');
   const completed=matched.filter(r=>r.status==='done');
   const skipped=matched.filter(r=>r.status==='skipped');
@@ -14417,12 +14415,12 @@ function renderBatchReportPage(){
       ? `<img src="${esc(thumb||fullImage)}" data-full-src="${esc(fullImage)}" loading="${index<2?'eager':'lazy'}" decoding="async" fetchpriority="${index<2?'high':'low'}" alt="Ảnh báo cáo mẻ in" onload="applyBatchReportSmartFocus(this)" onerror="batchReportImageFallback(this)"/>`
       : '';
     const selectionControl=batchReportMultiSelect?`<button type="button" class="batch-report-select-box ${selected?'is-selected':''}" aria-label="${selected?'Bỏ chọn':'Chọn'} ảnh báo cáo" onclick="toggleBatchReportSelection('${r.id}',event)">${selected?'✓':''}</button>`:'';
-    const cardAction=batchReportMultiSelect?`toggleBatchReportSelection('${r.id}',event)`:`viewBatchReport('${r.id}')`;
+    const cardAction=`handleBatchReportCardClick('${r.id}',event)`;
     const overlayActions=batchReportMultiSelect?'':`<div class="batch-report-overlay-actions" onclick="event.stopPropagation()">${canEdit?`<button class="btn btn-xs" onclick="${done?`viewBatchReport('${r.id}')`:`resumeBatchReport('${r.id}')`}">${done?'Xem chi tiết':isSkipped?'Xử lý lại':'Tiếp tục xử lý'}</button>${!done&&!isSkipped?`<button class="btn btn-ghost btn-xs" onclick="skipBatchReport('${r.id}')">Bỏ qua</button>`:''}<button class="btn btn-danger btn-xs" onclick="deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá</button>`:canDescribe&&!done&&!isSkipped?`<button class="btn btn-xs" onclick="declareBatchReportContents('${r.id}')">Khai báo đã in</button>`:`<button class="btn btn-xs" onclick="viewBatchReport('${r.id}')">Xem chi tiết</button>`}</div>`;
     const missingMediaAction=!hasMedia&&canEdit&&!uploading?`<div class="batch-report-missing-action"><button class="btn btn-ac btn-xs" onclick="event.stopPropagation();recoverMissingBatchReportMedia('${r.id}')">Tìm ảnh trên cloud</button></div>`:'';
     const stateLabel=uploading?'Đang tải ảnh':done?'Đã xử lý':isSkipped?'Bỏ qua':hasMedia?'Chưa xử lý':'Thiếu ảnh';
     const stateMeta=uploading?'Đang tải ảnh lên cloud':!hasMedia?'Bản ghi không còn nguồn ảnh':done?`Đã cập nhật ${applied} part`:isSkipped?'Đã bỏ qua, chưa đối chiếu':'Chưa đối chiếu tiến độ';
-    return `<div class="card batch-report-card ${done?'batch-done':isSkipped?'batch-skipped':'batch-pending'} ${aiAssisted?'ai-assisted':''} ${selected?'is-selected':''}" data-batch-report-id="${esc(r.id)}" style="padding:0;overflow:hidden;cursor:pointer" onclick="${cardAction}">
+    return `<div class="card batch-report-card ${done?'batch-done':isSkipped?'batch-skipped':'batch-pending'} ${aiAssisted?'ai-assisted':''} ${selected?'is-selected':''}" data-batch-report-id="${esc(r.id)}" ${batchReportMultiSelect?`role="option" aria-selected="${selected}"`:'role="button"'} tabindex="0" style="padding:0;overflow:hidden;cursor:pointer" onclick="${cardAction}" onkeydown="handleBatchReportCardKeydown('${r.id}',event)">
       <div class="batch-report-media${media?'':' is-missing'}">${media}
         ${selectionControl}
         <span class="batch-report-status-chip ${done?'is-done':isSkipped?'is-skipped':'is-pending'}">${stateLabel}</span>${missingMediaAction}
@@ -14433,7 +14431,7 @@ function renderBatchReportPage(){
       </div></div>`;
   };
   const section=(title,items,accent,empty)=>`<section class="batch-report-library" aria-label="${esc(title)}" style="margin-bottom:24px">
-    ${items.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">${items.map(reportCard).join('')}</div>`:`<div style="padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--t3);font-size:13px">${empty}</div>`}
+    ${items.length?`<div ${batchReportMultiSelect?'role="listbox" aria-multiselectable="true"':''} style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">${items.map(reportCard).join('')}</div>`:`<div style="padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--t3);font-size:13px">${empty}</div>`}
   </section>`;
   const searchEl=document.getElementById('batch-smart-search'); if(searchEl && searchEl.value!==FILTERS.batches.search) searchEl.value=FILTERS.batches.search;
   const sortEl=document.getElementById('batch-report-sort'); if(sortEl && sortEl.value!==(FILTERS.batches.sort||'recorded_desc')) sortEl.value=FILTERS.batches.sort||'recorded_desc';
@@ -14447,50 +14445,6 @@ function renderBatchReportPage(){
   const libraryTitle=serverPaged
     ? `Lịch sử báo cáo · ${batchCloudTotal} mẻ khớp điều kiện${reportStatus!=='all'?` · ${reportStatus==='done'?'Đã xử lý':reportStatus==='skipped'?'Bỏ qua':'Chưa xử lý'}`:''}`
     : reportStatus==='skipped' ? `Báo cáo đã bỏ qua · ${skipped.length} mẻ` : `Lịch sử báo cáo · ${pending.length} chờ xử lý · ${completed.length} đã xử lý`;
-  const pageDayKeys=statusMatched.map(r=>batchReportDayKey(r.createdAt)).filter(Boolean).sort();
-  const timelineRequestKey=batchReportTimelineRequestKey();
-  const hasServerTimeline=serverPaged && batchServerTimelineAvailable && batchCloudTimelineKey===timelineRequestKey;
-  if(serverPaged && batchServerTimelineAvailable && !hasServerTimeline && !batchCloudTimelineLoading){
-    loadBatchReportTimelineFromCloud().then(()=>{ if(curPage==='batches') renderBatchReportPage(); }).catch(error=>console.warn('Không tải được timeline báo cáo từ server',error));
-  }
-  const pageDayCounts={}; pageDayKeys.forEach(day=>{pageDayCounts[day]=(pageDayCounts[day]||0)+1;});
-  const timelineRows=hasServerTimeline
-    ? batchCloudTimeline.filter(row=>row.day)
-    : Object.entries(pageDayCounts).map(([day,count])=>({day,count}));
-  const dayCounts=Object.fromEntries(timelineRows.map(row=>[row.day,row.count]));
-  const uniqueDays=timelineRows.map(row=>row.day).sort();
-  const earliestDay=uniqueDays[0], latestDay=uniqueDays.at(-1);
-  const minDay=earliestDay?batchDayNumber(earliestDay):0;
-  const maxDay=latestDay?batchDayNumber(latestDay):0;
-  /* Chỉ xóa ngày đã chọn khi server xác nhận ngày đó không còn trong tập lọc.
-     Không suy luận từ trang hiện tại vì trang khác vẫn có thể chứa ngày đó. */
-  if(batchTimelineDay && hasServerTimeline && !dayCounts[batchTimelineDay]) batchTimelineDay='';
-  const timelineOffset=batchTimelineDay?Math.max(0,batchDayNumber(batchTimelineDay)-minDay):Math.max(0,maxDay-minDay);
-  const timelineTotal=timelineRows.reduce((total,row)=>total+row.count,0);
-  const selectedDayCount=batchTimelineDay?(dayCounts[batchTimelineDay]||0):(hasServerTimeline?timelineTotal:statusMatched.length);
-  /* Không dồn hàng trăm nhãn vào một dòng. Các mốc đại diện vẫn phủ đều cả
-     lịch sử, còn mốc nào hiện ra cũng là ngày có báo cáo thật để bấm nhảy tới. */
-  const tickLimit=12;
-  const tickDays=uniqueDays.length<=tickLimit ? uniqueDays : [...new Set(Array.from({length:tickLimit},(_,index)=>uniqueDays[Math.round(index*(uniqueDays.length-1)/(tickLimit-1))]))];
-  const daySpan=Math.max(1,maxDay-minDay);
-  const timelineMarks=tickDays.map(day=>{
-    const left=maxDay===minDay?50:((batchDayNumber(day)-minDay)/daySpan)*100;
-    const active=batchTimelineDay===day;
-    return `<button type="button" title="${dayCounts[day]} mẻ ngày ${batchDayLabel(day)}" onclick="setBatchTimelineDay('${day}')" style="position:absolute;left:${left}%;top:0;transform:translateX(-50%);z-index:2;border:0;background:transparent;color:${active?'var(--ac)':'var(--t3)'};font:inherit;font-size:10px;font-weight:${active?'800':'650'};line-height:1;white-space:nowrap;cursor:pointer;padding:0 2px 16px">
-      ${batchDayLabel(day)}<span style="display:block;width:7px;height:7px;border-radius:50%;background:${active?'var(--ac)':'var(--t3)'};margin:5px auto 0;box-shadow:0 0 0 3px var(--s)"></span>
-    </button>`;
-  }).join('');
-  /* Bộ lọc ngày là điều khiển chính, không giấu trong trạng thái đóng mặc định. */
-  const timeline=earliestDay?`<details class="batch-timeline" open><summary>⌁ Lọc theo ngày <span id="batch-timeline-date" class="badge" style="background:var(--acb);color:var(--ac)">${batchTimelineDay?batchDayLabel(batchTimelineDay):'Tất cả'}</span><span class="batch-timeline-label">${batchTimelineDay?`${selectedDayCount} mẻ`:`${selectedDayCount} mẻ`}</span></summary><div class="batch-timeline-body">
-    <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:end;gap:10px">
-      <span style="font-size:11px;color:var(--t3);white-space:nowrap">${batchDayLabel(earliestDay)}</span>
-      <div style="position:relative;height:47px;min-width:0">
-        <div aria-label="Các ngày có báo cáo" style="position:absolute;inset:0 7px auto 7px;height:28px">${timelineMarks}</div>
-        <input aria-label="Chọn ngày báo cáo" type="range" min="0" max="${Math.max(0,maxDay-minDay)}" value="${timelineOffset}" step="1" style="position:absolute;left:0;right:0;bottom:0;width:100%;margin:0;accent-color:var(--ac);cursor:grab" oninput="previewBatchTimelineDay(this.value,${minDay})" onchange="setBatchTimelineDayByOffset(this.value,${minDay})" />
-      </div>
-      <span style="font-size:11px;color:var(--t3);white-space:nowrap">${batchDayLabel(latestDay)}</span>
-    </div>
-    ${batchTimelineDay?`<button class="btn btn-ghost btn-xs" style="margin-top:7px" onclick="clearBatchTimelineDay()">Bỏ lọc ngày</button>`:''}</div></details>`:'';
   const totalPending=textMatched.filter(r=>r.status!=='done'&&r.status!=='skipped').length;
   const totalCompleted=textMatched.filter(r=>r.status==='done').length;
   const totalSkipped=textMatched.filter(r=>r.status==='skipped').length;
@@ -14502,9 +14456,9 @@ function renderBatchReportPage(){
   </div>`;
   const selectedReports=visible.filter(report=>batchReportSelectedIds.has(report.id));
   const selectedAiCount=selectedReports.filter(report=>report.image&&!report.aiAnalysis?.generatedAt&&report.status!=='uploading').length;
-  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()">✦ Phân tích AI (${selectedAiCount})</button><button class="btn btn-danger btn-xs" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button></div>`:'';
+  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" data-selection-action="view" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" data-selection-action="ai" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()">✦ Phân tích AI (${selectedAiCount})</button><button class="btn btn-danger btn-xs" data-selection-action="delete" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button><span class="batch-report-selection-hint">Ctrl: chọn từng mục · Shift: chọn một dải · Ctrl + Shift: cộng thêm dải</span></div>`:'';
   const queuePanel=renderBatchAiQueuePanel();
-  el.innerHTML=queuePanel+timeline+statusToolbar+(query && !matched.length ? `<div class="empty">Không tìm thấy báo cáo nào khớp “${esc(FILTERS.batches.search)}”.</div>` :
+  el.innerHTML=queuePanel+statusToolbar+(query && !matched.length ? `<div class="empty">Không tìm thấy báo cáo nào khớp “${esc(FILTERS.batches.search)}”.</div>` :
     selectionBar+paginationTop+section(libraryTitle,visible,'var(--ac)','Chưa có báo cáo nào.')+paginationBottom);
   initBatchReportCardFocus(el);
 }

@@ -105,7 +105,7 @@ try{
       batchReports=[];batchServerPagingAvailable=true;
       await loadBatchReportsFromCloud({reset:true});
       check('fresh server reload retains original photo date and media',batchReports.some(r=>r.id===shot.id&&r.createdAt===old&&r.image));
-      cloudReady=false;batchCloudServerPaged=false;FILTERS.batches={...FILTERS.batches,status:'all',search:'',sort:'recorded_desc'};batchTimelineDay='';batchReportCurrentPage=1;
+      cloudReady=false;batchCloudServerPaged=false;FILTERS.batches={...FILTERS.batches,status:'all',search:'',sort:'recorded_desc'};batchReportCurrentPage=1;
       renderBatchReportPage();
       check('saved uploads appear in the normal report list',batchReportVisibleIds.includes(shot.id)&&document.querySelectorAll('.batch-report-media>img').length>0);
       check('uploaded originals exist independently of thumbnails',files.size>=2);

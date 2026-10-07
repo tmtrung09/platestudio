@@ -132,6 +132,7 @@ const results = await page.evaluate(async () => {
   const batchHeader = document.querySelector('#page-batches .batch-library-header');
   const batchRedundantHeading = batchHeader?.querySelector('.catalog-redundant-heading');
   check('Thư viện mẻ bỏ tiêu đề lặp, nút chụp lặp và nhãn lọc dư thừa', getComputedStyle(batchRedundantHeading).display === 'none' && !batchHeader?.querySelector('button[onclick="openBatchReportHub()"]') && !/Lọc trạng thái/.test(document.querySelector('.batch-report-status-filters')?.textContent || ''), batchHeader?.textContent.trim() || 'thiếu toolbar');
+  check('Thư viện mẻ đã loại bỏ hoàn toàn bộ lọc theo ngày', !document.querySelector('.batch-timeline, #batch-timeline-date, input[aria-label="Chọn ngày báo cáo"]') && typeof batchTimelineDay === 'undefined' && !loadBatchReportsFromCloud.toString().includes('p_recorded_day'), document.querySelector('#batch-report-page')?.textContent.includes('Lọc theo ngày') ? 'vẫn còn giao diện lọc ngày' : 'không còn timeline hoặc điều kiện ngày');
   check('Tìm báo cáo thu gọn trong toolbar thay vì chiếm một hàng', Boolean(batchHeader?.querySelector('.batch-library-toolbar .compact-expand-search')) && !document.querySelector('#page-batches > .page-smart-search'), batchHeader?.querySelector('.compact-expand-search')?.className || 'thiếu search');
   const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
   document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
@@ -142,6 +143,21 @@ const results = await page.evaluate(async () => {
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
   const batchPreviewStyle = batchPreviewImage ? getComputedStyle(batchPreviewImage) : null;
   check('Ảnh thẻ báo cáo mẻ giữ crop thống nhất và canh tâm', Boolean(batchPreviewStyle && batchPreviewStyle.objectFit === 'cover' && batchPreviewStyle.objectPosition === '50% 50%'), batchPreviewStyle ? `${batchPreviewStyle.objectFit} · ${batchPreviewStyle.objectPosition}` : 'không có ảnh');
+  const ctrlSelection=resolveWindowsSelection(['a','b','c','d'],new Set(),null,'a',{ctrlKey:true});
+  const secondCtrlSelection=resolveWindowsSelection(['a','b','c','d'],ctrlSelection.selectedIds,ctrlSelection.anchorId,'c',{ctrlKey:true});
+  const shiftSelection=resolveWindowsSelection(['a','b','c','d'],secondCtrlSelection.selectedIds,secondCtrlSelection.anchorId,'d',{shiftKey:true});
+  const additiveRange=resolveWindowsSelection(['a','b','c','d'],new Set(['a']),'c','d',{ctrlKey:true,shiftKey:true});
+  check('Ctrl bật tắt từng báo cáo, Shift chọn dải theo thứ tự đang hiển thị', JSON.stringify([...secondCtrlSelection.selectedIds])===JSON.stringify(['a','c']) && JSON.stringify([...shiftSelection.selectedIds])===JSON.stringify(['c','d']), `${[...secondCtrlSelection.selectedIds].join(',')} → ${[...shiftSelection.selectedIds].join(',')}`);
+  check('Ctrl + Shift cộng dải vào lựa chọn hiện có', JSON.stringify([...additiveRange.selectedIds])===JSON.stringify(['a','c','d']), [...additiveRange.selectedIds].join(','));
+  batchReportMultiSelect=false;batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;renderBatchReportPage();
+  const firstBatchCard=document.querySelector('.batch-report-card');
+  firstBatchCard?.dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}));
+  const selectedBatchCard=document.querySelector('.batch-report-card.is-selected');
+  check('Ctrl + click tự mở chế độ chọn nhiều và không mở chi tiết', batchReportMultiSelect && batchReportSelectedIds.size===1 && selectedBatchCard?.getAttribute('aria-selected')==='true' && document.querySelector('.batch-report-selection-bar')?.textContent.includes('Ctrl'), `${batchReportSelectedIds.size} mục`);
+  const batchSelectBox=document.querySelector('.batch-report-select-box');
+  const batchSelectBoxRect=batchSelectBox?.getBoundingClientRect();
+  check('Ô chọn ảnh có vùng chạm tối thiểu 44px', Boolean(batchSelectBoxRect?.width>=44 && batchSelectBoxRect?.height>=44), batchSelectBoxRect ? `${Math.round(batchSelectBoxRect.width)}×${Math.round(batchSelectBoxRect.height)}px` : 'thiếu control');
+  toggleBatchReportMultiSelect();
   const focusHost = document.createElement('div');
   focusHost.className = 'batch-report-media'; focusHost.style.cssText = 'position:fixed;left:-1000px;top:0;width:240px;height:180px';
   const focusImage = document.createElement('img');
@@ -538,17 +554,18 @@ const results = await page.evaluate(async () => {
   check('Sửa báo cáo hoàn tác riêng số lượng đã đối chiếu', variantPitems[2].qtyDone === 0 && variantPitems[0].qtyDone === 0 && variantPitems[1].qtyDone === 0 && reversibleReport.manualItems[0]?.variantId === 'qa-v10' && reversibleReport.external, `${variantPitems.map(item=>item.qtyDone).join('/')} · ${reversibleReport.manualItems[0]?.variantId||''}`);
 
   /* Reload phải giữ đúng vị trí thư viện báo cáo và toàn bộ điều kiện lọc. */
-  const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status, day: batchTimelineDay };
+  const previousBatchView = { page: batchReportCurrentPage, pageSize: batchReportPageSize, search: FILTERS.batches.search, sort: FILTERS.batches.sort, status: FILTERS.batches.status };
   Object.assign(FILTERS.batches, { search: 'qa giữ bộ lọc', sort: 'pending_first', status: 'pending' });
-  batchReportCurrentPage = 4; batchReportPageSize = 36; batchTimelineDay = '2026-09-08';
+  batchReportCurrentPage = 4; batchReportPageSize = 36;
   persistBatchLibraryView();
+  const persistedBatchView=JSON.parse(localStorage.getItem(batchLibraryViewStorageKey())||'{}');
   Object.assign(FILTERS.batches, { search: '', sort: 'recorded_desc', status: 'all' });
-  batchReportCurrentPage = 1; batchReportPageSize = 24; batchTimelineDay = ''; batchLibraryViewRestoredKey = '';
+  batchReportCurrentPage = 1; batchReportPageSize = 24; batchLibraryViewRestoredKey = '';
   restoreBatchLibraryView();
   check('Tải lại giữ trang đang xem của báo cáo mẻ', batchReportCurrentPage === 4 && batchReportPageSize === 36, `${batchReportCurrentPage} · ${batchReportPageSize}/trang`);
-  check('Tải lại giữ đủ bộ lọc báo cáo mẻ', FILTERS.batches.search === 'qa giữ bộ lọc' && FILTERS.batches.sort === 'pending_first' && FILTERS.batches.status === 'pending' && batchTimelineDay === '2026-09-08', JSON.stringify({...FILTERS.batches, day:batchTimelineDay}));
+  check('Tải lại chỉ giữ tìm kiếm, sắp xếp và trạng thái, không lưu ngày', FILTERS.batches.search === 'qa giữ bộ lọc' && FILTERS.batches.sort === 'pending_first' && FILTERS.batches.status === 'pending' && !Object.hasOwn(persistedBatchView,'day'), JSON.stringify(persistedBatchView));
   Object.assign(FILTERS.batches, { search: previousBatchView.search, sort: previousBatchView.sort, status: previousBatchView.status });
-  batchReportCurrentPage = previousBatchView.page; batchReportPageSize = previousBatchView.pageSize; batchTimelineDay = previousBatchView.day;
+  batchReportCurrentPage = previousBatchView.page; batchReportPageSize = previousBatchView.pageSize;
 
   /* A confirmed receipt is included to exercise the populated mobile section,
      not just the empty-state layout. */

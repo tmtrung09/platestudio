@@ -57,6 +57,11 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
 6. Kiểm tra tạo → sửa → lưu → tải lại → đọc từ cloud, không chỉ trạng thái vừa tạo.
    Tách thời điểm nghiệp vụ (ngày chụp/in) khỏi thời điểm upload/sync; xử lý cạnh tranh
    giữa thiết bị mà không ghi đè hoặc dọn nhầm dữ liệu đang sử dụng.
+7. Danh sách hoặc lưới có chọn nhiều trên desktop phải hỗ trợ quy ước quen thuộc của
+   Windows: `Ctrl` + click bật/tắt từng mục, `Shift` + click chọn dải liên tiếp từ mục
+   neo, và `Ctrl` + `Shift` + click cộng thêm dải. Dải chọn tính theo thứ tự mục đang
+   hiển thị sau lọc/sắp xếp; thao tác có phím bổ trợ không được đồng thời mở chi tiết.
+   Trên thiết bị cảm ứng vẫn giữ nút/chế độ “Chọn nhiều” rõ ràng, không phụ thuộc bàn phím.
 
 ### Mật độ thông tin, ảnh và thời gian
 
@@ -82,6 +87,10 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
    khoảng 7/30 ngày tính cả hôm nay). Biểu đồ nhiều ngày phải cho phép cuộn tới mọi
    ngày trong khoảng đã chọn, mở ở đoạn mới nhất và cung cấp chuyển động cột tôn
    trọng cài đặt giảm chuyển động của thiết bị.
+6. Riêng Thư viện báo cáo mẻ tạm thời không có bộ lọc hoặc timeline theo ngày vì
+   phiên bản hiện tại không ổn định. Giữ tìm kiếm, lọc trạng thái và sắp xếp; không
+   khôi phục ngày cũ từ localStorage hoặc gửi điều kiện ngày lên cloud. Chỉ đưa lọc
+   ngày trở lại khi có một thiết kế mới được người dùng yêu cầu và kiểm thử lại.
 
 ### Quy trình bắt buộc trước khi bàn giao
 
