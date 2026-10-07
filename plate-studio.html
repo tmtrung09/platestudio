@@ -4076,6 +4076,9 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 .page-smart-search:not(.compact-expand-search) svg{width:15px;height:15px;stroke:var(--t3);stroke-width:2;pointer-events:none}
 .page-smart-search:not(.compact-expand-search) input{min-height:40px;padding:7px 0!important;font:600 13px 'Be Vietnam Pro',sans-serif}
 .page-smart-search:not(.compact-expand-search):focus-within{background:var(--s)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 25%,transparent),var(--sm)!important}
+.btn-icon{display:inline-grid;place-items:center;width:15px;height:15px;vertical-align:-2px}.btn-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.list-header-search{width:min(310px,30vw);min-width:190px;margin:0 0 0 8px!important}
+@media(max-width:860px){.list-header-search{order:8;flex:1 1 100%;width:100%;margin:7px 0 0!important}.list-header-search input{min-width:0}}
 .kiot-sales-range-chosen{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--s2);color:var(--t3);font-size:11px}.kiot-sales-range-chosen b{color:var(--t);font-size:13px}.kiot-sales-calendar{margin:10px 0;padding:12px;border-radius:17px;background:var(--s2)}.kiot-sales-calendar>header{display:flex;align-items:center;justify-content:space-between;gap:8px}.kiot-sales-calendar>header b{text-transform:capitalize;font-size:13px}.kiot-sales-calendar-weekdays,.kiot-sales-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.kiot-sales-calendar-weekdays{margin:10px 0 4px;color:var(--t3);font-size:9px;font-weight:800;text-align:center}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{aspect-ratio:1;min-height:34px}.kiot-sales-calendar-day{position:relative;display:grid;place-items:center;padding:0;border:0;border-radius:10px;background:transparent;color:var(--t);font:700 11px var(--font);cursor:pointer}.kiot-sales-calendar-day:hover:not(:disabled),.kiot-sales-calendar-day:focus-visible{background:var(--acb);color:var(--ac);outline:0}.kiot-sales-calendar-day i{position:absolute;bottom:4px;left:50%;width:4px;height:4px;border-radius:50%;background:transparent;transform:translateX(-50%)}.kiot-sales-calendar-day.is-recorded i,.kiot-sales-calendar>footer i.is-recorded{background:var(--gr)}.kiot-sales-calendar-day.is-missing i,.kiot-sales-calendar>footer i.is-missing{background:var(--am)}.kiot-sales-calendar-day.is-in-range{background:color-mix(in srgb,var(--ac) 12%,transparent)}.kiot-sales-calendar-day.is-selected{background:var(--ac)!important;color:#fff!important}.kiot-sales-calendar-day:disabled{opacity:.28;cursor:not-allowed}.kiot-sales-calendar>footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--t3);font-size:10px}.kiot-sales-calendar>footer span{display:inline-flex;align-items:center;gap:5px}.kiot-sales-calendar>footer i{width:6px;height:6px;border-radius:50%}.kiot-sales-calendar>footer .btn{margin-left:auto}
 @media(max-width:480px){.kiot-sales-calendar{padding:10px}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:31px}.kiot-sales-calendar>footer{gap:7px}.kiot-sales-calendar>footer .btn{margin-left:0}}
 .kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:44px!important}.kiot-sales-calendar>header .btn,.kiot-sales-calendar>footer .btn{min-width:44px;min-height:44px}.sales-month-chip{min-height:48px!important}
@@ -4856,6 +4859,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
         Order <span class="sect-count" id="cnt-orders">0</span>
         <button class="filter-toggle-btn" id="ftbtn-orders" onclick="toggleFilterBars('orders')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <div class="page-smart-search list-header-search" title="Tìm đơn, người đặt, model hoặc biến thể"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="order-smart-search" autocomplete="off" placeholder="Tìm đơn hoặc model..." oninput="setOrderSmartSearch(this.value)"></div>
         <div style="margin-left:auto"><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo Order</button></div>
       </div>
       <div class="filter-bars-wrap" id="filters-orders">
@@ -4872,6 +4876,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
         <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
         Plate <span class="sect-count" id="cnt-plates">0</span>
         <button class="filter-toggle-btn" id="ftbtn-plates" onclick="toggleFilterBars('plates')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <div class="page-smart-search list-header-search" title="Tìm plate, màu hoặc part"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="plate-smart-search" autocomplete="off" placeholder="Tìm plate hoặc màu..." oninput="setPlateSmartSearch(this.value)"></div>
         <div style="margin-left:auto;display:flex;gap:7px;align-items:center"><select id="plate-sort" class="plate-sort-select" onchange="setPlateSort(this.value)" title="Sắp xếp Plate"><option value="created_desc">Mới nhất</option><option value="progress_asc">Tiến độ thấp</option><option value="progress_desc">Tiến độ cao</option><option value="name_asc">Tên / màu A–Z</option><option value="status">Trạng thái in</option></select><button class="btn btn-ghost btn-sm" onclick="openAddPlate()">+ Plate thủ công</button></div>
       </div>
       <div class="filter-bars-wrap" id="filters-plates">
@@ -4887,6 +4892,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Project <span class="sect-count" id="cnt-projects">0</span>
         <button class="filter-toggle-btn" id="ftbtn-projects" onclick="toggleFilterBars('projects')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <div class="page-smart-search list-header-search" title="Tìm tên hoặc mô tả project"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="project-smart-search" autocomplete="off" placeholder="Tìm project..." oninput="setProjectSmartSearch(this.value)"></div>
         <div style="margin-left:auto"><button class="btn btn-ac btn-sm" onclick="openAddProject()">+ Tạo Project</button></div>
       </div>
       <div class="filter-bars-wrap" id="filters-projects">
@@ -4901,6 +4907,7 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>
         Màu nhựa <span class="sect-count" id="cnt-fils">0</span>
         <button class="filter-toggle-btn" id="ftbtn-filaments" onclick="toggleFilterBars('filaments')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <div class="page-smart-search list-header-search" title="Tìm hãng, màu hoặc chất liệu"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="filament-smart-search" autocomplete="off" placeholder="Tìm màu nhựa..." oninput="setFilamentSmartSearch(this.value)"></div>
         <div style="margin-left:auto" class="gap-row"><button class="btn btn-ghost btn-sm" id="btn-select-fils" onclick="toggleFilSelectionMode()">Chọn nhiều</button><button class="btn btn-danger btn-sm" id="btn-delete-selected-fils" onclick="deleteSelectedFils()" style="display:none">Xóa đã chọn</button><button class="btn btn-ac btn-sm" onclick="openAddFil()">+ Thêm màu</button></div>
       </div>
       <div class="filter-bars-wrap" id="filters-filaments">
@@ -7298,10 +7305,10 @@ document.addEventListener('keydown',event=>{
 /* ═══ BỘ LỌC — dùng chung cho mọi trang danh sách ═══ */
 const FILTERS = {
   models:    { cat: 'all', sort: 'created_desc', search: '' },
-  orders:    { status: 'all', projectId: 'all', orderedBy: 'all' },
-  plates:    { status: 'all', filamentId: 'all', sort: 'created_desc' },
-  projects:  { status: 'all' },
-  filaments: { brand: 'all', mat: 'all' },
+  orders:    { status: 'all', projectId: 'all', orderedBy: 'all', search: '' },
+  plates:    { status: 'all', filamentId: 'all', sort: 'created_desc', search: '' },
+  projects:  { status: 'all', search: '' },
+  filaments: { brand: 'all', mat: 'all', search: '' },
   batches:   { search: '', sort: 'recorded_desc', status: 'all' },
 };
 
@@ -8415,6 +8422,7 @@ function deleteFil(id) {
 function renderFilaments() {
   const el = document.getElementById('fil-grid'); if(!el) return;
   document.getElementById('cnt-fils').textContent = fils.length;
+  const searchEl=document.getElementById('filament-smart-search');if(searchEl&&searchEl.value!==FILTERS.filaments.search)searchEl.value=FILTERS.filaments.search;
 
   /* Bộ lọc hãng */
   const brandCounts = {};
@@ -8434,7 +8442,8 @@ function renderFilaments() {
 
   const filtered = fils
     .filter(f => FILTERS.filaments.brand==='all' || f.brand===FILTERS.filaments.brand)
-    .filter(f => FILTERS.filaments.mat==='all' || (f.mat||'PLA')===FILTERS.filaments.mat);
+    .filter(f => FILTERS.filaments.mat==='all' || (f.mat||'PLA')===FILTERS.filaments.mat)
+    .filter(f => !kvNorm(FILTERS.filaments.search||'') || kvNorm(`${f.brand||''} ${f.name||''} ${f.mat||''} ${f.hex||''}`).includes(kvNorm(FILTERS.filaments.search||'')));
 
   if (!filtered.length) {
     el.innerHTML = `<div class="empty" style="grid-column:1/-1">Không có màu nhựa nào khớp bộ lọc</div>`;
@@ -8515,6 +8524,7 @@ function deleteFilBrand(brand) {
 }
 function setFilFilterBrand(brand) { FILTERS.filaments.brand = brand; renderFilaments(); }
 function setFilFilterMat(mat) { FILTERS.filaments.mat = mat; renderFilaments(); }
+function setFilamentSmartSearch(value){FILTERS.filaments.search=String(value||'');renderFilaments();}
 
 /* ═══════════════════════════════════════
    RENDER — SIDEBAR COLOR LIST
@@ -8543,7 +8553,8 @@ function legacyRenderSb() {
    RENDER STUBS (các trang sẽ thêm ở bước sau)
 ═══════════════════════════════════════ */
 // renderDashboard defined above
-function sidebarIcon(kind) {
+/* Thư viện icon SVG nội bộ: một nguồn nét vẽ cho sidebar, toolbar và trạng thái. */
+function appIcon(kind) {
   const icons = {
     dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
     model:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
@@ -8557,10 +8568,16 @@ function sidebarIcon(kind) {
     batch:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
     data:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
     trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v5M14 11v5M9 6V3h6v3"/>',
-    plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'
+    plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    check:'<polyline points="5 12 10 17 20 7"/>',
+    sparkle:'<path d="m12 3-1.7 5.3L5 10l5.3 1.7L12 17l1.7-5.3L19 10l-5.3-1.7z"/><path d="m19 15-.7 2.3L16 18l2.3.7L19 21l.7-2.3L22 18l-2.3-.7z"/>',
+    refresh:'<path d="M20 11a8 8 0 1 0 2 5.5"/><polyline points="20 4 20 11 13 11"/>',
+    inbox:'<path d="M4 4h16v12H4z"/><path d="M4 12h5l2 3h2l2-3h5"/>',
+    cart:'<circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h3l2.4 11.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 7H6"/>'
   };
   return `<svg viewBox="0 0 24 24">${icons[kind] || icons.dashboard}</svg>`;
 }
+function sidebarIcon(kind) { return appIcon(kind); }
 let sidebarGroupState=ld('ps_sidebar_groups',{});
 function sidebarGroupCollapsed(key,forceOpen=false){
   if(forceOpen)return false;
@@ -10308,6 +10325,7 @@ function renderPlates() {
   document.getElementById('cnt-plates').textContent = all.length;
   const sortSelect = document.getElementById('plate-sort');
   if(sortSelect) sortSelect.value = FILTERS.plates.sort || 'created_desc';
+  const searchEl=document.getElementById('plate-smart-search');if(searchEl&&searchEl.value!==FILTERS.plates.search)searchEl.value=FILTERS.plates.search;
 
   /* Bộ lọc trạng thái */
   const statusCounts = {};
@@ -10334,6 +10352,7 @@ function renderPlates() {
   const sorted = all
     .filter(pl => FILTERS.plates.status==='all' || pl.status===FILTERS.plates.status)
     .filter(pl => FILTERS.plates.filamentId==='all' || (pl.filamentIds||[pl.filamentId]).includes(FILTERS.plates.filamentId))
+    .filter(pl => {const q=kvNorm(FILTERS.plates.search||'');if(!q)return true;const colors=(pl.filamentIds||[pl.filamentId]).map(id=>{const f=getFil(id);return `${f?.brand||''} ${f?.name||''} ${f?.hex||''}`;}).join(' ');return kvNorm(`${pl.name||''} ${pl.status||''} ${colors} ${(pl.items||[]).map(item=>`${item.partName||''} ${item.modelName||''}`).join(' ')}`).includes(q);})
     .sort((a,b)=>{
       const progress = pl => { const items=pl.items||pitems.filter(x=>x.plateId===pl.id); const total=items.reduce((s,x)=>s+x.qty,0); return total ? items.reduce((s,x)=>s+(x.qtyDone||0),0)/total : 0; };
       const mode = FILTERS.plates.sort || 'created_desc';
@@ -10430,6 +10449,7 @@ function renderPlates() {
 function setPlateFilterStatus(status) { FILTERS.plates.status = status; renderPlates(); }
 function setPlateFilterColor(filamentId) { FILTERS.plates.filamentId = filamentId; renderPlates(); }
 function setPlateSort(sort) { FILTERS.plates.sort = sort; renderPlates(); }
+function setPlateSmartSearch(value){FILTERS.plates.search=String(value||'');renderPlates();}
 
 function viewConfirmImg(plId) {
   const el = document.getElementById('cimg-'+plId);
@@ -11412,6 +11432,7 @@ function deleteProject(id) {
 function renderProjects() {
   const el = document.getElementById('project-list'); if(!el) return;
   document.getElementById('cnt-projects').textContent = projects.length;
+  const searchEl=document.getElementById('project-smart-search');if(searchEl&&searchEl.value!==FILTERS.projects.search)searchEl.value=FILTERS.projects.search;
 
   /* Bộ lọc trạng thái */
   const statusCounts = {};
@@ -11421,8 +11442,9 @@ function renderProjects() {
   document.getElementById('project-filter-status').innerHTML =
     statusChips.length > 1 ? filterChipsHTML(statusChips, FILTERS.projects.status, 'setProjectFilterStatus') : '';
 
-  const filtered = FILTERS.projects.status==='all' ? projects
-    : projects.filter(p => (p.status||'active') === FILTERS.projects.status);
+  const filtered = projects
+    .filter(p=>FILTERS.projects.status==='all' || (p.status||'active')===FILTERS.projects.status)
+    .filter(p=>{const q=kvNorm(FILTERS.projects.search||'');return !q||kvNorm(`${p.name||''} ${p.desc||''} ${p.note||''}`).includes(q);});
 
   if (!filtered.length) {
     el.innerHTML = `<div class="empty">
@@ -11464,6 +11486,7 @@ function renderProjects() {
     }).join('');
 }
 function setProjectFilterStatus(status) { FILTERS.projects.status = status; renderProjects(); }
+function setProjectSmartSearch(value){FILTERS.projects.search=String(value||'');renderProjects();}
 
 /* ═══════════════════════════════════════
    PROJECT DETAIL — xem sản phẩm cần in / đơn hàng / tiến độ của 1 dự án
@@ -14085,8 +14108,8 @@ function syncBatchReportSelectionUI(focusId=null){
   if(bar){
     const count=bar.querySelector('b');if(count)count.textContent=`Đã chọn ${selectedReports.length}/${batchReportVisibleIds.length} ảnh`;
     const view=bar.querySelector('[data-selection-action="view"]');if(view)view.disabled=selectedReports.length!==1;
-    const ai=bar.querySelector('[data-selection-action="ai"]');if(ai){ai.disabled=!selectedAiCount;ai.textContent=`✦ Phân tích AI (${selectedAiCount})`;}
-    const skip=bar.querySelector('[data-selection-action="skip"]');if(skip){const count=selectedReports.filter(report=>report.status!=='done'&&report.status!=='skipped').length;skip.disabled=!count;skip.textContent=`✓ Bỏ qua (${count})`;}
+    const ai=bar.querySelector('[data-selection-action="ai"]');if(ai){ai.disabled=!selectedAiCount;ai.innerHTML=`<span class="btn-icon" aria-hidden="true">${appIcon('sparkle')}</span> Phân tích AI (${selectedAiCount})`;}
+    const skip=bar.querySelector('[data-selection-action="skip"]');if(skip){const count=selectedReports.filter(report=>report.status!=='done'&&report.status!=='skipped').length;skip.disabled=!count;skip.innerHTML=`<span class="btn-icon" aria-hidden="true">${appIcon('check')}</span> Bỏ qua (${count})`;}
     const remove=bar.querySelector('[data-selection-action="delete"]');if(remove){remove.disabled=!selectedReports.length;remove.textContent=`Xoá (${selectedReports.length})`;}
   }
   if(focusId)root.querySelector(`.batch-report-card[data-batch-report-id="${CSS.escape(focusId)}"]`)?.focus({preventScroll:true});
@@ -14491,7 +14514,7 @@ function renderBatchReportPage(){
   const selectedReports=visible.filter(report=>batchReportSelectedIds.has(report.id));
   const selectedAiCount=selectedReports.filter(report=>report.image&&!report.aiAnalysis?.generatedAt&&report.status!=='uploading').length;
   const selectedSkipCount=selectedReports.filter(report=>report.status!=='done'&&report.status!=='skipped').length;
-  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" data-selection-action="view" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" data-selection-action="ai" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()">✦ Phân tích AI (${selectedAiCount})</button><button class="btn btn-ghost btn-xs" data-selection-action="skip" ${selectedSkipCount?'':'disabled'} onclick="skipSelectedBatchReports()">✓ Bỏ qua (${selectedSkipCount})</button><button class="btn btn-danger btn-xs" data-selection-action="delete" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button></div>`:'';
+  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" data-selection-action="view" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" data-selection-action="ai" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()"><span class="btn-icon" aria-hidden="true">${appIcon('sparkle')}</span> Phân tích AI (${selectedAiCount})</button><button class="btn btn-ghost btn-xs" data-selection-action="skip" ${selectedSkipCount?'':'disabled'} onclick="skipSelectedBatchReports()"><span class="btn-icon" aria-hidden="true">${appIcon('check')}</span> Bỏ qua (${selectedSkipCount})</button><button class="btn btn-danger btn-xs" data-selection-action="delete" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button></div>`:'';
   const queuePanel=renderBatchAiQueuePanel();
   const queueSlot=document.getElementById('batch-ai-queue-slot');
   if(queueSlot) queueSlot.innerHTML=queuePanel;
@@ -14731,6 +14754,7 @@ function renderOrders() {
   const el = document.getElementById('order-list'); if(!el) return;
   const all = [...orders].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   document.getElementById('cnt-orders').textContent = all.length;
+  const searchEl=document.getElementById('order-smart-search');if(searchEl&&searchEl.value!==FILTERS.orders.search)searchEl.value=FILTERS.orders.search;
 
   /* Bộ lọc trạng thái */
   const statusCounts = {};
@@ -14765,7 +14789,8 @@ function renderOrders() {
   const sorted = all
     .filter(o => FILTERS.orders.status==='all' || o.status===FILTERS.orders.status)
     .filter(o => FILTERS.orders.projectId==='all' || (FILTERS.orders.projectId==='none' ? !o.projectId : o.projectId===FILTERS.orders.projectId))
-    .filter(o => !FILTERS.orders.orderedBy || FILTERS.orders.orderedBy==='all' || (FILTERS.orders.orderedBy==='none' ? !o.orderedBy : o.orderedBy===FILTERS.orders.orderedBy));
+    .filter(o => !FILTERS.orders.orderedBy || FILTERS.orders.orderedBy==='all' || (FILTERS.orders.orderedBy==='none' ? !o.orderedBy : o.orderedBy===FILTERS.orders.orderedBy))
+    .filter(o => {const q=kvNorm(FILTERS.orders.search||'');if(!q)return true;const project=projects.find(project=>project.id===o.projectId);const itemText=(o.items||[]).map(item=>`${item.modelName||''} ${item.variantName||''} ${item.productName||''}`).join(' ');return kvNorm(`${o.note||''} ${o.orderedBy||''} ${project?.name||''} ${itemText}`).includes(q);});
 
   if (!sorted.length) {
     el.innerHTML = `<div class="empty">
@@ -14811,6 +14836,7 @@ function renderOrders() {
 function setOrderFilterStatus(status) { FILTERS.orders.status = status; renderOrders(); }
 function setOrderFilterProject(projectId) { FILTERS.orders.projectId = projectId; renderOrders(); }
 function setOrderFilterOrderer(name) { FILTERS.orders.orderedBy = name; renderOrders(); }
+function setOrderSmartSearch(value){FILTERS.orders.search=String(value||'');renderOrders();}
 function viewOrderModelImages(orderId) {
   const order = orders.find(o=>o.id===orderId); if(!order) return;
   const grouped = new Map();

@@ -138,6 +138,9 @@ const results = await page.evaluate(async () => {
   renderOrders();
   check('Thẻ Order chỉ tóm tắt số model, không lặp dải chip tên model gây rối', !document.querySelector('#order-list .oc-models') && (document.querySelector('#order-list .oc-meta')?.textContent||'').includes('5 model'), document.querySelector('#order-list .order-card')?.textContent.replace(/\s+/g,' ').trim().slice(0,180)||'thiếu thẻ Order');
   orders[0].items=originalQaOrderItems;
+  setOrderSmartSearch('không thể khớp');
+  check('Search cạnh tiêu đề Order lọc danh sách bằng nội dung thực', !document.querySelector('#order-list .order-card') && Boolean(document.querySelector('.list-header-search #order-smart-search')), document.querySelector('#order-list')?.textContent.trim()||'không có trạng thái rỗng');
+  setOrderSmartSearch('');
   goPage('batches', { historyMode: 'none' });
   renderBatchReportPage();
   const batchHeader = document.querySelector('#page-batches .batch-library-header');

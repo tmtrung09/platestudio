@@ -186,6 +186,10 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
    workspace nhưng không được tự chiếm thêm một hàng nếu còn đặt cạnh tiêu đề/toolbar
    một cách an toàn. Hướng dẫn phím tắt không được chiếm một dòng riêng trong thanh
    chọn nhiều khi nút và hành vi đã rõ.
+10. Các thư viện chính (Đơn, Plate, Project, Màu nhựa và Model) phải có tìm kiếm
+    không dấu ngay cạnh tiêu đề trên desktop, tự xuống hàng an toàn trên mobile và lọc
+    theo các thuộc tính người dùng nhìn thấy. Không chỉ chuẩn hóa CSS mà để một trang
+    còn không có cách tìm dữ liệu của chính nó.
 
 ## Định nghĩa hoàn tất
 
