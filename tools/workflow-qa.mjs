@@ -137,7 +137,7 @@ const results = await page.evaluate(async () => {
   const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
   document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
   const batchSearchCompactRect = batchSearchShell?.getBoundingClientRect(), batchSearchCompactWidth = batchSearchCompactRect?.width || 0;
-  batchSearchShell?.click(); await new Promise(resolve => setTimeout(resolve, 260));
+  batchSearchShell?.click(); await new Promise(resolve => setTimeout(resolve, 520));
   const batchSearchExpandedWidth = batchSearchShell?.getBoundingClientRect().width || 0;
   check('Nhấn vỏ tìm báo cáo thu gọn đưa focus vào ô nhập và bung rộng', document.activeElement === batchSearch && batchSearchCompactWidth >= 44 && (batchSearchCompactRect?.height || 0) >= 44 && batchSearchCompactWidth <= 56 && batchSearchExpandedWidth > batchSearchCompactWidth + 80, `${Math.round(batchSearchCompactWidth)}×${Math.round(batchSearchCompactRect?.height || 0)}px → ${Math.round(batchSearchExpandedWidth)}px`);
   const batchPreviewImage = document.querySelector('.batch-report-media > img');
@@ -165,7 +165,9 @@ const results = await page.evaluate(async () => {
   stickySpacer.remove();batchScrollRoot.scrollTo({top:scrollBefore,behavior:'instant'});batchScrollRoot.style.scrollBehavior=scrollBehaviorBefore;
   const batchSelectBox=document.querySelector('.batch-report-select-box');
   const batchSelectBoxRect=batchSelectBox?.getBoundingClientRect();
-  check('Ô chọn ảnh có vùng chạm tối thiểu 44px', Boolean(batchSelectBoxRect?.width>=44 && batchSelectBoxRect?.height>=44), batchSelectBoxRect ? `${Math.round(batchSelectBoxRect.width)}×${Math.round(batchSelectBoxRect.height)}px` : 'thiếu control');
+  const batchSelectVisual=getComputedStyle(batchSelectBox,'::before');
+  const batchCheckmark=getComputedStyle(batchSelectBox,'::after');
+  check('Ô chọn ảnh giữ vùng bấm 44px nhưng icon gọn 32px', Boolean(batchSelectBoxRect?.width>=44 && batchSelectBoxRect?.height>=44 && Math.round(parseFloat(batchSelectVisual.width))===32 && Math.round(parseFloat(batchSelectVisual.height))===32 && batchCheckmark.content.includes('✓') && batchCheckmark.fontSize==='16px'), batchSelectBoxRect ? `${Math.round(batchSelectBoxRect.width)}×${Math.round(batchSelectBoxRect.height)}px · icon ${batchSelectVisual.width}×${batchSelectVisual.height} · dấu ${batchCheckmark.fontSize}` : 'thiếu control');
   toggleBatchReportMultiSelect();
   const focusHost = document.createElement('div');
   focusHost.className = 'batch-report-media'; focusHost.style.cssText = 'position:fixed;left:-1000px;top:0;width:240px;height:180px';

@@ -45,6 +45,8 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
    nhập, truy vấn, focus/caret, vị trí cuộn và ảnh đã tải; cập nhật đúng vùng thay đổi.
 2. Số lượng có giới hạn hợp lệ và thao tác chạm thuận tiện (− / nhập / + khi cần
    chỉnh lặp lại). Nút chính và control cảm ứng dùng vùng chạm tối thiểu 44×44px.
+   Icon/ô đánh dấu có thể nhỏ hơn vùng chạm để tránh lấn ảnh hoặc nội dung, nhưng
+   vùng bấm thực vẫn phải đủ 44×44px.
 3. Form dài có vùng cuộn rõ ràng, nút lưu/đóng luôn tiếp cận được; không che nội dung
    hoặc bàn phím, không tràn ngang. Kiểm tra focus, Tab, Enter, Escape, hover/active.
    Control ghép chỉ có một vòng focus, không viền chồng viền.
