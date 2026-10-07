@@ -63,6 +63,10 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
    Windows: `Ctrl` + click bật/tắt từng mục, `Shift` + click chọn dải liên tiếp từ mục
    neo, và `Ctrl` + `Shift` + click cộng thêm dải. Dải chọn tính theo thứ tự mục đang
    hiển thị sau lọc/sắp xếp; thao tác có phím bổ trợ không được đồng thời mở chi tiết.
+8. Khi đang chọn nhiều ở thư viện, `Esc` phải hủy chế độ chọn và `Delete` mở luồng
+   xóa có xác nhận, trừ khi người dùng đang nhập liệu hoặc đang ở dialog. Thanh thao
+   tác phải có hành động hàng loạt cho mọi trạng thái hợp lệ, gồm đánh dấu “Bỏ qua”;
+   không được áp dụng lên mục đã hoàn tất và phải phản hồi rõ số lượng đã đổi.
    Trên thiết bị cảm ứng vẫn giữ nút/chế độ “Chọn nhiều” rõ ràng, không phụ thuộc bàn phím.
 8. Khi người dùng đang chọn nhiều mục trong một danh sách dài, thanh hiển thị số mục
    đã chọn và các thao tác hàng loạt phải ghim trong vùng cuộn, luôn nhìn thấy khi lướt.
@@ -169,6 +173,19 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 6. Các control là anh em trong cùng toolbar phải dùng cùng chiều cao, bán kính bo và
    vùng chạm; không trộn kích thước mặc định của select, button, menu ba chấm và ô tìm
    kiếm. Khi có chip/trạng thái nền chen vào toolbar, khung bao của nó cũng theo chuẩn đó.
+7. Hàng công việc theo model (kể cả khi đang gộp theo plate/màu) phải kèm thumbnail
+   model thật khi có dữ liệu; ảnh lỗi chỉ được ẩn/fallback cùng khung, không bỏ tên hoặc
+   làm đổi bố cục. Không dùng emoji hệ thống cho icon thao tác/trạng thái mới; mỗi họ
+   giao diện được chạm tới phải thay icon emoji còn thấy được của chính họ bằng SVG từ
+   primitive icon chung để nét vẽ, kích thước và màu đồng nhất.
+8. Thẻ tóm tắt không được lặp toàn bộ tên model thành nhiều chip. Giữ thumbnail stack,
+   số model/sản phẩm và hành động xem chi tiết; chỉ hiển thị từng tên khi người dùng mở
+   phần chi tiết hoặc khi tên đó cần ra quyết định.
+9. Thanh tìm kiếm dùng chung trên các trang phải kế thừa bề mặt của tìm kiếm Tiến độ
+   In: icon SVG nhỏ, chiều cao tối thiểu 42px, nền gọn và focus rõ. Vị trí/rộng theo
+   workspace nhưng không được tự chiếm thêm một hàng nếu còn đặt cạnh tiêu đề/toolbar
+   một cách an toàn. Hướng dẫn phím tắt không được chiếm một dòng riêng trong thanh
+   chọn nhiều khi nút và hành vi đã rõ.
 
 ## Định nghĩa hoàn tất
 

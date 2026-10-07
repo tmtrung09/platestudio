@@ -1298,10 +1298,8 @@ body.delivery-receive-only #page-delivery-receive{padding-bottom:0!important}
 .oc-title { font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap }
 .oc-meta { font-size:12px; color:var(--t3); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap }
 .oc-status { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0 }
-.oc-models { display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
 .oc-progress { margin-top:7px }
 .oc-progress-text { font-size:11px; color:var(--t3); margin-bottom:3px }
-.oc-more { display:none }
 .oc-thumb-area { display:flex; align-items:center; gap:5px; flex-shrink:0 }
 .oc-view-images { white-space:nowrap }
 .order-image-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(125px,1fr)); gap:10px; margin-top:4px }
@@ -1616,9 +1614,6 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
   .oc-thumb-area { grid-column:1; grid-row:1; align-self:start }
   .oc-thumb-area > .thumb-stack { padding-top:2px }
   .oc-view-images { font-size:10px; padding:4px 6px }
-  .oc-models { margin-top:8px; max-height:52px; overflow:hidden }
-  .oc-models .badge:nth-child(n+4) { display:none }
-  .oc-models .oc-more { display:inline-flex }
   .oc-progress { margin-top:7px }
 }
 @media (max-width:520px) {
@@ -2099,7 +2094,7 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
 #ov-print-progress .pp-mi-chev{ width:15px; height:15px; flex-shrink:0; fill:none; stroke:var(--t3); stroke-width:2; stroke-linecap:round; transition:transform .18s var(--es) }
 #ov-print-progress .pp-mi-hd.pp-open .pp-mi-chev{ transform:rotate(90deg) }
 #ov-print-progress .pp-mi-media{ width:76px; height:76px; flex-shrink:0; overflow:hidden; border-radius:14px; background:var(--s2); border:1px solid var(--b); display:grid; place-items:center; font-size:28px; box-shadow:0 3px 10px rgba(0,0,0,.06) }
-#ov-print-progress .pp-mi-media img{ width:100%; height:100%; object-fit:cover; display:block }
+#ov-print-progress .pp-mi-media img{ width:100%; height:100%; object-fit:cover; display:block }#ov-print-progress .pp-mi-media svg,#ov-print-progress .pp-group-media svg,#ov-print-progress .pp-external-photo svg{width:54%;height:54%;fill:none;stroke:var(--t3);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #ov-print-progress .pp-mi-info{ flex:1; min-width:0 }
 #ov-print-progress .pp-mi-title{ display:flex; align-items:baseline; gap:7px; flex-wrap:wrap }
 #ov-print-progress .pp-mi-name{ font-size:14.5px; font-weight:700 }
@@ -2188,7 +2183,8 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
 #ov-print-progress .pp-group-order{ padding:.7rem 0 .2rem; border-bottom:1px solid var(--b) }
 #ov-print-progress .pp-group-order:last-child{ border-bottom:0 }
 #ov-print-progress .pp-group-order-title{ display:flex; align-items:center; gap:7px; color:var(--t2); font-size:12px; font-weight:700; padding:0 4px 4px }
-#ov-print-progress .pp-group-order-title .pp-group-order-model{ color:var(--t); margin-left:auto; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+#ov-print-progress .pp-group-order-source{display:inline-flex;align-items:center;gap:5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp-group-order-source svg{width:14px;height:14px;flex:0 0 14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#ov-print-progress .pp-group-order-title .pp-group-order-model{display:flex;align-items:center;gap:7px;min-width:0;color:var(--t);margin-left:auto;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp-group-order-model-thumb{width:32px;height:32px;flex:0 0 32px;border-radius:9px;object-fit:cover;background:var(--s2);border:1px solid var(--b)}
 #ov-print-progress .pp-group-body .pp-pr{ padding:7px 4px }
 
 /* ═══════════════════════════════ EMPTY / TOAST ═══════════════════════════════ */
@@ -4074,6 +4070,12 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 .fulfillment-command-bar{display:flex;align-items:center;justify-content:flex-end;gap:14px;margin:0 0 18px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--pu) 18%,var(--b));border-radius:18px;background:color-mix(in srgb,var(--pu) 5%,var(--s))}.fulfillment-command-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:nowrap;width:100%}.fulfillment-command-actions .btn{justify-content:center}.fulfillment-command-search{margin-right:auto!important}.fulfillment-command-search:focus-within{width:min(560px,42vw)}
 @media(max-width:600px){#page-fulfillment>.page-heading{margin-bottom:12px!important}#page-fulfillment .page-heading-main{flex-direction:column;gap:11px!important}#page-fulfillment .page-heading-main>.gap-row{display:grid;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#page-fulfillment .page-heading-main>.gap-row .btn{justify-content:center}.batch-library-header .batch-library-toolbar{width:100%;justify-content:flex-end;overflow-x:auto;padding:2px}.compact-expand-search:focus-within{width:min(100%,300px)}.fulfillment-command-bar{display:block;margin:0 8px 14px;padding:12px;border-radius:17px}.fulfillment-command-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.fulfillment-command-actions .btn{width:100%;min-width:0}.fulfillment-command-actions .fulfillment-create-delivery{grid-column:1/-1;grid-row:1;min-height:40px!important;font-size:12px!important}.fulfillment-command-actions .compact-expand-search{grid-column:1/-1;grid-row:2;width:100%;height:44px}.fulfillment-command-actions .compact-expand-search input{width:100%;opacity:1}.fulfillment-command-actions .btn:nth-of-type(1){grid-column:1;grid-row:3}.fulfillment-command-actions .btn:nth-of-type(2){grid-column:2;grid-row:3}}
 .batch-report-media>img{object-position:50% 50%!important}.batch-report-card{outline-offset:-1px}.fulfillment-process-tab,.fulfillment-process-tab::before,.fulfillment-process-panel{border-color:transparent!important}.fulfillment-process-panel{box-shadow:none!important}
+/* Search ở các trang dùng cùng bề mặt với ô tìm kiếm của Tiến độ in: icon gọn,
+   input 42px và focus rõ ràng. Từng workspace vẫn tự quyết định vị trí/rộng theo layout. */
+.page-smart-search:not(.compact-expand-search){min-height:42px;padding:0 13px!important;border-radius:13px!important;background:var(--s2)!important;box-shadow:var(--sm)!important;transition:background var(--dur),box-shadow var(--dur)}
+.page-smart-search:not(.compact-expand-search) svg{width:15px;height:15px;stroke:var(--t3);stroke-width:2;pointer-events:none}
+.page-smart-search:not(.compact-expand-search) input{min-height:40px;padding:7px 0!important;font:600 13px 'Be Vietnam Pro',sans-serif}
+.page-smart-search:not(.compact-expand-search):focus-within{background:var(--s)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 25%,transparent),var(--sm)!important}
 .kiot-sales-range-chosen{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--s2);color:var(--t3);font-size:11px}.kiot-sales-range-chosen b{color:var(--t);font-size:13px}.kiot-sales-calendar{margin:10px 0;padding:12px;border-radius:17px;background:var(--s2)}.kiot-sales-calendar>header{display:flex;align-items:center;justify-content:space-between;gap:8px}.kiot-sales-calendar>header b{text-transform:capitalize;font-size:13px}.kiot-sales-calendar-weekdays,.kiot-sales-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.kiot-sales-calendar-weekdays{margin:10px 0 4px;color:var(--t3);font-size:9px;font-weight:800;text-align:center}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{aspect-ratio:1;min-height:34px}.kiot-sales-calendar-day{position:relative;display:grid;place-items:center;padding:0;border:0;border-radius:10px;background:transparent;color:var(--t);font:700 11px var(--font);cursor:pointer}.kiot-sales-calendar-day:hover:not(:disabled),.kiot-sales-calendar-day:focus-visible{background:var(--acb);color:var(--ac);outline:0}.kiot-sales-calendar-day i{position:absolute;bottom:4px;left:50%;width:4px;height:4px;border-radius:50%;background:transparent;transform:translateX(-50%)}.kiot-sales-calendar-day.is-recorded i,.kiot-sales-calendar>footer i.is-recorded{background:var(--gr)}.kiot-sales-calendar-day.is-missing i,.kiot-sales-calendar>footer i.is-missing{background:var(--am)}.kiot-sales-calendar-day.is-in-range{background:color-mix(in srgb,var(--ac) 12%,transparent)}.kiot-sales-calendar-day.is-selected{background:var(--ac)!important;color:#fff!important}.kiot-sales-calendar-day:disabled{opacity:.28;cursor:not-allowed}.kiot-sales-calendar>footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--t3);font-size:10px}.kiot-sales-calendar>footer span{display:inline-flex;align-items:center;gap:5px}.kiot-sales-calendar>footer i{width:6px;height:6px;border-radius:50%}.kiot-sales-calendar>footer .btn{margin-left:auto}
 @media(max-width:480px){.kiot-sales-calendar{padding:10px}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:31px}.kiot-sales-calendar>footer{gap:7px}.kiot-sales-calendar>footer .btn{margin-left:0}}
 .kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:44px!important}.kiot-sales-calendar>header .btn,.kiot-sales-calendar>footer .btn{min-width:44px;min-height:44px}.sales-month-chip{min-height:48px!important}
@@ -14045,6 +14047,12 @@ function toggleBatchReportMultiSelect(){
   if(!batchReportMultiSelect){batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;}
   renderBatchReportPage();
 }
+function cancelBatchReportMultiSelect(){
+  if(!batchReportMultiSelect)return false;
+  batchReportMultiSelect=false;batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;
+  renderBatchReportPage();
+  return true;
+}
 function resolveWindowsSelection(orderedIds,selectedIds,anchorId,targetId,{ctrlKey=false,shiftKey=false,toggleWithoutModifier=false}={}){
   const ids=Array.isArray(orderedIds)?orderedIds:[];
   const next=new Set(selectedIds||[]);
@@ -14078,6 +14086,7 @@ function syncBatchReportSelectionUI(focusId=null){
     const count=bar.querySelector('b');if(count)count.textContent=`Đã chọn ${selectedReports.length}/${batchReportVisibleIds.length} ảnh`;
     const view=bar.querySelector('[data-selection-action="view"]');if(view)view.disabled=selectedReports.length!==1;
     const ai=bar.querySelector('[data-selection-action="ai"]');if(ai){ai.disabled=!selectedAiCount;ai.textContent=`✦ Phân tích AI (${selectedAiCount})`;}
+    const skip=bar.querySelector('[data-selection-action="skip"]');if(skip){const count=selectedReports.filter(report=>report.status!=='done'&&report.status!=='skipped').length;skip.disabled=!count;skip.textContent=`✓ Bỏ qua (${count})`;}
     const remove=bar.querySelector('[data-selection-action="delete"]');if(remove){remove.disabled=!selectedReports.length;remove.textContent=`Xoá (${selectedReports.length})`;}
   }
   if(focusId)root.querySelector(`.batch-report-card[data-batch-report-id="${CSS.escape(focusId)}"]`)?.focus({preventScroll:true});
@@ -14121,6 +14130,18 @@ function queueSelectedBatchReportsForAi(){
   brAiQueue={running:true,ids:reports.map(report=>report.id),states:{},cooldownUntil:0};
   brAiQueue.ids.forEach(id=>brAiQueue.states[id]='queued');saveBatchAiQueue();renderBatchAiQueueFloat();renderBatchReportPage();void runBatchAiQueue();
 }
+function skipSelectedBatchReports(){
+  if(!canManageBatchReports()){toast('Chỉ quản lý mới được phân loại hoặc bỏ qua báo cáo mẻ.');return;}
+  const reports=selectedBatchReportsOnPage().filter(report=>report.status!=='done'&&report.status!=='skipped');
+  if(!reports.length){toast('Các ảnh đã chọn không còn mục nào có thể bỏ qua.');return;}
+  const skippedAt=new Date().toISOString(),actor=ensureBatchActor();
+  reports.forEach(report=>{report.status='skipped';report.skippedAt=skippedAt;report.skippedBy=actor;});
+  sv(K.batchReports,batchReports);
+  recordAudit('update','Báo cáo mẻ',`Đã bỏ qua ${reports.length} ảnh báo cáo mẻ`,{reportIds:reports.map(report=>report.id)});
+  updateCamBadge();batchReportMultiSelect=false;batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;
+  renderBatchReportPage();renderBatchHub();
+  toast(`Đã chuyển ${reports.length} ảnh vào mục Bỏ qua.`);
+}
 async function deleteSelectedBatchReports(){
   if(!canManageBatchReports()){toast('Chỉ quản lý mới được xoá báo cáo mẻ.');return;}
   const reports=selectedBatchReportsOnPage();if(!reports.length)return;
@@ -14138,6 +14159,17 @@ async function deleteSelectedBatchReports(){
   updateCamBadge();renderBatchReportPage();renderBatchHub();
   toast(removed.length===reports.length?`Đã chuyển ${removed.length} ảnh vào thùng rác.`:`Đã chuyển ${removed.length}/${reports.length} ảnh vào thùng rác.`);
 }
+function batchReportSelectionShortcutBlocked(target){
+  if(target?.closest?.('input,textarea,select,[contenteditable="true"]'))return true;
+  return [...document.querySelectorAll('.dlg,.ov,[role="dialog"]')].some(el=>el?.classList?.contains('show')||['flex','block','grid'].includes(el?.style?.display));
+}
+function handleBatchReportSelectionShortcut(event){
+  if(curPage!=='batches'||!batchReportMultiSelect||!batchReportSelectedIds.size||batchReportSelectionShortcutBlocked(event?.target))return false;
+  if(event.key==='Escape'){event.preventDefault();cancelBatchReportMultiSelect();return true;}
+  if(event.key==='Delete'){event.preventDefault();void deleteSelectedBatchReports();return true;}
+  return false;
+}
+document.addEventListener('keydown',event=>{if(handleBatchReportSelectionShortcut(event))event.stopImmediatePropagation();},true);
 function batchReportPagerHTML(position='bottom'){
   const meta=batchReportPaginationMeta||{matched:0,totalPages:1};
   const total=Math.max(1,Number(meta.totalPages)||1);
@@ -14458,7 +14490,8 @@ function renderBatchReportPage(){
   </div>`;
   const selectedReports=visible.filter(report=>batchReportSelectedIds.has(report.id));
   const selectedAiCount=selectedReports.filter(report=>report.image&&!report.aiAnalysis?.generatedAt&&report.status!=='uploading').length;
-  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" data-selection-action="view" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" data-selection-action="ai" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()">✦ Phân tích AI (${selectedAiCount})</button><button class="btn btn-danger btn-xs" data-selection-action="delete" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button><span class="batch-report-selection-hint">Ctrl: chọn từng mục · Shift: chọn một dải · Ctrl + Shift: cộng thêm dải</span></div>`:'';
+  const selectedSkipCount=selectedReports.filter(report=>report.status!=='done'&&report.status!=='skipped').length;
+  const selectionBar=canEdit&&batchReportMultiSelect?`<div class="card batch-report-selection-bar"><b>Đã chọn ${selectedReports.length}/${visible.length} ảnh</b><button class="btn btn-ghost btn-xs" onclick="selectAllVisibleBatchReports()">Chọn cả trang</button><button class="btn btn-ghost btn-xs" onclick="clearBatchReportSelection()">Bỏ chọn</button><button class="btn btn-ghost btn-xs" data-selection-action="view" ${selectedReports.length===1?'':'disabled'} onclick="viewSelectedBatchReport()">Xem chi tiết</button><button class="btn btn-ac btn-xs" data-selection-action="ai" ${selectedAiCount?'':'disabled'} onclick="queueSelectedBatchReportsForAi()">✦ Phân tích AI (${selectedAiCount})</button><button class="btn btn-ghost btn-xs" data-selection-action="skip" ${selectedSkipCount?'':'disabled'} onclick="skipSelectedBatchReports()">✓ Bỏ qua (${selectedSkipCount})</button><button class="btn btn-danger btn-xs" data-selection-action="delete" ${selectedReports.length?'':'disabled'} onclick="deleteSelectedBatchReports()">Xoá (${selectedReports.length})</button></div>`:'';
   const queuePanel=renderBatchAiQueuePanel();
   const queueSlot=document.getElementById('batch-ai-queue-slot');
   if(queueSlot) queueSlot.innerHTML=queuePanel;
@@ -14748,11 +14781,6 @@ function renderOrders() {
     const done = rel.filter(pi=>pi.qtyDone>=pi.qty).length;
     const pct  = rel.length ? Math.round(done/rel.length*100) : 0;
     const orderItems = o.items||[];
-    const itemBadges = orderItems.map(i=>{
-      const m=models.find(x=>x.id===i.modelId);
-      const source=i.productName?`${i.productName} · `:'';
-      return `<span class="badge bg-bl">📦 ${esc(source+(m?.name||i.modelId))}${i.variantName?` · ${esc(i.variantName)}`:''} ×${i.qty}</span>`;
-    }).join('');
     return `<div class="order-card" onclick="openPrintProgress('${o.id}')">
       <div class="oc-top">
         <div class="oc-thumb-area" onclick="event.stopPropagation()">
@@ -14776,7 +14804,6 @@ function renderOrders() {
           </div>
         </div>
       </div>
-      <div class="oc-models">${itemBadges}${orderItems.length>3?`<span class="badge bg-gray oc-more">+${orderItems.length-3} model</span>`:''}</div>
       ${rel.length ? `<div class="oc-progress"><div class="oc-progress-text">${done}/${rel.length} part · ${pct}%</div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div></div>` : ''}
     </div>`;
   }).join('');
@@ -20375,10 +20402,10 @@ function modelProgressViewHTML(list) {
     const done = entries.reduce((s,e)=>s+itemProgress(e.item).done,0);
     const qty = entries.reduce((s,e)=>s+(e.item.qty||0),0);
     const variants = [...new Set(entries.map(e=>e.item.variantName).filter(Boolean))];
-    const media = model?.images?.[0] ? `<img src="${esc(model.images[0])}" alt="${esc(group.name)}" onerror="this.parentElement.textContent='📦'">` : '📦';
+    const media = model?.images?.[0] ? `<img src="${esc(model.images[0])}" alt="${esc(group.name)}" onerror="this.remove()">` : sidebarIcon('model');
     return `<section class="pp-group-card pp-model-group">
       <div class="pp-group-hd"><div class="pp-group-media">${media}</div><div class="pp-group-info"><div class="pp-group-title">${esc(group.name)}</div><div class="pp-group-meta"><span>${entries.length} dòng trong ${new Set(entries.map(e=>e.order.id)).size} đơn</span><span>× ${qty} model</span>${variants.length?`<span>${esc(variants.join(' · '))}</span>`:''}</div></div>${ppProgressBarHTML(done,need)}</div>
-      <div class="pp-group-body">${entries.map(({order,item}) => `<div class="pp-group-order"><div class="pp-group-order-title"><span>🛒 ${esc(order.note||'Đơn không tên')}</span><span class="pp-group-order-model">${item.variantName?`✦ ${esc(item.variantName)}`:`× ${item.qty} model`}</span></div>${item.parts.map(pt=>partRowHTML(order.id,item.id,pt)).join('') || '<div class="pp-pr">Chưa có part</div>'}</div>`).join('')}</div>
+      <div class="pp-group-body">${entries.map(({order,item}) => `<div class="pp-group-order"><div class="pp-group-order-title"><span class="pp-group-order-source">${sidebarIcon('order')}${esc(order.note||'Đơn không tên')}</span><span class="pp-group-order-model">${item.variantName?esc(item.variantName):`× ${item.qty} model`}</span></div>${item.parts.map(pt=>partRowHTML(order.id,item.id,pt)).join('') || '<div class="pp-pr">Chưa có part</div>'}</div>`).join('')}</div>
     </section>`;
   }).join('');
 }
@@ -20400,7 +20427,7 @@ function plateProgressViewHTML(list) {
     const need = group.entries.reduce((s,e)=>s+e.pt.qtyNeeded,0);
     const done = group.entries.reduce((s,e)=>s+e.pt.qtyDone,0);
     const modelsInPlate = new Set(group.entries.map(e=>e.item.modelId)).size;
-    return `<section class="pp-group-card pp-plate-group" style="--group-accent:${color};--group-soft:${color}24"><div class="pp-group-hd"><div class="pp-plate-swatch"></div><div class="pp-group-info"><div class="pp-group-title">${esc(plateName)}</div><div class="pp-group-meta"><span>${modelsInPlate} model</span><span>${group.entries.length} part</span><span>${done>=need?'Đã in xong':'Còn '+Math.max(0,need-done)+' part'}</span></div></div>${ppProgressBarHTML(done,need)}</div><div class="pp-group-body">${group.entries.map(({order,item,pt}) => `<div class="pp-group-order"><div class="pp-group-order-title"><span>🛒 ${esc(order.note||'Đơn không tên')}</span><span class="pp-group-order-model">${esc(item.modelName)}${item.variantName?` · ${esc(item.variantName)}`:''}</span></div>${partRowHTML(order.id,item.id,pt)}</div>`).join('')}</div></section>`;
+    return `<section class="pp-group-card pp-plate-group" style="--group-accent:${color};--group-soft:${color}24"><div class="pp-group-hd"><div class="pp-plate-swatch"></div><div class="pp-group-info"><div class="pp-group-title">${esc(plateName)}</div><div class="pp-group-meta"><span>${modelsInPlate} model</span><span>${group.entries.length} part</span><span>${done>=need?'Đã in xong':'Còn '+Math.max(0,need-done)+' part'}</span></div></div>${ppProgressBarHTML(done,need)}</div><div class="pp-group-body">${group.entries.map(({order,item,pt}) => {const model=models.find(row=>row.id===item.modelId),image=model?.images?.[0]||'';return `<div class="pp-group-order"><div class="pp-group-order-title"><span class="pp-group-order-source">${sidebarIcon('order')}${esc(order.note||'Đơn không tên')}</span><span class="pp-group-order-model">${image?`<img class="pp-group-order-model-thumb" src="${esc(image)}" alt="" loading="lazy" onerror="this.remove()">`:''}<span>${esc(item.modelName)}${item.variantName?` · ${esc(item.variantName)}`:''}</span></span></div>${partRowHTML(order.id,item.id,pt)}</div>`;}).join('')}</div></section>`;
   }).join('') || `<div class="pp-empty"><div class="pp-empty-title">Chưa có part trong Plate</div></div>`;
 }
 
@@ -20468,8 +20495,8 @@ function modelItemHTML(order, item) {
   const colors = [...new Map(item.parts.map(part=>[part.hex,part])).values()];
   const remaining = Math.max(0,p.need-p.done);
   const media = model?.images?.[0]
-    ? `<img src="${esc(model.images[0])}" alt="${esc(item.modelName)}" onerror="this.parentElement.textContent='📦'">`
-    : '📦';
+    ? `<img src="${esc(model.images[0])}" alt="${esc(item.modelName)}" onerror="this.remove()">`
+    : sidebarIcon('model');
   return `<div class="pp-mi">
     <div class="pp-mi-hd${open?' pp-open':''}" onclick="toggleModelItem('${key}')">
       <svg class="pp-mi-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
