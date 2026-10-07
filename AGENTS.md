@@ -161,7 +161,10 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
    thích nếu nhãn, số lượng hoặc trạng thái đã truyền đủ ý.
 3. Mô tả chỉ được giữ khi nó làm rõ một hệ quả quan trọng (dữ liệu không ảnh hưởng
    tồn kho, thao tác không thể hoàn tác, quyền hạn, hay điều kiện cần thực hiện).
-4. Khi rút gọn copy, quét cả họ component và mọi breakpoint; thêm regression check
+4. Trạng thái nền hoặc hàng chờ phụ chỉ cần một số lượng và một hành động chính phải
+   nằm gọn trong toolbar/chip cạnh luồng liên quan, không tự chiếm nguyên một hàng
+   ngang; vẫn giữ được số lượng, trạng thái thực và hành động đó trên desktop lẫn mobile.
+5. Khi rút gọn copy, quét cả họ component và mọi breakpoint; thêm regression check
    cho nguyên tắc mới thay vì chỉ cắt chữ ở ảnh người dùng gửi.
 
 ## Định nghĩa hoàn tất

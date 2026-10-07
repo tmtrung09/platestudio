@@ -134,6 +134,12 @@ const results = await page.evaluate(async () => {
   check('Thư viện mẻ bỏ tiêu đề lặp, nút chụp lặp và nhãn lọc dư thừa', getComputedStyle(batchRedundantHeading).display === 'none' && !batchHeader?.querySelector('button[onclick="openBatchReportHub()"]') && !/Lọc trạng thái/.test(document.querySelector('.batch-report-status-filters')?.textContent || ''), batchHeader?.textContent.trim() || 'thiếu toolbar');
   check('Thư viện mẻ đã loại bỏ hoàn toàn bộ lọc theo ngày', !document.querySelector('.batch-timeline, #batch-timeline-date, input[aria-label="Chọn ngày báo cáo"]') && typeof batchTimelineDay === 'undefined' && !loadBatchReportsFromCloud.toString().includes('p_recorded_day'), document.querySelector('#batch-report-page')?.textContent.includes('Lọc theo ngày') ? 'vẫn còn giao diện lọc ngày' : 'không còn timeline hoặc điều kiện ngày');
   check('Tìm báo cáo thu gọn trong toolbar thay vì chiếm một hàng', Boolean(batchHeader?.querySelector('.batch-library-toolbar .compact-expand-search')) && !document.querySelector('#page-batches > .page-smart-search'), batchHeader?.querySelector('.compact-expand-search')?.className || 'thiếu search');
+  const queuedBatchIds=batchReports.filter(report=>report.image&&!report.aiAnalysis?.generatedAt).map(report=>report.id);
+  brAiQueue={running:false,ids:[],states:{},cooldownUntil:0};
+  renderBatchReportPage();
+  const batchAiQueue=document.querySelector('.batch-ai-queue');
+  const batchAiQueueRect=batchAiQueue?.getBoundingClientRect(), batchToolbarRect=batchHeader?.querySelector('.batch-library-toolbar')?.getBoundingClientRect();
+  check('Hàng chờ Gemini nằm gọn trong toolbar, không chiếm hàng riêng', Boolean(batchAiQueue?.closest('#batch-ai-queue-slot')) && !document.querySelector('#batch-report-page > .batch-ai-queue') && batchAiQueueRect.width < batchToolbarRect.width && batchAiQueue?.textContent.includes(`${queuedBatchIds.length} ảnh chờ phân tích`) && Boolean(batchAiQueue?.querySelector('button[onclick="startBatchAiQueue()"]')), `${Math.round(batchAiQueueRect?.width||0)}px / toolbar ${Math.round(batchToolbarRect?.width||0)}px`);
   const batchSearch = document.getElementById('batch-smart-search'), batchSearchShell = batchSearch?.closest('.compact-expand-search');
   document.getElementById('batch-report-sort')?.focus(); await new Promise(resolve => requestAnimationFrame(resolve));
   const batchSearchCompactRect = batchSearchShell?.getBoundingClientRect(), batchSearchCompactWidth = batchSearchCompactRect?.width || 0;
