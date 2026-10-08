@@ -4130,6 +4130,53 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 #sales-page [role="status"] .btn,#dlg-mv .sales-detail-error .btn{min-height:44px!important;min-width:44px}
 #sales-page>[role="status"]{margin-bottom:14px;max-width:1360px;overflow-wrap:anywhere}
 </style>
+<style id="production-workspace-style">
+.production-navigation-slot{grid-column:1 / -1;position:sticky;top:0;z-index:25;margin:0 0 14px;background:var(--bg);border-radius:14px;box-shadow:var(--ss)}
+.production-navigation{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px;background:var(--s);border-radius:14px}
+.production-mode{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;min-width:44px;padding:8px 13px;border:0;border-radius:10px;background:transparent;color:var(--t2);font:650 13px 'Be Vietnam Pro',sans-serif;cursor:pointer}
+.production-mode.is-active{background:var(--pub);color:var(--pu)}
+.production-mode svg,.production-needs-toolbar svg,.production-needs-meta svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.production-mode:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.production-plate-tools{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.production-plate-tools [aria-current="page"]{box-shadow:inset 0 0 0 1px var(--pu);color:var(--pu)!important}
+.production-surface>.sect-hd{display:none}
+.production-surface .production-needs-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.production-needs-toolbar .page-smart-search{flex:1;min-width:220px;margin:0!important}
+.production-needs-toolbar .page-smart-search>span{display:grid;place-items:center}
+.production-needs-toolbar select,.production-policy select{min-height:44px;min-width:0;max-width:100%;padding:8px 11px;font:600 12px 'Be Vietnam Pro',sans-serif}
+.production-needs-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:var(--t2)}
+.production-needs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:10px;align-items:start}
+.production-need-card{min-width:0;padding:12px;border-radius:14px;background:var(--s);box-shadow:var(--ss)}
+.production-need-card>header{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:10px}
+.production-need-card>header>div{min-width:0;flex:1}
+.production-need-thumb{position:relative;display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:10px;overflow:hidden;background:var(--s2);color:var(--t3)}
+.production-need-thumb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7}
+.production-need-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.production-need-card h3{margin:3px 0;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.production-need-card small{color:var(--t2);font-size:11px;line-height:1.5}
+.production-need-origins{display:flex;flex-wrap:wrap;gap:4px;font-size:10px;font-weight:700;color:var(--t2)}
+.production-need-origins span{padding:2px 6px;border-radius:5px;background:var(--s2)}
+.production-need-origins [data-origin="qc"],.production-need-origins [data-origin="reconcile"]{color:var(--re);background:var(--reb)}
+.production-part-list{display:grid;gap:5px;margin-bottom:10px}
+.production-part-list>div{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:7px;font-size:12px;line-height:1.5}
+.production-part-list .part-dot{width:8px;height:8px;margin:0}
+.production-part-list em{margin-left:5px;font-style:normal;color:var(--re);font-size:10px}
+.production-need-totals,.production-stock-facts{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--t2)}
+.production-need-totals b,.production-stock-facts b{color:var(--t);margin-left:4px}
+.production-order-sources{margin-top:8px;font-size:11px;color:var(--t2)}
+.production-order-sources summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.production-order-sources .btn{display:flex;margin-bottom:4px;white-space:normal;text-align:left}
+.production-policy{display:grid;gap:5px;margin:10px 0;font-size:11px;color:var(--t2)}
+.production-need-note{display:block;font-size:12px;color:var(--t2);line-height:1.5}
+.production-need-card footer{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.production-needs-more{margin-top:12px}
+.production-surface .production-needs-more[hidden]{display:none!important}
+#page-progress #ov-print-progress .pp-hd-titlewrap,#page-progress #ov-print-progress .pp-hd-back{display:none!important}
+#page-progress #ov-print-progress .pp-hd{min-height:0!important;padding-top:0!important;margin-top:0!important}
+#page-progress>.page-heading .page-layout-btn,#page-reminders>.page-heading .page-layout-btn,#page-inventory>.page-heading .page-layout-btn{display:none}
+@media(max-width:860px){.production-plate-tools{width:100%;margin-left:0}.production-navigation-slot{margin-left:8px;margin-right:8px}.production-needs-toolbar .page-smart-search{flex-basis:100%}.production-needs-toolbar select{flex:1}.production-needs-toolbar .btn{min-height:44px}.production-need-card footer .btn{min-height:44px}.production-mode{padding:8px 10px;font-size:12px}}
+@media print{.production-navigation-slot{display:none}}
+</style>
 <style id="shared-compact-density">
 /* One density layer for page chrome and reusable surfaces. Keep image ratios,
    form state, scroll containers and camera/print geometry unchanged. */
@@ -4363,14 +4410,10 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
           <button class="more-item" data-more-tone="violet" data-sidebar-permission="models.manage" onclick="closeMoreSheet();openAddModel()"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Thêm Model</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-page="orders" onclick="closeMoreSheet();goPage('orders')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>Đơn hàng</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-page="models" onclick="closeMoreSheet();goPage('models')"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Model 3D</button>
-          <button class="more-item" data-more-tone="blue" data-sidebar-page="progress" onclick="closeMoreSheet();goPage('progress')"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Tiến độ in</button>
+          <button class="more-item" data-more-tone="blue" data-sidebar-page="production" onclick="closeMoreSheet();goPage('production')"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Sản xuất</button>
           <button class="more-item" data-more-tone="pink" data-sidebar-page="batches" onclick="closeMoreSheet();goPage('batches')"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Báo cáo mẻ in</button>
-          <button class="more-item" data-more-tone="cyan" data-sidebar-page="print-plans" onclick="closeMoreSheet();goPage('print-plans')"><svg viewBox="0 0 24 24"><path d="M4 19V5M10 19V9M16 19V3M22 19V12"/></svg>Kế hoạch in</button>
-          <button class="more-item" data-more-tone="cyan" data-sidebar-page="plates" onclick="closeMoreSheet();goPage('plates')"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Plate in</button>
-          <button class="more-item" data-more-tone="amber" data-sidebar-page="machine-setup" onclick="closeMoreSheet();goPage('machine-setup')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Khay nhựa & máy</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-page="projects" onclick="closeMoreSheet();goPage('projects')"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Dự án</button>
           <button class="more-item" data-more-tone="amber" data-sidebar-page="filaments" onclick="closeMoreSheet();goPage('filaments')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Màu nhựa</button>
-          <button class="more-item" data-more-tone="rose" data-sidebar-page="reminders" onclick="closeMoreSheet();goPage('reminders')"><svg viewBox="0 0 24 24"><path d="M12 9v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg>Nhắc part còn thiếu</button>
         </div>
       </section>
       <section class="more-group" data-more-group="delivery">
@@ -4382,7 +4425,6 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
           <button class="more-item" data-more-tone="pink" data-sidebar-page="packaging" onclick="closeMoreSheet();goPage('packaging')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Bao bì & nhãn giá</button>
           <button class="more-item" data-more-tone="indigo" data-sidebar-page="kiotviet" onclick="closeMoreSheet();goPage('kiotviet')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Đồng bộ KiotViet</button>
           <button class="more-item" data-more-tone="green" data-sidebar-page="sales" onclick="closeMoreSheet();goPage('sales')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 12h8M8 16h5"/></svg>Bán hàng</button>
-          <button class="more-item" data-more-tone="orange" data-sidebar-page="inventory" onclick="closeMoreSheet();goPage('inventory')"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M8 12h8M9 16h.01M15 16h.01"/></svg>Cần in lại</button>
         </div>
       </section>
       <section class="more-group" data-more-group="system">
@@ -7326,9 +7368,8 @@ function getSpotlightResults(query){
     ['Tạo đơn hàng','Bắt đầu chọn model và phân bổ plate','＋',()=>openOrderForm(),'đơn mới'],
     ['Báo cáo mẻ in','Chụp hoặc tải ảnh mẻ in mới','📷',()=>openBatchReportHub(),'chụp ảnh báo cáo in'],
     ['Báo cáo bán hàng','Xem hàng đã bán và lịch sử nhập KiotViet','▥',()=>goPage('sales'),'doanh thu bán kiot'],
-    ['Cần in lại','Xem hàng cần bù do bán hàng hoặc QC không đạt','↻',()=>goPage('inventory'),'in bù hàng lỗi qc'],
+    ['Sản xuất','Cần in, plate & máy, tiến độ','▥',()=>goPage('production'),'in bù hàng lỗi qc thiếu part plate máy tiến độ'],
     ['Đồng bộ KiotViet','Nhập hoặc quản lý dữ liệu KiotViet','⇅',()=>goPage('kiotviet'),'sku danh mục kiot'],
-    ['Nhắc part còn thiếu',`${getIncompleteModelReminders().length} model cần kiểm tra`,'◷',()=>goPage('reminders'),'thiếu part']
   ];
   if(isWorkspaceOwner())quickActions.push(['Phân quyền','Thêm người dùng và cấp quyền thao tác','⚿',()=>openAccessManagement(),'quản lý quyền thành viên']);
   quickActions.forEach(([title,meta,icon,action,searchText])=>add('actions',title,meta,{icon,action},searchText));
@@ -7600,22 +7641,209 @@ function ordererTag(name) {
 ═══════════════════════════════════════ */
 let curPage = 'dashboard';
 let sbPinned = localStorage.getItem('ps_sb_pin') !== '0';
+/* The production workspace projects existing records; changing a view never
+   creates an order, plate or stock movement. Old routes remain usable aliases. */
+const PRODUCTION_ROUTES=['progress','plates','reminders','inventory','print-plans','machine-setup'];
+const productionNeedsState={query:'',source:'all',status:'all',limit:60,policies:{}};
+function productionCan(permission){return !currentUser||canAccess(permission);}
+function productionNeedsAllowed(){return ['progress.view','batches.view','kiot.import','plates.plan'].some(productionCan);}
+function productionAllowed(){return productionNeedsAllowed()||productionCan('plates.plan');}
+function canonicalNavigationPage(page){return PRODUCTION_ROUTES.includes(page)?'production':page;}
+function productionMode(page){return ['reminders','inventory'].includes(page)?'needs':page==='progress'?'progress':'plates';}
+function productionDefaultRoute(){
+  const saved=ld('ps_production_mode','');
+  const allowed=page=>page==='reminders'?productionNeedsAllowed():productionCan(requiredWorkspacePermission(page));
+  return [saved,'reminders','plates','progress'].find(page=>['reminders','plates','progress'].includes(page)&&allowed(page))||'dashboard';
+}
+function productionNavigationHTML(page){
+  const mode=productionMode(page),modes=[['needs','Cần in','reminders',productionNeedsAllowed()],['plates','Plate & máy','plates',productionCan('plates.plan')],['progress','Tiến độ','progress',productionCan('progress.view')]];
+  return `<nav class="production-navigation" aria-label="Không gian sản xuất">${modes.filter(item=>item[3]).map(([key,label,route])=>`<button type="button" class="production-mode${mode===key?' is-active':''}" data-production-mode="${key}" ${mode===key?'aria-current="page"':''} onclick="goPage('${route}')">${appIcon(key==='needs'?'order':key==='plates'?'plate':'progress')}<span>${label}</span></button>`).join('')}${mode==='plates'?`<div class="production-plate-tools">${[['plates','Danh sách plate'],['print-plans','Lịch máy'],['machine-setup','Khay nhựa']].map(([route,label])=>`<button type="button" class="btn btn-ghost btn-sm" ${page===route?'aria-current="page"':''} onclick="goPage('${route}')">${label}</button>`).join('')}</div>`:''}</nav>`;
+}
+function renderProductionNavigation(page){
+  if(!PRODUCTION_ROUTES.includes(page))return;
+  const root=document.getElementById('page-'+page);if(!root)return;
+  let nav=root.querySelector(':scope > .production-navigation-slot');
+  if(!nav){nav=document.createElement('div');nav.className='production-navigation-slot';const heading=root.querySelector(':scope > .page-heading');if(heading)heading.after(nav);else root.prepend(nav);}
+  nav.innerHTML=productionNavigationHTML(page);
+  root.classList.add('production-surface');
+  saveLocalValue('ps_production_mode',productionMode(page)==='needs'?'reminders':productionMode(page)==='plates'?'plates':'progress');
+}
+function getProductionNeedRows(exclude={},includeSuggestions=true){
+  const groups=new Map(),scheduled=new Map(scheduledPrintQtyByKey(exclude));
+  const addPart=(groupKey,base,item)=>{
+    if(!(item.qty>0))return;
+    let row=groups.get(groupKey);if(!row){row={...base,id:groupKey,parts:[],origins:[],orders:[]};groups.set(groupKey,row);}
+    const key=planItemKey(item),prior=row.parts.find(part=>planItemKey(part)===key);
+    if(prior){prior.qty+=item.qty;prior.qc=prior.qc||item.qc;prior.references.push(...(item.references||[]));}
+    else row.parts.push({...item,references:item.references||[]});
+    if(item.orderId&&!row.orders.includes(item.orderId))row.orders.push(item.orderId);
+    if(item.qc&&!row.origins.includes('qc'))row.origins.push('qc');
+    if(!row.origins.includes(base.type))row.origins.push(base.type);
+  };
+  if(productionCan('progress.view'))pitems.forEach(item=>{
+    const order=rawOrder(item.orderId),model=models.find(m=>m.id===item.modelId);
+    const manual=!item.orderId&&plates.some(plate=>plate.id===item.plateId);
+    if(!model||(!order&&!manual)||['cancelled','shipped'].includes(order?.status))return;
+    const qty=Math.max(0,(Number(item.qty)||0)-(Number(item.qtyDone)||0));if(!qty)return;
+    const variant=model.variants?.find(v=>v.id===item.variantId),part=model.parts?.find(p=>p.id===item.partId);
+    const qc=(operations.qualityIssues||[]).some(issue=>issue.status!=='resolved'&&issue.partId===item.id);
+    const filamentId=item.filamentId||planPartColorId(model,variant,part||item);
+    addPart(`${manual?'manual':'order'}:${model.id}:${item.variantId||'base'}`,{type:manual?'outside':'order',model,variantName:item.variantName||variant?.name||'',title:model.name},
+      {modelId:model.id,modelName:model.name,variantId:item.variantId||null,variantName:item.variantName||variant?.name||'',partId:item.partId,partName:item.partName||part?.name||'Part',filamentId,qty,source:manual?'outside':'order',orderId:order?.id,qc,references:[{pitemId:item.id,orderId:order?.id,orderItemId:item.orderItemId,plateId:item.plateId,qty}]});
+  });
+  // Legacy QC can outlive its pitem. Keep the work visible, but never guess
+  // a printable part or increase the order gap from incomplete metadata.
+  if(productionCan('progress.view'))(operations.qualityIssues||[]).forEach(issue=>{
+    if(issue.status==='resolved'||pitems.some(part=>part.id===issue.partId))return;
+    const order=rawOrder(issue.orderId),model=models.find(model=>model.id===issue.modelId);
+    if(!order||!model||['cancelled','shipped'].includes(order.status)||!(Number(issue.qty)>0))return;
+    groups.set(`qc-review:${issue.id}`,{id:`qc-review:${issue.id}`,type:'qc',origins:['order','qc'],title:model.name,model,variantName:'',blockedQcQty:Number(issue.qty),parts:[],orders:[order.id]});
+  });
+  if(productionCan('batches.view')){
+    fulfillmentWorkshopRows().filter(row=>row.source==='external'&&row.m).forEach(external=>{
+      const model=external.m,variant=model.variants?.find(v=>v.id===external.it.variantId),parts=partsForVariant(model,variant||null);
+      const items=(external.reports||[]).flatMap(report=>(report.manualItems||[]).filter(item=>item.modelId===model.id&&String(item.variantId||'')===String(external.it.variantId||'')));
+      const coverage=getExternalModelPartCoverage({...model,parts},items);
+      const failed=workshopNeedsReprint(external)?workshopReprintQty(external):0;
+      const rejected=parts.find(part=>part.id===external.handover?.qcRejectedPartId);
+      if(failed&&!rejected)groups.set(`qc-review:${external.externalKey}`,{id:`qc-review:${external.externalKey}`,type:'qc',origins:['outside','qc'],title:model.name,variantName:external.it.variantName||variant?.name||'',model,externalKey:external.externalKey,blockedQcQty:failed,parts:[],orders:[]});
+      (coverage?.items||[]).forEach(item=>{
+        const part=parts.find(part=>part.id===item.partId)||item;
+        const qcQty=failed&&rejected?.id===item.partId?failed*Math.max(1,Number(part.qtyPerModel)||1):0;
+        const qty=Math.max(0,(Number(item.qty)||0)-(Number(item.qtyDone)||0))+qcQty;
+        addPart(`outside:${external.externalKey}`,{type:'outside',model,variantName:external.it.variantName||variant?.name||'',title:model.name,externalKey:external.externalKey},
+          {modelId:model.id,modelName:model.name,variantId:external.it.variantId||null,variantName:external.it.variantName||variant?.name||'',partId:item.partId,partName:item.partName||part.name,filamentId:planPartColorId(model,variant,part),qty,source:'outside',qc:qcQty>0});
+      });
+    });
+    if(includeSuggestions)fulfillmentReportSource().filter(isOperationalBatchReport).forEach(report=>{
+      const matches=getBatchReportReconciliationCandidates(report);if(!matches.length)return;
+      groups.set(`reconcile:${report.id}`,{id:`reconcile:${report.id}`,type:'reconcile',origins:['reconcile'],title:'Mẻ đã in · cần đối chiếu',report,matches,model:models.find(model=>model.id===matches[0].pitem.modelId),parts:[],orders:[]});
+    });
+  }
+  if(includeSuggestions&&productionCan('kiot.import')){
+    const sales=new Map(getSalesRestockNeeds().map(row=>[row.sku,row])),alerts=new Map(getInventoryAlerts().map(row=>[row.sku,row]));
+    new Set([...sales.keys(),...alerts.keys()]).forEach(sku=>{
+      const sale=sales.get(sku),alert=alerts.get(sku),model=sale?.model||alert?.model||kiotSalesModelForMapping(alert?.mapping);
+      groups.set(`stock:${sku}`,{id:`stock:${sku}`,type:'stock',origins:['stock'],title:sale?.product?.name||alert?.product?.name||sale?.name||sku,sku,sale,alert,model,parts:[],orders:[],variantName:sale?.mapping?.variantName||alert?.mapping?.variantName||''});
+    });
+  }
+  const rows=[...groups.values()];
+  rows.forEach(row=>row.parts.forEach(part=>{
+    const key=planItemKey(part),reserved=Math.max(0,scheduled.get(key)||0);part.planned=Math.min(part.qty,reserved);part.unplanned=Math.max(0,part.qty-part.planned);scheduled.set(key,reserved-part.planned);
+  }));
+  // Failed/unprinted planned parts are already included in order/outside gaps.
+  // Keep only the larger remainder per key instead of creating a second demand.
+  if(productionCan('plates.plan'))mergePrintNeedRows(getPlanRetryNeeds(exclude)).forEach(part=>{
+    const existing=rows.flatMap(row=>row.parts).filter(item=>planItemKey(item)===planItemKey(part));
+    const missing=Math.max(0,part.qty-existing.reduce((sum,item)=>sum+item.unplanned,0));
+    if(!missing)return;
+    const model=models.find(m=>m.id===part.modelId);if(!model)return;
+    let row=rows.find(row=>row.id===`retry:${part.modelId}:${part.variantId||'base'}`);
+    if(!row){row={id:`retry:${part.modelId}:${part.variantId||'base'}`,type:'qc',origins:['qc'],model,title:model.name,variantName:part.variantName||'',parts:[],orders:[]};rows.push(row);}
+    row.parts.push({...part,qty:missing,planned:0,unplanned:missing,qc:true,references:[]});
+  });
+  return rows.sort((a,b)=>(a.type==='reconcile'?-1:b.type==='reconcile'?1:0)||Number(b.origins.includes('qc'))-Number(a.origins.includes('qc'))||String(a.title).localeCompare(String(b.title),'vi'));
+}
+function productionRestockPolicy(row){const saved=productionNeedsState.policies[row.sku];return saved==='sales'&&row.sale?'sales':saved==='stock'&&row.alert?'stock':row.sale?'sales':'stock';}
+function productionRestockQty(row){return productionRestockPolicy(row)==='sales'?row.sale?.suggestedQty||0:row.alert?inventorySuggestedQty(row.alert):0;}
+function productionNeedMatches(row){
+  const state=productionNeedsState;
+  if(state.source!=='all'&&!row.origins.includes(state.source))return false;
+  if(state.status==='unplanned'&&(row.type==='reconcile'||row.blockedQcQty||(row.parts.length&&!row.parts.some(part=>part.unplanned>0))))return false;
+  if(state.status==='planned'&&(!row.parts.length||row.parts.some(part=>part.unplanned>0)))return false;
+  const text=[row.title,row.variantName,row.sku,...row.parts.flatMap(part=>[part.partName,getFil(part.filamentId)?.name]),...row.orders.map(id=>rawOrder(id)?.note),...(row.matches||[]).map(match=>match.item.partName)].join(' ');
+  return !state.query||searchFold(text).includes(searchFold(state.query));
+}
+function productionNeedCard(row){
+  const labels={order:'Theo đơn',outside:'Ngoài đơn',qc:'QC lỗi',stock:'Bù hàng',reconcile:'Cần đối chiếu'};
+  const image=row.type==='reconcile'?(row.report.thumb||row.report.image):row.model?.images?.[0]||(row.sale?salesRestockImage(row.sale):row.alert?inventoryProductImage(row.alert):'');
+  const thumb=`<span class="production-need-thumb">${appIcon('model')}${image?`<img src="${esc(image)}" alt="" loading="lazy" onerror="this.remove()">`:''}</span>`;
+  let body='',action='';
+  if(row.type==='reconcile'){
+    body=`<p class="production-need-note">${row.matches.length} part có thể cập nhật vào đơn. Đối chiếu trước khi in thêm.</p>`;
+    action=canEditBatchReports()?`<button class="btn btn-ac btn-sm" onclick="openBatchReconciliation('${esc(row.report.id)}')">Đối chiếu</button>`:`<span class="production-need-note">Cần người có quyền xử lý báo cáo.</span>`;
+  }else if(row.blockedQcQty){
+    body=`<p class="production-need-note">${row.blockedQcQty} sản phẩm QC lỗi · cần xác định part trước khi xếp máy.</p>`;
+    action=productionCan('assembly.qc')?`<button class="btn btn-ac btn-sm" onclick="${row.externalKey?`openExternalWorkshopReprintEdit('${esc(row.externalKey)}')`:"revealFulfillmentStage('reprint')"}">Kiểm tra QC</button>`:'<span class="production-need-note">Cần người có quyền QC kiểm tra part lỗi.</span>';
+  }else if(row.type==='stock'){
+    body=`<div class="production-stock-facts"><span>SKU <b>${esc(row.sku)}</b></span><span>Tồn <b>${row.sale?.stock??row.alert?.stock??'—'}</b></span>${row.sale?`<span>Đã bán <b>${row.sale.qty}</b></span>`:''}</div><label class="production-policy"><span>Gợi ý cần bù</span><select aria-label="Nguồn gợi ý ${esc(row.sku)}" onchange="setProductionRestockPolicy('${encodeURIComponent(row.sku)}',this.value)">${row.sale?`<option value="sales" ${productionRestockPolicy(row)==='sales'?'selected':''}>Theo bán · ${row.sale.suggestedQty} sản phẩm</option>`:''}${row.alert?`<option value="stock" ${productionRestockPolicy(row)==='stock'?'selected':''}>Theo tồn · ${inventorySuggestedQty(row.alert)} sản phẩm</option>`:''}</select></label><small class="production-need-note">${row.sale?esc(kiotSalesImportPeriodLabel(row.sale.report)):''}${row.alert?`${row.sale?' · ':''}Snapshot ${kiotViet.lastCatalogImportAt?fmtDate(kiotViet.lastCatalogImportAt):'chưa rõ ngày'}`:''}</small>`;
+    action=row.model?(productionCan('plates.plan')?`<button class="btn btn-ac btn-sm" onclick="planProductionNeed('${encodeURIComponent(row.id)}')">Sắp vào máy</button>`:'')+`<button class="btn btn-ghost btn-sm" onclick="openProductionStockDetail('${encodeURIComponent(row.id)}')">Chi tiết</button>`:`<button class="btn btn-ac btn-sm" onclick="openKiotMappingDialog('${encodeURIComponent(row.sku)}')">Ghép SKU</button>`;
+  }else{
+    body=`<div class="production-part-list">${row.parts.map(part=>`<div><span class="part-dot" style="background:${esc(getFil(part.filamentId)?.hex||'#888')}"></span><span>${esc(part.partName)}${getFil(part.filamentId)?` <small>· ${esc(getFil(part.filamentId).name)}</small>`:''}${part.qc?'<em>QC lỗi</em>':''}</span><b>${part.qty}</b></div>`).join('')}</div><div class="production-need-totals"><span>Còn thiếu <b>${row.parts.reduce((n,p)=>n+p.qty,0)}</b></span><span>Đã xếp máy <b>${row.parts.reduce((n,p)=>n+p.planned,0)}</b></span><span>Chưa xếp <b>${row.parts.reduce((n,p)=>n+p.unplanned,0)}</b></span></div>${row.orders.length?`<details class="production-order-sources"><summary>${row.orders.length} đơn liên quan</summary>${row.orders.map(id=>`<button type="button" class="btn btn-ghost btn-sm" onclick="openPrintProgress({type:'order',id:'${esc(id)}'})">${esc(rawOrder(id)?.note||'Đơn không tên')}</button>`).join('')}</details>`:''}`;
+    action=productionCan('plates.plan')&&row.parts.some(part=>part.unplanned>0)?`<button class="btn btn-ac btn-sm" onclick="planProductionNeed('${encodeURIComponent(row.id)}')">Sắp vào máy</button>`:'';
+    if(productionCan('progress.view'))action+=`<button class="btn btn-ghost btn-sm" onclick="showProductionNeedProgress('${encodeURIComponent(row.id)}')">Xem tiến độ</button>`;
+  }
+  return `<article class="production-need-card" data-production-need="${esc(row.id)}"><header>${thumb}<div><div class="production-need-origins">${row.origins.map(origin=>`<span data-origin="${origin}">${labels[origin]}</span>`).join('')}</div><h3>${esc(row.title)}</h3>${row.variantName?`<small>${esc(row.variantName)}</small>`:''}</div></header>${body}<footer>${action}</footer></article>`;
+}
+function renderProductionNeeds(hostId='reminders-page'){
+  const host=document.getElementById(hostId);if(!host)return;
+  ensureOperationalManualReports();
+  if(!host.querySelector('.production-needs-toolbar'))host.innerHTML=`<div class="production-needs-toolbar"><label class="page-smart-search"><span>${appIcon('search')}</span><input type="search" autocomplete="off" aria-label="Tìm việc cần in" placeholder="Tìm model, part, màu, đơn, SKU…" oninput="setProductionNeedsQuery(this.value)"></label><select class="production-source-filter" aria-label="Nguồn cần in" onchange="setProductionNeedsFilter('source',this.value)"></select><select aria-label="Trạng thái xếp máy" onchange="setProductionNeedsFilter('status',this.value)"><option value="all">Mọi trạng thái</option><option value="unplanned">Chưa xếp máy</option><option value="planned">Đã xếp đủ</option></select><button class="btn btn-ghost btn-sm" onclick="refreshProductionNeeds()">${appIcon('refresh')}Làm mới</button></div><div class="production-needs-meta" role="status"></div><div class="production-needs-list"></div><button class="btn btn-ghost production-needs-more" onclick="productionNeedsState.limit+=60;renderProductionNeeds('${hostId}')">Xem thêm</button>`;
+  const sources=[['all','Tất cả nguồn'],...(productionCan('progress.view')?[['order','Theo đơn']]:[]),...(productionCan('batches.view')?[['outside','Ngoài đơn'],['reconcile','Cần đối chiếu']]:[]),...(productionCan('progress.view')||productionCan('plates.plan')||productionCan('batches.view')?[['qc','QC lỗi']]:[]),...(productionCan('kiot.import')?[['stock','Bù hàng']]:[])];
+  if(!sources.some(([key])=>key===productionNeedsState.source))productionNeedsState.source='all';
+  host.querySelector('.production-source-filter').innerHTML=sources.map(([key,label])=>`<option value="${key}" ${productionNeedsState.source===key?'selected':''}>${label}</option>`).join('');
+  const input=host.querySelector('input');if(input.value!==productionNeedsState.query)input.value=productionNeedsState.query;
+  host.querySelector('[aria-label="Trạng thái xếp máy"]').value=productionNeedsState.status;
+  const all=getProductionNeedRows(),rows=all.filter(productionNeedMatches),visible=rows.slice(0,productionNeedsState.limit);
+  document.getElementById('cnt-reminders')?.replaceChildren(document.createTextNode(String(all.length)));
+  document.getElementById('cnt-inventory')?.replaceChildren(document.createTextNode(String(all.filter(row=>row.type==='stock').length)));
+  host.querySelector('.production-needs-meta').innerHTML=`<span>${rows.length} việc${visible.length<rows.length?` · đang hiện ${visible.length}`:''}</span>${productionCan('kiot.import')?`<button class="btn btn-ghost btn-sm" ${kiotViet.inventoryAiLoading?'disabled':''} onclick="analyzeKiotInventory()">${appIcon('progress')}${kiotViet.inventoryAiLoading?'Đang phân tích tồn':'Phân tích tồn'}</button>`:''}`;
+  host.querySelector('.production-needs-list').innerHTML=visible.map(productionNeedCard).join('')||'<div class="empty">Không có việc khớp lựa chọn.</div>';
+  host.querySelector('.production-needs-more').hidden=visible.length>=rows.length;
+}
+function activeProductionNeedsHost(){return curPage==='inventory'?'inventory-page':'reminders-page';}
+function persistProductionNeedsView(){if(['reminders','inventory'].includes(curPage))history.replaceState({...history.state,plateStudioPage:curPage},'',pageHistoryUrl(curPage));}
+function restoreProductionNeedsFromLocation(page){const params=new URLSearchParams(location.hash.slice(1));if(['reminders','inventory'].includes(page)&&params.get(PAGE_HISTORY_KEY)===page){productionNeedsState.source=params.get('source')||(page==='inventory'?'stock':'all');productionNeedsState.status=params.get('status')||'all';productionNeedsState.query=params.get('q')||'';}}
+function setProductionNeedsQuery(value){productionNeedsState.query=value;productionNeedsState.limit=60;persistProductionNeedsView();renderProductionNeeds(activeProductionNeedsHost());}
+function setProductionNeedsFilter(key,value){productionNeedsState[key]=value;productionNeedsState.limit=60;persistProductionNeedsView();renderProductionNeeds(activeProductionNeedsHost());}
+function setProductionRestockPolicy(sku,value){productionNeedsState.policies[decodeURIComponent(sku)]=value;renderProductionNeeds(activeProductionNeedsHost());}
+async function refreshProductionNeeds(){
+  const refreshed=await refreshPageFromCloud(productionCan('kiot.import')?'inventory':'reminders');
+  if(refreshed&&['reminders','inventory'].includes(curPage))renderProductionNeeds(activeProductionNeedsHost());
+  return refreshed;
+}
+function planProductionNeed(encodedId){
+  if(!productionCan('plates.plan')){toast('Bạn chưa được cấp quyền xếp plate.');return;}
+  const row=getProductionNeedRows().find(row=>row.id===decodeURIComponent(encodedId));if(!row)return;
+  if(row.type==='stock'){
+    const policy=productionRestockPolicy(row);
+    if(policy==='sales'){openSalesRestockPlan(encodeURIComponent(row.sku),row.sale.report.id);return;}
+    const need={sku:row.sku,mapping:row.alert.mapping},components=salesRestockComponents(need);if(!components)return;
+    const qty=productionRestockQty(row),parts=components.flatMap(component=>{const model=models.find(m=>m.id===component.modelId),variant=model.variants?.find(v=>v.id===component.variantId);return partsForVariant(model,variant||null).map(part=>({modelId:model.id,modelName:model.name,variantId:variant?.id||null,variantName:variant?.name||'',partId:part.id,partName:part.name,qty:qty*component.qty*Math.max(1,Number(part.qtyPerModel)||1),filamentId:planPartColorId(model,variant,part),source:'inventory'}));});
+    openPrintPlanSuggestion(parts,`Bù tồn · ${row.title}`,'Số lượng là gợi ý theo snapshot tồn kho.');return;
+  }
+  if(row.type==='reconcile')return;
+  const parts=row.parts.filter(part=>part.unplanned>0).map(part=>({...part,qty:part.unplanned}));
+  openPrintPlanSuggestion(parts,`Cần in · ${row.title}`,'Chỉ xếp phần chưa có trong kế hoạch máy.');
+}
+function showProductionNeedProgress(encodedId){
+  const row=getProductionNeedRows().find(row=>row.id===decodeURIComponent(encodedId));if(!row)return;
+  if(row.orders.length===1){openPrintProgress({type:'order',id:row.orders[0]});return;}
+  openPrintProgress();setPpView(row.type==='outside'?'external':'models');document.getElementById('pp-search').value=row.title;renderQueue();
+}
+function openProductionStockDetail(encodedId){
+  const row=getProductionNeedRows().find(row=>row.id===decodeURIComponent(encodedId));if(!row?.model)return;
+  viewModel(row.model.id);
+}
+function renderRemindersPage(){renderProductionNeeds('reminders-page');}
+function renderInventoryPage(){renderProductionNeeds('inventory-page');}
 const PAGE_META = {
+  progress:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Kiểm tra kết quả in.'},
   dashboard:{eyebrow:'Điều phối',title:'Tình hình xưởng',subtitle:'Ưu tiên và tiến độ.'},
   models:{eyebrow:'Thư viện',title:'Model 3D',subtitle:'Model và biến thể.'},
   orders:{eyebrow:'Vận hành',title:'Đơn hàng',subtitle:'Theo dõi đơn.'},
-  plates:{eyebrow:'Chuẩn bị in',title:'Plate in',subtitle:'Part và màu.'},
+  plates:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Xếp plate theo máy.'},
   projects:{eyebrow:'Tổ chức',title:'Dự án',subtitle:'Nhóm công việc.'},
   filaments:{eyebrow:'Vật liệu',title:'Màu nhựa',subtitle:'Màu và tồn.'},
   batches:{eyebrow:'Xác minh',title:'Báo cáo mẻ in',subtitle:'Ảnh và lịch sử.'},
-  reminders:{eyebrow:'Kiểm soát',title:'Nhắc part còn thiếu',subtitle:'Việc cần in.'},
+  reminders:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhu cầu in và đối chiếu.'},
   fulfillment:{eyebrow:'Hoàn thiện',title:'Gia công & giao hàng',subtitle:'Gia công và giao.'},
   packaging:{eyebrow:'Chuẩn bị song song',title:'Bao bì & nhãn giá',subtitle:'Bao bì và nhãn.'},
-  'print-plans':{eyebrow:'Vận hành ban đêm',title:'Kế hoạch in',subtitle:'Plate theo máy.'},
-  'machine-setup':{eyebrow:'Chuẩn bị máy',title:'Khay nhựa & máy in',subtitle:'Nhựa trên máy.'},
+  'print-plans':{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Lịch máy theo ca in.'},
+  'machine-setup':{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhựa đang lắp trên máy.'},
   kiotviet:{eyebrow:'Bán hàng',title:'Đồng bộ KiotViet',subtitle:'SKU và tồn kho.'},
   sales:{eyebrow:'Bán hàng',title:'Tình hình bán hàng',subtitle:'Bán và cần bù.'},
-  inventory:{eyebrow:'Bán hàng',title:'Cần in lại',subtitle:'Bán và tồn.'},
+  inventory:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhu cầu in và đối chiếu.'},
   devices:{eyebrow:'Bảo mật vận hành',title:'Thiết bị',subtitle:'Thiết bị báo cáo.'},
   access:{eyebrow:'Hệ thống',title:'Phân quyền',subtitle:'Quyền truy cập.'},
   data:{eyebrow:'Hệ thống',title:'Dữ liệu',subtitle:'Sao lưu và nhập xuất.'}
@@ -7623,15 +7851,15 @@ const PAGE_META = {
 /* Mỗi trang chức năng có một địa chỉ nhỏ trong lịch sử trình duyệt. Nhờ vậy
    tải lại không rơi về Dashboard, và Back/Forward hoạt động như ứng dụng đa trang. */
 const PAGE_HISTORY_KEY='ps_page';
-function validHistoryPage(page){return !!PAGE_META[page]||['progress','order-form','kiotviet-map'].includes(page);}
+function validHistoryPage(page){return !!PAGE_META[page]||['production','order-form','kiotviet-map'].includes(page);}
 function pageFromLocation(){
   const value=new URLSearchParams(location.hash.replace(/^#/,'')).get(PAGE_HISTORY_KEY)||'';
   if(validHistoryPage(value))return value;
   try{const saved=localStorage.getItem('ps_last_open_page')||'';return validHistoryPage(saved)?saved:'dashboard';}catch(_){return 'dashboard';}
 }
-function pageHistoryUrl(page){return `${location.pathname}${location.search}#${PAGE_HISTORY_KEY}=${encodeURIComponent(page)}`;}
+function pageHistoryUrl(page){const params=new URLSearchParams({[PAGE_HISTORY_KEY]:page});if(['reminders','inventory'].includes(page)){params.set('source',productionNeedsState.source);params.set('status',productionNeedsState.status);if(productionNeedsState.query)params.set('q',productionNeedsState.query);}return `${location.pathname}${location.search}#${params}`;}
 function rememberCurrentPageScroll(){
-  const state={...(history.state||{}),plateStudioPage:curPage,plateStudioScroll:window.scrollY||0};
+  const state={...(history.state||{}),plateStudioPage:curPage,plateStudioScroll:window.scrollY||document.getElementById('pg-content')?.scrollTop||0};
   history.replaceState(state,'',pageHistoryUrl(curPage));
 }
 function writePageHistory(page,mode='push'){
@@ -7641,6 +7869,7 @@ function writePageHistory(page,mode='push'){
   else history.pushState(state,'',pageHistoryUrl(page));
 }
 const initialHistoryPage=pageFromLocation();
+restoreProductionNeedsFromLocation(initialHistoryPage);
 if(initialHistoryPage!=='dashboard')curPage=initialHistoryPage;
 if('scrollRestoration' in history)history.scrollRestoration='manual';
 window.addEventListener('popstate',event=>{
@@ -7698,10 +7927,10 @@ const GUIDE_TOURS={
     ['Tìm và sắp xếp lịch sử','Ô tìm kiếm dùng cho màu, ngày, người báo cáo, model và part; menu cạnh đó thay đổi thứ tự hiển thị.', '#batch-smart-search', 'Dùng “Mới cập nhật” khi cần xem phần vừa được QC bổ sung.'],
     ['Chụp mẻ mới','Nút Chụp mẻ tạo ảnh minh chứng; việc đối chiếu/điều chỉnh chi tiết cần quyền chỉnh sửa báo cáo.', '#page-batches button[onclick="openBatchReportHub()"]', 'Chụp rõ toàn bộ plate và màu nhựa sẽ giảm thời gian xác minh.']
   ]},
-  reminders:{title:'Nhắc part còn thiếu',steps:[
-    ['Danh sách việc chưa khép kín','Trang này chỉ ra part còn thiếu sau khi so với yêu cầu của order.', '#reminders-page', 'Đây là danh sách nhắc việc, không phải nơi tạo order mới.'],
-    ['Làm mới','Lấy trạng thái mới nhất từ cloud.', '#page-reminders .gap-row button:first-child', 'Part đủ số lượng sẽ tự rời danh sách.'],
-    ['Báo cáo ngay từ đây','Nút Báo cáo mẻ in dẫn tới thao tác bổ sung minh chứng cho part vừa hoàn tất.', '#page-reminders button[onclick="openBatchReportHub()"]', 'Đi theo từng thẻ để tránh bỏ sót part thiếu.']
+  reminders:{title:'Sản xuất · Cần in',version:2,steps:[
+    ['Chọn việc trước khi xếp máy','Theo đơn, ngoài đơn, QC lỗi và bù hàng dùng chung một danh sách.', '#reminders-page', 'Nhãn nguồn cho biết vì sao việc này xuất hiện.'],
+    ['Tìm và lọc nguồn','Tìm model, part, màu, đơn hoặc SKU; lọc phần chưa xếp máy.', '#page-reminders .production-needs-toolbar', 'Chữ có dấu hoặc không dấu đều tìm được.'],
+    ['Xếp phần còn thiếu','Sắp vào máy lấy đúng biến thể, màu và lượng chưa được xếp. Mẻ đã in cần đối chiếu trước.', '#page-reminders .production-needs-list', 'Gợi ý theo bán và theo tồn là hai lựa chọn, không cộng lại.']
   ]},
   fulfillment:{title:'Gia công & giao hàng',version:2,steps:[
     ['1. Đủ part in → chờ giao xưởng','Mỗi sản phẩm chỉ được đưa đi gia công khi các part cần thiết đã in đủ. Nếu còn “Thiếu part”, hãy quay lại xử lý phần in trước.', '#fulfillment-flow-guide [data-fulfillment-flow="print"]', 'Đừng giao xưởng một sản phẩm còn thiếu part: sau đó rất khó biết đang thiếu ở bước nào.'],
@@ -7738,17 +7967,17 @@ const GUIDE_TOURS={
   kiotviet:{title:'Đồng bộ KiotViet',steps:[
     ['Nhập snapshot bán hàng','Đây là nơi tải file xuất từ KiotViet để cập nhật SKU, tồn kho và dữ liệu bán.', '#kiotviet-page', 'Không phải đồng bộ trực tiếp theo thời gian thực; hệ thống đọc file bạn tải lên.'],
     ['Ghép SKU với model','SKU đã ghép sẽ ưu tiên ảnh và thông tin từ model 3D trong các trang bán hàng.', '#kiotviet-page', 'Ghép SKU giúp đề xuất cần in lại chính xác hơn.'],
-    ['Phân biệt các trang bán hàng','KiotViet là nhập/đối chiếu dữ liệu; Tình hình bán hàng là xem báo cáo; Cần in lại là danh sách hành động.', '#kiotviet-page', 'Luôn kiểm tra ngày của file trước khi nhập.']
+    ['Đi từ bán hàng đến sản xuất','KiotViet nhập/đối chiếu; Bán hàng xem báo cáo; Sản xuất → Cần in tập trung việc cần bù.', '#kiotviet-page', 'Luôn kiểm tra ngày của file trước khi nhập.']
   ]},
   sales:{title:'Tình hình bán hàng',steps:[
     ['Đọc doanh số theo ngày','Biểu đồ và các thẻ tổng hợp giúp nhìn tiền bán, số SKU và xu hướng của kỳ đã chọn.', '#sales-page', 'Doanh số đến từ file KiotViet đã nhập, không phải nhập tay từng đơn.'],
     ['Nhập báo cáo cho đúng ngày','Khi tải file bán hàng, chọn ngày báo cáo để hệ thống tính doanh số theo ngày đó.', '#sales-page', 'Nếu nhập lại cùng ngày, hãy kiểm tra để không nhầm dữ liệu trùng.'],
-    ['Đi từ dữ liệu đến hành động','Sản phẩm bán nhiều và cảnh báo tồn liên kết sang Cần in lại để chuẩn bị sản xuất.', '#sales-page', 'Xem xu hướng trước, sau đó mở Cần in lại để quyết định.']
+    ['Đi từ dữ liệu đến hành động','Sản phẩm bán nhiều và cảnh báo tồn liên kết sang Sản xuất → Cần in.', '#sales-page', 'Chọn một mức bù theo bán hoặc tồn trước khi xếp máy.']
   ]},
-  inventory:{title:'Cần in lại',steps:[
-    ['Danh sách đề xuất, không tự tạo việc','Trang này phân tích bán và tồn để đề xuất SKU cần bù hàng.', '#inventory-page', 'Đề xuất không tự sinh order hay plate; người vận hành vẫn là người quyết định.'],
-    ['Làm mới hoặc phân tích','Nút Phân tích cập nhật đánh giá dựa trên dữ liệu KiotViet mới nhất.', '#inventory-ai-btn', 'Nhập file KiotViet mới trước khi phân tích để kết quả đáng tin hơn.'],
-    ['Tạo việc sau khi đã kiểm tra','Chỉ chuyển đề xuất hợp lý thành order/kế hoạch in sau khi xem tồn thực tế.', '#inventory-page', 'Bán chạy không luôn đồng nghĩa phải in ngay nếu tồn kho vẫn đủ.']
+  inventory:{title:'Sản xuất · Bù hàng',version:2,steps:[
+    ['Cần in dùng chung một danh sách','Đường dẫn cũ này mở Cần in với nguồn Bù hàng.', '#inventory-page', 'Các nguồn khác vẫn có trong bộ lọc nếu bạn được cấp quyền.'],
+    ['Chọn mức bù','Một SKU có thể có mức theo bán và theo tồn; chọn một mức để lập kế hoạch.', '#inventory-page .production-policy', 'Số lượng là gợi ý để duyệt, chưa phải lệnh in.'],
+    ['Đi tiếp trong Sản xuất','Dùng Plate & máy để điều phối hoặc Tiến độ để kiểm tra kết quả.', '#page-inventory .production-navigation', 'Giữ nguyên quyền theo từng công việc.']
   ]},
   'kiotviet-map':{title:'Ghép SKU với model',steps:[
     ['Nối dữ liệu bán với dữ liệu sản xuất','Ghép SKU để sản phẩm KiotViet dùng tên, ảnh và thông tin của model 3D.', '#kiotviet-map-page', 'SKU không ghép vẫn hiện được, nhưng dữ liệu sản xuất sẽ ít đầy đủ hơn.'],
@@ -7888,6 +8117,9 @@ function pageLayoutLabel(page,el){
   return text.slice(0,68);
 }
 function pageLayoutItems(page){
+  // The unified queue has fixed search/status/actions; legacy layout settings
+  // must not hide or reorder its decision-making controls.
+  if(['reminders','inventory'].includes(page))return [];
   const root=pageLayoutContainer(page);if(!root)return [];
   const excluded=el=>el.matches('.page-heading,.sect-hd,.model-link-drop-overlay,input[type="file"],script,style,template,nav')||el.id==='model-link-drop-overlay'||el.hasAttribute('data-layout-internal')||el.hasAttribute('data-layout-fixed');
   const counts=new Map();
@@ -7936,11 +8168,15 @@ function openPageLayoutManager(page=curPage){
 }
 
 function goPage(p,{historyMode='push',restoreScroll=null}={}) {
+  if(p==='production')p=productionDefaultRoute();
+  if(p==='inventory'){productionNeedsState.source='stock';productionNeedsState.status='all';}
+  if(historyMode==='none')restoreProductionNeedsFromLocation(p);
   // Work surfaces live inside .page now. Hide them before changing pages so a
   // fixed child from an old mobile rule can never outlive its destination page.
   closeModelCategoryDrawer();
   document.querySelectorAll('.delivery-action-dock,.delivery-cart-float,.delivery-next-float').forEach(el=>el.remove());
   const requiredPermission=typeof requiredWorkspacePermission==='function'?requiredWorkspacePermission(p):'';
+  if(p==='reminders'&&!productionNeedsAllowed()){toast('Tài khoản này chưa được cấp quyền xem nhu cầu sản xuất.');p='dashboard';}
   if(currentUser&&requiredPermission&&typeof canAccess==='function'&&!canAccess(requiredPermission)){
     toast('Tài khoản này chưa được cấp quyền vào mục này.');p='dashboard';
   }
@@ -7956,7 +8192,7 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
   else if(historyMode==='replace')writePageHistory(p,'replace');
   if (p !== 'order-form') document.getElementById('ov-order-form')?.style && (document.getElementById('ov-order-form').style.display = 'none');
   if (p !== 'progress') document.getElementById('ov-print-progress')?.style && (document.getElementById('ov-print-progress').style.display = 'none');
-  const navPage = p === 'order-form' ? 'orders' : p === 'kiotviet-map' ? 'kiotviet' : p;
+  const navPage = canonicalNavigationPage(p === 'order-form' ? 'orders' : p === 'kiotviet-map' ? 'kiotviet' : p);
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn, .sb-btn[id^=sbn-], .mnav-btn, [data-sidebar-page]').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p)?.classList.add('active');
@@ -7972,6 +8208,7 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
   document.getElementById('sticky-bar').classList.remove('show');
   closeMoreSheet();
   updatePageHeading(p);
+  renderProductionNavigation(p);
   renderPage(p);
   applyPageLayout(p);
   /* Sau khi nội dung đã mount xong mới bắt đầu tour, để người dùng nhìn đúng
@@ -7981,9 +8218,9 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
     window.scrollTo({top:0,behavior:'instant'});
     setTimeout(()=>document.getElementById('model-smart-search')?.focus({preventScroll:true}), 60);
   }
-  if (p === 'progress') document.getElementById('pg-content')?.scrollTo({top:0,behavior:'instant'});
+  if (PRODUCTION_ROUTES.includes(p)) document.getElementById('pg-content')?.scrollTo({top:0,behavior:'instant'});
   if (p === 'batches') setTimeout(()=>document.getElementById('batch-smart-search')?.focus({preventScroll:true}), 60);
-  if(restoreScroll!==null)setTimeout(()=>window.scrollTo({top:restoreScroll,behavior:'instant'}),0);
+  if(restoreScroll!==null)setTimeout(()=>{window.scrollTo({top:restoreScroll,behavior:'instant'});document.getElementById('pg-content')?.scrollTo({top:restoreScroll,behavior:'instant'});},0);
 }
 
 let appContextActions={};
@@ -8620,6 +8857,8 @@ function legacyRenderSb() {
 /* Thư viện icon SVG nội bộ: một nguồn nét vẽ cho sidebar, toolbar và trạng thái. */
 function appIcon(kind) {
   const icons = {
+    search:'<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>',
+    refresh:'<path d="M20 7V3m0 4h-4M4 17v4m0-4h4"/><path d="M19 7a8 8 0 0 0-14-2M5 17a8 8 0 0 0 14 2"/>',
     dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
     model:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
     order:'<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>',
@@ -8665,7 +8904,7 @@ function renderSb() {
   const accountName=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'Chưa đăng nhập';
   const accountEmail=currentUser?.email||'Dữ liệu chỉ lưu trên thiết bị này';
   const accountInitial=String(accountName||'?').trim().charAt(0).toUpperCase()||'?';
-  const item = (page, label, icon, count='') => `<button class="sb-nav-item${curPage===page?' active':''}" data-sidebar-page="${page}" onclick="goPage('${page}')">${sidebarIcon(icon)}<span class="sb-nav-label">${label}</span>${count ? `<span class="sb-nav-count">${count}</span>` : ''}</button>`;
+  const item = (page, label, icon, count='') => `<button class="sb-nav-item${canonicalNavigationPage(curPage)===page?' active':''}" data-sidebar-page="${page}" onclick="goPage('${page}')">${sidebarIcon(icon)}<span class="sb-nav-label">${label}</span>${count ? `<span class="sb-nav-count">${count}</span>` : ''}</button>`;
   if(typeof isDeliveryReceiveOnlyAccount==='function'&&isDeliveryReceiveOnlyAccount()){
     host.innerHTML = `
       <div class="sb-brand" onclick="goPage('delivery-receive')" role="button" tabindex="0" title="Tiếp nhận hàng">
@@ -8692,23 +8931,18 @@ function renderSb() {
     ${sidebarNavGroup('work','Vận hành',
       item('dashboard','Tổng quan','dashboard')+
       item('orders','Đơn hàng','order',orders.length)+
-      item('progress','Tiến độ in','progress')
-    ,{forceOpen:['dashboard','orders','progress'].includes(curPage)})}
+      item('production','Sản xuất','plate')
+    ,{forceOpen:['dashboard','orders',...PRODUCTION_ROUTES].includes(curPage)})}
     ${sidebarNavGroup('print','Sản xuất & đối chiếu',
       item('models','Model 3D','model',models.length)+
-      item('print-plans','Kế hoạch in','plate')+
-      item('plates','Plate in','plate',waiting)+
-      item('machine-setup','Khay nhựa & máy','filament')+
-      item('batches','Báo cáo mẻ in','batch',batchCloudTotal||batchReports.length)+
-      item('reminders','Nhắc part còn thiếu','progress',getIncompleteModelReminders().length)
-    ,{forceOpen:['models','print-plans','plates','machine-setup','batches','reminders'].includes(curPage)})}
+      item('batches','Báo cáo mẻ in','batch',batchCloudTotal||batchReports.length)
+    ,{forceOpen:['models','batches'].includes(curPage)})}
     ${sidebarNavGroup('finish','Hoàn thiện & bán hàng',
       item('fulfillment','Gia công & giao hàng','order',fulfillmentAttentionCount())+
       item('packaging','Bao bì & nhãn giá','plate')+
       item('sales','Bán hàng','progress',(kiotViet.salesImports||[]).length)+
-      item('kiotviet','Đồng bộ KiotViet','data',kiotViet.catalog.length)+
-      item('inventory','Cần in lại','plate',getQcReprintNeeds().length||getSalesRestockNeeds().filter(row=>row.state!=='normal').length||getInventoryAlerts().length)
-    ,{forceOpen:['fulfillment','packaging','sales','kiotviet','inventory'].includes(curPage)})}
+      item('kiotviet','Đồng bộ KiotViet','data',kiotViet.catalog.length)
+    ,{forceOpen:['fulfillment','packaging','sales','kiotviet'].includes(curPage)})}
     ${sidebarNavGroup('catalog','Danh mục',
       item('projects','Dự án','project',projects.length)+
       item('filaments','Màu nhựa','filament',fils.length)
@@ -10800,18 +11034,6 @@ function editCompletedManualBatchReport(reportId){
   document.getElementById('ov-batch-report').style.display='flex'; renderBatchReport();
   if(hasReconciliation) toast('Đã hoàn tác đối chiếu của mẻ này. Kiểm tra đúng biến thể rồi lưu lại.',5000);
 }
-function renderRemindersPage(){
-  const el=document.getElementById('reminders-page'); if(!el) return;
-  ensureOperationalManualReports();
-  const operationalReports=fulfillmentReportSource();
-  const reconciliation=operationalReports.map(report=>({report,matches:getBatchReportReconciliationCandidates(report)})).filter(x=>x.matches.length);
-  const incomplete=getIncompleteModelReminders();
-  const total=reconciliation.reduce((n,x)=>n+x.matches.length,0)+incomplete.length;
-  const count=document.getElementById('cnt-reminders'); if(count) count.textContent=total;
-  const reconcileSection=`<section style="margin-bottom:22px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:50%;background:var(--re)"></span><b>Đã in nhưng chưa cập nhật Order</b><span class="badge bg-re">${reconciliation.reduce((n,x)=>n+x.matches.length,0)}</span></div><div style="font-size:12px;color:var(--t3);margin:-3px 0 10px">Part đã in nhưng chưa vào Order.</div>${reconciliation.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px">${reconciliation.map(({report,matches})=>{const f=getFil(report.filamentId),names=[...new Set(matches.map(x=>x.item.partName))].join(', '),m=models.find(x=>x.id===matches[0].pitem.modelId);return `<div class="card" style="padding:10px;display:flex;gap:10px;align-items:center">${report.image?`<img src="${esc(report.image)}" alt="Ảnh mẻ in" style="width:84px;height:84px;object-fit:cover;border-radius:10px;background:var(--s2)"/>`:modelThumbSm(m)}<div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700">${matches.length} part cần đối chiếu</div><div style="font-size:12px;color:var(--t2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(names)}</div><div style="font-size:11px;color:var(--t3);margin-top:4px"><span class="cdot" style="background:${f?.hex||'#aaa'}"></span> ${esc(f?.brand||'')} ${esc(f?.name||'')} · ${fmtDate(report.completedAt||report.createdAt)}</div><button class="btn btn-ac btn-xs" style="margin-top:8px" onclick="openBatchReconciliation('${report.id}')">Đối chiếu ngay</button></div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:1.1rem">Không có báo cáo nào cần đối chiếu vào Order. ✓</div>`}</section>`;
-  const incompleteSection=`<section><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:50%;background:var(--am)"></span><b>Model đã in dở, còn thiếu part</b><span class="badge bg-am">${incomplete.length}</span></div><div style="font-size:12px;color:var(--t3);margin:-3px 0 10px">Part còn thiếu trong Order và mẻ ngoài đơn.</div>${incomplete.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px">${incomplete.map(g=>{const m=models.find(x=>x.id===g.modelId),missing=g.missing.map(pi=>`${pi.qty-pi.qtyDone} ${pi.partName}`).join(', '),done=g.items.filter(pi=>pi.qtyDone>=pi.qty).map(pi=>pi.partName).join(', '),report=g.reports?.[0];return `<div class="card" style="padding:10px;display:flex;gap:10px;align-items:center">${report?.thumb||report?.image?`<img src="${esc(report.thumb||report.image)}" loading="lazy" decoding="async" alt="Ảnh báo cáo mẻ in" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:var(--s2)"/>`:modelThumbSm(m)}<div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700">${esc(g.modelName)}</div><div style="font-size:11px;color:var(--t3);margin-top:4px">Đã có: ${esc(done||'một phần')}</div><div style="font-size:12px;color:var(--am);font-weight:650;margin-top:3px">Còn thiếu: ${esc(missing)}</div><div style="font-size:11px;color:var(--t3);margin-top:4px">${esc(g.order?.note||(g.type==='history'?'Từ báo cáo mẻ in ngoài kế hoạch':'Đơn không tên'))}</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ac btn-xs" style="margin-top:8px" onclick="openIncompleteReminderPlan('${g.orderId||''}','${g.modelId}')">☾ Sắp vào máy</button><button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="resumeIncompleteModelReminder('${g.orderId||''}','${g.modelId}')">${g.type==='history'?'Xem model':'In tiếp'}</button></div></div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:1.1rem">Không có model nào đang in dở. ✓</div>`}</section>`;
-  el.innerHTML=total?reconcileSection+incompleteSection:`<div class="empty"><div style="font-size:28px;margin-bottom:8px">✓</div>Không có part nào cần nhắc lúc này.</div>`;
-}
 function resumeIncompleteModelReminder(orderId, modelId){
   const row=getIncompleteModelReminders().find(x=>String(x.orderId||'')===String(orderId||'') && x.modelId===modelId); if(!row) return;
   if(!orderId) { goPage('models'); viewModel(modelId); toast(`Nhắc việc: ${row.modelName} còn thiếu ${row.missing.map(pi=>pi.partName).join(', ')}`,5000); return; }
@@ -11027,7 +11249,7 @@ function renderLegacyDashboard(){
     return `<div class="dash-work-row" style="--signal:var(--ac)" onclick="openPrintProgress({type:'order',id:'${order.id}'})"><i class="dash-work-color"></i><div class="dash-work-copy"><b>${esc(order.note||'Đơn không tên')}</b><small>${progress.done||0}/${progress.need||0} part đã in</small></div><span class="dash-work-value">Mở tiến độ</span></div>`;
   }).join('');
 
-  host.innerHTML=`<section class="dash-command-hero"><div><div class="dash-command-kicker">ĐIỀU PHỐI XƯỞNG · ${dateLabel}</div><h2>${attentionCount?'Việc cần xử lý trước.':'Xưởng đang ổn định.'}</h2><p>${attentionCount?'Ưu tiên xử lý các mục dưới đây.':'Chưa có cảnh báo cần xử lý.'}</p></div><div class="dash-command-actions"><button class="btn btn-ghost btn-sm" onclick="openBatchReportHub()">📷 Báo cáo mẻ</button><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo đơn</button></div></section><section class="dash-signal-grid"><button class="dash-signal" style="--signal:#ff9b68" onclick="document.getElementById('dash-priority')?.scrollIntoView({behavior:'smooth',block:'start'})"><span class="dash-signal-icon">!</span><span><b>${attentionCount}</b><small>Cần xử lý</small></span></button><button class="dash-signal" style="--signal:#68d5ff" onclick="goPage('plates')"><span class="dash-signal-icon">▣</span><span><b>${activePlates.length}</b><small>Plate đang chạy</small></span></button><button class="dash-signal" style="--signal:#63dfa8" onclick="goPage('fulfillment')"><span class="dash-signal-icon">✓</span><span><b>${fulfillmentCount}</b><small>Chờ hoàn thiện</small></span></button></section><section class="dash-priority" id="dash-priority"><div class="dash-section-head"><h3>Ưu tiên xử lý</h3><small>${priorities.length?'Theo mức độ ảnh hưởng':'Không có việc tồn'}</small></div><div class="dash-priority-list">${priorityRows||'<div class="dash-quiet">✓ Không có việc cần xử lý ngay.</div>'}</div></section><div class="dash-work-grid"><section class="dash-work-panel"><div class="dash-section-head"><h3>Đang in</h3><button class="btn btn-ghost btn-xs" onclick="goPage('plates')">Xem plate</button></div><div class="dash-work-list">${plateRows||'<div class="dash-quiet">Chưa có plate đang chạy.</div>'}</div></section><section class="dash-work-panel"><div class="dash-section-head"><h3>Đơn đang xử lý</h3><button class="btn btn-ghost btn-xs" onclick="goPage('orders')">Xem đơn</button></div><div class="dash-work-list">${orderRows||'<div class="dash-quiet">Chưa có đơn đang xử lý.</div>'}</div></section></div><nav class="dash-route" aria-label="Điều hướng nhanh"><button class="btn btn-ghost btn-sm" onclick="goPage('progress')">Tiến độ in</button><button class="btn btn-ghost btn-sm" onclick="goPage('reminders')">Part thiếu</button><button class="btn btn-ghost btn-sm" onclick="goPage('inventory')">Tồn kho</button><button class="btn btn-ghost btn-sm" onclick="goPage('fulfillment')">Gia công & giao hàng</button></nav>`;
+  host.innerHTML=`<section class="dash-command-hero"><div><div class="dash-command-kicker">ĐIỀU PHỐI XƯỞNG · ${dateLabel}</div><h2>${attentionCount?'Việc cần xử lý trước.':'Xưởng đang ổn định.'}</h2><p>${attentionCount?'Ưu tiên xử lý các mục dưới đây.':'Chưa có cảnh báo cần xử lý.'}</p></div><div class="dash-command-actions"><button class="btn btn-ghost btn-sm" onclick="openBatchReportHub()">📷 Báo cáo mẻ</button><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo đơn</button></div></section><section class="dash-signal-grid"><button class="dash-signal" style="--signal:#ff9b68" onclick="document.getElementById('dash-priority')?.scrollIntoView({behavior:'smooth',block:'start'})"><span class="dash-signal-icon">!</span><span><b>${attentionCount}</b><small>Cần xử lý</small></span></button><button class="dash-signal" style="--signal:#68d5ff" onclick="goPage('plates')"><span class="dash-signal-icon">▣</span><span><b>${activePlates.length}</b><small>Plate đang chạy</small></span></button><button class="dash-signal" style="--signal:#63dfa8" onclick="goPage('fulfillment')"><span class="dash-signal-icon">✓</span><span><b>${fulfillmentCount}</b><small>Chờ hoàn thiện</small></span></button></section><section class="dash-priority" id="dash-priority"><div class="dash-section-head"><h3>Ưu tiên xử lý</h3><small>${priorities.length?'Theo mức độ ảnh hưởng':'Không có việc tồn'}</small></div><div class="dash-priority-list">${priorityRows||'<div class="dash-quiet">✓ Không có việc cần xử lý ngay.</div>'}</div></section><div class="dash-work-grid"><section class="dash-work-panel"><div class="dash-section-head"><h3>Đang in</h3><button class="btn btn-ghost btn-xs" onclick="goPage('plates')">Xem plate</button></div><div class="dash-work-list">${plateRows||'<div class="dash-quiet">Chưa có plate đang chạy.</div>'}</div></section><section class="dash-work-panel"><div class="dash-section-head"><h3>Đơn đang xử lý</h3><button class="btn btn-ghost btn-xs" onclick="goPage('orders')">Xem đơn</button></div><div class="dash-work-list">${orderRows||'<div class="dash-quiet">Chưa có đơn đang xử lý.</div>'}</div></section></div><nav class="dash-route" aria-label="Điều hướng nhanh"><button class="btn btn-ghost btn-sm" onclick="goPage('production')">Sản xuất</button><button class="btn btn-ghost btn-sm" onclick="goPage('fulfillment')">Gia công & giao hàng</button></nav>`;
   document.getElementById('hd-sub').textContent=`${activePlates.length} plate đang chạy · ${attentionCount} việc cần xử lý`;
 }
 
@@ -11221,18 +11443,16 @@ function dashboardQuickNavHTML(ctx){
   const links=[
     {permission:'orders.manage',icon:'＋',label:'Tạo đơn',color:'#ff8c75',action:'openOrderForm()'},
     {permission:'models.manage',icon:'◇',label:'Model 3D',color:'#a98cff',action:"goPage('models')"},
-    {permission:'plates.plan',icon:'▱',label:'Plate in',color:'#6ca8ff',action:"goPage('plates')"},
-    {permission:'plates.plan',icon:'▥',label:'Tiến độ in',color:'#59d6a2',action:"goPage('progress')"},
+    {permission:'production',icon:appIcon('plate'),label:'Sản xuất',color:'#6ca8ff',action:"goPage('production')"},
     {permission:'batches.report',icon:'◉',label:'Chụp báo cáo',color:'#f17db0',action:'openBatchReportHub()'},
     {permission:'batches.manage',icon:'✦',label:'Xử lý báo cáo',color:'#b47dff',action:"goPage('batches')"},
     {permission:'assembly.qc',icon:'⌘',label:'Gia công & QC',color:'#8d7cff',action:"goPage('fulfillment')"},
     {permission:'packaging.manage',icon:'▣',label:'Bao bì',color:'#ffb759',action:"goPage('packaging')"},
     {permission:'delivery.create',icon:'↗',label:'Tạo đợt giao',color:'#5bddaa',action:'openDeliveryBatchBuilder()'},
     {permission:'delivery.receive',icon:'⇣',label:'Tiếp nhận hàng',color:'#64caff',action:"goPage('delivery-receive')"},
-    {permission:'plates.plan',icon:'⌁',label:'Kế hoạch in',color:'#e7c36b',action:"goPage('print-plans')"},
     {permission:'kiot.import',icon:'▤',label:'Bán hàng',color:'#6fb8ff',action:"goPage('sales')"},
     {permission:'kiot.import',icon:'↻',label:'Đồng bộ KiotViet',color:'#55d0b0',action:"goPage('kiotviet')"}
-  ].filter(link=>dashboardHas(ctx,link.permission));
+  ].filter(link=>link.permission==='production'?productionAllowed():dashboardHas(ctx,link.permission));
   if(!links.length)return '';
   return `<section class="dashboard-quick-nav" aria-label="Truy cập nhanh"><div class="dashboard-quick-nav-head"><h3>Thao tác theo quyền của bạn</h3><small>${links.length} lối tắt được cấp quyền</small></div><div class="dashboard-quick-nav-grid">${links.map(link=>`<button class="dashboard-quick-link" style="--quick-color:${link.color}" onclick="${link.action}"><span class="dashboard-quick-icon">${link.icon}</span><span class="dashboard-quick-label">${link.label}</span></button>`).join('')}</div></section>`;
 }
@@ -16948,8 +17168,9 @@ function mergePrintNeedRows(rows){
   const grouped=new Map();
   rows.forEach(row=>{
     if(!row?.modelId||!row?.partId||!(Number(row.qty)>0))return;
-    const key=planItemKey(row),current=grouped.get(key)||{...row,qty:0,sources:[]};
+    const key=planItemKey(row),current=grouped.get(key)||{...row,qty:0,sources:[],references:[]};
     current.qty+=(Number(row.qty)||0);
+    current.references.push(...(row.references||[]));
     if(row.source&&!current.sources.includes(row.source))current.sources.push(row.source);
     grouped.set(key,current);
   });
@@ -16959,28 +17180,7 @@ function mergePrintNeedRows(rows){
    ngoài kế hoạch. Từ đây Nhắc part, Nhắc tồn kho và Kế hoạch in không còn
    tự tính những con số riêng rẽ. */
 function getAllOutstandingPrintNeeds(exclude={}){
-  const rows=[];
-  pitems.forEach(item=>{
-    const remaining=Math.max(0,(Number(item.qty)||0)-(Number(item.qtyDone)||0));
-    if(!remaining)return;
-    const model=models.find(m=>m.id===item.modelId),part=model?.parts?.find(p=>p.id===item.partId);
-    if(!model||!part)return;
-    const variant=model.variants?.find(v=>v.id===item.variantId)||null;
-    rows.push({modelId:model.id,modelName:model.name,variantId:variant?.id||null,variantName:variant?.name||'',partId:part.id,partName:part.name,qty:remaining,filamentId:item.filamentId||planPartColorId(model,variant,part),source:'order'});
-  });
-  getIncompleteModelReminders().filter(row=>row.type==='history').forEach(group=>{
-    const model=models.find(m=>m.id===group.modelId); if(!model)return;
-    (group.missing||[]).forEach(item=>{
-      const part=model.parts?.find(p=>p.id===item.partId)||item;
-      const remaining=Math.max(0,(Number(item.qty)||0)-(Number(item.qtyDone)||0));
-      if(!remaining||!part?.id)return;
-      rows.push({modelId:model.id,modelName:model.name,variantId:null,variantName:'',partId:part.id,partName:part.name||item.partName||'Part',qty:remaining,filamentId:item.filamentId||planPartColorId(model,null,part),source:'outside'});
-    });
-  });
-  const scheduled=scheduledPrintQtyByKey(exclude);
-  const needs=new Map(mergePrintNeedRows(rows).map(row=>[planItemKey(row),{...row,qty:Math.max(0,row.qty-(scheduled.get(planItemKey(row))||0))}]));
-  mergePrintNeedRows(getPlanRetryNeeds(exclude)).forEach(row=>{const key=planItemKey(row),existing=needs.get(key);if(!existing||existing.qty<row.qty)needs.set(key,row);});
-  return [...needs.values()].filter(row=>row.qty>0);
+  return mergePrintNeedRows(getProductionNeedRows(exclude,false).flatMap(row=>row.parts.filter(part=>part.unplanned>0).map(part=>({...part,qty:part.unplanned}))));
 }
 function getNightPlanCandidates(){return getAllOutstandingPrintNeeds();}
 /* Các điểm nhắc (tồn kho, part thiếu, tiến độ) đều gọi cùng bộ chọn này.
@@ -19480,37 +19680,6 @@ function inventoryQcReprintPanel(needs){
   const cards=needs.map(need=>{const image=need.model.images?.[0]||'',variant=need.variantId?(need.model.variants||[]).find(item=>item.id===need.variantId)?.name||'':'';const parts=need.parts.map(part=>`${part.name} × ${part.qty}`).join(' · ')||'Xem lại part lỗi';return `<article class="inventory-card is-out"><div class="inventory-card-top"><div class="inventory-thumb">${image?`<img src="${esc(image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='📦'"/>`:'📦'}</div><div><span class="inventory-state">QC KHÔNG ĐẠT</span><h3>${esc(need.model.name)}</h3><small>${esc(variant||'Không có biến thể')}</small></div></div><div class="inventory-facts"><div><b>${need.productQty}</b><span>Sản phẩm lỗi</span></div><div style="grid-column:span 2"><b style="font-size:12px;line-height:1.35">${esc(parts)}</b><span>Part cần in lại</span></div></div><div class="inventory-model"><span>Nguồn</span><b>Không đạt chuẩn QC</b></div><div class="inventory-actions"><button class="btn btn-danger btn-sm" onclick="goPage('progress')">↗ Theo dõi in lại</button><button class="btn btn-ghost btn-sm" onclick="viewModel('${need.model.id}')">Xem model</button></div></article>`;}).join('');
   return `<section class="card" data-inventory-group="qc-reprint" style="padding:14px;margin:0 0 12px"><div class="inventory-overview" style="margin:0 0 12px"><div><span class="inventory-overview-kicker">QC → CẦN IN LẠI</span><b>${needs.length} model · ${needs.reduce((sum,item)=>sum+item.productQty,0)} sản phẩm không đạt</b><small>Tách riêng khỏi nhu cầu bù theo bán.</small></div><button class="btn btn-ghost btn-xs" onclick="toggleInventoryGroup('qc-reprint')">${collapsed?'Mở nhóm':'Thu gọn nhóm'}</button></div><div class="inventory-grid" ${collapsed?'hidden':''}>${cards}</div></section>`;
 }
-function renderInventoryPage(){
-  const host=document.getElementById('inventory-page');if(!host)return;
-  const alerts=getInventoryAlerts(),restocks=getSalesRestockNeeds(),qcReprints=getQcReprintNeeds(),report=latestKiotSalesImport(),insight=kiotViet.inventoryInsight,loading=Boolean(kiotViet.inventoryAiLoading);
-  const urgentRestocks=restocks.filter(row=>row.state!=='normal').length;
-  document.getElementById('cnt-inventory')?.replaceChildren(document.createTextNode(String(urgentRestocks||alerts.length||qcReprints.length)));
-  const aiPanel=loading
-    ? `<section class="inventory-ai ai-rainbow is-loading"><div><b>✦ Gemini đang phân tích tồn kho</b><p>Đang so sánh snapshot KiotViet với dữ liệu bán đã nhập. Không có plate hay order nào được thay đổi tự động.</p></div><span class="badge">Đang xử lý</span></section>`
-    : insight
-      ? `<section class="inventory-ai ai-rainbow"><div><b>✦ Đề xuất tồn kho từ Gemini</b><p>${esc(insight.summary||'Gemini đã đọc snapshot tồn kho. Hãy xem từng gợi ý trước khi đưa vào kế hoạch in.')}</p>${(insight.recommendations||[]).length?`<ul>${insight.recommendations.slice(0,4).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div><button class="btn btn-ghost btn-sm" onclick="analyzeKiotInventory()">Phân tích lại</button></section>`
-      : `<section class="inventory-ai ai-rainbow"><div><b>✦ Phân tích tồn kho bằng Gemini</b><p>AI chỉ đọc các số liệu đã import, ưu tiên cảnh báo hết/sắp hết và đề xuất mức cần in để em duyệt.</p></div><button class="btn btn-ac btn-sm" onclick="analyzeKiotInventory()">✦ Phân tích</button></section>`;
-  const qcPanel=inventoryQcReprintPanel(qcReprints);
-  if(!kiotViet.catalog.length){host.innerHTML=`${qcPanel}<div class="empty inventory-empty"><div style="font-size:34px">📦</div><b>Chưa có tồn kho KiotViet</b><span>Nhập file Danh mục hàng hóa.</span><button class="btn btn-ac btn-sm" onclick="goPage('kiotviet')">Đi đến KiotViet</button></div>`;return;}
-  const high=alerts.filter(x=>x.severity==='out').length;
-  const salesPanel=!report
-    ? `<section class="inventory-ai"><div><b>Chưa có báo cáo bán gần nhất</b><p>Nhập báo cáo để nhận danh sách cần bù theo sản phẩm đã bán.</p></div><button class="btn btn-ac btn-sm" onclick="goPage('kiotviet')">Nhập báo cáo</button></section>`
-    : `<section class="card" style="padding:14px;margin:0 0 12px"><div class="inventory-overview" style="margin:0 0 12px"><div><span class="inventory-overview-kicker">BÁN → CẦN IN LẠI</span><b>${restocks.length} SKU · ${restocks.reduce((sum,row)=>sum+row.suggestedQty,0)} sản phẩm đã bán</b><small>${esc(kiotSalesImportPeriodLabel(report))} · bù đúng số đã bán</small></div><span class="kv-pill ${urgentRestocks?'warn':'ok'}">${urgentRestocks?`${urgentRestocks} cần ưu tiên`:'Tồn ổn'}</span></div><div class="inventory-grid">${restocks.length?restocks.slice(0,36).map(need=>{
-      const image=salesRestockImage(need),linked=Boolean(need.model),stateLabel=need.state==='out'?'HẾT HÀNG':need.state==='low'?'ƯU TIÊN':'BÙ THEO BÁN';
-      return `<article class="inventory-card ${need.state==='out'?'is-out':need.state==='low'?'is-low':''}"><div class="inventory-card-top"><div class="inventory-thumb">${image?`<img src="${esc(image)}" alt="${esc(need.product?.name||need.name)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'"/>`:'📦'}</div><div><span class="inventory-state">${stateLabel}</span><h3>${esc(need.product?.name||need.name)}</h3><small>${esc(need.sku)}${need.product?.category?` · ${esc(need.product.category)}`:''}</small></div></div><div class="inventory-facts"><div><b>${need.qty}</b><span>Đã bán</span></div><div><b>${need.stock}</b><span>Tồn hiện tại</span></div><div><b>${need.suggestedQty}</b><span>Cần bù</span></div></div><div class="inventory-model"><span>Liên kết xưởng</span><b>${linked?esc(`${need.model.name}${need.mapping?.variantName?` · ${need.mapping.variantName}`:''}`):'Chưa ghép SKU với model'}</b></div><div class="inventory-actions">${linked?`<button class="btn btn-ac btn-sm" onclick="openSalesRestockPlan('${encodeURIComponent(need.sku)}')">Sắp vào máy</button><button class="btn btn-ghost btn-sm" onclick="openSalesRestockOrder('${encodeURIComponent(need.sku)}')">Tạo Order</button>`:`<button class="btn btn-ac btn-sm" onclick="openKiotMappingDialog('${encodeURIComponent(need.sku)}')">Ghép SKU</button>`}</div></article>`;
-    }).join(''):`<div class="empty inventory-empty"><div style="font-size:30px">✓</div><b>Không có sản phẩm đã bán trong báo cáo này</b></div>`}</div>${restocks.length>36?`<div class="kv-note">Đang hiển thị 36 SKU ưu tiên nhất.</div>`:''}</section>`;
-  host.innerHTML=`${qcPanel}${salesPanel}<div class="inventory-overview"><div><span class="inventory-overview-kicker">SNAPSHOT CỬA HÀNG</span><b>${kiotViet.catalog.length} SKU · ${high} hết hàng · ${Math.max(0,alerts.length-high)} sắp hết</b><small>${kiotViet.lastCatalogImportAt?`Cập nhật ${fmtDate(kiotViet.lastCatalogImportAt)} từ ${esc(kiotViet.lastCatalogFile||'file KiotViet')}`:'Chưa rõ thời điểm import'}</small></div><button class="btn btn-ghost btn-sm" onclick="goPage('kiotviet')">Cập nhật file KiotViet</button></div>${aiPanel}<div class="inventory-guide">Gợi ý từ tồn kho & báo cáo bán.</div><div class="inventory-grid">${alerts.length?alerts.map(alert=>{
-    const image=inventoryProductImage(alert),ai=inventoryAiSuggestion(alert.sku),qty=inventorySuggestedQty(alert),modelLabel=alert.model?`${alert.model.name}${alert.mapping?.variantName?` · ${alert.mapping.variantName}`:''}`:'Chưa ghép SKU với model';
-    return `<article class="inventory-card ${alert.severity==='out'?'is-out':'is-low'}"><div class="inventory-card-top"><div class="inventory-thumb">${image?`<img src="${esc(image)}" alt="${esc(alert.product.name)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'"/>`:'📦'}</div><div><span class="inventory-state">${alert.severity==='out'?'HẾT HÀNG':'SẮP HẾT'}</span><h3>${esc(alert.product.name)}</h3><small>${esc(alert.product.sku)} · ${esc(alert.product.category||'Chưa phân nhóm')}</small></div></div><div class="inventory-facts"><div><b>${alert.stock}</b><span>Tồn cửa hàng</span></div><div><b>${alert.minStock||'—'}</b><span>Ngưỡng tối thiểu</span></div><div><b>${alert.sales.qty}</b><span>Đã bán (file)</span></div></div><div class="inventory-model"><span>Liên kết xưởng</span><b>${esc(modelLabel)}</b></div><div class="inventory-suggestion ${ai?'from-ai':''}"><span>${ai?'✦ Gemini gợi ý':'Gợi ý cơ bản'}</span><b>In thêm ${qty} sản phẩm</b><small>${esc(ai?.reason||'Bù mức tồn hiện tại theo ngưỡng và số đã bán đã import.')}</small></div><div class="inventory-actions">${alert.model?`<button class="btn btn-ac btn-sm" onclick="openInventoryPlateSuggestion('${encodeURIComponent(alert.sku)}')">Lên kế hoạch</button><button class="btn btn-ghost btn-sm" onclick="viewModel('${alert.model.id}')">Xem model</button>`:`<button class="btn btn-ac btn-sm" onclick="openKiotMappingDialog('${encodeURIComponent(alert.sku)}')">Ghép SKU với model</button>`}</div></article>`;
-  }).join(''):`<div class="empty inventory-empty"><div style="font-size:34px">✓</div><b>Chưa có SKU nào chạm ngưỡng tồn</b><span>Hệ thống sẽ nhắc ở đây khi tồn KiotViet bằng 0 hoặc thấp hơn ngưỡng tối thiểu đã export.</span></div>`}</div>`;
-  const guide=host.querySelector('.inventory-guide');
-  if(guide) guide.innerHTML='Số lượng là <b>gợi ý</b> từ tồn kho và báo cáo bán.';
-  if(!loading&&!insight) host.querySelector('.inventory-ai p')?.replaceChildren(document.createTextNode('Chỉ phân tích dữ liệu đã nhập.'));
-  const emptyHint=host.querySelector('.inventory-empty span');
-  if(emptyHint) emptyHint.textContent='Không có SKU hết hoặc chạm ngưỡng tồn.';
-  const salesKicker=[...host.querySelectorAll('.inventory-overview-kicker')].find(item=>item.textContent.includes('BÁN → CẦN IN LẠI'));
-  setupInventoryCollapsibleGroup(salesKicker?.closest('section'),'sales-restock');
-}
 function openInventoryPlateSuggestion(encodedSku){
   const sku=decodeURIComponent(encodedSku),alert=getInventoryAlerts().find(row=>row.sku===sku);if(!alert)return;
   if(!alert.model){openKiotMappingDialog(encodedSku);return;}
@@ -21005,7 +21174,7 @@ function canEditBatchReports(){return canAccess('batches.manage');}
 function canManageBatchReports(){return canEditBatchReports();}
 function requiredWorkspacePermission(page){return ({
   models:'models.manage',filaments:'models.manage',plates:'plates.plan',progress:'progress.view','print-plans':'plates.plan','machine-setup':'plates.plan',
-  orders:'orders.manage','order-form':'orders.manage',projects:'projects.manage',batches:'batches.view',reminders:'batches.view',
+  orders:'orders.manage','order-form':'orders.manage',projects:'projects.manage',batches:'batches.view',reminders:'',
   packaging:'packaging.manage',
   fulfillment:'assembly.qc','delivery-builder':'delivery.create','delivery-receive':'delivery.receive',
   kiotviet:'kiot.import','kiotviet-map':'kiot.import',sales:'kiot.import',inventory:'kiot.import',devices:'devices.manage',data:'data.manage',access:'access.manage'
@@ -21040,7 +21209,7 @@ function mobileNavigationIcon(name){
 function mobileNavigationItem(page,label,icon,permission,action){return {page,label,icon,permission:permission||requiredWorkspacePermission(page),action:action||`goPage('${page}')`};}
 function syncMobileNavigationState(){
   const nav=document.getElementById('mobile-nav');if(!nav)return;
-  const page=curPage==='kiotviet-map'?'kiotviet':curPage;
+  const page=canonicalNavigationPage(curPage==='kiotviet-map'?'kiotviet':curPage);
   const buttons=[...nav.querySelectorAll('.mnav-btn')],direct=buttons.find(button=>button.dataset.mobilePage===page);
   const open=Boolean(document.getElementById('more-sheet-ov')?.classList.contains('show'));
   const lensTarget=open?buttons.find(button=>button.id==='mnav-more'):(direct||buttons.find(button=>button.id==='mnav-more'));
@@ -21062,13 +21231,13 @@ function renderRoleMobileNavigation(){
   const items={
     dashboard:mobileNavigationItem('dashboard','Trang chủ','dashboard',''),
     models:mobileNavigationItem('models','Model','models','models.manage'),
-    progress:mobileNavigationItem('progress','Tiến độ','progress','progress.view'),
+    progress:{...mobileNavigationItem('production','Sản xuất','progress',''),permission:''},
     batches:mobileNavigationItem('batches','Báo cáo','batches','batches.view'),
     fulfillment:mobileNavigationItem('fulfillment','Gia công','fulfillment','assembly.qc'),
     packaging:mobileNavigationItem('packaging','Bao bì','packaging','packaging.manage'),
     receive:mobileNavigationItem('delivery-receive','Nhận hàng','receive','delivery.receive'),
     kiot:mobileNavigationItem('kiotviet','KiotViet','kiot','kiot.import'),
-    plates:mobileNavigationItem('plates','Plate','plates','plates.plan'),
+    plates:mobileNavigationItem('production','Sản xuất','plates','plates.plan'),
     notifications:{page:'',label:'Thông báo',icon:'notifications',permission:'',action:'openSystemNotifications()'}
   };
   const primaryByRole={
@@ -21087,7 +21256,7 @@ function renderRoleMobileNavigation(){
       {...items.receive,label:'Kiểm hàng',tone:['#2c9fca','#55cfa6']},
       {page:'delivery-builder',label:'Tạo giao',icon:'delivery',permission:'delivery.create',action:'openDeliveryBatchBuilder()',tone:['#2baa78','#55cfa6']},
       {page:'batches',label:'Xử lý mẻ',icon:'batches',permission:'batches.manage',action:"goPage('batches')",tone:['#8c64df','#cb6ed6']},
-      {page:'plates',label:'Plate',icon:'plates',permission:'plates.plan',action:"goPage('plates')",tone:['#557fe3','#58bfe0']},
+      {page:'production',label:'Sản xuất',icon:'plates',permission:'plates.plan',action:"goPage('production')",tone:['#557fe3','#58bfe0']},
       {page:'order-form',label:'Tạo Order',icon:'orders',permission:'orders.manage',action:'openOrderForm()',tone:['var(--ac)','#9689ff']},
       {...items.kiot,label:'KiotViet',tone:['#329f83','#57cbb0']},
       {...items.models,label:'Model',tone:['#7a67de','#aa78dd']},
@@ -21102,7 +21271,7 @@ function renderRoleMobileNavigation(){
   const fallbackOrder=['dashboard','progress','batches','fulfillment','packaging','receive','kiot','models','plates','notifications'];
   const primaryPage=primary?.page||'',sideKeys=[...(sideOrderByRole[role]||[]),...fallbackOrder];
   const seen=new Set(),sides=[];
-  sideKeys.forEach(key=>{const item=items[key];if(!item||seen.has(key)||sides.length>=3)return;seen.add(key);if(item.page&&item.page===primaryPage)return;if(item.permission&&!has(item.permission))return;if(isDeliveryReceiveOnlyAccount()&&item.page==='dashboard')return;sides.push(item);});
+  sideKeys.forEach(key=>{const item=items[key],identity=item?.page||key;if(!item||seen.has(identity)||sides.length>=3)return;seen.add(identity);if(item.page==='production'&&!productionAllowed())return;if(item.page&&item.page===primaryPage)return;if(item.permission&&!has(item.permission))return;if(isDeliveryReceiveOnlyAccount()&&item.page==='dashboard')return;sides.push(item);});
   if(primary?.label==='Tạo Order')primary={...primary,label:'Tạo đơn'};
   const navButton=(item,extra='')=>{const id=item.page?`mnav-${item.page==='order-form'?'orders':item.page}`:`mnav-${item.icon}`;return `<button type="button" class="mnav-btn ${extra}" id="${id}" data-mobile-page="${esc(item.page||'')}" onclick="${item.action}" title="${esc(item.label)}" aria-label="${esc(item.label)}"${item.icon==='more'?' aria-haspopup="dialog" aria-controls="more-sheet-ov" aria-expanded="false"':''}><i class="mnav-icon" aria-hidden="true">${mobileNavigationIcon(item.icon)}</i><span>${esc(item.label)}</span></button>`;};
   const more=isDeliveryReceiveOnlyAccount()?null:{page:'',label:'Menu',icon:'more',permission:'',action:'toggleMoreSheet()'};
@@ -21130,7 +21299,7 @@ function applyWorkspaceNavigationPermissions(){
   document.body.classList.toggle('batch-capture-denied',!canCaptureBatchReports());
   document.querySelectorAll('[data-sidebar-page]').forEach(button=>{
     const permission=requiredWorkspacePermission(button.dataset.sidebarPage);
-    button.style.display=permission&&!canAccess(permission)?'none':'';
+    button.style.display=button.dataset.sidebarPage==='production'?!productionAllowed()?'none':'':permission&&!canAccess(permission)?'none':'';
   });
   document.querySelectorAll('[data-sidebar-permission]').forEach(button=>{
     const permission=button.dataset.sidebarPermission;

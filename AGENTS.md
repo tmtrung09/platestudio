@@ -193,6 +193,26 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Không gian Sản xuất tập trung (yêu cầu ngày 2026-10-08)
+
+- Người dùng yêu cầu phân tích bằng mô hình 6.1 Sol và làm lại bốn trang Tiến độ
+  in, Plate in, Nhắc part còn thiếu, Cần in lại vì chức năng phân mảnh. Hợp nhất
+  điều hướng thành một mục Sản xuất, gồm Cần in / Plate & máy / Tiến độ.
+- Cần in dùng một danh sách và tìm kiếm chung; ghi rõ nguồn theo đơn, ngoài đơn,
+  QC lỗi, đối chiếu mẻ, bù hàng. Đơn chưa bắt đầu vẫn xuất hiện; đơn hủy không
+  được đề xuất. Mẻ đã in chờ đối chiếu không được cộng vào số lượng cần in mới.
+- QC của pitem là lý do của phần thiếu đã có, không cộng trùng. Cùng SKU có gợi ý
+  theo bán và theo tồn chỉ có một hàng; người dùng chọn chính sách, không cộng hai
+    mức. QC ngoài đơn thiếu ID part hoặc QC đơn đã mất tham chiếu pitem phải giữ
+    hàng cần kiểm tra, không đoán part. Làm mới danh sách gộp phải cập nhật cả
+    dữ liệu xưởng và index báo cáo bán khi tài khoản có quyền KiotViet.
+- Giữ định danh model/biến thể/part/màu và tham chiếu pitem/đơn khi lập kế hoạch;
+  chỉ xếp lượng chưa có trong kế hoạch. Giữ quyền đọc theo từng nguồn và quyền
+  ghi riêng, không cấp thêm quyền khi gom trang. Danh sách lớn có đường xem tiếp.
+- Plate & máy giữ thư viện plate và có Lịch máy/Khay nhựa; Tiến độ dùng các cách
+  xem đơn/model/plate. Các route cũ vẫn mở đúng góc nhìn trong cùng không gian,
+  giữ liên kết theo đơn/dự án, tìm kiếm/bộ lọc khi Back/Forward hoặc tải lại.
+
 ### Mật độ giao diện mặc định (yêu cầu ngày 2026-10-08)
 
 - Người dùng yêu cầu thu gọn giao diện toàn hệ thống: áp dụng chung cho tiêu đề,
