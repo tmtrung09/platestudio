@@ -213,6 +213,21 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   xem đơn/model/plate. Các route cũ vẫn mở đúng góc nhìn trong cùng không gian,
   giữ liên kết theo đơn/dự án, tìm kiếm/bộ lọc khi Back/Forward hoặc tải lại.
 
+### Tiến độ in native (yêu cầu viết lại ngày 2026-10-09)
+
+- Trang Tiến độ phải là bề mặt native trong Sản xuất, dùng cùng header, toolbar,
+  theme và vùng cuộn `.pg-content` với các trang khác. Không mount cửa sổ legacy,
+  không có sidebar/drawer hay navigation mobile riêng, không chồng CSS vá layout.
+- Giữ bốn góc xem đơn/model/plate/ngoài đơn, liên kết đơn/dự án và các handler
+  cập nhật part, QC, gia công/giao hàng. Viết lại giao diện không chuyển/xóa dữ liệu.
+- Tìm không dấu theo đơn, model, biến thể, part, màu; có số kết quả và đường bỏ
+  bộ lọc. Chỉnh số part dùng stepper thống nhất, vùng bấm 44px; thẻ mở được bằng
+  bàn phím. Giữ focus, cuộn và ảnh đã tải khi cập nhật; ảnh lỗi giữ khung fallback.
+  Back/tải lại phải giữ góc xem, tìm kiếm, trạng thái và scope đơn/dự án trong URL.
+- Guard phải kiểm tra mọi góc xem, chiều rộng nhỏ/tablet/desktop và landscape,
+  hai theme, không tràn ngang, không khoảng trắng do chiều cao viewport, không
+  có vùng cuộn lồng hay ảnh hưởng hình học trang kế cận khi chuyển trang.
+
 ### Mật độ giao diện mặc định (yêu cầu ngày 2026-10-08)
 
 - Người dùng yêu cầu thu gọn giao diện toàn hệ thống: áp dụng chung cho tiêu đề,
