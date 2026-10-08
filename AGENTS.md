@@ -270,6 +270,20 @@ ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên re
 
 ## Nhập báo cáo bán hàng KiotViet (mandatory)
 
+Phạm vi rà soát ngày 2026-10-08: người dùng báo trang Bán hàng có nhiều lỗi và
+mất dữ liệu; phải kiểm tra toàn luồng nhập file/Chrome/bù ngày, cache, archive,
+đồng bộ, lịch sử, lọc/biểu đồ và in lại. Phân biệt lỗi đã tái hiện với dữ liệu live
+chưa xác minh; kiểm thử trên dữ liệu cô lập. Không coi QA giao diện trước đây là
+bằng chứng dữ liệu bán đã an toàn. Kết quả rà soát: docs/sales-audit-2026-10-08.md.
+
+Người dùng đã yêu cầu sửa các lỗi rà soát này. Báo cáo và ledger bán phải lưu/xóa
+nguyên tử, kiểm tra revision và retry cùng request ID. Bản nhập chưa xác nhận phải
+được lưu bền trước khi gửi, không cắt lịch sử, không compact chi tiết chưa archive,
+không báo cloud thành công hoặc xác nhận ngày cho bridge khi còn lỗi. File nhiều
+ngày không được ghi vào ngày cuối. Cache chi tiết phải khớp revision, tải đủ mọi
+trang và có trạng thái lỗi/thử lại hữu hạn. In bù dùng đủ thành phần và hệ số của
+SKU; không tự chọn model thay thế. Không sửa/xóa dữ liệu live cũ để kiểm thử.
+
 1. Không coi việc có bản ghi theo ngày là đã nhập thành công: ngày chỉ được
    hoàn tất nếu báo cáo có chi tiết bán hoặc metadata tổng hợp xác nhận SKU/số
    lượng/doanh thu lớn hơn 0. Báo cáo rỗng phải hiển thị riêng và có thể đưa vào

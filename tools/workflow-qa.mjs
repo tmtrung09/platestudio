@@ -742,6 +742,8 @@ const results = await page.evaluate(async () => {
   };
   check('Lịch sử cũ vẫn được giữ trong settings trước khi chuyển kho xong', kiotVietForCloudSettings().salesImports[0].sales?.length === 1, JSON.stringify(kiotVietForCloudSettings().salesImports[0]));
   kiotSalesArchiveReadyForSettings = true;
+  check('Cờ chuyển kho toàn cục không được loại chi tiết chưa xác nhận', kiotVietForCloudSettings().salesImports[0].sales?.length === 1);
+  kiotViet.salesImports[0].archiveMigrated=true;kiotViet.salesImports[0].archiveRevision=stamp;
   const cloudKiotSettings = kiotVietForCloudSettings();
   check('Lịch sử bán lớn chỉ đồng bộ metadata, không gửi chi tiết SKU trong settings', cloudKiotSettings.sales.length === 0 && cloudKiotSettings.salesImports.length === 1 && !Object.hasOwn(cloudKiotSettings.salesImports[0], 'sales') && cloudKiotSettings.salesImports[0].qtyTotal === 12, JSON.stringify(cloudKiotSettings.salesImports[0]));
   /* Lịch/biểu đồ đọc metadata trước, còn SKU chi tiết chỉ nạp khi mở đúng

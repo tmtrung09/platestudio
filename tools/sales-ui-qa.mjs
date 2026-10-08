@@ -1,0 +1,40 @@
+import {chromium} from 'playwright-core';
+import {existsSync,mkdirSync} from 'node:fs';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+import assert from 'node:assert/strict';
+const root=fileURLToPath(new URL('../',import.meta.url)),out=resolve(root,'qa-results/sales-safety');mkdirSync(out,{recursive:true});
+const executablePath=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
+const browser=await chromium.launch({executablePath,headless:true});
+for(const width of [390,1280])for(const theme of ['light','dark']){
+ const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await context.newPage();
+ await page.route('**/*.supabase.co/**',route=>route.abort());
+ await page.goto(pathToFileURL(resolve(root,'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>typeof renderSalesPage==='function');
+ await page.evaluate(theme=>{
+  document.documentElement.setAttribute('data-theme',theme);const style=document.createElement('style');style.textContent='#auth-ov{display:none!important}';document.head.append(style);
+  cloudReady=false;canAccess=()=>true;currentUser={id:'qa-sales'};cloudWorkspaceId=()=> 'qa-workspace';
+  sb={from:()=>({select(){return this},eq(){return this},order(){return this},range:async()=>({error:{message:'Mất kết nối thử nghiệm. Dữ liệu vẫn được giữ.'}})})};
+  kiotViet={...kiotViet,salesImports:[{id:'offline',period:{from:'2026-10-08',to:'2026-10-08'},skuCount:3,qtyTotal:20,revenueTotal:200000,archiveRevision:'r1'},{id:'ready',period:{from:'2026-10-07',to:'2026-10-07'},sales:[{sku:'QA',name:'Model kiểm thử',qty:5,revenue:50000}]}]};
+  saveKiotSalesPending({requestId:'qa-pending',period:{from:'2026-10-06',to:'2026-10-06'},sales:[{sku:'QA',qty:1}],syncConflict:true});
+  salesPageReportId='offline';salesPageDatePreset='all';goPage('sales',{historyMode:'none'});
+ },theme);
+ await page.getByRole('button',{name:'Tải lại chi tiết',exact:true}).waitFor({timeout:8000}).catch(async error=>{console.log(await page.evaluate(()=>({page:curPage,html:document.getElementById('sales-page')?.innerHTML,report:kiotViet.salesImports[0]})));throw error;});
+ assert.equal(await page.locator('#sales-period option').count(),2);
+ assert.ok(await page.getByText('1 báo cáo đang giữ trên máy, chưa xác nhận cloud',{exact:true}).isVisible());
+ const checks=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,touch:[...document.querySelectorAll('#sales-page > .sales-panel button,.sales-layout [role=status] button')].every(b=>b.getBoundingClientRect().height>=43.99)}));
+ if(!checks.touch)console.log(await page.evaluate(()=>[...document.querySelectorAll('#sales-page > .sales-panel button,.sales-layout [role=status] button')].map(b=>({text:b.textContent,height:b.getBoundingClientRect().height,css:getComputedStyle(b).minHeight,display:getComputedStyle(b).display}))));
+ assert.equal(checks.overflow,false);assert.equal(checks.touch,true);
+ await page.waitForTimeout(500);
+ await page.screenshot({path:resolve(out,`${width}-${theme}-error.png`),fullPage:true});
+ await page.locator('.sales-layout [role=status]').scrollIntoViewIfNeeded();
+ await page.screenshot({path:resolve(out,`${width}-${theme}-detail.png`)});
+ await page.locator('#sales-period').selectOption('ready');assert.ok(await page.locator('.sales-product-copy').getByText('Model kiểm thử',{exact:true}).isVisible());
+ await page.evaluate(()=>openKiotSalesComparison('offline'));
+ await page.getByRole('button',{name:'Thử lại',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Đóng',exact:true}).last().click();
+ assert.equal(await page.locator('#sales-period').inputValue(),'ready');
+ console.log(`PASS sales ${width}/${theme}: error stops, period switch, pending state, touch, overflow, dialog close`);
+ await context.close();
+}
+await browser.close();
