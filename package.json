@@ -1,7 +1,7 @@
 {
   "scripts": {
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs",
-    "qa:desktop": "node tools/desktop-qa.mjs",
+    "qa:desktop": "node tools/desktop-qa.mjs && node tools/density-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs && node tools/product-library-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/sales-audit.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs",
     "qa:cloud": "node tools/cloud-sync-qa.mjs && node tools/batch-upload-qa.mjs",

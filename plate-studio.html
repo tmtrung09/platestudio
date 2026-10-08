@@ -4130,6 +4130,59 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 #sales-page [role="status"] .btn,#dlg-mv .sales-detail-error .btn{min-height:44px!important;min-width:44px}
 #sales-page>[role="status"]{margin-bottom:14px;max-width:1360px;overflow-wrap:anywhere}
 </style>
+<style id="shared-compact-density">
+/* One density layer for page chrome and reusable surfaces. Keep image ratios,
+   form state, scroll containers and camera/print geometry unchanged. */
+:root{--ui-title:30px;--ui-page-pad:20px;--ui-section-gap:14px;--ui-panel-pad:12px;--ui-panel-radius:16px;--ui-control-text:12px}
+.page.active{padding-top:var(--ui-page-pad)!important;padding-left:var(--ui-page-pad)!important;padding-right:var(--ui-page-pad)!important;border-radius:20px!important}
+.page-heading{padding-top:0!important;padding-bottom:10px!important;margin-top:0!important;margin-bottom:var(--ui-section-gap)!important}
+.page-heading h1{font-size:var(--ui-title)!important;line-height:1.15!important;letter-spacing:-.035em!important}
+.page-heading p{font-size:13px!important;line-height:1.45!important;margin-top:6px!important}
+.page-heading::after{width:44px!important;height:3px!important}
+.page-heading-main{gap:10px!important}
+.sect-hd{font-size:13px!important;margin-bottom:10px!important}
+.card,.sales-panel,.dashboard-widget,.dashboard-focus,.dashboard-lane{padding:var(--ui-panel-pad)!important;border-radius:var(--ui-panel-radius)!important}
+.model-card,.order-card,.plate-card,.project-card{border-radius:var(--ui-panel-radius)!important}
+.model-body{padding:10px 12px!important}
+.model-grid,.fulfillment-grid,.packaging-grid,.dashboard-widget-grid,.dashboard-role-lanes{gap:10px!important}
+.sales-page,.dashboard-command,.dashboard-command.role-dashboard,.dashboard-sales-layout{gap:12px!important}
+.sales-page,.dashboard-command,.dashboard-sales-layout{grid-template-columns:minmax(0,1fr)}
+.sales-panel,.sales-period,.sales-layout{min-width:0}
+.sales-hero,.dash-command-hero,.dashboard-role-hero{padding:14px 16px!important;border-radius:var(--ui-panel-radius)!important;gap:14px!important;min-height:0!important}
+.sales-hero h2{font-size:18px!important}
+.sales-hero>div,.dash-command-hero>div,.dashboard-role-hero>div{min-width:0}
+.dashboard-role-hero h2,.dashboard-role-hero p{overflow-wrap:anywhere}
+.dash-command-hero h2,.dashboard-role-hero h2{font-size:24px!important;line-height:1.2!important;margin:6px 0!important}
+.sales-kpi,.dashboard-sales-kpi,.dashboard-role-kpi{padding:10px 12px!important;border-radius:12px!important}
+.dashboard-role-kpi b{font-size:23px!important;margin-top:6px!important}
+.sales-kpi b{font-size:19px!important}
+.btn{font-size:var(--ui-control-text)!important;padding:6px 10px!important}
+.sales-date-preset,.sales-month-chip{font-family:inherit;font-size:var(--ui-control-text);font-weight:650}
+.btn-ac{min-height:44px!important;min-width:44px}
+.sb-nav-group{margin-top:10px!important;margin-bottom:6px!important}
+.sb-nav-group-body{gap:2px!important}
+.sb-nav-item{padding-top:6px!important;padding-bottom:6px!important;border-radius:10px!important}
+.dlg{border-radius:18px!important}
+@media(min-width:861px){
+  .page.active{margin:8px!important;min-height:calc(100% - 16px)!important}
+  .model-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+}
+@media(max-width:860px){
+  :root{--ui-title:26px;--ui-page-pad:12px;--ui-section-gap:12px;--ui-panel-pad:11px;--ui-panel-radius:14px}
+  .page.active{border-radius:0!important}
+}
+@media(max-width:600px){
+  :root{--ui-title:24px;--ui-page-pad:10px}
+  .page.active{padding-left:8px!important;padding-right:8px!important}
+  .dash-command-hero h2,.dashboard-role-hero h2{font-size:21px!important}
+  .sales-hero,.dash-command-hero,.dashboard-role-hero{padding:12px!important}
+  .sales-hero-actions .btn{flex:1 1 140px;white-space:normal;line-height:1.4}
+}
+/* Compact appearance must never shrink the hit area on touch devices. */
+@media(pointer:coarse),(max-width:600px){
+  .btn,.page-layout-btn{min-height:44px!important;min-width:44px}
+}
+</style>
 </head>
 <body>
 

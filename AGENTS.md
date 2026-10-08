@@ -193,6 +193,16 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Mật độ giao diện mặc định (yêu cầu ngày 2026-10-08)
+
+- Người dùng yêu cầu thu gọn giao diện toàn hệ thống: áp dụng chung cho tiêu đề,
+  khoảng cách trang, thẻ, thống kê và thanh điều hướng; không chỉ sửa một trang.
+- Giữ mật độ gọn trên desktop và mobile, light/dark. Không dùng `zoom` hoặc
+  `transform:scale` toàn trang để thu nhỏ; giữ tỷ lệ ảnh và các vùng cuộn hiện có.
+- Không đổi dữ liệu hay hành vi lưu/đồng bộ để chỉnh kích thước. Nút chính và
+  control cảm ứng vẫn có vùng bấm tối thiểu 44px, ô nhập mobile giữ chữ 16px để
+  tránh Safari tự zoom. Kiểm tra bằng `tools/density-qa.mjs` cùng QA hiện có.
+
 Một sửa lỗi UI chỉ hoàn tất khi đã có: sửa ở nguồn dùng chung hoặc lý do rõ ràng cho
 ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên remote theo quyền đã
 được người dùng cấp. Quy tắc này áp dụng cho mọi thay đổi tương lai trong repository.
