@@ -213,6 +213,23 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   xem đơn/model/plate. Các route cũ vẫn mở đúng góc nhìn trong cùng không gian,
   giữ liên kết theo đơn/dự án, tìm kiếm/bộ lọc khi Back/Forward hoặc tải lại.
 
+### Tín hiệu bán và tồn trên thẻ model (yêu cầu ngày 2026-10-09)
+
+- Thư viện model phải cho xem nhanh lượng bán, tồn Kiot và tồn xưởng khi rê chuột;
+  có đường tương đương bằng bàn phím và nút chạm, không làm thay đổi chọn/drag/mở model.
+- Người dùng yêu cầu ngưỡng linh động theo tình hình bán thực tế, không dùng một
+  số lượng cố định để gắn nhãn tồn ít hoặc bán chạy. Nêu rõ kỳ, nguồn, độ phủ dữ liệu
+  và tiêu chí suy ra; báo cáo thiếu/chưa tải, SKU chưa ghép hay ghép thay thế không
+  được biến thành số 0 hoặc tín hiệu chắc chắn. Không cộng trùng báo cáo giao nhau.
+- Tồn Kiot là snapshot riêng; tồn xưởng là thành phẩm sẵn giao còn lại sau gửi/QC
+  và tồn đầu kỳ đã kiểm, không phải tổng part từng in. Công thức SKU nhiều model/
+  biến thể phải giữ hệ số và không đoán thành phần thay thế. Không sửa dữ liệu nguồn.
+- Hiệu ứng gọn có nhãn/icon SVG, không chỉ dựa vào màu, không nhấp nháy liên tục;
+  tôn trọng reduced-motion. Bảng xem nhanh không bị card/viewport cắt, đóng được
+  bằng Escape, đọc được khi đưa chuột vào chính bảng và không che navigation mobile.
+- Guard phải kiểm tra phép tính/hệ số, thiếu dữ liệu/quyền, hàng đã giao/QC, nhiều
+  model, light/dark, hover/focus/chạm, cạnh viewport, cuộn và tải nền không dựng lại lưới.
+
 ### Tiến độ in native (yêu cầu viết lại ngày 2026-10-09)
 
 - Trang Tiến độ phải là bề mặt native trong Sản xuất, dùng cùng header, toolbar,

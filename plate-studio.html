@@ -3782,6 +3782,43 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 @media(max-width:360px){.product-picker-grid{grid-template-columns:minmax(0,1fr)}}
 #sales-page [role="status"] .btn,#dlg-mv .sales-detail-error .btn{min-height:44px!important;min-width:44px}
 #sales-page>[role="status"]{margin-bottom:14px;max-width:1360px;overflow-wrap:anywhere}
+/* Library commerce peek: viewport portal, shared across all model cards. */
+#page-models .model-signal-button{position:absolute;right:5px;top:5px;z-index:6;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:12px;background:var(--s);color:var(--t);box-shadow:var(--ss);cursor:pointer;opacity:0;transition:opacity .16s}
+#page-models .model-signal-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8}
+#page-models .model-card:is(:hover,:focus-within) .model-signal-button{opacity:1}
+#page-models .model-signal-button:focus-visible,#page-models .model-card:focus-visible{outline:2px solid var(--pu);outline-offset:2px}
+#page-models .model-signal-marks{position:absolute;left:8px;top:8px;right:52px;display:flex;flex-wrap:wrap;gap:5px;z-index:5;pointer-events:none}
+.model-signal-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:8px;font-size:10px;font-weight:700;line-height:1.3;background:var(--s);color:var(--t);box-shadow:var(--ss)}
+.model-signal-badge svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;flex-shrink:0}
+.model-signal-badge.is-low{background:var(--s);color:var(--am)}
+.model-signal-badge.is-hot{background:var(--s);color:var(--pu)}
+#page-models .has-low-stock .model-img::after{content:'';position:absolute;inset:auto 0 0;height:3px;background:var(--am);pointer-events:none}
+#page-models .has-hot-sales .model-name{color:var(--pu)}
+#page-models .model-img>svg{width:32px;height:32px;fill:none;stroke:var(--t2);stroke-width:1.5}
+#page-models .model-img{position:relative}
+#page-models .model-img>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#page-models .model-category-emoji svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+#page-models .product-library-card .model-img{position:relative}
+#page-models .product-library-card .model-img>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.model-signal-panel{position:fixed;z-index:850;width:min(330px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;overscroll-behavior:contain;padding:12px;border:1px solid var(--bm);border-radius:16px;background:var(--s);color:var(--t);box-shadow:var(--sl);font-size:12px}
+.model-signal-panel[hidden]{display:none!important}
+body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;pointer-events:none!important}
+.model-signal-panel header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.model-signal-panel header b{flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px}
+.model-signal-panel header button{width:44px;height:44px;flex-shrink:0;padding:0;background:var(--s2);border:0;border-radius:10px;color:var(--t);font-size:22px;cursor:pointer}
+.model-signal-kpis{display:grid;gap:7px}
+.model-signal-kpis>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;background:var(--s2);border-radius:10px}
+.model-signal-kpis small{color:var(--t2);font-size:11px}
+.model-signal-kpis strong{font-size:15px;text-align:right}
+.model-signal-panel p{font-size:11px;line-height:1.5;color:var(--t2);margin:8px 0 0;overflow-wrap:anywhere}
+.model-signal-panel-marks{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.model-signal-panel .model-signal-explanation{display:flex;gap:5px;align-items:flex-start;color:var(--t)}
+.model-signal-explanation svg{width:14px;height:14px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8}
+.model-signal-panel .btn{margin-top:8px;min-height:44px}
+.model-signal-panel summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--t2);font-size:11px}
+.model-signal-panel.is-touch{max-height:calc(100dvh - 106px - env(safe-area-inset-bottom));width:calc(100vw - 16px)}
+@media(hover:none){#page-models .model-signal-button{opacity:1}}
+@media(prefers-reduced-motion:reduce){#page-models .model-signal-button{transition:none}}
 </style>
 <style id="production-workspace-style">
 .production-navigation-slot{grid-column:1 / -1;position:sticky;top:0;z-index:25;margin:0 0 14px;background:var(--bg);border-radius:14px;box-shadow:var(--ss)}
@@ -7048,7 +7085,7 @@ function modelCategoryCardsHTML(items, activeVal) {
     const value = esc(JSON.stringify(it.val));
     return `<button class="model-category-card${active?' active':''}" data-model-category="${esc(it.val)}" aria-pressed="${active}" onclick="setModelFilterCat(${value})" style="--cat-accent:${theme.accent};--cat-soft:${theme.soft}" title="Lọc ${esc(it.label)}">
       ${theme.art ? `<img class="model-category-art" src="${theme.art}" alt=""/>` : ''}
-      ${theme.art ? '<span class="model-category-wash"></span>' : `<span class="model-category-emoji">${theme.emoji}</span>`}
+      ${theme.art ? '<span class="model-category-wash"></span>' : `<span class="model-category-emoji">${appIcon(it.val===MODEL_INFO_MISSING_CATEGORY?'warning':it.val==='all'?'sparkle':'model')}</span>`}
       <span class="model-category-info"><span class="model-category-name">${esc(it.label)}</span><span class="model-category-count">${it.count}</span></span>
     </button>`;
   }).join('');
@@ -7753,6 +7790,7 @@ function openPageLayoutManager(page=curPage){
 }
 
 function goPage(p,{historyMode='push',restoreScroll=null}={}) {
+  if(document.getElementById('model-signal-panel'))closeModelSignal();
   if(p==='production')p=productionDefaultRoute();
   if(p==='inventory'){productionNeedsState.source='stock';productionNeedsState.status='all';}
   if(historyMode==='none')restoreProductionNeedsFromLocation(p);
@@ -9683,8 +9721,88 @@ function modelMissingInfo(model) {
 }
 function modelNeedsMoreInfo(model) { return modelMissingInfo(model).length>0; }
 
+/* Model commerce signals are read-only projections, never inventory writes. */
+let modelSignalIndex=new Map(),modelSignalRequest=null,modelSignalScope='',modelSignalLoadedAt=0,modelSignalLoading=false,modelSignalError='';
+let modelSignalActive=null,modelSignalPinned=false,modelSignalCloseTimer=null,modelSignalDismissed=null,modelSignalHoverPaused=false;
+function modelSignalRange(){const to=kiotSalesRangeToday();let from=to;for(let i=1;i<30;i++)from=kiotSalesRangeDayBefore(from);return {from,to};}
+function modelSignalReports(range=modelSignalRange()){
+  const occupied=new Set(),entries=[];
+  const candidates=(kiotViet.salesImports||[]).filter(entry=>entry.period?.from>=range.from&&entry.period?.to<=range.to&&entry.period.from<=entry.period.to&&!entry.syncError&&!entry.requestIdPending&&kiotSalesImportHasSales(hydrateKiotSalesDetail(entry)));
+  candidates.sort((a,b)=>kiotSalesRangeDays(a.period.from,a.period.to).length-kiotSalesRangeDays(b.period.from,b.period.to).length||String(b.archiveRevision||b.importedAt||'').localeCompare(String(a.archiveRevision||a.importedAt||'')));
+  for(const entry of candidates){const days=kiotSalesRangeDays(entry.period.from,entry.period.to);if(days.some(day=>occupied.has(day)))continue;days.forEach(day=>occupied.add(day));entries.push(entry);}
+  return {entries,days:occupied,range};
+}
+function buildModelSignalIndex(){
+  const canKiot=productionCan('kiot.import'),canWorkshop=productionCan('assembly.qc')||productionCan('delivery.create');
+  const {entries,days,range}=modelSignalReports(),bySku=new Map();
+  let pending=!!(currentUser&&sb&&cloudWorkspaceId()&&kiotSalesArchiveAvailable&&!kiotSalesArchiveLoaded),uncertain=false,recentDays=0,olderDays=0,recentFrom=range.to;for(let i=1;i<7;i++)recentFrom=kiotSalesRangeDayBefore(recentFrom);
+  for(const day of days){if(day>=recentFrom)recentDays++;else olderDays++;}
+  for(const entry of entries){hydrateKiotSalesDetail(entry);const rows=kiotSalesRows(entry),loaded=entry.detailLoaded||rows.length>0||Number(entry.qtyTotal)===0;
+    if(!loaded){pending=true;continue;}if(entry.period.from<recentFrom&&entry.period.to>=recentFrom)uncertain=true;
+    for(const row of rows){const sku=String(row.sku||'').trim(),value=bySku.get(sku)||{sold:0,recent:0,older:0};value.sold+=Math.max(0,Number(row.qty)||0);if(entry.period.from>=recentFrom)value.recent+=Math.max(0,Number(row.qty)||0);else if(entry.period.to<recentFrom)value.older+=Math.max(0,Number(row.qty)||0);bySku.set(sku,value);}
+  }
+  const index=new Map(models.map(model=>[model.id,{model,range,coverage:days.size,pending,uncertain,sold:0,shopStock:0,workshop:0,mapped:false,ambiguous:false,stockKnown:true,recent:0,older:0,low:false,hot:false}]));
+  if(canKiot)for(const mapping of new Map((kiotViet.mappings||[]).map(row=>[String(row.sku||'').trim(),row])).values()){const sku=String(mapping.sku||'').trim(),components=kvMappingComponents(mapping),product=kvProductForSku(sku),sale=bySku.get(sku)||{sold:0,recent:0,older:0},byModel=new Map();
+    for(const component of components){const record=index.get(component.modelId);if(!record)continue;record.mapped=true;if(components.some(row=>row.mode==='alternative')){record.ambiguous=true;continue;}byModel.set(component.modelId,(byModel.get(component.modelId)||0)+Math.max(1,Number(component.qty)||1));}
+    for(const [id,multiplier] of byModel){const record=index.get(id);record.sold+=sale.sold*multiplier;record.recent+=sale.recent*multiplier;record.older+=sale.older*multiplier;if(!product||product.stock===null||product.stock===undefined||product.stock===''||!Number.isFinite(Number(product.stock)))record.stockKnown=false;else record.shopStock+=Number(product.stock)*multiplier;}
+  }
+  if(canWorkshop){for(const row of fulfillmentWorkshopRows()){const record=index.get(row.it?.modelId);if(record)record.workshop+=workshopReadyDeliveryQty(row);}for(const entry of openingStockEntries()){const record=index.get(entry.modelId);if(record)record.workshop+=Math.max(0,Number(entry.remainingQty??entry.qty)||0);}}
+  const ranked=[...index.values()].filter(row=>canKiot&&row.mapped&&!row.ambiguous&&!pending&&days.size>=2&&row.sold>0);
+  for(const record of index.values()){
+    record.canKiot=canKiot;record.canWorkshop=canWorkshop;record.workshopPartial=!!(currentUser&&sb&&cloudWorkspaceId()&&!fulfillmentCloudManualLoaded);
+    const average=days.size?record.sold/days.size:0,recent=recentDays&&!uncertain?record.recent/recentDays:average,older=olderDays&&!uncertain?record.older/olderDays:0;
+    record.rate=Math.max(average,recent);record.weekNeed=Math.ceil(record.rate*7);record.coverDays=record.rate>0?Math.max(0,record.shopStock)/record.rate:null;
+    record.growth=older>0&&recentDays?recent/older:null;record.score=record.rate;
+    record.low=canKiot&&record.mapped&&!record.ambiguous&&record.stockKnown&&!pending&&days.size>=2&&record.rate>0&&record.shopStock<record.weekNeed;
+  }
+  ranked.sort((a,b)=>b.score-a.score);const cutoff=ranked.length>=2?ranked[Math.max(0,Math.ceil(ranked.length*.2)-1)].score:Infinity;
+  for(const record of ranked)record.hot=record.score>=cutoff;
+  modelSignalIndex=index;return index;
+}
+function modelSignalStatus(record,kind){
+  if(!record)return 'Chưa có dữ liệu';
+  if(kind==='workshop')return !record.canWorkshop?'Không có quyền':record.workshopPartial?(record.workshop>0?'≥ '+kiotInventoryNumber(record.workshop):'Chưa tải đủ'):kiotInventoryNumber(record.workshop);
+  if(!record.canKiot)return 'Không có quyền';if(!record.mapped)return 'Chưa ghép SKU';if(record.ambiguous)return 'Cần rõ công thức';
+  if(kind==='stock')return record.stockKnown?kiotInventoryNumber(record.shopStock):'Thiếu snapshot';
+  if(record.pending)return modelSignalLoading?'Đang tải…':'Chưa tải đủ';if(!record.coverage)return 'Chưa có báo cáo';return kiotInventoryNumber(record.sold);
+}
+function modelSignalBadges(record){return `${record?.hot?`<span class="model-signal-badge is-hot">${appIcon('sparkle')}Bán chạy</span>`:''}${record?.low?`<span class="model-signal-badge is-low">${appIcon('warning')}Tồn ít</span>`:''}`;}
+function modelSignalButtonHTML(model){return `<div class="model-signal-marks">${modelSignalBadges(modelSignalIndex.get(model.id))}</div><button type="button" class="model-signal-button" aria-label="Xem bán và tồn ${esc(model.name)}" aria-expanded="false" aria-controls="model-signal-panel" onfocus="clearTimeout(modelSignalCloseTimer)" onclick="event.stopPropagation();toggleModelSignal(this.closest('[data-model-id]'))">${appIcon('progress')}</button>`;}
+function modelSignalPanelHTML(record){
+  const stockAt=kiotViet.lastCatalogImportAt||kiotViet.snapshots?.[0]?.importedAt||'';
+  const note=!record.canKiot?'Bạn chưa có quyền xem dữ liệu Kiot.':!record.mapped?'Chưa ghép SKU Kiot với model.':record.ambiguous?'SKU có model thay thế: chưa thể quy lượng bán/tồn cho model này.':record.pending?'Chi tiết bán chưa tải đủ; chưa đánh giá bán chạy/tồn ít.':!record.coverage?'Chưa có báo cáo đúng kỳ.':`${record.coverage}/30 ngày có báo cáo${record.coverage<30?' · không coi ngày thiếu là 0':''}.`;
+  return `<header><b>${esc(record.model.name)}</b><button type="button" aria-label="Đóng bán và tồn" onclick="closeModelSignal(true)">×</button></header><div class="model-signal-kpis"><div><small>Đã bán · 30 ngày</small><strong>${modelSignalStatus(record,'sold')}</strong></div><div><small>Tồn Kiot · theo SKU</small><strong>${modelSignalStatus(record,'stock')}</strong></div><div><small>Tồn xưởng · sẵn giao</small><strong>${modelSignalStatus(record,'workshop')}</strong></div></div><div class="model-signal-panel-marks">${modelSignalBadges(record)}</div><p>${fmtDate(record.range.from)} – ${fmtDate(record.range.to)} · ${esc(note)}</p><details><summary>Tiêu chí & nguồn</summary>${record.low?`<p class="model-signal-explanation">${appIcon('warning')}Còn khoảng ${kiotInventoryNumber(record.coverDays)} ngày bán; nhu cầu 7 ngày ≈ ${record.weekNeed} model theo tốc độ gần đây.</p>`:''}${record.hot?`<p class="model-signal-explanation">${appIcon('sparkle')}Nhóm 20% sức bán cao nhất; ưu tiên nhịp bán 7 ngày gần đây${record.growth!==null?' · '+kiotInventoryNumber(record.growth)+'× kỳ trước':''}.</p>`:''}${record.canKiot?`<p>${stockAt?'Snapshot Kiot '+fmtDate(stockAt):'Kiot chưa có mốc snapshot'} · quy theo hệ số thành phần SKU.</p>`:''}${record.canWorkshop?`<p>Xưởng: thành phẩm còn lại sau QC/gửi hàng + tồn đầu kỳ đã kiểm; không cộng part đang in. ${record.workshopPartial?'Chưa tải đủ dữ liệu xưởng.':''}</p>`:''}</details>${record.pending||record.workshopPartial||modelSignalError?'<button type="button" class="btn btn-ghost btn-sm" onclick="refreshModelSignals(true)">Thử tải lại số liệu</button>':''}`;
+}
+function ensureModelSignalPanel(){let panel=document.getElementById('model-signal-panel');if(panel)return panel;panel=document.createElement('aside');panel.id='model-signal-panel';panel.className='model-signal-panel';panel.hidden=true;panel.setAttribute('aria-label','Bán và tồn model');panel.onmouseenter=()=>clearTimeout(modelSignalCloseTimer);panel.onmouseleave=()=>scheduleCloseModelSignal();panel.onfocusout=()=>setTimeout(()=>{if(!panel.contains(document.activeElement))scheduleCloseModelSignal();},0);panel.addEventListener('toggle',positionModelSignal,true);document.body.append(panel);return panel;}
+function positionModelSignal(){const panel=document.getElementById('model-signal-panel'),card=modelSignalActive;if(!panel||panel.hidden||!card?.isConnected)return;const box=card.getBoundingClientRect(),mobile=matchMedia('(max-width:860px)').matches;
+  panel.classList.toggle('is-touch',mobile);if(mobile){panel.style.left='8px';panel.style.top='';panel.style.bottom='calc(84px + env(safe-area-inset-bottom))';return;}
+  panel.style.bottom='';const width=panel.offsetWidth,height=panel.offsetHeight;let left=box.right+10;if(left+width>innerWidth-8)left=box.left-width-10;left=Math.max(8,Math.min(left,innerWidth-width-8));panel.style.left=left+'px';panel.style.top=Math.max(8,Math.min(box.top,innerHeight-height-8))+'px';
+}
+function showModelSignal(card,pinned=false){if(!card||modelSelectionMode||modelSignalHoverPaused&&!pinned||card===modelSignalDismissed||modelSignalPinned&&!pinned)return;clearTimeout(modelSignalCloseTimer);modelSignalActive?.querySelector('.model-signal-button')?.setAttribute('aria-expanded','false');modelSignalActive=card;modelSignalPinned=pinned;const record=modelSignalIndex.get(card.dataset.modelId);if(!record)return;const panel=ensureModelSignalPanel();panel.innerHTML=modelSignalPanelHTML(record);panel.hidden=false;document.body.classList.add('model-signal-open');panel.dataset.modelId=record.model.id;card.querySelector('.model-signal-button')?.setAttribute('aria-expanded','true');positionModelSignal();}
+function toggleModelSignal(card){modelSignalDismissed=null;modelSignalHoverPaused=false;if(modelSignalActive===card&&modelSignalPinned)closeModelSignal(true);else{showModelSignal(card,true);document.querySelector('#model-signal-panel header button')?.focus({preventScroll:true});}}
+function scheduleCloseModelSignal(){clearTimeout(modelSignalCloseTimer);if(!modelSignalPinned)modelSignalCloseTimer=setTimeout(()=>closeModelSignal(),180);}
+function closeModelSignal(returnFocus=false){clearTimeout(modelSignalCloseTimer);const card=modelSignalActive,panel=document.getElementById('model-signal-panel');if(panel)panel.hidden=true;document.body.classList.remove('model-signal-open');card?.querySelector('.model-signal-button')?.setAttribute('aria-expanded','false');modelSignalActive=null;modelSignalPinned=false;if(returnFocus){modelSignalDismissed=card;modelSignalHoverPaused=true;card?.querySelector('.model-signal-button')?.focus();}}
+function patchModelSignals(){
+  buildModelSignalIndex();document.querySelectorAll('#model-grid [data-model-id]').forEach(card=>{const record=modelSignalIndex.get(card.dataset.modelId);card.classList.toggle('has-low-stock',!!record?.low);card.classList.toggle('has-hot-sales',!!record?.hot);const marks=card.querySelector('.model-signal-marks');if(marks)marks.innerHTML=modelSignalBadges(record);});
+  if(modelSignalActive?.isConnected){const panel=ensureModelSignalPanel(),expanded=panel.querySelector('details')?.open,focused=panel.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null,scroll=panel.scrollTop;panel.innerHTML=modelSignalPanelHTML(modelSignalIndex.get(modelSignalActive.dataset.modelId));if(expanded)panel.querySelector('details').open=true;if(focused)[...panel.querySelectorAll('[aria-label]')].find(el=>el.getAttribute('aria-label')===focused)?.focus({preventScroll:true});panel.scrollTop=scroll;positionModelSignal();}
+}
+async function refreshModelSignals(force=false){
+  if(curPage!=='models'||batchCameraHasPending())return;
+  const scope=cloudWorkspaceId()+':'+(currentUser?.id||'local');if(modelSignalRequest)return modelSignalRequest;if(!force&&modelSignalScope===scope&&Date.now()-modelSignalLoadedAt<300000)return;
+  modelSignalScope=scope;modelSignalLoading=true;modelSignalError='';
+  modelSignalRequest=(async()=>{try{
+    if(productionCan('kiot.import')){await loadKiotSalesArchiveIndex({force});const reports=modelSignalReports().entries,queue=reports.filter(entry=>{hydrateKiotSalesDetail(entry);return !entry.detailLoaded&&!kiotSalesRows(entry).length&&Number(entry.qtyTotal)!==0;});if(force)queue.forEach(entry=>delete entry.detailError);let cursor=0;await Promise.all(Array.from({length:Math.min(3,queue.length)},async()=>{while(cursor<queue.length){const entry=queue[cursor++];await loadKiotSalesArchiveDetail(entry);}}));}
+    if(productionCan('assembly.qc')||productionCan('delivery.create'))await loadFulfillmentManualReportsFromCloud({force});
+  }catch(error){modelSignalError=String(error.message||error);}finally{modelSignalLoading=false;modelSignalRequest=null;modelSignalLoadedAt=Date.now();if(scope===cloudWorkspaceId()+':'+(currentUser?.id||'local')&&curPage==='models')patchModelSignals();}})();return modelSignalRequest;
+}
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&modelSignalActive){event.preventDefault();closeModelSignal(true);}});
+document.addEventListener('pointerdown',event=>{if(modelSignalActive&&!event.target.closest('#model-signal-panel,.model-signal-button'))closeModelSignal();});
+document.addEventListener('pointermove',event=>{if(modelSignalHoverPaused&&(event.movementX||event.movementY)){modelSignalHoverPaused=false;modelSignalDismissed=null;const card=event.target.closest('#model-grid [data-model-id]');if(card&&matchMedia('(hover:hover)').matches)showModelSignal(card);}},{passive:true});
+document.addEventListener('scroll',event=>{if(!modelSignalActive||event.target.closest?.('#model-signal-panel'))return;if(modelSignalPinned){const rect=modelSignalActive.getBoundingClientRect();if(rect.bottom<0||rect.top>innerHeight)closeModelSignal();else positionModelSignal();}else closeModelSignal();},{capture:true,passive:true});
+window.addEventListener('resize',()=>{if(modelSignalActive)positionModelSignal();});
 function renderModels() {
   const el = document.getElementById('model-grid'); if(!el) return;
+  closeModelSignal();buildModelSignalIndex();refreshModelSignals();
   const products=productCatalog(),productEntries=new Set(products);
   document.getElementById('cnt-models').textContent = models.length+products.length;
   const addToCategoryBtn = document.getElementById('btn-add-to-model-category');
@@ -9707,7 +9825,7 @@ function renderModels() {
   });
   const incompleteCount=models.filter(modelNeedsMoreInfo).length;
   const catChips = [{val:'all', label:'Tất cả', count:models.length+products.length},{val:MODEL_PRODUCTS_CATEGORY,label:'Sản phẩm ghép',count:products.length}]
-    .concat(incompleteCount ? [{val:MODEL_INFO_MISSING_CATEGORY,label:'⚠ Chưa đủ thông tin',count:incompleteCount}] : [])
+    .concat(incompleteCount ? [{val:MODEL_INFO_MISSING_CATEGORY,label:'Chưa đủ thông tin',count:incompleteCount}] : [])
     .concat(Object.keys(catCounts).sort().map(c => ({val:c, label:c, count:catCounts[c]})));
   document.getElementById('model-filter-cat').innerHTML =
     modelCategoryCardsHTML(catChips, FILTERS.models.cat);
@@ -9758,8 +9876,8 @@ function renderModels() {
   el.innerHTML = list.map(m => {
     if(productEntries.has(m))return productLibraryCardHTML(m);
     const imgHTML = m.images?.length
-      ? `<div class="model-img"><img src="${esc(m.images[0])}" alt="${esc(m.name)}" onerror="this.onerror=null;this.src='https://image.thum.io/get/width/900/crop/900/noanimate/'+encodeURIComponent('${esc((m.links||[]).find(l=>makerWorldIdFromUrl(l.url))?.url||'')}');this.parentElement.classList.add('model-thumb-fallback')"/></div>`
-      : `<div class="model-img">📦</div>`;
+      ? `<div class="model-img">${appIcon('model')}<img src="${esc(m.images[0])}" alt="${esc(m.name)}" loading="lazy" onerror="this.remove()"/></div>`
+      : `<div class="model-img">${appIcon('model')}</div>`;
     const partChips = (m.parts||[]).slice(0,4).map(p => {
       const f = getFil((p.filamentIds||[])[0]);
       const multi = (p.filamentIds||[]).length > 1;
@@ -9773,8 +9891,10 @@ function renderModels() {
     const missingInfo = modelMissingInfo(m);
 
     const selected = selectedModelIds.has(m.id);
-    return `<div class="model-card" data-model-id="${esc(m.id)}" draggable="true" onmouseenter="this.classList.add('show-details')" onmouseleave="this.classList.remove('show-details')" ondragstart="startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}" style="${selected?'outline:2px solid var(--ac);outline-offset:1px':''}">
+    const signal=modelSignalIndex.get(m.id);
+    return `<div class="model-card${signal?.low?' has-low-stock':''}${signal?.hot?' has-hot-sales':''}" data-model-id="${esc(m.id)}" tabindex="0" aria-label="${esc(m.name)}" draggable="true" onmouseenter="this.classList.add('show-details');if(matchMedia('(hover:hover)').matches)showModelSignal(this)" onmouseleave="modelSignalDismissed=null;this.classList.remove('show-details');scheduleCloseModelSignal()" onfocus="modelSignalHoverPaused=false;modelSignalDismissed=null;showModelSignal(this)" onblur="scheduleCloseModelSignal()" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();this.click()}" ondragstart="closeModelSignal();startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="closeModelSignal();${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}" style="${selected?'outline:2px solid var(--ac);outline-offset:1px':''}">
       ${imgHTML}
+      ${modelSelectionMode?'':modelSignalButtonHTML(m)}
       <div class="model-body">
         <div class="model-name" style="display:flex;align-items:center;gap:7px">${modelSelectionMode ? `<input type="checkbox" ${selected?'checked':''} onclick="event.stopPropagation();toggleModelSelected('${m.id}')" style="accent-color:var(--ac)"/>` : ''}${esc(m.name)}</div>
         <div class="model-hover-details">
@@ -15438,7 +15558,7 @@ function goBack(){
 let editingProductId=null,productDraft=[],productPickerEntries=[],productPickerTarget=null,productPickerLimit=48,productEditorInitial='',productEditorReturn=null;
 function productLibraryCardHTML(product){
   const firstModel=models.find(model=>model.id===product.components?.[0]?.modelId);
-  const preview=firstModel?.images?.[0]?`<img src="${esc(firstModel.images[0])}" alt="${esc(product.name)}" onerror="this.replaceWith(document.createTextNode('📦'))"/>`:'📦';
+  const preview=appIcon('model')+(firstModel?.images?.[0]?`<img src="${esc(firstModel.images[0])}" alt="${esc(product.name)}" onerror="this.remove()"/>`:'');
   return `<article class="model-card product-library-card" data-product-id="${esc(product.id)}"><div class="model-img">${preview}<span class="product-kind-mark">Ghép</span></div><div class="model-body"><h3 class="model-name">${esc(product.name)}</h3><ul>${(product.components||[]).map(component=>`<li><span>${esc(productComponentLabel(component))}</span><b>×${Math.max(1,Number(component.qty)||1)}</b></li>`).join('')}</ul><div class="product-library-actions"><button type="button" class="btn btn-ghost" data-product-id="${esc(product.id)}" onclick="openProductEditor(this.dataset.productId)">Sửa</button><button type="button" class="btn btn-danger" data-product-id="${esc(product.id)}" onclick="deleteCompositeProduct(this.dataset.productId)">Xóa</button></div></div></article>`;
 }
 function productCatalog(){normalizeOperations();return operations.products;}

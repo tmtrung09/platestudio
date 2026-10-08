@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {mkdirSync} from 'node:fs';
+const out=resolve('qa-results/model-signals');mkdirSync(out,{recursive:true});
+const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+try{for(const width of [320,390,640,1024,1440])for(const theme of ['light','dark']){
+ const context=await browser.newContext({viewport:{width,height:900},hasTouch:width<600,reducedMotion:'reduce'});await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await page.evaluate(theme=>{
+  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');currentUser=null;cloudReady=false;
+  const photo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="300" height="180" fill="#8374c5"/><circle cx="150" cy="90" r="65" fill="#ffd080"/></svg>');
+  models=Array.from({length:350},(_,i)=>({id:'m'+i,name:i===0?'Model bán chạy tên rất dài để kiểm tra bố cục':'Model '+i,createdAt:new Date(Date.UTC(2026,9,1,0,350-i)).toISOString(),images:i===0?[photo]:i===1?['https://qa.invalid/broken.jpg']:[],parts:[{id:'body',name:'Thân',qtyPerModel:1}],variants:[],cats:[]}));
+  operations={products:[],qualityIssues:[],deliveries:[{id:'old',orderId:'o',items:[{itemId:'it',modelId:'m0',qty:2}]}],deliveryBatches:[{id:'ship',status:'sent',items:[{orderId:'o',itemId:'it',modelId:'m0',sentQty:1}]},{id:'cancel',status:'cancelled',items:[{orderId:'o',itemId:'it',modelId:'m0',sentQty:20}]}],openingStock:[{id:'opening',modelId:'m0',qty:8,remainingQty:3},{id:'inactive',modelId:'m0',qty:100,remainingQty:100,active:false}]};normalizeOperations();
+  orders=[{id:'o',status:'printing',items:[{id:'it',modelId:'m0',qty:8}],assembly:{items:{it:5},handovers:{it:{assemblyStatus:'completed',readyQty:5,qcStatus:'accepted'}}}}];pitems=[{id:'pi',orderId:'o',orderItemId:'it',modelId:'m0',partId:'body',qty:8,qtyDone:8}];batchReports=[];fulfillmentCloudManualReports=[];
+  const today=kiotSalesRangeToday(),yesterday=kiotSalesRangeDayBefore(today);
+  kiotViet={catalog:[{sku:'A',stock:20},{sku:'B',stock:100},{sku:'ALT',stock:5}],mappings:[{sku:'A',components:[{modelId:'m0',qty:2,mode:'required'}]},{sku:'B',modelId:'m1'},{sku:'ALT',components:[{modelId:'m2',mode:'alternative'}]},{sku:'UNKNOWN',modelId:'m3'}],sales:[],salesImports:[today,yesterday].map((day,i)=>({id:'day'+i,period:{from:day,to:day},sales:[{sku:'A',qty:10},{sku:'B',qty:2},{sku:'ALT',qty:8}],detailLoaded:true})),snapshots:[],lastCatalogImportAt:today};
+  FILTERS.models={cat:'all',search:'',sort:'created_desc'};goPage('models');window.signalCard=document.querySelector('[data-model-id="m0"]');
+ },theme);
+ await page.waitForTimeout(200);
+ assert.equal(await page.locator('#model-grid [data-model-id]').count(),350);
+ await page.locator('#model-grid [data-model-id="m1"] .model-img img').waitFor({state:'detached'});assert.equal(await page.locator('#model-grid [data-model-id="m1"] .model-img svg').count(),1,'Broken images retain fallback without third party screenshots');
+ const stats=await page.evaluate(()=>{const r=modelSignalIndex.get('m0');return {sold:r.sold,stock:r.shopStock,workshop:r.workshop,hot:r.hot,low:r.low,need:r.weekNeed};});
+ assert.deepEqual(stats,{sold:40,stock:40,workshop:5,hot:true,low:true,need:140},'Component units, shipped/cancelled/QC ready qty and checked opening stock');
+ assert.equal(await page.evaluate(()=>modelSignalIndex.get('m1').low),false,'Slow seller with ample coverage is not low');
+ await page.evaluate(()=>{kiotViet.salesImports.forEach(entry=>entry.sales[0].qty=1);buildModelSignalIndex();});assert.equal(await page.evaluate(()=>modelSignalIndex.get('m0').low),false,'Same stock ceases to be low when actual sales slow');await page.evaluate(()=>{kiotViet.salesImports.forEach(entry=>entry.sales[0].qty=10);patchModelSignals();});
+ const card=page.locator('#model-grid [data-model-id="m0"]'),info=card.locator('.model-signal-button'),panel=page.locator('#model-signal-panel');
+ if(width<600)await info.click();else await card.hover();
+ await panel.waitFor({state:'visible'});assert.match(await panel.innerText(),/Đã bán.*30 ngày/s);assert.match(await panel.innerText(),/2\/30 ngày/);
+ assert.equal(await page.locator('.cam-fab').isVisible(),false,'Floating camera does not cover mobile peek');
+ assert.equal(await page.locator('#dlg-mv').isVisible(),false,'Peek does not open detail');
+ const rect=await panel.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1&&rect.y>=0&&rect.y+rect.height<=900,'Portal bounded by viewport');
+ if(width>860){await panel.hover();await page.waitForTimeout(220);assert.equal(await panel.isVisible(),true,'Pointer can enter and read the panel');}
+ if(width<=860)assert.ok(rect.y+rect.height<=816,'Touch peek avoids navigation');
+ await page.screenshot({path:`${out}/${width}-${theme}.png`});
+ await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false,'Escape dismisses without reopening on focus');
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('model-signal-open')),false,'Closing restores the normal floating layer');
+ await card.focus();await panel.waitFor({state:'visible'});await page.keyboard.press('Escape');
+ await info.click();assert.equal(await panel.isVisible(),true);await info.click();assert.equal(await panel.isVisible(),false,'Tap toggles');
+ await page.evaluate(()=>{const node=signalCard;patchModelSignals();window.signalNodeRetained=node===document.querySelector('[data-model-id="m0"]');});assert.equal(await page.evaluate(()=>signalNodeRetained),true,'Background updates retain card/image DOM');
+ await info.click();await panel.locator('summary').click();await panel.getByRole('button',{name:'Đóng bán và tồn'}).focus();await page.evaluate(()=>patchModelSignals());assert.equal(await panel.locator('details').getAttribute('open'),'','Background update keeps methodology expanded');assert.equal(await panel.getByRole('button',{name:'Đóng bán và tồn'}).evaluate(button=>button===document.activeElement),true,'Background update keeps panel focus');await page.keyboard.press('Escape');
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+ await page.evaluate(()=>{document.querySelector('#model-grid [data-model-id="m349"]').scrollIntoView({block:'end',behavior:'instant'});});await page.waitForTimeout(150);await page.evaluate(()=>toggleModelSignal(document.querySelector('#model-grid [data-model-id="m349"]')));await panel.locator('summary').click();await page.waitForTimeout(100);const expandedRect=await panel.boundingBox();assert.ok(expandedRect.y>=0&&expandedRect.y+expandedRect.height<=900,'Expanded methodology remains bounded at bottom edge');await page.evaluate(()=>{closeModelSignal();document.getElementById('pg-content').scrollTop=0;});
+ await page.evaluate(()=>{const base=kiotViet.salesImports[0];kiotViet.salesImports.push({...base,id:'duplicate',sales:[{sku:'A',qty:1000}]});buildModelSignalIndex();});assert.equal(await page.evaluate(()=>modelSignalIndex.get('m0').sold),40,'Duplicate period is not counted twice');
+ await page.evaluate(()=>{const day=kiotSalesRangeDayBefore(kiotSalesRangeDayBefore(kiotSalesRangeToday()));kiotViet.salesImports.push({id:'empty',period:{from:day,to:day},sales:[],qtyTotal:0,skuCount:0,detailLoaded:true});buildModelSignalIndex();});assert.equal(await page.evaluate(()=>modelSignalIndex.get('m0').coverage),2,'Empty import is missing data, not a zero-sales day');
+ await page.evaluate(()=>{kiotViet.salesImports.push({id:'unloaded',period:{from:kiotSalesRangeDayBefore(kiotSalesRangeDayBefore(kiotSalesRangeToday())),to:kiotSalesRangeDayBefore(kiotSalesRangeDayBefore(kiotSalesRangeToday()))},qtyTotal:10,skuCount:1});patchModelSignals();});assert.equal(await page.evaluate(()=>modelSignalIndex.get('m0').hot||modelSignalIndex.get('m0').low),false,'Incomplete details cannot produce certain badges');
+ assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m0'),'sold')),'Chưa tải đủ');
+ assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m2'),'sold')),'Cần rõ công thức');assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m3'),'stock')),'Thiếu snapshot');assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m4'),'stock')),'Chưa ghép SKU');
+ await page.evaluate(()=>{currentUser={id:'viewer'};canAccess=()=>false;patchModelSignals();});assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m0'),'sold')),'Không có quyền');assert.equal(await page.evaluate(()=>modelSignalStatus(modelSignalIndex.get('m0'),'workshop')),'Không có quyền');
+ await page.evaluate(()=>{currentUser=null;modelSelectionMode=true;renderModels();});assert.equal(await card.locator('.model-signal-button').count(),0,'No peek control competes with multiselect');
+ assert.deepEqual(errors,[]);console.log(`PASS model signals ${width}/${theme}: adaptive demand, SKU factors, current workshop stock, missing data, hover/focus/touch, 350 cards, bounded portal, no grid rerender`);await context.close();
+}}finally{await browser.close();}
