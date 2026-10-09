@@ -3,7 +3,7 @@
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs",
     "qa:desktop": "node tools/desktop-qa.mjs && node tools/density-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs && node tools/product-library-qa.mjs && node tools/model-signals-qa.mjs && node tools/model-sales-qa.mjs && node tools/production-qa.mjs && node tools/progress-qa.mjs",
-    "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/sales-audit.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs",
+    "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/kiot-ui-qa.mjs && node tools/sales-audit.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs",
     "qa:cloud": "node tools/cloud-sync-qa.mjs && node tools/batch-upload-qa.mjs",
     "qa:plate-editor": "node tools/plate-editor-qa.mjs && node tools/plan-report-qa.mjs",
     "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor"

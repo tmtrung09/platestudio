@@ -193,6 +193,18 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Trang đồng bộ KiotViet (yêu cầu ngày 2026-10-10)
+
+- Người dùng yêu cầu dùng năng lực mô hình 6.1 Sol làm lại trang Đồng bộ KiotViet
+  vì giao diện rối. Phạm vi là tổ chức lại trang và các control liên quan; giữ dữ
+  liệu danh mục, báo cáo bán, ghép SKU và sổ đối chiếu hiện có.
+- Áp dụng hợp đồng UX đã có cho cả nhóm nhập dữ liệu, lịch nền, danh mục SKU và
+  đối chiếu: thông tin gọn, trạng thái thật, giữ focus/caret/ảnh khi tìm kiếm và
+  cập nhật nền; không coi chưa kết nối hoặc chưa có dữ liệu là thành công.
+- Việc làm lại vẫn phải giữ các đường nhập file/Chrome/bù ngày và ghép SKU theo
+  các quy tắc KiotViet bên dưới; kiểm tra mobile/desktop, hai theme và regression
+  trước khi bàn giao theo quy trình chung.
+
 ### Không gian Sản xuất tập trung (yêu cầu ngày 2026-10-08)
 
 - Người dùng yêu cầu phân tích bằng mô hình 6.1 Sol và làm lại bốn trang Tiến độ
