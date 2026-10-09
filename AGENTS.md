@@ -338,6 +338,24 @@ mất dữ liệu; phải kiểm tra toàn luồng nhập file/Chrome/bù ngày,
 chưa xác minh; kiểm thử trên dữ liệu cô lập. Không coi QA giao diện trước đây là
 bằng chứng dữ liệu bán đã an toàn. Kết quả rà soát: docs/sales-audit-2026-10-08.md.
 
+Đối chiếu ngày 2026-10-09: người dùng hỏi vì sao SP012001 / Lót ly hoa / Flower
+Coasters có 3 bán, 131.552 đ ở trang Bán hàng nhưng 0 bán, 0 đ trong chi tiết model,
+trong khi tồn cửa hàng vẫn là 9. Đã tái hiện bằng dữ liệu cô lập: trang Bán hàng đọc
+`salesImports`/archive, còn `getModelKiotMetrics` và `modelKiotVariantRows` đọc cache
+phiên cũ `kiotViet.sales`; settings cloud chủ động bỏ cache này khi archive đã sẵn
+sàng. Chênh lệch hiển thị không tự chứng minh báo cáo bị mất; phải đối chiếu nguồn
+và kỳ trước khi kết luận. Người dùng đã đồng ý sửa đồng bộ bảng chi tiết và metrics
+gửi AI; không chỉ phần xem nhanh trên thẻ model. Dùng báo cáo cùng kỳ đang chọn ở
+trang Bán hàng (fallback cùng bộ lọc ngày), ghi rõ kỳ; cache chỉ dùng khi revision
+khớp, chi tiết chưa tải/lỗi phải là chưa biết, có tải lại, không coi là số 0. AI
+chờ chi tiết đầy đủ và không gửi khi thiếu dữ liệu/quyền; kết quả cũ khác báo cáo/
+revision không được trình bày như đánh giá kỳ hiện tại. Chỉ patch vùng Kiot trong
+dialog, giữ ảnh, cuộn và không mở lại model khi người dùng đã đóng/đổi model. Giữ
+nguyên báo cáo nguồn và ledger; QA dùng dữ liệu cô lập, không sửa dữ liệu live.
+Regression: tools/model-sales-qa.mjs kiểm tra cả bảng model, tóm tắt Kiot, metrics
+AI, tải lại/cache lệch revision, tải nền/lỗi/thử lại, kỳ cũ và zero thật, hai theme
+trên mobile/desktop. Phần xem nhanh 30 ngày phải tiếp tục ghi rõ kỳ riêng.
+
 Người dùng đã yêu cầu sửa các lỗi rà soát này. Báo cáo và ledger bán phải lưu/xóa
 nguyên tử, kiểm tra revision và retry cùng request ID. Bản nhập chưa xác nhận phải
 được lưu bền trước khi gửi, không cắt lịch sử, không compact chi tiết chưa archive,
