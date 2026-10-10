@@ -60,6 +60,7 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  if(!profile.touch){await card.hover();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.system-notification-popup .notification-dismiss')).opacity==='1');}
  await close.focus();assert.equal(await close.evaluate(el=>getComputedStyle(el).opacity),'1');
  assert.ok(await close.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;}));
+ assert.ok(await card.evaluate(el=>{const copy=el.querySelector('.system-popup-open>span:last-child'),open=el.querySelector('.system-popup-open').getBoundingClientRect(),close=el.querySelector('.notification-dismiss').getBoundingClientRect();return copy.getBoundingClientRect().width>=120&&copy.scrollWidth<=copy.clientWidth+1&&close.left>=open.right-1;}),'Shared popup content remains readable beside its close control');
  assert.ok(await page.evaluate(()=>{const cards=[...document.querySelectorAll('#toast .notification-card')].map(el=>el.getBoundingClientRect());return cards.every(r=>r.left>=0&&r.right<=innerWidth&&r.top>=60)&&cards.every((r,i)=>!i||r.top>=cards[i-1].bottom)&&[...document.querySelectorAll('#toast .notification-card')].every(el=>getComputedStyle(el).borderTopWidth==='0px');}));
  await page.screenshot({path:resolve(out,`${profile.width}-${profile.height}-${theme}-popups.png`)});
  await close.click();await card.waitFor({state:'detached'});assert.equal(await page.evaluate(()=>curPage===keptPage),true,'Dismiss does not navigate');

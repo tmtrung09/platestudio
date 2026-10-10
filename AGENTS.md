@@ -255,6 +255,10 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   gửi mã/xác nhận mã/đọc định danh/đọc máy và HTTP hoặc mã lỗi an toàn, không gộp
   mọi lỗi thành “mã email sai”, không lộ token/email/mã xác nhận trong chẩn đoán.
   Lỗi giữ dữ liệu đã lưu và thông tin form để thử lại, không yêu cầu xóa dữ liệu web.
+- Người dùng yêu cầu hai máy mỗi hàng ở Máy trực tiếp; giữ đúng hai cột trên
+  desktop/mobile, dùng bố cục thẻ gọn ở màn hình hẹp thay vì ép chữ cạnh ảnh.
+  Giữ ảnh máy/ảnh mẻ, trạng thái, chỉ số và đường xem/bỏ qua cảnh báo; không đổi
+  dữ liệu hoặc kết nối để chỉnh lưới. Guard đo hai cột và tràn bên trong từng thẻ.
 
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 
@@ -275,6 +279,9 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 - Header dùng chung phải chừa chỗ cho chuông mà không ép tên trang thành cột hẹp
   trên mobile. Guard sticky đo mốc ghim từ vị trí thực thay vì giả định chiều cao
   header; vẫn kiểm tra thanh thao tác nằm đúng mép vùng cuộn sau khi vượt mốc đó.
+- Pop-up có hành động phụ (như Bỏ qua cảnh báo) phải đặt hành động dưới nội dung,
+  không chia ba cột khiến tên/mô tả bị ép xuống từng chữ. Giữ nút đóng 44px ở góc
+  trên, phần chữ có chiều rộng đọc được, không tràn ngang ở mọi theme/breakpoint.
 
 ### Trao đổi về trang Cài đặt (ngày 2026-10-10)
 

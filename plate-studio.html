@@ -3174,7 +3174,8 @@ html body .pp-quantity-control :is(button,input):is(:focus,:focus-visible){outli
 #toast #system-notification-popups{position:static;display:contents;width:auto;pointer-events:none}
 #toast .notification-card{display:flex;align-items:flex-start;gap:8px;width:100%;padding:8px 6px 8px 12px;box-sizing:border-box;flex-shrink:0;border:0;border-radius:14px;background:var(--s);color:var(--t);box-shadow:var(--sm);pointer-events:auto;touch-action:pan-y;overflow-wrap:anywhere}
 #toast .t-msg{font-size:13px;line-height:1.5;user-select:text}#toast .notification-feedback-icon{display:grid;place-items:center;min-height:44px;color:var(--ac)}#toast .notification-feedback-copy{flex:1;min-width:0;padding:12px 0}
-#toast .system-notification-popup{transform:translateX(115%);opacity:0;transition:transform .24s var(--sp),opacity .18s ease}#toast .system-notification-popup.is-visible{transform:none;opacity:1}#toast .system-notification-popup.is-swiping{transition:none}
+#toast .system-notification-popup{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:start;transform:translateX(115%);opacity:0;transition:transform .24s var(--sp),opacity .18s ease}#toast .system-notification-popup.is-visible{transform:none;opacity:1}#toast .system-notification-popup.is-swiping{transition:none}
+.system-popup-open>span:last-child{min-width:0;white-space:normal}
 .system-popup-open{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:start;gap:8px;flex:1;min-width:0;min-height:44px;padding:10px 0;border:0;background:none;color:var(--t);font:inherit;text-align:left;cursor:pointer}.system-popup-icon{display:grid;place-items:center;min-height:22px;color:var(--ac)}.system-popup-open b,.system-popup-open small{display:block;overflow-wrap:anywhere}.system-popup-open b{font-size:13px;line-height:1.4;font-weight:650}.system-popup-open small{margin-top:3px;color:var(--t2);font-size:12px;line-height:1.5}
 body.notifications-open #toast{visibility:hidden}
 @media(max-width:860px){#system-notification-panel{max-height:min(480px,calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))}#toast{max-height:calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}.page-heading-main{flex-wrap:wrap}.page-heading-main>div:first-child{width:100%;min-width:0}.page-heading-main>.gap-row{flex-wrap:wrap}}
@@ -4057,14 +4058,16 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   display: grid;
   gap: 10px;
 }
+.pm-live{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.pm-live>.empty{grid-column:1/-1}
 .pm-live[hidden],
 .pm-history[hidden] {
   display: none;
 }
 .pm-machine {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) 115px;
-  gap: 14px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
   background: var(--s);
   border-radius: 18px;
@@ -4072,17 +4075,22 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   min-width: 0;
   box-shadow: 0 4px 18px #00000005;
 }
+.pm-machine>.pm-machine-image{grid-column:1;grid-row:1;height:72px}
+.pm-machine>.pm-job-image{grid-column:1;grid-row:2;height:64px}
+.pm-machine>.pm-main{grid-column:2;grid-row:1/3}
 .pm-main {
   min-width: 0;
 }
 .pm-main header {
-  display: flex;
+  display: grid;
+  grid-template-columns:minmax(0,1fr) 44px;
   align-items: center;
   gap: 9px;
   flex-wrap: wrap;
 }
 .pm-name {
-  font-size: 17px;
+  font-size: 15px;
+  min-width:0;
   overflow-wrap: anywhere;
 }
 .pm-model,
@@ -4091,8 +4099,13 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   font-size: 11px;
 }
 .pm-main header button {
-  margin-left: auto;
+  grid-column:2;
+  grid-row:1/3;
+  width:44px;
+  min-height:44px;
+  padding:0;
 }
+.pm-main header .pm-model{grid-column:1;grid-row:2}
 .pm-status {
   font-size: 12px;
   font-weight: 750;
@@ -4361,7 +4374,11 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   color: var(--rd, #b92d38);
 }
 .pm-popup-ignore {
-  margin: 0 44px 8px 12px;
+  grid-column:1/-1;
+  justify-self:start;
+  margin:0 0 4px 32px;
+  max-width:calc(100% - 32px);
+  white-space:normal;
   min-height: 44px;
   font-size: 12px;
 }
@@ -4407,27 +4424,19 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
 }
 @media (max-width: 700px) {
   .pm-machine {
-    grid-template-columns: 70px minmax(0, 1fr);
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    padding:10px;
+    align-items:start;
   }
-  .pm-machine > .pm-job-image {
-    grid-column: 1;
-    height: 64px;
-    grid-row: 2;
-  }
-  .pm-main {
-    grid-column: 2;
-    grid-row: 1/3;
-  }
-  .pm-machine-image {
-    height: 72px;
-  }
+  .pm-machine>.pm-machine-image{grid-column:1;grid-row:1;height:64px}
+  .pm-machine>.pm-job-image{grid-column:2;grid-row:1;height:64px}
+  .pm-machine>.pm-main{grid-column:1/-1;grid-row:2}
   .pm-main header {
     gap: 5px;
   }
   .pm-name {
-    font-size: 15px;
+    font-size: 13px;
   }
   .pm-main header button {
     padding: 0;
@@ -4436,6 +4445,8 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   .pm-metrics {
     font-size: 11px;
   }
+  .pm-issue{padding:8px}
+  .pm-issue .btn{max-width:100%;white-space:normal;padding-inline:8px;font-size:11px}
   .pm-run {
     grid-template-columns: 70px minmax(0, 1fr);
     padding: 12px;
