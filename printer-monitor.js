@@ -586,11 +586,17 @@
     ov.querySelector("[data-cancel]").onclick = () => closeDialog("dlg-mv");
     const status = ov.querySelector(".pm-auth-status");
     const dialog=ov.firstElementChild;ov.onclick=()=>closeDialog('dlg-mv');
+    let busy=false,emailRetryAt=0;
+    modal={node:dialog,busy:()=>busy};
+    const controls=()=>{
+      dialog.querySelectorAll('[data-login],[data-disconnect]').forEach(el=>el.disabled=busy);
+      const send=dialog.querySelector('[data-email]');if(send)send.disabled=busy||Date.now()<emailRetryAt;
+    };
     const run = async (action, button) => {
-      if (button.disabled) return;
+      if (busy || button.disabled) return;
       const gen = generation;
-      button.disabled = true;
-      status.textContent = "Đang xử lý…";
+      busy=true;controls();
+      status.textContent = action==='email'?'Đang gửi yêu cầu mã email…':action==='connect'?'Đang xác nhận mã và kết nối Bambu…':'Đang ngắt liên kết…';
       try {
         const region = ov.querySelector("select").value,
           email = ov.querySelector('[type="email"]').value.trim(),
@@ -602,9 +608,9 @@
           throw new Error("Workspace đã đổi. Mở lại kết nối.");
         if (action === "email") {
           status.textContent = "Đã gửi yêu cầu. Nhập mã email mới nhất.";
-          setTimeout(() => {
-            button.disabled = false;
-          }, 60000);
+          emailRetryAt=Date.now()+60000;
+          setTimeout(controls,60000);
+          if(ov.firstElementChild===dialog)ov.querySelector('[autocomplete="one-time-code"]').focus();
           return;
         }
         if(ov.firstElementChild===dialog)ov.querySelector('[autocomplete="one-time-code"]').value = "";
@@ -616,12 +622,14 @@
           connected = true;
           message = "Đã liên kết, đang chờ báo cáo máy…";
         }
-        if(ov.firstElementChild===dialog)closeDialog("dlg-mv");
+        if(ov.firstElementChild===dialog){modal=null;closeDialog("dlg-mv");}
         void poll({ initial: !primed, force: true });
       } catch (error) {
         status.textContent = error.message;
+      } finally {
+        busy=false;
+        if(ov.firstElementChild===dialog)controls();
       }
-      button.disabled = false;
     };
     ov.querySelector("[data-email]").onclick = (event) =>
       void run("email", event.currentTarget);
@@ -835,10 +843,10 @@
       if (id !== "dlg-mv" || !modal || ov?.firstElementChild !== modal.node)
         return true;
       if (modal.busy?.()) {
-        toast("Đang lưu, chờ phản hồi trước khi đóng.");
+        toast("Đang xử lý, chờ phản hồi trước khi đóng.");
         return false;
       }
-      if (modal.dirty() && !confirm("Bỏ thay đổi chưa lưu?")) return false;
+      if (modal.dirty?.() && !confirm("Bỏ thay đổi chưa lưu?")) return false;
       modal = null;
       return true;
     },

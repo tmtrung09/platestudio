@@ -74,6 +74,24 @@ async function unseal(data: any, workspace: string) {
 }
 const base = (region: string) =>
   region === "China" ? "https://api.bambulab.cn" : "https://api.bambulab.com";
+const cloudStep = (path: string) =>
+  path.endsWith('/sendemail/code') ? 'Gửi mã email' :
+  path.endsWith('/user/login') ? 'Xác nhận mã email' :
+  path.endsWith('/my/preference') ? 'Đọc định danh Bambu' :
+  path.endsWith('/user/bind') ? 'Đọc danh sách máy' : 'Đọc dữ liệu Bambu';
+// Never echo arbitrary upstream messages: they can include account/token details.
+const safeCloudCode = (value: unknown) =>
+  /^(?:\d{1,10}|[A-Z][A-Z0-9_]{0,31})$/.test(String(value)) ? String(value) : 'không xác định';
+function tokenUsername(token: string): string | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    payload = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const value = JSON.parse(new TextDecoder().decode(unbase64(payload))).username;
+    return typeof value === 'string' && /^u_[A-Za-z0-9_-]{1,100}$/.test(value) ? value : null;
+  } catch { return null; }
+}
 async function cloud(
   region: string,
   path: string,
@@ -81,7 +99,9 @@ async function cloud(
   token?: string,
   empty = false,
 ) {
-  const response = await fetch(base(region) + path, {
+  const step = cloudStep(path);
+  let response: Response;
+  try { response = await fetch(base(region) + path, {
     method: body ? "POST" : "GET",
     headers: {
       "User-Agent": "PlateStudio/1.0 (personal-printer-monitor)",
@@ -91,29 +111,30 @@ async function cloud(
     },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(20000),
-  });
-  if (!response.ok)
-    throw new Error(
-      response.status === 401 || response.status === 403
-        ? "Bambu từ chối phiên/quyền truy cập. Hãy đăng nhập lại."
-        : response.status === 429
-          ? "Bambu giới hạn yêu cầu. Chờ một lúc rồi thử lại."
-          : `Bambu trả HTTP ${response.status}.`,
-    );
-  const raw = await response.text();
-  if (!raw && empty) return { accepted: true };
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    throw new Error(
-      "Bambu trả dữ liệu khác dự kiến. Nếu đã nhận mã email, vẫn có thể nhập mã để xác nhận.",
-    );
+  }); } catch { throw new Error(`${step}: không nhận được phản hồi Bambu. Thử lại sau.`); }
+  const raw = (await response.text()).trim().replace(/^\uFEFF/, '').trim();
+  if (raw.length > 2_000_000) throw new Error(`${step}: phản hồi Bambu quá lớn.`);
+  let data: any;
+  try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
+  const businessFailure = data && typeof data === 'object' && !Array.isArray(data) && (
+    (data.code != null && !['0','200',''].includes(String(data.code))) ||
+    data.success === false || data.success === 'false' ||
+    (data.error != null && data.error !== '' && data.error !== false)
+  );
+  if (path.endsWith('/user/login') && (!response.ok || businessFailure)) {
+    if (String(data?.code) === '1') throw new Error(`${step}: mã email đã hết hạn. Hãy gửi mã mới.`);
+    if (String(data?.code) === '2') throw new Error(`${step}: mã email chưa đúng. Nhập mã mới nhất Bambu gửi.`);
   }
-  if (data.code !== undefined && !["0", "200", ""].includes(String(data.code)))
-    throw new Error(
-      "Bambu chưa chấp nhận yêu cầu. Kiểm tra mã email mới nhất hoặc thử lại sau.",
-    );
+  if (!response.ok) throw new Error(`${step}: ` + (
+    response.status === 401 ? 'Bambu từ chối phiên hoặc thông tin đăng nhập (HTTP 401).' :
+    response.status === 403 ? 'Bambu từ chối quyền truy cập (HTTP 403). Không thể tự vượt xác thực.' :
+    response.status === 429 ? 'Bambu giới hạn yêu cầu (HTTP 429). Chờ một lúc rồi thử lại.' :
+    `Bambu trả HTTP ${response.status}${data?.code != null ? ' · mã '+safeCloudCode(data.code) : ''}.`
+  ));
+  if (!raw && empty) return { accepted: true };
+  if (!data || typeof data !== 'object' || Array.isArray(data))
+    throw new Error(`${step}: Bambu trả dữ liệu khác dự kiến (HTTP ${response.status}).`);
+  if (businessFailure) throw new Error(`${step}: Bambu từ chối yêu cầu${data.code != null ? ' · mã '+safeCloudCode(data.code) : ''}.`);
   return data;
 }
 async function devices(session: any) {
@@ -236,17 +257,19 @@ export async function handle(req: Request) {
       });
       if (typeof login.accessToken !== "string" || !login.accessToken)
         return json({ error: "Bambu chưa cấp phiên đăng nhập" }, 401);
-      const preference = await cloud(
-        region,
-        "/v1/design-user-service/my/preference",
-        undefined,
-        login.accessToken,
-      );
-      if (!preference.uid)
-        return json({ error: "Chưa đọc được định danh Bambu" }, 502);
+      // Like PrintPeek: prefer the username already in the token. This is only
+      // a MQTT identifier, not proof of auth; MQTT still validates the token.
+      let username = tokenUsername(login.accessToken);
+      if (!username) {
+        const preference = await cloud(region, "/v1/design-user-service/my/preference", undefined, login.accessToken);
+        const uid = String(preference.uid ?? '');
+        if (!/^[A-Za-z0-9_-]{1,100}$/.test(uid))
+          return json({ error: "Đọc định danh Bambu: phản hồi chưa có UID hợp lệ." }, 502);
+        username = 'u_' + uid;
+      }
       const session = {
         token: login.accessToken,
-        username: "u_" + String(preference.uid),
+        username,
         region,
       };
       const list = await devices(session);

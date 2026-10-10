@@ -9,6 +9,11 @@ Sản xuất → Plate & máy → Máy trực tiếp. Chủ xưởng chọn Kế
 liên kết với tài khoản Bambu, gửi mã và xác nhận. Chưa có kết nối/dữ liệu thì
 không tạo máy giả. Biệt danh lưu riêng trên thiết bị. Bảng ghim chỉ ở trong web.
 
+Phản hồi thành công có `code: null` được chấp nhận; username có sẵn trong token
+không cần gọi preference lần nữa. Lỗi nêu đúng bước và mã/HTTP đã lọc, không
+hiển thị nguyên nội dung có thể chứa thông tin tài khoản. Mã sai/hết hạn có
+thông báo riêng; lỗi giữ form và phiên cũ. Không gửi mã mới đồng thời với xác nhận.
+
 Thông báo bắt đầu/tạm dừng/tiếp tục/in xong/thất bại/mất/kết nối lại dùng bảng
 thả và pop-up hiện có. Cảnh báo, lỗi, thông tin có nhãn riêng. “Bỏ qua cảnh báo”
 chỉ áp dụng warning theo máy + mã + đợt xuất hiện, giữ lịch sử và có Hiện lại.

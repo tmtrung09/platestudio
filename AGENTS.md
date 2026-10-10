@@ -249,6 +249,12 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   Telemetry không ghi đè ghép model. Ngắt tài khoản không xóa lịch sử đã lưu.
   Guard: `tools/printer-core-qa.mjs`, `printer-sql-qa.mjs`, `printer-ui-qa.mjs`,
   `printer-api-qa.ts`; API QA bằng Deno, chỉ dùng dữ liệu cô lập.
+- Sự cố kết nối Bambu người dùng báo ngày 2026-10-10: phản hồi thành công có
+  `code: null` không phải lỗi. Lấy username MQTT từ token khi có, chỉ gọi preference
+  để fallback; vẫn xác nhận quyền MQTT trước khi thay phiên cũ. Lỗi phải nêu bước
+  gửi mã/xác nhận mã/đọc định danh/đọc máy và HTTP hoặc mã lỗi an toàn, không gộp
+  mọi lỗi thành “mã email sai”, không lộ token/email/mã xác nhận trong chẩn đoán.
+  Lỗi giữ dữ liệu đã lưu và thông tin form để thử lại, không yêu cầu xóa dữ liệu web.
 
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 
