@@ -437,7 +437,7 @@
         card = document.createElement("article");
         card.className = "pm-machine";
         card.dataset.device = d.id;
-        card.innerHTML = `<div class="pm-machine-image"></div><div class="pm-main"><header><b class="pm-name"></b><span class="pm-model"></span><button type="button" class="btn btn-ghost btn-sm" data-pm-action="rename" data-device="${e(d.id)}" aria-label="Đổi biệt danh máy">${icon("edit")}</button></header><div class="pm-status"></div><div class="pm-file"></div><div class="pm-progress" role="progressbar" aria-label="Tiến độ in" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="pm-metrics"></div><small class="pm-seen"></small><details class="pm-issues"><summary></summary><div></div></details></div><div class="pm-job-image"></div>`;
+        card.innerHTML = `<div class="pm-media"><div class="pm-machine-image"></div><div class="pm-job-image"></div></div><div class="pm-main"><header><b class="pm-name"></b><span class="pm-model"></span><button type="button" class="btn btn-ghost btn-sm" data-pm-action="rename" data-device="${e(d.id)}" aria-label="Đổi biệt danh máy">${icon("edit")}</button></header><div class="pm-status"></div><div class="pm-file"></div><div class="pm-progress" role="progressbar" aria-label="Tiến độ in" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="pm-metrics"></div><small class="pm-seen"></small><details class="pm-issues"><summary></summary><div></div></details></div>`;
         list.append(card);
       }
       setText(card.querySelector(".pm-name"), aliases[d.id] || d.name);

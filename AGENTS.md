@@ -259,6 +259,11 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   desktop/mobile, dùng bố cục thẻ gọn ở màn hình hẹp thay vì ép chữ cạnh ảnh.
   Giữ ảnh máy/ảnh mẻ, trạng thái, chỉ số và đường xem/bỏ qua cảnh báo; không đổi
   dữ liệu hoặc kết nối để chỉnh lưới. Guard đo hai cột và tràn bên trong từng thẻ.
+- Phản hồi thẻ máy lỏm chỏm: hai thẻ cùng hàng phải cao bằng nhau, nội dung căn
+  trên và ảnh máy/ảnh mẻ nằm trong một cụm với khoảng cách ổn định. Chiều cao hàng
+  tự tăng theo tên/mẻ dài hoặc chi tiết lỗi đang mở, không đặt chiều cao cứng hay
+  cắt thông tin để làm đều. Guard kiểm tra cả có/không lỗi, mở chi tiết và cập nhật
+  telemetry trên desktop/mobile, light/dark; giữ hai máy mỗi hàng và DOM ảnh/focus.
 
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 
