@@ -18,7 +18,8 @@ assert.match(plateMediaPolicyMigration,/bucket_id\s*=\s*['"]plate-media['"]/i,'P
 assert.match(plateMediaPolicyMigration,/storage\.foldername\(name\)\)\[1\].*auth\.uid\(\)/is,'Plate-media SELECT must stay restricted to the authenticated user folder');
 assert.match(source,/cachedManifest&&hasCompleteCloudCache/,'Startup must reuse a complete local cache');
 assert.match(source,/changed\.filter\(key=>key!==['"]batchReports['"]\)/,'Startup must fetch only changed collections');
-assert.match(serviceWorkerSource,/plate-studio-shell-v2/,'Service worker caches the app shell');
+assert.match(serviceWorkerSource,/plate-studio-shell-v\d+/,'Service worker uses a versioned app shell cache');
+assert.match(serviceWorkerSource,/\.\/printer-monitor\.js/,'Offline shell includes the native printer module');
 assert.equal(webManifest.shortcuts?.[0]?.url,'./plate-studio.html?capture=1','Installed app exposes the direct camera shortcut');
 const executablePath=[process.env.CHROME_PATH,'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].filter(Boolean).find(existsSync);
 const browser=await chromium.launch({executablePath,headless:true});

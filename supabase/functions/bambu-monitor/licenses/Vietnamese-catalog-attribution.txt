@@ -1,0 +1,18 @@
+Vietnamese HMS catalog, PrintPeek 0.3
+
+Source descriptions: ha-bambulab, MIT license (see ha-bambulab-MIT.txt).
+5208 nonempty descriptions were translated offline with the Argos en_vi 1.9
+package and then terminology was normalized. Common maintenance, low-storage,
+nozzle-contact, resonance and heater warnings have manual translations.
+The full catalog has NOT received a human technical review. Original source
+descriptions remain available in the printer detail view.
+
+Translation model attribution:
+Jorg Tiedemann and Santhosh Thottingal, "OPUS-MT -- Building open translation
+services for the World", EAMT 2020. The original OPUS model is CC-BY 4.0.
+https://creativecommons.org/licenses/by/4.0/
+https://github.com/argosopentech/argospm-index
+https://argos-net.com/v1/translate-en_vi-1_9.argosmodel
+
+Only the translated text dictionary is shipped. The model and translation
+runtime are not bundled and no notification data is sent to a translation service.

@@ -4010,6 +4010,461 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
 @media(max-width:460px){.kv-sync-source,.kv-sync-panel{padding:12px}.kv-sync-source-head{flex-wrap:wrap}.kv-sync-workspace .kv-row{grid-template-columns:minmax(0,1fr)}.kv-row-actions{flex-direction:row;align-items:center;justify-content:space-between;padding-left:55px}.kv-row-actions .kv-pill{max-width:calc(100% - 90px)}.kv-sync-workspace .kv-link-filter{padding:6px 8px;gap:4px;font-size:11px}.kv-sync-workspace .kv-kpi{padding:10px 12px}.kv-sync-schedule>small{flex-basis:100%}.kv-sync-workspace .kv-sync-actions .btn{flex:1 1 auto}}
 
 </style>
+<style id="printer-monitor-styles">
+.pm-workspace {
+  min-width: 0;
+}
+.pm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.pm-toolbar > .page-smart-search {
+  flex: 1 1 220px;
+  max-width: 340px;
+  margin: 0;
+  min-height: 44px;
+}
+.pm-toolbar .btn {
+  min-height: 44px;
+}
+.pm-tabs {
+  display: flex;
+  gap: 4px;
+}
+.pm-tabs [aria-pressed="true"] {
+  background: var(--ac);
+  color: #fff;
+}
+.pm-connection,
+.pm-count,
+.pm-footnote {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.pm-count {
+  margin: 8px 0;
+}
+.pm-footnote {
+  margin-top: 14px;
+}
+.pm-live,
+.pm-history {
+  display: grid;
+  gap: 10px;
+}
+.pm-live[hidden],
+.pm-history[hidden] {
+  display: none;
+}
+.pm-machine {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 115px;
+  gap: 14px;
+  align-items: center;
+  background: var(--s);
+  border-radius: 18px;
+  padding: 14px;
+  min-width: 0;
+  box-shadow: 0 4px 18px #00000005;
+}
+.pm-main {
+  min-width: 0;
+}
+.pm-main header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.pm-name {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.pm-model,
+.pm-seen {
+  color: var(--t2);
+  font-size: 11px;
+}
+.pm-main header button {
+  margin-left: auto;
+}
+.pm-status {
+  font-size: 12px;
+  font-weight: 750;
+  margin: 4px 0 8px;
+}
+.pm-file {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.pm-progress {
+  height: 5px;
+  background: var(--s2);
+  border-radius: 8px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+.pm-progress i {
+  display: block;
+  height: 100%;
+  background: var(--ac);
+  border-radius: 8px;
+  transition: width 0.35s ease;
+}
+.pm-metrics {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.7;
+}
+.pm-metrics,.pm-seen,.pm-status,.pm-file{white-space:normal;overflow-wrap:anywhere}
+.pm-seen{display:block}
+.pm-machine-image,
+.pm-job-image {
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--s2);
+  font-size: 11px;
+  text-align: center;
+  color: var(--t2);
+}
+.pm-machine-image img,
+.pm-job-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.pm-has-error .pm-status {
+  color: var(--rd, #b92d38);
+}
+.pm-stale .pm-progress i {
+  background: var(--t3);
+}
+.pm-issues {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.pm-issues summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
+.pm-issue {
+  padding: 10px 12px;
+  background: var(--s2);
+  border-radius: 12px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.pm-issue > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.pm-issue svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+.pm-issue p {
+  line-height: 1.5;
+  margin: 6px 0;
+}
+.pm-warning > span {
+  color: var(--or, #a06300);
+}
+.pm-error > span {
+  color: var(--rd, #b92d38);
+}
+.pm-ignored > span > small {
+  font-size: 10px;
+  color: var(--t2);
+}
+.pm-issue .btn {
+  min-height: 44px;
+}
+.pm-run {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px;
+  background: var(--s);
+  border-radius: 18px;
+  padding: 14px;
+  min-width: 0;
+}
+.pm-run-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pm-run-copy > b {
+  font-size: 14px;
+}
+.pm-run-copy p,
+.pm-run-copy dl {
+  font-size: 12px;
+  color: var(--t2);
+}
+.pm-run-copy dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-run-copy dd {
+  margin: 3px 0 0;
+  color: var(--t);
+}
+.pm-model-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.pm-model-links > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;
+}
+.pm-model-links>small{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.pm-model-links img {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+.pm-model-links svg {
+  width: 30px;
+  height: 30px;
+}
+.pm-more {
+  margin: 10px 0;
+}
+.pm-connect .field {
+  margin: 12px 0;
+}
+.pm-connect p {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+.pm-auth-status,
+.pm-save-status {
+  color: var(--t) !important;
+  min-height: 20px;
+}
+.pm-picker {
+  max-width: 740px !important;
+}
+.pm-picker .page-smart-search {
+  min-height: 44px;
+}
+.pm-picker-count {
+  font-size: 12px;
+  color: var(--t2);
+  margin: 8px 0;
+}
+.pm-options {
+  display: grid;
+  gap: 8px;
+}
+.pm-model-option {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--s2);
+  min-width: 0;
+}
+.pm-thumb {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex: 0 0 46px;
+  display:grid;place-items:center;position:relative;overflow:hidden;background:var(--s2);
+}
+.pm-thumb>svg{width:22px;height:22px;color:var(--t2);fill:none;stroke:currentColor;stroke-width:1.7}
+.pm-thumb>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pm-model-links .pm-thumb{width:30px;height:30px;flex-basis:30px}
+.pm-model-option > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pm-model-option b {
+  font-size: 13px;
+}
+.pm-model-option .btn {
+  min-height: 44px;
+  margin: 4px 4px 0 0;
+  font-size: 12px;
+}
+.pm-picked-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+.pm-picked-row > span:not(.pm-thumb) {
+  flex: 1 1 130px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.pm-picked-row input {
+  width: 62px;
+  min-height: 44px;
+  background: var(--s2);
+  color: var(--t);
+  border: 1px solid var(--b);
+  border-radius: 9px;
+  padding: 6px;
+  font-size: 16px;
+}
+.pm-picked-row button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.pm-picker .dlg-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--s);
+  padding: 12px 0;
+  z-index: 2;
+}
+.pm-notice-severity {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t2);
+  display: block;
+  margin-top: 4px;
+}
+.pm-notice-warning {
+  color: var(--or, #a06300);
+}
+.pm-notice-error {
+  color: var(--rd, #b92d38);
+}
+.pm-popup-ignore {
+  margin: 0 44px 8px 12px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.pm-popup-ignore[hidden] {
+  display: none;
+}
+#pm-pinned {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  width: 240px;
+  max-height: 50vh;
+  overflow: auto;
+  z-index: 120;
+  background: var(--s);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 8px 40px #0003;
+  color: var(--t);
+  font-size: 12px;
+}
+#pm-pinned header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#pm-pinned header button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+#pm-pinned > div {
+  padding: 7px 0;
+  overflow-wrap: anywhere;
+}
+#pm-pinned strong {
+  float: right;
+}
+#pm-pinned small {
+  display: block;
+  color: var(--t2);
+  margin-top: 3px;
+}
+@media (max-width: 700px) {
+  .pm-machine {
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+  .pm-machine > .pm-job-image {
+    grid-column: 1;
+    height: 64px;
+    grid-row: 2;
+  }
+  .pm-main {
+    grid-column: 2;
+    grid-row: 1/3;
+  }
+  .pm-machine-image {
+    height: 72px;
+  }
+  .pm-main header {
+    gap: 5px;
+  }
+  .pm-name {
+    font-size: 15px;
+  }
+  .pm-main header button {
+    padding: 0;
+    width: 44px;
+  }
+  .pm-metrics {
+    font-size: 11px;
+  }
+  .pm-run {
+    grid-template-columns: 70px minmax(0, 1fr);
+    padding: 12px;
+    gap: 10px;
+  }
+  .pm-run > .pm-job-image {
+    height: 70px;
+  }
+  .pm-run-copy dl {
+    grid-template-columns: 1fr;
+  }
+  .pm-toolbar > .page-smart-search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .pm-toolbar input {
+    font-size: 16px !important;
+  }
+  .pm-toolbar .btn {
+    font-size: 12px;
+    padding: 0 10px;
+  }
+  .pm-tabs {
+    flex: 1 1 auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-progress i {
+    transition: none;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -4793,6 +5248,7 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
     <!-- KẾ HOẠCH IN — chuẩn bị ca in đêm (sẽ dùng lại được cho ca ban ngày). -->
     <div class="page" id="page-print-plans"><div id="print-plans-page"></div></div>
     <div class="page" id="page-machine-setup"><div id="machine-setup-page"></div></div>
+    <div class="page" id="page-printer-monitor"><div id="printer-monitor-page"></div></div>
 
     <!-- WORKSPACE TẠO ĐỢT GIAO — tách khỏi dialog để chọn thành phẩm bằng ảnh lớn -->
     <div class="page" id="page-delivery-builder">
@@ -7354,7 +7810,7 @@ let curPage = 'dashboard';
 let sbPinned = localStorage.getItem('ps_sb_pin') !== '0';
 /* The production workspace projects existing records; changing a view never
    creates an order, plate or stock movement. Old routes remain usable aliases. */
-const PRODUCTION_ROUTES=['progress','plates','reminders','inventory','print-plans','machine-setup'];
+const PRODUCTION_ROUTES=['progress','plates','reminders','inventory','print-plans','machine-setup','printer-monitor'];
 const productionNeedsState={query:'',source:'all',status:'all',limit:60,policies:{}};
 function productionCan(permission){return !currentUser||canAccess(permission);}
 function productionNeedsAllowed(){return ['progress.view','batches.view','kiot.import','plates.plan'].some(productionCan);}
@@ -7367,8 +7823,8 @@ function productionDefaultRoute(){
   return [saved,'reminders','plates','progress'].find(page=>['reminders','plates','progress'].includes(page)&&allowed(page))||'dashboard';
 }
 function productionNavigationHTML(page){
-  const mode=productionMode(page),modes=[['needs','Cần in','reminders',productionNeedsAllowed()],['plates','Plate & máy','plates',productionCan('plates.plan')],['progress','Tiến độ','progress',productionCan('progress.view')]];
-  return `<nav class="production-navigation" aria-label="Không gian sản xuất">${modes.filter(item=>item[3]).map(([key,label,route])=>`<button type="button" class="production-mode${mode===key?' is-active':''}" data-production-mode="${key}" ${mode===key?'aria-current="page"':''} onclick="goPage('${route}')">${appIcon(key==='needs'?'order':key==='plates'?'plate':'progress')}<span>${label}</span></button>`).join('')}${mode==='plates'?`<div class="production-plate-tools">${[['plates','Danh sách plate'],['print-plans','Lịch máy'],['machine-setup','Khay nhựa']].map(([route,label])=>`<button type="button" class="btn btn-ghost btn-sm" ${page===route?'aria-current="page"':''} onclick="goPage('${route}')">${label}</button>`).join('')}</div>`:''}</nav>`;
+  const mode=productionMode(page),modes=[['needs','Cần in','reminders',productionNeedsAllowed()],['plates','Plate & máy',productionCan('plates.plan')?'plates':'printer-monitor',productionCan('plates.plan')||productionCan('progress.view')],['progress','Tiến độ','progress',productionCan('progress.view')]];
+  return `<nav class="production-navigation" aria-label="Không gian sản xuất">${modes.filter(item=>item[3]).map(([key,label,route])=>`<button type="button" class="production-mode${mode===key?' is-active':''}" data-production-mode="${key}" ${mode===key?'aria-current="page"':''} onclick="goPage('${route}')">${appIcon(key==='needs'?'order':key==='plates'?'plate':'progress')}<span>${label}</span></button>`).join('')}${mode==='plates'?`<div class="production-plate-tools">${[['plates','Danh sách plate'],['printer-monitor','Máy trực tiếp'],['print-plans','Lịch máy'],['machine-setup','Khay nhựa']].filter(([route])=>route==='printer-monitor'||productionCan('plates.plan')).map(([route,label])=>`<button type="button" class="btn btn-ghost btn-sm" ${page===route?'aria-current="page"':''} onclick="goPage('${route}')">${label}</button>`).join('')}</div>`:''}</nav>`;
 }
 function renderProductionNavigation(page){
   if(!PRODUCTION_ROUTES.includes(page))return;
@@ -7552,6 +8008,7 @@ const PAGE_META = {
   packaging:{eyebrow:'Chuẩn bị song song',title:'Bao bì & nhãn giá',subtitle:'Bao bì và nhãn.'},
   'print-plans':{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Lịch máy theo ca in.'},
   'machine-setup':{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhựa đang lắp trên máy.'},
+  'printer-monitor':{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Máy và lịch sử mẻ.'},
   kiotviet:{eyebrow:'Bán hàng',title:'Đồng bộ KiotViet',subtitle:'SKU và tồn kho.'},
   sales:{eyebrow:'Bán hàng',title:'Tình hình bán hàng',subtitle:'Bán và cần bù.'},
   inventory:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhu cầu in và đối chiếu.'},
@@ -7890,6 +8347,7 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
   document.querySelectorAll('.delivery-action-dock,.delivery-cart-float,.delivery-next-float').forEach(el=>el.remove());
   const requiredPermission=typeof requiredWorkspacePermission==='function'?requiredWorkspacePermission(p):'';
   if(p==='reminders'&&!productionNeedsAllowed()){toast('Tài khoản này chưa được cấp quyền xem nhu cầu sản xuất.');p='dashboard';}
+  if(p==='printer-monitor'&&currentUser&&!canAccess('progress.view')&&!canAccess('plates.plan')){toast('Tài khoản này chưa được cấp quyền xem máy.');p='dashboard';}
   if(currentUser&&requiredPermission&&typeof canAccess==='function'&&!canAccess(requiredPermission)){
     toast('Tài khoản này chưa được cấp quyền vào mục này.');p='dashboard';
   }
@@ -7992,6 +8450,7 @@ function renderPage(p) {
   else if (p === 'packaging') renderPackagingPage();
   else if (p === 'print-plans') renderPrintPlansPage();
   else if (p === 'machine-setup') renderMachineSetupPage();
+  else if (p === 'printer-monitor') window.PlatePrinterMonitor?.render();
   else if (p === 'delivery-builder') renderDeliveryBuilderPage();
   else if (p === 'delivery-receive') STAFF_RECEIVING_MODE ? renderStaffDeliveryReceivingPage() : renderDeliveryReceivingPage();
   else if (p === 'kiotviet') renderKiotVietPage();
@@ -15637,6 +16096,7 @@ function injectMinBtn(dlgId) {
    Only for known draft-able dialogs when triggered by Huỷ button.
    Direct closeDialog() calls (after save) still close fully.        */
 function closeDialog(id) {
+  if(window.PlatePrinterMonitor?.allowClose(id)===false)return;
   // Nếu người dùng rời biểu mẫu Model khi đang bổ sung Part từ báo cáo mẻ in,
   // hủy trạng thái quay lại để một lần lưu Model khác không làm đổi báo cáo cũ.
   if(id==='dlg-model' && pendingBatchModelSetup){
@@ -21131,7 +21591,7 @@ window.addEventListener('pointerdown',unlockNotificationAudio,{once:true,passive
 function playNotificationSound(){
   if(!notificationAudioEnabled||!notificationAudioUnlocked||!notificationAudioContext)return;
   try{const context=notificationAudioContext,now=context.currentTime;[[660,0],[880,.12]].forEach(([frequency,offset])=>{const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='sine';oscillator.frequency.setValueAtTime(frequency,now+offset);gain.gain.setValueAtTime(.0001,now+offset);gain.gain.exponentialRampToValueAtTime(.075,now+offset+.018);gain.gain.exponentialRampToValueAtTime(.0001,now+offset+.16);oscillator.connect(gain).connect(context.destination);oscillator.start(now+offset);oscillator.stop(now+offset+.18);});}catch(_){}}
-function notificationIcon(event){return appIcon(({delivery_received:'check',delivery_created:'delivery',print_completed:'plate',quality_rejected:'warning',assembly_handover:'model',assembly_accepted:'sparkle',batch_reported:'batch',order_created:'order'})[event?.type]||'bell');}
+function notificationIcon(event){return appIcon(event?.type?.startsWith('printer_')?(event.severity==='info'?'progress':'warning'):({delivery_received:'check',delivery_created:'delivery',print_completed:'plate',quality_rejected:'warning',assembly_handover:'model',assembly_accepted:'sparkle',batch_reported:'batch',order_created:'order'})[event?.type]||'bell');}
 /* Thông báo là một việc cần biết, không phải bảng log gửi cho tất cả mọi
    người.  Mỗi event có thể nhắm theo quyền thao tác hoặc đúng tài khoản; chủ
    xưởng vẫn thấy toàn bộ để điều phối. */
@@ -21145,10 +21605,10 @@ function eventIsForCurrentUser(event){
   /* Event cũ chưa có người nhận vẫn được giữ trong lịch sử thay vì biến mất. */
   return !recipients.length&&!permissions.length;
 }
-function notificationEventsForCurrentUser(){normalizeOperations();return (operations.events||[]).filter(eventIsForCurrentUser);}
+function notificationEventsForCurrentUser(){normalizeOperations();return [...(operations.events||[]),...(window.PlatePrinterMonitor?.events()||[])].filter(eventIsForCurrentUser).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));}
 function eventReadByCurrentUser(event){const key=notificationUserKey();return Array.isArray(event.readBy)?event.readBy.includes(key):!!event.readAt;}
 function eventAudienceLabel(event){const permissions=Array.isArray(event?.permissions)?event.permissions:[];const labels=permissions.map(permission=>ACCESS_PERMISSION_LIST.find(row=>row[0]===permission)?.[1]).filter(Boolean);return labels.length?`Gửi đến: ${labels.join(', ')}`:'';}
-function notificationDestination(event){return ({order_created:{page:'orders',label:'Xem đơn hàng'},batch_reported:{page:'batches',label:'Xem mẻ in'},print_completed:{page:'fulfillment',label:'Bàn giao gia công'},assembly_handover:{page:'fulfillment',label:'Xem QC part'},part_qc_accepted:{page:'fulfillment',label:'Bắt đầu gia công'},quality_rejected:{page:'progress',label:'Xử lý in bù'},packaging_ready:{page:'packaging',label:'Xem bao bì'},assembly_completed:{page:'delivery-builder',label:'Tạo đợt giao'},assembly_accepted:{page:'fulfillment',label:'Tạo đợt giao'},delivery_created:{page:'delivery-receive',label:'Kiểm hàng'},delivery_received:{page:'kiotviet',label:'Tạo file KiotViet'}})[event?.type]||null;}
+function notificationDestination(event){if(event?.type?.startsWith('printer_'))return {page:'printer-monitor',label:'Xem máy in'};return ({order_created:{page:'orders',label:'Xem đơn hàng'},batch_reported:{page:'batches',label:'Xem mẻ in'},print_completed:{page:'fulfillment',label:'Bàn giao gia công'},assembly_handover:{page:'fulfillment',label:'Xem QC part'},part_qc_accepted:{page:'fulfillment',label:'Bắt đầu gia công'},quality_rejected:{page:'progress',label:'Xử lý in bù'},packaging_ready:{page:'packaging',label:'Xem bao bì'},assembly_completed:{page:'delivery-builder',label:'Tạo đợt giao'},assembly_accepted:{page:'fulfillment',label:'Tạo đợt giao'},delivery_created:{page:'delivery-receive',label:'Kiểm hàng'},delivery_received:{page:'kiotviet',label:'Tạo file KiotViet'}})[event?.type]||null;}
 function openSystemNotificationById(id){const event=notificationEventsForCurrentUser().find(row=>row.id===id);if(!event)return;markSystemNotificationRead(event);const target=notificationDestination(event);if(target){closeSystemNotifications(false);goPage(target.page);return;}openSystemNotifications();}
 function ensureNotificationPopups(){let host=document.getElementById('system-notification-popups');if(!host){host=document.createElement('div');host.id='system-notification-popups';host.setAttribute('aria-live','polite');document.getElementById('toast').append(host);}return host;}
 /* One rail for feedback and events; timers stop while the reader is interacting
@@ -21180,7 +21640,7 @@ function enableSystemNotificationSwipe(card){
     startAt=0;dragging=false;
   };
   card.addEventListener('pointerdown',event=>{
-    if(event.target.closest('.notification-dismiss')||(event.pointerType==='mouse'&&event.button!==0))return;
+    if(event.target.closest('.notification-dismiss,.pm-popup-ignore')||(event.pointerType==='mouse'&&event.button!==0))return;
     startX=event.clientX;startY=event.clientY;startAt=Date.now();dragging=false;
     card.setPointerCapture?.(event.pointerId);
   });
@@ -21194,17 +21654,18 @@ function enableSystemNotificationSwipe(card){
   card.addEventListener('pointerup',finish);card.addEventListener('pointercancel',()=>{if(dragging)reset();startAt=0;dragging=false;});
   card.addEventListener('click',event=>{
     if(Date.now()<suppressClickUntil){event.preventDefault();event.stopPropagation();return;}
-    if(event.target.closest('.notification-dismiss'))return;
+    if(event.target.closest('.notification-dismiss,.pm-popup-ignore'))return;
     /* Pointer capture retargets mouse clicks to the card itself after a swipe
        probe. Only dismiss/suppressed clicks are excluded, not a normal tap. */
     closeSystemNotificationPopup(card);openSystemNotificationById(card.dataset.eventId);
   });
 }
 function showSystemNotificationPopup(event,{sound=true}={}){
-  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE||!event?.id||!eventIsForCurrentUser(event))return;const host=ensureNotificationPopups();if([...host.children].some(card=>card.dataset.eventId===event.id))return;
+  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE||!event?.id||!eventIsForCurrentUser(event)||window.PlatePrinterMonitor?.ignored(event))return;const host=ensureNotificationPopups();if([...host.children].some(card=>card.dataset.eventId===event.id))return;
   const card=document.createElement('div');card.className='system-notification-popup notification-card';card.dataset.eventId=event.id;card.innerHTML=`<button type="button" class="system-popup-open"><span class="system-popup-icon" aria-hidden="true">${notificationIcon(event)}</span><span><b>${esc(event.title||'Hoạt động mới')}</b>${event.detail?`<small>${esc(event.detail)}</small>`:''}</span></button><button type="button" class="notification-dismiss" aria-label="Đóng thông báo">${appIcon('close')}</button>`;enableSystemNotificationSwipe(card);host.prepend(card);requestAnimationFrame(()=>card.classList.add('is-visible'));armNotificationDismiss(card,7000,closeSystemNotificationPopup);if(sound)playNotificationSound();
+  if(event.type?.startsWith('printer_')){const label=document.createElement('span');label.className='pm-notice-severity pm-notice-'+event.severity;label.textContent=event.severity==='error'?'Lỗi':event.severity==='warning'?'Cảnh báo':'Thông tin';card.querySelector('.system-popup-open>span:last-child').append(label);if(event.severity==='warning'){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost pm-popup-ignore';button.textContent='Bỏ qua cảnh báo';button.onclick=click=>{click.stopPropagation();window.PlatePrinterMonitor?.ignoreEvent(event);closeSystemNotificationPopup(card);};card.append(button);}}
 }
-function announceSystemEvent(event){if(!eventIsForCurrentUser(event))return;const seen=seenNotificationIds();if(seen.has(event.id))return;seen.add(event.id);saveSeenNotificationIds(seen);showSystemNotificationPopup(event);}
+function announceSystemEvent(event){if(!eventIsForCurrentUser(event)||window.PlatePrinterMonitor?.ignored(event))return;const seen=seenNotificationIds();if(seen.has(event.id))return;seen.add(event.id);saveSeenNotificationIds(seen);showSystemNotificationPopup(event);}
 function primeSystemNotificationEvents(){const seen=seenNotificationIds();notificationEventsForCurrentUser().forEach(event=>seen.add(event.id));saveSeenNotificationIds(seen);}
 function announceUnseenSystemEvents(){ensureSystemNotificationButton();const seen=seenNotificationIds(),fresh=notificationEventsForCurrentUser().filter(event=>!seen.has(event.id)).slice(0,3);fresh.reverse().forEach(event=>{seen.add(event.id);showSystemNotificationPopup(event);});if(fresh.length)saveSeenNotificationIds(seen);}
 function recordSystemEvent({type='activity',actor='',title='',detail='',permissions=[],recipients=[],metadata={}}={}){
@@ -21241,6 +21702,7 @@ function renderSystemNotificationRows(){
     const read=eventReadByCurrentUser(event);row.classList.toggle('is-unread',!read);
     const html=`<span class="notification-row-icon" aria-hidden="true">${notificationIcon(event)}</span><span class="notification-row-copy"><b>${esc(event.title||'Hoạt động hệ thống')}</b>${event.detail?`<span>${esc(event.detail)}</span>`:''}<small>${esc(fmtDate(event.createdAt))}${eventAudienceLabel(event)?` · ${esc(eventAudienceLabel(event))}`:''}</small></span><span class="notification-unread" aria-label="${read?'Đã đọc':'Chưa đọc'}"></span>`;
     if(row.innerHTML!==html)row.innerHTML=html;
+    if(event.type?.startsWith('printer_')&&!row.querySelector('.pm-notice-severity')){const label=document.createElement('span');label.className='pm-notice-severity pm-notice-'+event.severity;label.textContent=event.severity==='error'?'Lỗi':event.severity==='warning'?'Cảnh báo':'Thông tin';row.querySelector('.notification-row-copy').append(label);}
     if(list.children[index]!==row)list.insertBefore(row,list.children[index]||null);
   });
   if(!shown.length)list.innerHTML='<p class="notification-empty">Chưa có thông báo.</p>';
@@ -21256,9 +21718,9 @@ function closeSystemNotifications(returnFocus=true){
   const panel=document.getElementById('system-notification-panel');if(!panel||panel.hidden)return;panel.hidden=true;document.body.classList.remove('notifications-open');document.getElementById('system-notification-button')?.setAttribute('aria-expanded','false');refreshNotificationVisibility();if(returnFocus)document.getElementById('system-notification-button')?.focus({preventScroll:true});
 }
 function refreshNotificationVisibility(){document.querySelectorAll('.notification-card').forEach(card=>card.notificationVisibility?.());}
-function markSystemNotificationRead(event){if(eventReadByCurrentUser(event))return;const key=notificationUserKey();event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);sv(K.operations,operations);ensureSystemNotificationButton();}
+function markSystemNotificationRead(event){if(eventReadByCurrentUser(event))return;if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);ensureSystemNotificationButton();return;}const key=notificationUserKey();event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);sv(K.operations,operations);ensureSystemNotificationButton();}
 function toggleNotificationSound(){notificationAudioEnabled=!notificationAudioEnabled;localStorage.setItem('ps_notification_sound',notificationAudioEnabled?'1':'0');if(notificationAudioEnabled){unlockNotificationAudio();playNotificationSound();}renderSystemNotificationRows();}
-function markSystemNotificationsRead(){normalizeOperations();const key=notificationUserKey();notificationEventsForCurrentUser().forEach(event=>{if(!eventReadByCurrentUser(event)){event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);}});sv(K.operations,operations);ensureSystemNotificationButton();}
+function markSystemNotificationsRead(){normalizeOperations();const key=notificationUserKey();notificationEventsForCurrentUser().forEach(event=>{if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);return;}if(!eventReadByCurrentUser(event)){event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);}});sv(K.operations,operations);ensureSystemNotificationButton();}
 document.addEventListener('pointerdown',event=>{if(document.body.classList.contains('notifications-open')&&!event.target.closest('#system-notification-panel,#system-notification-button'))closeSystemNotifications(false);});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('notifications-open')){event.preventDefault();event.stopImmediatePropagation();closeSystemNotifications();}},true);
 
@@ -21390,5 +21852,6 @@ installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNo
 
 </script>
 <div id="app-context-menu" class="app-context-menu" role="menu" aria-label="Thao tác theo ngữ cảnh"></div>
+<script src="printer-monitor.js"></script>
 </body>
 </html>

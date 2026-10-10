@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.send-device-push]
 verify_jwt = true
+
+[functions.bambu-monitor]
+verify_jwt = false

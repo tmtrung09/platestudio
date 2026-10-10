@@ -193,6 +193,63 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Demo tích hợp trạng thái máy in lên web (yêu cầu ngày 2026-10-10)
+
+- Người dùng yêu cầu kế thừa flow/yêu cầu app Windows PrintPeek, cho xem demo,
+  chỉnh sửa và phê duyệt trước khi triển khai lên web. Sau demo người dùng đã
+  đồng ý và yêu cầu làm thông báo khi máy đổi trạng thái, phân biệt warning/error
+  và thêm bỏ qua warning. Đây là phê duyệt tính năng thông báo, không phải quyền
+  gửi lệnh điều khiển máy hay tự mua/cấp dịch vụ hosting mới.
+- Ngữ cảnh gốc: 2 A1, 2 P1S, 1 P2S, 1 H2S; dùng Bambu Cloud độc lập, không LAN,
+  không bắt buộc Bambu Connect. Giữ biệt danh, tiến độ/layer/thời gian, phân biệt
+  lỗi/cảnh báo/thông tin, nội dung Việt hóa có mã gốc và bỏ qua/hiện lại cảnh báo.
+  Điều khiển pause/resume/tốc độ của PrintPeek đang bị từ chối xác thực trên máy
+  thật; demo không được trình bày như đã giải quyết quyền điều khiển cloud.
+- Bổ sung đã yêu cầu: hình mô tả đúng dòng máy, thumbnail đúng mẻ, lưu lịch sử mẻ
+  có tổng thời gian in, thời điểm bắt đầu/kết thúc, máy và các model trong mẻ;
+  thiết kế dữ liệu để mở rộng về sau. Không ghép ảnh/mẻ chỉ bằng tên hoặc lấy mẻ
+  gần nhất. Thiếu thumbnail hay chưa ghép model phải hiện rõ, không đoán dữ liệu.
+- Bề mặt đề xuất trong Sản xuất / Plate & máy có máy trực tiếp và lịch sử mẻ.
+  Người dùng chốt không cần theo dõi/lưu liên tục khi đóng web vì thường mở web.
+  Triển khai theo phiên web đang mở, không tự thuê dịch vụ 24/7 hay buộc chạy
+  PrintPeek Windows. Có thể dùng trung gian Supabase hiện có; không cam kết miễn
+  phí ngoài hạn mức của tài khoản. Tách giờ thực/ước tính/lần đầu quan sát, thời
+  gian tạm dừng và khoảng mất dữ liệu. Không coi kết thúc máy là QC đạt/tự cộng tồn.
+- Web chỉ ghim bảng trạng thái trong trang web; overlay đè ứng dụng khác của
+  Windows không được hứa là web tái tạo tương đương. Dữ liệu demo phải có nhãn
+  minh họa rõ ràng; ảnh mẫu không được coi là ảnh mẻ thật của xưởng.
+- Thông báo trạng thái phải dựa trên chuyển trạng thái thật (bắt đầu, tạm dừng,
+  tiếp tục, hoàn thành, thất bại, mất/kết nối lại), chống báo trùng do telemetry,
+  reconnect hoặc nhiều tab. Warning không đổi trạng thái đang in thành lỗi;
+  error không được bỏ qua bằng nút dành cho warning. Bỏ qua theo máy + mã cảnh
+  báo, có Hiện lại, giữ qua reload và giữ lịch sử; không gửi lệnh xóa lỗi lên máy.
+  Delta thiếu HMS không được coi là cảnh báo đã hết. Chỉ khi nguồn xác nhận mã
+  đã biến mất mới cho cảnh báo tái phát được báo lại. Mã chưa hiểu phải giữ mã
+  và nội dung gốc, không đoán nguyên nhân hoặc mức độ an toàn.
+- Quyết định nơi chạy đã chốt: dùng trung gian Supabase hiện có theo phiên web,
+  không phụ thuộc PrintPeek và không cấp hosting mới. Token Bambu chỉ ở server,
+  mã hóa và không đọc được bằng quyền web. Chỉ chủ xưởng kết nối/ngắt liên kết;
+  đọc theo quyền Tiến độ hoặc Plate, ghép model theo quyền Plate. Không báo hoàn
+  tất trên máy thật chỉ bằng demo/lõi giả lập; phải phân biệt deploy và live QA.
+- Lựa chọn đã chốt thay cho câu hỏi nơi chạy ở trên: chỉ thu trạng thái khi có
+  web mở. Đóng mọi phiên web hoặc mất mạng thì có thể có khoảng trống dữ liệu;
+  mở lại không tạo giả thời điểm bắt đầu/kết thúc hay sự kiện đã bỏ lỡ. Token
+  cloud phải giữ phía server có kiểm tra workspace/quyền, không log mật khẩu/mã
+  email/token. Trung gian kết nối hữu hạn phải tự nối lại và giữ state/dedup.
+- Khi người dùng hỏi chưa hiểu lựa chọn nơi chạy bộ thu, giải thích bằng tình huống
+  bật/tắt máy tính: bộ thu trên Windows ngừng cập nhật khi máy tính tắt/ngủ hoặc
+  app ngừng chạy; bộ thu cloud độc lập không phụ thuộc máy tính cá nhân. Phân biệt
+  bộ thu dữ liệu/lưu lịch sử với nơi hiển thị thông báo: đóng web vẫn có thể ghi
+  lịch sử nếu bộ thu còn chạy, nhưng pop-up trong web chỉ hiện khi web mở; push
+  ngoài web là khả năng riêng cần quyền và triển khai tương ứng. Không tự cấp
+  hosting hoặc tính phí; quyết định chỉ theo dõi khi web mở ở trên là lựa chọn mới.
+- Bảng máy dùng trang native `printer-monitor` trong Plate & máy. Không đoán
+  model từ tên file; chủ động ghép model/biến thể/số lượng vào mẻ bằng bộ chọn
+  có tìm kiếm/ảnh, giữ nháp khi lưu lỗi và kiểm tra revision khi hai thiết bị sửa.
+  Telemetry không ghi đè ghép model. Ngắt tài khoản không xóa lịch sử đã lưu.
+  Guard: `tools/printer-core-qa.mjs`, `printer-sql-qa.mjs`, `printer-ui-qa.mjs`,
+  `printer-api-qa.ts`; API QA bằng Deno, chỉ dùng dữ liệu cô lập.
+
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 
 - Người dùng yêu cầu chuyển thông báo lên góc trên bên phải và tinh gọn, đơn giản
