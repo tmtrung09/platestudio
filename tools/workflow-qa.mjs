@@ -189,7 +189,11 @@ const results = await page.evaluate(async () => {
   const scrollBefore=batchScrollRoot?.scrollTop||0;
   const scrollBehaviorBefore=batchScrollRoot?.style.scrollBehavior||'';
   const stickySpacer=document.createElement('div');stickySpacer.style.height='1100px';document.getElementById('batch-report-page')?.append(stickySpacer);
-  batchScrollRoot.style.scrollBehavior='auto';batchScrollRoot.scrollTo({top:420,behavior:'instant'});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  /* Header height varies with screen width and shared controls. Scroll past
+     the measured sticky threshold, not a magic distance for the old header. */
+  const stickyThreshold=batchScrollRoot.scrollTop+batchSelectionBar.getBoundingClientRect().top-batchScrollRoot.getBoundingClientRect().top;
+  const stickyProbeScroll=Math.max(420,stickyThreshold+100);
+  batchScrollRoot.style.scrollBehavior='auto';batchScrollRoot.scrollTo({top:stickyProbeScroll,behavior:'instant'});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   const batchRootRect=batchScrollRoot?.getBoundingClientRect(),batchBarRect=batchSelectionBar?.getBoundingClientRect();
   check('Thanh thao tác chọn nhiều ghim khi lướt danh sách', batchScrollRoot.scrollTop>=400 && getComputedStyle(batchSelectionBar).position==='sticky' && batchBarRect?.top>=batchRootRect?.top+7 && batchBarRect?.top<=batchRootRect?.top+28, `${Math.round(batchBarRect?.top||0)}px / ${Math.round(batchRootRect?.top||0)}px · cuộn ${Math.round(batchScrollRoot.scrollTop)}px`);
   stickySpacer.remove();batchScrollRoot.scrollTo({top:scrollBefore,behavior:'instant'});batchScrollRoot.style.scrollBehavior=scrollBehaviorBefore;

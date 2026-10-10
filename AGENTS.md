@@ -193,6 +193,35 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
+
+- Người dùng yêu cầu chuyển thông báo lên góc trên bên phải và tinh gọn, đơn giản
+  hơn. Phải cho xem thiết kế và chờ người dùng chốt trước khi sửa ứng dụng.
+- Sau khi xem bản minh họa, người dùng đã chốt và yêu cầu triển khai cả pop-up
+  nhỏ góc trên bên phải và bảng thông báo dạng thả gọn; cả hai không có border.
+  Đây là phê duyệt thay cho yêu cầu khoan triển khai ở lượt xem trước.
+- Dấu X chỉ hiện khi đưa chuột vào thông báo trên thiết bị có hover. Vẫn phải
+  hiện khi focus bàn phím, và có đường đóng rõ ràng trên thiết bị không có hover;
+  vùng bấm đóng 44px. Không dùng cách ẩn khiến bàn phím hoặc cảm ứng không đóng được.
+- Bảng thả không mở dialog giữa màn hình, không ghi đè dialog đang nhập, không
+  tự đánh dấu đã đọc khi chỉ mở. Giữ lọc người nhận/quyền, lịch sử và âm thanh;
+  click xem, đọc hết, Escape, click ngoài và tải nền phải giữ trạng thái đúng.
+- Pop-up sự kiện và toast phản hồi dùng chung vị trí/kiểu không viền, icon SVG,
+  không chồng nhau hay bảng thả. Tạm dừng tự đóng khi hover/focus; không sửa/xóa
+  dữ liệu camera hay nghiệp vụ để thay giao diện. Guard: tools/notifications-qa.mjs.
+- Header dùng chung phải chừa chỗ cho chuông mà không ép tên trang thành cột hẹp
+  trên mobile. Guard sticky đo mốc ghim từ vị trí thực thay vì giả định chiều cao
+  header; vẫn kiểm tra thanh thao tác nằm đúng mép vùng cuộn sau khi vượt mốc đó.
+
+### Trao đổi về trang Cài đặt (ngày 2026-10-10)
+
+- Người dùng hỏi nếu làm trang Cài đặt thì có thể làm những gì. Phạm vi lượt này
+  là tư vấn khả năng và cách tổ chức, chưa phải yêu cầu xây dựng hay phát hành.
+- Khi tiếp tục trao đổi, phân biệt các tùy chỉnh đã có có thể gom lại (âm thanh
+  chụp/thông báo, thông báo đẩy, sao lưu, quản lý thiết bị/quyền) với tính năng
+  đề xuất mới. Các nhóm hoặc thứ tự ưu tiên trong tư vấn chưa được người dùng
+  chấp thuận; không tự coi là phạm vi triển khai đã thống nhất.
+
 ### Trang đồng bộ KiotViet (yêu cầu ngày 2026-10-10)
 
 - Người dùng yêu cầu dùng năng lực mô hình 6.1 Sol làm lại trang Đồng bộ KiotViet
