@@ -417,6 +417,7 @@
     historyRows = [];
     historyOffset = 0;
     detailSelection = null;
+    clearTimeout(detailCloseTimer);detailCloseTimer=0;
     detailRequests.clear();
     detailErrors.clear();
     moreHistory = false;
@@ -487,6 +488,9 @@
   function shell(host) {
     if (host.querySelector(".pm-toolbar")) return;
     host.innerHTML = `<section class="pm-workspace"><div class="pm-toolbar"><label class="page-smart-search"><span aria-hidden="true">${icon("search")}</span><input type="search" aria-label="Tìm máy hoặc mẻ in" placeholder="Tìm máy hoặc mẻ in…" autocomplete="off"></label><div class="pm-tabs"><button class="btn btn-ghost" data-pm-action="live">Hiện tại</button><button class="btn btn-ghost" data-pm-action="history">Lịch sử mẻ</button></div><button class="btn btn-ghost" data-pm-action="pin">Ghim gọn</button><button class="btn btn-ghost" data-pm-action="connect">Kết nối</button><button class="btn btn-ghost btn-icon-only" data-pm-action="retry" aria-label="Thử lại kết nối máy">${icon("refresh")}</button></div><p class="pm-connection" role="status"></p><div class="pm-count"></div><div class="pm-content"><div class="pm-list"><div class="pm-live"></div><div class="pm-history"></div><button class="btn btn-ghost pm-more" data-pm-action="more" hidden>Xem thêm mẻ</button></div><section id="pm-detail" class="pm-detail" aria-labelledby="pm-detail-title" hidden></section></div><p class="pm-footnote">Chỉ đọc trạng thái khi web mở. Mẻ in xong không tự cộng tồn hoặc xác nhận QC.</p></section>`;
+    const panel=host.querySelector('.pm-detail'),slot=document.createElement('div'),clip=document.createElement('div');
+    slot.className='pm-detail-slot';clip.className='pm-detail-clip';
+    panel.before(slot);slot.append(clip);clip.append(panel);
     host.querySelector("input").value = query;
     host.querySelector("input").oninput = (event) => {
       query = event.target.value;
@@ -682,13 +686,43 @@
       list.innerHTML =
         '<p class="empty">Chưa có mẻ phù hợp đã được ghi nhận.</p>';
   }
+  let detailMotionRequested=false,detailCloseTimer=0;
+  function renderDetailMotion() {
+    detailMotionRequested=true;
+    try{render();}finally{detailMotionRequested=false;}
+  }
+  function setDetailLayout(host,visible) {
+    const panel=host.querySelector('.pm-detail'),layout=host.querySelector('.pm-content');
+    const wasOpen=layout.classList.contains('pm-detail-open');
+    const animate=detailMotionRequested&&!matchMedia('(prefers-reduced-motion:reduce)').matches;
+    // Telemetry must not restart or cut short a user-initiated collapse.
+    if(!visible&&detailCloseTimer&&!detailMotionRequested&&context().allowed)return;
+    if(visible&&wasOpen)return;
+    clearTimeout(detailCloseTimer);detailCloseTimer=0;
+    layout.classList.toggle('pm-motion-off',!animate);
+    panel.inert=!visible;panel.setAttribute('aria-hidden',String(!visible));
+    if(visible){
+      panel.hidden=false;
+      if(!wasOpen)void layout.offsetWidth; // Establish the collapsed track before expanding.
+      layout.classList.add('pm-detail-open');
+    }else{
+      layout.classList.remove('pm-detail-open');
+      if(animate&&wasOpen){
+        const scroll=detailReturnScroll;
+        detailCloseTimer=setTimeout(()=>{
+          detailCloseTimer=0;panel.hidden=true;
+          if(curPage==='printer-monitor'&&innerWidth<1100)document.querySelector('.pg-content')?.scrollTo({top:scroll,behavior:'instant'});
+        },350);
+      }else panel.hidden=true;
+    }
+  }
   function selectDetail(type,id) {
     if(!context().allowed)return;
     if(type==='machine'&&!snapshot.devices[id])return;
     if(type==='run'&&!historyRows.some(row=>row.id===id))return;
-    if(!detailSelection)detailReturnScroll=document.querySelector('.pg-content')?.scrollTop||0;
+    if(!detailSelection&&!detailCloseTimer)detailReturnScroll=document.querySelector('.pg-content')?.scrollTop||0;
     detailSelection={type,id};
-    render();
+    renderDetailMotion();
     const panel=document.querySelector('#printer-monitor-page .pm-detail');
     panel?.querySelector('h2')?.focus({preventScroll:true});
     if(innerWidth<1100)panel?.scrollIntoView({block:'start',behavior:'instant'});
@@ -696,7 +730,7 @@
   function closeDetail() {
     const selected=detailSelection;
     detailSelection=null;
-    render();
+    renderDetailMotion();
     if(innerWidth<1100)document.querySelector('.pg-content')?.scrollTo({top:detailReturnScroll,behavior:'instant'});
     const cards=document.querySelectorAll('#printer-monitor-page .pm-machine,#printer-monitor-page .pm-run');
     [...cards].find(card=>(selected?.type==='machine'?card.dataset.device:card.dataset.run)===selected?.id)?.querySelector('[data-pm-action="machine"],[data-pm-action="run"]')?.focus({preventScroll:true});
@@ -720,8 +754,8 @@
     const id=device?.run?.id||(detailSelection?.type==='run'?detailSelection.id:null);
     const row=id?historyRows.find(row=>row.id===id):null;
     const visible=context().allowed&&!!detailSelection&&!!(device||row);
-    panel.hidden=!visible;layout.classList.toggle('pm-detail-open',visible);
-    if(!visible)return;
+    if(!visible){setDetailLayout(host,false);return;}
+    panel.hidden=false;
     panel.style.setProperty('--pm-nav-offset',((document.querySelector('.page.active .production-navigation-slot')?.getBoundingClientRect().height||0)+10)+'px');
     if(!panel.firstElementChild)panel.innerHTML=`<header class="pm-detail-head"><div class="pm-detail-machine-image"></div><div><h2 id="pm-detail-title" tabindex="-1"></h2><small class="pm-detail-model"></small></div><button type="button" class="btn btn-ghost btn-icon-only" data-pm-action="close-detail" aria-label="Đóng chi tiết máy và mẻ">${icon('close')}</button></header><div class="pm-detail-image"></div><div class="pm-detail-titleline"><h3 class="pm-detail-file"></h3><strong class="pm-detail-percent"></strong></div><p class="pm-detail-status"></p><div class="pm-progress" role="progressbar" aria-label="Tiến độ mẻ đang xem" aria-valuemin="0" aria-valuemax="100"><i></i></div><p class="pm-detail-metrics"></p><dl class="pm-detail-facts"></dl><p class="pm-detail-gap"></p><div class="pm-detail-issues"></div><p class="pm-detail-read-status" role="status"></p><button type="button" class="btn btn-ghost" data-pm-action="detail-retry">Tải lại mẻ</button><section class="pm-detail-models"><h3>Model trong mẻ</h3><div class="pm-model-links"></div><button type="button" class="btn btn-ghost" data-pm-action="models">Ghép model</button></section><section class="pm-detail-log"><h3>Diễn biến mẻ</h3><ol></ol></section><p class="pm-detail-control">Chỉ đọc trạng thái; điều khiển cloud chưa được Bambu xác thực.</p>`;
     // Telemetry supplies current timing; only the exact saved run supplies confirmed model links.
@@ -767,6 +801,7 @@
     if(run.lastObservedAt)logs.push([run.lastObservedAt,'Lần cuối ghi nhận mẻ']);
     const logHTML=logs.sort((a,b)=>Date.parse(a[0])-Date.parse(b[0])).map(([at,label])=>`<li><time>${e(date(at))}</time><span>${e(label)}</span></li>`).join('')||'<li>Chưa có diễn biến được ghi nhận.</li>';
     const logNode=panel.querySelector('.pm-detail-log ol');if(logNode.innerHTML!==logHTML)logNode.innerHTML=logHTML;
+    setDetailLayout(host,true);
     if(id&&!row&&!detailRequests.has(id)&&!detailErrors.has(id))void loadDetailRun(id);
   }
   async function loadMore() {

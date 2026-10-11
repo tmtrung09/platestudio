@@ -296,6 +296,13 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   Dữ liệu nền không dựng lại bảng/ảnh hoặc mất vị trí cuộn; đổi máy/mẻ/workspace
   không được giữ nhầm model/ảnh. Chỉ đọc đúng ID mẻ, thiếu/lỗi có trạng thái và thử
   lại; không lấy mẫu demo làm dữ liệu thật hoặc thêm quyền điều khiển máy.
+- Yêu cầu ngày 2026-10-11: mở/đóng chi tiết máy hoặc mẻ phải co giãn bố cục mượt:
+  desktop thu/giãn danh sách để nhường chỗ bên phải, màn hình nhỏ bung/thu khung
+  trên lưới, vẫn hai máy mỗi hàng. Không scale toàn trang hay dựng lại ảnh/DOM;
+  không chạy lại hiệu ứng khi telemetry cập nhật. Đóng trả focus và cuộn, bấm
+  nhanh không để khung kẹt; thu khung phải bỏ khỏi Tab ngay. Giảm chuyển động
+  phải chuyển trạng thái tức thời; mất quyền/xưởng phải ẩn dữ liệu ngay.
+  Guard: `tools/printer-ui-qa.mjs` và `tools/printer-motion-probe.mjs`.
 
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 

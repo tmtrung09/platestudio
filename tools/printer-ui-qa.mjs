@@ -4,9 +4,10 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {mkdirSync} from 'node:fs';
 import {assertPrinterAlerts} from './printer-alerts-probe.mjs';
+import {assertPrinterMotion} from './printer-motion-probe.mjs';
 const out=resolve('qa-results/printers');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
-const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1280,height:900}];
+const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1099,height:900},{width:1100,height:900},{width:1280,height:900}];
 async function assertUniformCards(page){
  assert.ok(await page.evaluate(()=>{const cards=[...document.querySelectorAll('.pm-machine')];return cards.every((card,i)=>{const r=card.getBoundingClientRect(),peer=cards[i-i%2+1]?.getBoundingClientRect();return (!peer||Math.abs(r.height-peer.height)<1)&&card.scrollWidth<=card.clientWidth+1;});}),'Paired printer cards have equal height despite different names, files and issues');
  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.pm-machine')].every(card=>{const media=card.querySelector('.pm-media'),machine=card.querySelector('.pm-machine-image').getBoundingClientRect(),job=card.querySelector('.pm-job-image').getBoundingClientRect();if(!media)return false;const style=getComputedStyle(media),gap=parseFloat(style.gap);return style.gridTemplateColumns.split(' ').length>1?Math.abs(machine.top-job.top)<1&&Math.abs(job.left-machine.right-gap)<1:Math.abs(machine.left-job.left)<1&&Math.abs(job.top-machine.bottom-gap)<1;})),'Machine and batch images remain a compact top-aligned group instead of spreading with card height');
@@ -60,6 +61,7 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  await page.screenshot({path:resolve(out,`${profile.width}-${profile.height}-${theme}-detail.png`)});
  await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false);assert.equal(await machineOpen.evaluate(el=>el===document.activeElement),true,'Escape returns focus to selected machine');
  if(profile.width===1280&&theme==='light')await assertDetailLifecycle(page);
+ await assertPrinterMotion(page,profile,theme,out);
  const search=page.getByRole('searchbox',{name:'Tìm máy hoặc mẻ in'});await search.fill('my my');assert.equal(await page.locator('.pm-machine').count(),1,'Shared unaccented search');await search.fill('');
  await page.evaluate(()=>{window.pmKeptInput=document.querySelector('.pm-toolbar input');window.pmKeptCard=document.querySelector('.pm-machine');window.pmKeptImage=document.querySelector('.pm-machine-image');document.querySelector('.pm-toolbar input').focus();pmFixture.state.devices['machine-0'].percent=46;PlatePrinterMonitor.receive({...pmFixture,events:[]});});
  assert.ok(await page.evaluate(()=>pmKeptInput===document.activeElement&&pmKeptCard===document.querySelector('.pm-machine')&&pmKeptImage===document.querySelector('.pm-machine-image')),'Telemetry preserves search, cards and media frames');
