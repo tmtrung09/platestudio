@@ -190,6 +190,13 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
     không dấu ngay cạnh tiêu đề trên desktop, tự xuống hàng an toàn trên mobile và lọc
     theo các thuộc tính người dùng nhìn thấy. Không chỉ chuẩn hóa CSS mà để một trang
     còn không có cách tìm dữ liệu của chính nó.
+11. Quyết định ngày 2026-10-11: nút hành động phụ chỉ có icon (sửa, đóng, làm mới,
+    bỏ mục, sao chép, chuyển trang/tháng/thứ tự) dùng primitive `.btn-icon-only`:
+    chỉ hiện SVG căn chính giữa, không nền/viền/vòng sáng/bóng hay hiệu ứng dịch
+    chuyển của nút có chữ trong mọi theme và trạng thái hover/active. Giữ vùng
+    bấm 44×44px, tên truy cập, focus bàn phím và disabled. Nút có chữ, nút chính,
+    stepper số lượng, nút chụp và nút điều hướng riêng không bị chuyển thành kiểu
+    này chỉ vì chứa icon. Guard: `tools/icon-actions-qa.mjs`, cùng QA máy in.
 
 ## Định nghĩa hoàn tất
 
