@@ -31,7 +31,10 @@
     ignored = {},
     readIds = {},
     pinned = false,
-    modal = null;
+    modal = null,
+    detailSelection = null,
+    detailReturnScroll = 0;
+  const detailRequests = new Set(), detailErrors = new Map();
   const icon = (name) => appIcon(name),
     e = (value) => esc(String(value ?? ""));
   const context = () => ({
@@ -286,6 +289,9 @@
     events = [];
     historyRows = [];
     historyOffset = 0;
+    detailSelection = null;
+    detailRequests.clear();
+    detailErrors.clear();
     moreHistory = false;
     aliases = {};
     ignored = {};
@@ -351,7 +357,7 @@
   }
   function shell(host) {
     if (host.querySelector(".pm-toolbar")) return;
-    host.innerHTML = `<section class="pm-workspace"><div class="pm-toolbar"><label class="page-smart-search"><span aria-hidden="true">${icon("search")}</span><input type="search" aria-label="Tìm máy hoặc mẻ in" placeholder="Tìm máy hoặc mẻ in…" autocomplete="off"></label><div class="pm-tabs"><button class="btn btn-ghost" data-pm-action="live">Hiện tại</button><button class="btn btn-ghost" data-pm-action="history">Lịch sử mẻ</button></div><button class="btn btn-ghost" data-pm-action="pin">Ghim gọn</button><button class="btn btn-ghost" data-pm-action="connect">Kết nối</button><button class="btn btn-ghost" data-pm-action="retry" aria-label="Thử lại kết nối máy">${icon("refresh")}</button></div><p class="pm-connection" role="status"></p><div class="pm-count"></div><div class="pm-live"></div><div class="pm-history"></div><button class="btn btn-ghost pm-more" data-pm-action="more" hidden>Xem thêm mẻ</button><p class="pm-footnote">Chỉ đọc trạng thái khi web mở. Mẻ in xong không tự cộng tồn hoặc xác nhận QC.</p></section>`;
+    host.innerHTML = `<section class="pm-workspace"><div class="pm-toolbar"><label class="page-smart-search"><span aria-hidden="true">${icon("search")}</span><input type="search" aria-label="Tìm máy hoặc mẻ in" placeholder="Tìm máy hoặc mẻ in…" autocomplete="off"></label><div class="pm-tabs"><button class="btn btn-ghost" data-pm-action="live">Hiện tại</button><button class="btn btn-ghost" data-pm-action="history">Lịch sử mẻ</button></div><button class="btn btn-ghost" data-pm-action="pin">Ghim gọn</button><button class="btn btn-ghost" data-pm-action="connect">Kết nối</button><button class="btn btn-ghost" data-pm-action="retry" aria-label="Thử lại kết nối máy">${icon("refresh")}</button></div><p class="pm-connection" role="status"></p><div class="pm-count"></div><div class="pm-content"><div class="pm-list"><div class="pm-live"></div><div class="pm-history"></div><button class="btn btn-ghost pm-more" data-pm-action="more" hidden>Xem thêm mẻ</button></div><section id="pm-detail" class="pm-detail" aria-labelledby="pm-detail-title" hidden></section></div><p class="pm-footnote">Chỉ đọc trạng thái khi web mở. Mẻ in xong không tự cộng tồn hoặc xác nhận QC.</p></section>`;
     host.querySelector("input").value = query;
     host.querySelector("input").oninput = (event) => {
       query = event.target.value;
@@ -359,11 +365,17 @@
     };
     host.addEventListener("click", (event) => {
       const button = event.target.closest("[data-pm-action]");
-      if (!button) return;
+      if (!button) {
+        if(event.target.closest('button,input,summary,details,a,select'))return;
+        const card=event.target.closest('.pm-machine,.pm-run');
+        if(card)selectDetail(card.dataset.device?'machine':'run',card.dataset.device||card.dataset.run);
+        return;
+      }
       const action = button.dataset.pmAction,
         device = snapshot.devices[button.dataset.device];
       if (action === "live" || action === "history") {
         view = action;
+        detailSelection = null;
         render();
       } else if (action === "connect") openConnection();
       else if (action === "retry") {
@@ -373,7 +385,10 @@
         pinned = !pinned;
         renderPin();
         button.setAttribute("aria-pressed", String(pinned));
-      } else if (action === "rename") rename(device);
+      } else if (action === "machine" || action === "run") selectDetail(action,button.dataset.device||button.dataset.run);
+      else if (action === "close-detail") closeDetail();
+      else if (action === "detail-retry") void loadDetailRun(button.dataset.run,true);
+      else if (action === "rename") rename(device);
       else if (action === "ignore" || action === "restore") {
         const issue = device?.issues?.find(
           (i) => i.code === button.dataset.code,
@@ -426,6 +441,7 @@
     );
     const list = host.querySelector(".pm-live"),
       ids = new Set(shown.map((d) => d.id));
+    if(detailSelection?.type==='machine'&&(!ctx.allowed||!ids.has(detailSelection.id)))detailSelection=null;
     [...list.children].forEach((node) => {
       if (!ids.has(node.dataset.device)) node.remove();
     });
@@ -437,10 +453,14 @@
         card = document.createElement("article");
         card.className = "pm-machine";
         card.dataset.device = d.id;
-        card.innerHTML = `<div class="pm-media"><div class="pm-machine-image"></div><div class="pm-job-image"></div></div><div class="pm-main"><header><b class="pm-name"></b><span class="pm-model"></span><button type="button" class="btn btn-ghost btn-sm" data-pm-action="rename" data-device="${e(d.id)}" aria-label="Đổi biệt danh máy">${icon("edit")}</button></header><div class="pm-status"></div><div class="pm-file"></div><div class="pm-progress" role="progressbar" aria-label="Tiến độ in" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="pm-metrics"></div><small class="pm-seen"></small><details class="pm-issues"><summary></summary><div></div></details></div>`;
+        card.innerHTML = `<div class="pm-media"><div class="pm-machine-image"></div><div class="pm-job-image"></div></div><div class="pm-main"><header><button type="button" class="pm-machine-open pm-name" data-pm-action="machine" data-device="${e(d.id)}" aria-controls="pm-detail"></button><span class="pm-model"></span><button type="button" class="btn btn-ghost btn-sm" data-pm-action="rename" data-device="${e(d.id)}" aria-label="Đổi biệt danh máy">${icon("edit")}</button></header><div class="pm-status"></div><div class="pm-file"></div><div class="pm-progress" role="progressbar" aria-label="Tiến độ in" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="pm-metrics"></div><small class="pm-seen"></small><details class="pm-issues"><summary></summary><div></div></details></div>`;
         list.append(card);
       }
       setText(card.querySelector(".pm-name"), aliases[d.id] || d.name);
+      const selected=detailSelection?.type==='machine'&&detailSelection.id===d.id;
+      card.classList.toggle('pm-selected',selected);
+      card.querySelector('.pm-machine-open').setAttribute('aria-expanded',String(selected));
+      card.querySelector('.pm-machine-open').setAttribute('aria-label','Xem chi tiết '+(aliases[d.id]||d.name));
       setText(card.querySelector(".pm-model"), d.model);
       const activeErrors = (d.issues || []).filter(
           (i) => i.severity === "error",
@@ -486,6 +506,7 @@
         "</p>";
     }
     renderHistory(host);
+    renderDetail(host);
     host.querySelector(".pm-more").hidden = view !== "history" || !moreHistory;
   }
   function renderHistory(host) {
@@ -501,6 +522,7 @@
         ).includes(norm(query)),
       ),
       ids = new Set(shown.map((row) => row.id));
+    if(detailSelection?.type==='run'&&!ids.has(detailSelection.id))detailSelection=null;
     [...list.children].forEach((node) => {
       if (!ids.has(node.dataset.run)) node.remove();
     });
@@ -516,18 +538,107 @@
         list.append(card);
       }
       image(card.firstElementChild, run.thumbnail);
-      const html = `<b>${e(run.fileName || "Mẻ chưa có tên")}</b><p>${e(aliases[run.deviceId] || run.machineName)} · ${e(run.machineModel)} · ${e({ running: "Đang theo dõi", finished: "Hoàn thành", failed: "Thất bại", stopped: "Dừng", unknown: "Chưa rõ kết quả" }[run.result] || "Chưa rõ kết quả")}</p><dl><div><dt>Bắt đầu ghi nhận</dt><dd>${e(date(run.startedObservedAt || run.firstObservedAt))}${!run.startedObservedAt ? " (giữa mẻ)" : ""}</dd></div><div><dt>Kết thúc ghi nhận</dt><dd>${e(date(run.endedObservedAt))}</dd></div><div><dt>Thời gian in đã theo dõi</dt><dd>${e(time(run.printingMs))}${run.gap ? " · Có khoảng trống dữ liệu" : ""}</dd></div><div><dt>Tạm dừng đã theo dõi</dt><dd>${e(time(run.pausedMs))}</dd></div></dl><div class="pm-model-links">${(row.linked_models || []).map((m) => `<span>${thumb(m.image)}${e(m.modelName)}${m.variantName ? " · " + e(m.variantName) : ""} × ${e(m.qty)}</span>`).join("") || "<small>Chưa ghép model — không tự đoán từ tên file.</small>"}</div>${canAccess("plates.plan") ? `<button type="button" class="btn btn-ghost" data-pm-action="models" data-run="${e(row.id)}">Ghép model</button>` : ""}`;
+      card.classList.toggle('pm-selected',detailSelection?.type==='run'&&detailSelection.id===row.id);
+      const html = `<button type="button" class="pm-machine-open" data-pm-action="run" data-run="${e(row.id)}" aria-controls="pm-detail" aria-expanded="${detailSelection?.type==='run'&&detailSelection.id===row.id}">${e(run.fileName || "Mẻ chưa có tên")}</button><p>${e(aliases[run.deviceId] || run.machineName)} · ${e(run.machineModel)} · ${e({ running: "Đang theo dõi", finished: "Hoàn thành", failed: "Thất bại", stopped: "Dừng", unknown: "Chưa rõ kết quả" }[run.result] || "Chưa rõ kết quả")}</p><dl><div><dt>Bắt đầu ghi nhận</dt><dd>${e(date(run.startedObservedAt || run.firstObservedAt))}${!run.startedObservedAt ? " (giữa mẻ)" : ""}</dd></div><div><dt>Kết thúc ghi nhận</dt><dd>${e(date(run.endedObservedAt))}</dd></div><div><dt>Thời gian in đã theo dõi</dt><dd>${e(time(run.printingMs))}${run.gap ? " · Có khoảng trống dữ liệu" : ""}</dd></div><div><dt>Tạm dừng đã theo dõi</dt><dd>${e(time(run.pausedMs))}</dd></div></dl><div class="pm-model-links">${(row.linked_models || []).map((m) => `<span>${thumb(m.image)}${e(m.modelName)}${m.variantName ? " · " + e(m.variantName) : ""} × ${e(m.qty)}</span>`).join("") || "<small>Chưa ghép model — không tự đoán từ tên file.</small>"}</div>${canAccess("plates.plan") ? `<button type="button" class="btn btn-ghost" data-pm-action="models" data-run="${e(row.id)}">Ghép model</button>` : ""}`;
       if (
         card.lastElementChild.innerHTML !== html &&
         !card.contains(document.activeElement)
       )
         card.lastElementChild.innerHTML = html;
+      card.querySelector('[data-pm-action="run"]')?.setAttribute('aria-expanded',String(detailSelection?.type==='run'&&detailSelection.id===row.id));
       if (list.children[index] !== card)
         list.insertBefore(card, list.children[index] || null);
     }
     if (!shown.length)
       list.innerHTML =
         '<p class="empty">Chưa có mẻ phù hợp đã được ghi nhận.</p>';
+  }
+  function selectDetail(type,id) {
+    if(!context().allowed)return;
+    if(type==='machine'&&!snapshot.devices[id])return;
+    if(type==='run'&&!historyRows.some(row=>row.id===id))return;
+    if(!detailSelection)detailReturnScroll=document.querySelector('.pg-content')?.scrollTop||0;
+    detailSelection={type,id};
+    render();
+    const panel=document.querySelector('#printer-monitor-page .pm-detail');
+    panel?.querySelector('h2')?.focus({preventScroll:true});
+    if(innerWidth<1100)panel?.scrollIntoView({block:'start',behavior:'instant'});
+  }
+  function closeDetail() {
+    const selected=detailSelection;
+    detailSelection=null;
+    render();
+    if(innerWidth<1100)document.querySelector('.pg-content')?.scrollTo({top:detailReturnScroll,behavior:'instant'});
+    const cards=document.querySelectorAll('#printer-monitor-page .pm-machine,#printer-monitor-page .pm-run');
+    [...cards].find(card=>(selected?.type==='machine'?card.dataset.device:card.dataset.run)===selected?.id)?.querySelector('[data-pm-action="machine"],[data-pm-action="run"]')?.focus({preventScroll:true});
+  }
+  async function loadDetailRun(id,force=false) {
+    if(!id||detailRequests.has(id)||(!force&&detailErrors.has(id)))return;
+    const gen=generation;
+    detailRequests.add(id);detailErrors.delete(id);
+    try {
+      const data=await request({action:'read',runId:id});
+      if(gen!==generation)return;
+      if(data.run?.id!==id||!data.run.data)throw new Error('Chưa nhận được đúng mẻ đã chọn.');
+      const index=historyRows.findIndex(row=>row.id===id);
+      if(index<0)historyRows.push(data.run);else historyRows[index]=data.run;
+    }catch(error){if(gen===generation)detailErrors.set(id,error.message);}
+    finally{if(gen===generation){detailRequests.delete(id);render();}}
+  }
+  function renderDetail(host) {
+    const panel=host.querySelector('.pm-detail'),layout=host.querySelector('.pm-content');
+    const device=detailSelection?.type==='machine'?snapshot.devices[detailSelection.id]:null;
+    const id=device?.run?.id||(detailSelection?.type==='run'?detailSelection.id:null);
+    const row=id?historyRows.find(row=>row.id===id):null;
+    const visible=context().allowed&&!!detailSelection&&!!(device||row);
+    panel.hidden=!visible;layout.classList.toggle('pm-detail-open',visible);
+    if(!visible)return;
+    panel.style.setProperty('--pm-nav-offset',((document.querySelector('.page.active .production-navigation-slot')?.getBoundingClientRect().height||0)+10)+'px');
+    if(!panel.firstElementChild)panel.innerHTML=`<header class="pm-detail-head"><div class="pm-detail-machine-image"></div><div><h2 id="pm-detail-title" tabindex="-1"></h2><small class="pm-detail-model"></small></div><button type="button" class="btn btn-ghost" data-pm-action="close-detail" aria-label="Đóng chi tiết máy và mẻ">${icon('close')}</button></header><div class="pm-detail-image"></div><div class="pm-detail-titleline"><h3 class="pm-detail-file"></h3><strong class="pm-detail-percent"></strong></div><p class="pm-detail-status"></p><div class="pm-progress" role="progressbar" aria-label="Tiến độ mẻ đang xem" aria-valuemin="0" aria-valuemax="100"><i></i></div><p class="pm-detail-metrics"></p><dl class="pm-detail-facts"></dl><p class="pm-detail-gap"></p><div class="pm-detail-issues"></div><p class="pm-detail-read-status" role="status"></p><button type="button" class="btn btn-ghost" data-pm-action="detail-retry">Tải lại mẻ</button><section class="pm-detail-models"><h3>Model trong mẻ</h3><div class="pm-model-links"></div><button type="button" class="btn btn-ghost" data-pm-action="models">Ghép model</button></section><section class="pm-detail-log"><h3>Diễn biến mẻ</h3><ol></ol></section><p class="pm-detail-control">Chỉ đọc trạng thái; điều khiển cloud chưa được Bambu xác thực.</p>`;
+    // Telemetry supplies current timing; only the exact saved run supplies confirmed model links.
+    const run=device?{...(row?.data||{}),...(device.run||{})}:row.data;
+    const name=aliases[device?.id||run.deviceId]||device?.name||run.machineName||'Máy in';
+    setText(panel.querySelector('h2'),name);
+    setText(panel.querySelector('.pm-detail-model'),(device?.model||run.machineModel||'Chưa rõ dòng máy')+' · '+(device?'Báo cáo: '+date(device.lastReport):'Mẻ lịch sử'));
+    image(panel.querySelector('.pm-detail-machine-image'),modelImage(device?.model||run.machineModel));
+    image(panel.querySelector('.pm-detail-image'),run.thumbnail);
+    setText(panel.querySelector('.pm-detail-file'),run.fileName||device?.fileName||'Chưa có mẻ được ghi nhận');
+    setText(panel.querySelector('.pm-detail-percent'),device?`${device.percent??'—'}%`:'');
+    const errors=(device?.issues||[]).filter(issue=>issue.severity==='error');
+    panel.classList.toggle('pm-has-error',errors.length>0);
+    panel.classList.toggle('pm-stale',!!device&&(stale(device)||!device.online));
+    const status=device?`${phaseText[device.phase]||'Chờ dữ liệu'}${device.online===false?' · Máy ngoại tuyến':stale(device)?' · Dữ liệu cũ':''}${errors.length?' · Có lỗi':''}`:({running:'Đang theo dõi',finished:'Hoàn thành',failed:'Thất bại',stopped:'Dừng',unknown:'Chưa rõ kết quả'}[run.result]||'Chưa rõ kết quả');
+    setText(panel.querySelector('.pm-detail-status'),status);
+    const bar=panel.querySelector('.pm-progress');bar.hidden=!device;
+    bar.setAttribute('aria-valuenow',String(device?.percent||0));bar.querySelector('i').style.width=(device?.percent||0)+'%';
+    setText(panel.querySelector('.pm-detail-metrics'),device?`Layer ${device.layer??'—'}/${device.totalLayers??'—'} · Còn ${Number.isFinite(device.remainingMinutes)?time(device.remainingMinutes*60000):'—'} · Đầu ${device.nozzle??'—'}° / Bàn ${device.bed??'—'}°`:'');
+    const estimate=device&&['RUNNING','PREPARE'].includes(device.phase)&&!stale(device)&&device.online!==false&&!errors.length&&Number.isFinite(device.remainingMinutes)?new Date(Date.parse(device.lastReport)+device.remainingMinutes*60000).toISOString():null;
+    const total=Number.isFinite(run.printingMs)&&Number.isFinite(run.pausedMs)?time(run.printingMs+run.pausedMs):'Chưa xác định';
+    const facts=[['Bắt đầu ghi nhận',run.startedObservedAt?date(run.startedObservedAt):run.firstObservedAt?date(run.firstObservedAt)+' (giữa mẻ)':'Chưa xác định'],['Kết thúc ghi nhận',date(run.endedObservedAt)],['Dự kiến xong',date(estimate)],['Thời gian in đã theo dõi',time(run.printingMs)],['Tạm dừng đã theo dõi',time(run.pausedMs)],['Tổng thời gian đã theo dõi',total]];
+    const factsNode=panel.querySelector('.pm-detail-facts');
+    if(!factsNode.children.length)factsNode.innerHTML=facts.map(()=>'<div><dt></dt><dd></dd></div>').join('');
+    facts.forEach(([label,value],i)=>{setText(factsNode.children[i].firstElementChild,label);setText(factsNode.children[i].lastElementChild,value);});
+    setText(panel.querySelector('.pm-detail-gap'),run.gap?'Có khoảng trống dữ liệu; các thời gian theo dõi không phải tổng thời gian thực của máy.':'');
+    const issueNode=panel.querySelector('.pm-detail-issues'),issueHTML=issuesHTML(device?.id,device?.issues);
+    if(issueNode.innerHTML!==issueHTML)issueNode.innerHTML=issueHTML;
+    const readStatus=panel.querySelector('.pm-detail-read-status');
+    setText(readStatus,id?(detailErrors.get(id)||(!row?'Đang tải thông tin mẻ…':'')):'Chưa có ID mẻ; không tự đoán model từ tên file.');
+    const retry=panel.querySelector('[data-pm-action="detail-retry"]');retry.dataset.run=id||'';retry.hidden=!id||!detailErrors.has(id);retry.disabled=detailRequests.has(id);
+    const links=panel.querySelector('.pm-detail-models .pm-model-links'),linked=row?.linked_models||[];
+    const modelKey=m=>JSON.stringify([m.modelId,m.variantId||'']);
+    [...links.children].forEach(node=>{if(!linked.some(m=>modelKey(m)===node.dataset.key))node.remove();});
+    linked.forEach(m=>{let node=[...links.children].find(node=>node.dataset.key===modelKey(m));if(!node){node=document.createElement('span');node.dataset.key=modelKey(m);node.innerHTML='<span class="pm-thumb"></span><span class="pm-link-label"></span>';links.append(node);}image(node.firstElementChild,m.image);setText(node.lastElementChild,`${m.modelName}${m.variantName?' · '+m.variantName:''} × ${m.qty}`);});
+    if(!linked.length){let empty=links.querySelector('small');if(!empty){empty=document.createElement('small');links.append(empty);}setText(empty,row?'Chưa ghép model — không tự đoán từ tên file.':id?'Chưa xác nhận liên kết model của mẻ này.':'Chưa ghép model.');}
+    const modelsButton=panel.querySelector('[data-pm-action="models"]');modelsButton.hidden=!row||!canAccess('plates.plan');modelsButton.dataset.run=id||'';
+    const logs=[];
+    if(run.firstObservedAt)logs.push([run.firstObservedAt,run.startedObservedAt?'Lần đầu ghi nhận mẻ':'Lần đầu thấy giữa mẻ — chưa biết giờ bắt đầu thực']);
+    if(run.startedObservedAt)logs.push([run.startedObservedAt,'Bắt đầu in được ghi nhận']);
+    events.filter(event=>event.jobKey===id&&event.printerId===(device?.id||run.deviceId)).forEach(event=>logs.push([event.createdAt,event.title+(event.code?' · '+event.code:'')]));
+    if(run.endedObservedAt)logs.push([run.endedObservedAt,'Máy kết thúc mẻ · '+status]);
+    if(run.lastObservedAt)logs.push([run.lastObservedAt,'Lần cuối ghi nhận mẻ']);
+    const logHTML=logs.sort((a,b)=>Date.parse(a[0])-Date.parse(b[0])).map(([at,label])=>`<li><time>${e(date(at))}</time><span>${e(label)}</span></li>`).join('')||'<li>Chưa có diễn biến được ghi nhận.</li>';
+    const logNode=panel.querySelector('.pm-detail-log ol');if(logNode.innerHTML!==logHTML)logNode.innerHTML=logHTML;
+    if(id&&!row&&!detailRequests.has(id)&&!detailErrors.has(id))void loadDetailRun(id);
   }
   async function loadMore() {
     const gen = generation;
@@ -823,6 +934,7 @@
         status.textContent = "Đã lưu trên cloud.";
         modal = null;
         closeDialog("dlg-mv");
+        void loadDetailRun(id,true);
         void poll({ force: true });
       } catch (error) {
         status.textContent = error.message;
@@ -868,6 +980,9 @@
   document.addEventListener(
     "keydown",
     (event) => {
+      if(event.key==='Escape'&&detailSelection&&curPage==='printer-monitor'&&!document.querySelector('.dlg-ov[style*="flex"]')&&!document.body.classList.contains('notifications-open')&&!event.target.closest('input,textarea,select,[contenteditable="true"]')){
+        event.preventDefault();event.stopImmediatePropagation();closeDetail();return;
+      }
       const dlg = document.querySelector(
         '#dlg-mv[style*="flex"]>.pm-picker,#dlg-mv[style*="flex"]>.pm-connect,#dlg-mv[style*="flex"]>.pm-rename',
       );

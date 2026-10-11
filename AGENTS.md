@@ -264,6 +264,14 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   tự tăng theo tên/mẻ dài hoặc chi tiết lỗi đang mở, không đặt chiều cao cứng hay
   cắt thông tin để làm đều. Guard kiểm tra cả có/không lỗi, mở chi tiết và cập nhật
   telemetry trên desktop/mobile, light/dark; giữ hai máy mỗi hàng và DOM ảnh/focus.
+- Phản hồi thiếu luồng demo ngày 2026-10-11: bấm thẻ/tên máy phải chọn máy và mở
+  bảng chi tiết có ảnh mẻ lớn, trạng thái/layer/nhiệt độ, các mốc/thời gian đã theo
+  dõi, model đã ghép và diễn biến/lỗi/cảnh báo. Mẻ lịch sử cũng mở được chi tiết.
+  Desktop rộng đặt chi tiết bên phải; màn hình nhỏ đặt trên lưới, vẫn giữ hai máy
+  mỗi hàng. Có nhận diện máy được chọn, mở bằng bàn phím/chạm, đóng/Escape trả focus.
+  Dữ liệu nền không dựng lại bảng/ảnh hoặc mất vị trí cuộn; đổi máy/mẻ/workspace
+  không được giữ nhầm model/ảnh. Chỉ đọc đúng ID mẻ, thiếu/lỗi có trạng thái và thử
+  lại; không lấy mẫu demo làm dữ liệu thật hoặc thêm quyền điều khiển máy.
 
 ### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
 

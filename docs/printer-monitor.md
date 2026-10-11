@@ -9,6 +9,13 @@ Sản xuất → Plate & máy → Máy trực tiếp. Chủ xưởng chọn Kế
 liên kết với tài khoản Bambu, gửi mã và xác nhận. Chưa có kết nối/dữ liệu thì
 không tạo máy giả. Biệt danh lưu riêng trên thiết bị. Bảng ghim chỉ ở trong web.
 
+Bấm thẻ hoặc tên máy để mở bảng chi tiết: ảnh mẻ, tiến độ/chỉ số, mốc thời gian
+đã ghi nhận, model đã ghép, lỗi/cảnh báo và diễn biến cùng ID mẻ. Mẻ lịch sử cũng
+mở theo cùng luồng. Desktop rộng hiện bên phải; màn hình nhỏ hiện trên lưới hai
+máy mỗi hàng. Có nút đóng/Escape và mở bằng bàn phím. Bảng cập nhật nền không
+dựng lại ảnh, không suy đoán giờ bắt đầu khi mở giữa mẻ. Không tải được mẻ thì
+hiện lỗi/thử lại, không coi liên kết model chưa xác nhận là danh sách rỗng đã biết.
+
 Phản hồi thành công có `code: null` được chấp nhận; username có sẵn trong token
 không cần gọi preference lần nữa. Lỗi nêu đúng bước và mã/HTTP đã lọc, không
 hiển thị nguyên nội dung có thể chứa thông tin tài khoản. Mã sai/hết hạn có
