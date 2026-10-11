@@ -3,6 +3,7 @@ import {chromium} from 'playwright-core';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {mkdirSync} from 'node:fs';
+import {assertPrinterAlerts} from './printer-alerts-probe.mjs';
 const out=resolve('qa-results/printers');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
 const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1280,height:900}];
@@ -73,6 +74,7 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  const error=page.locator('.system-notification-popup[data-event-id="printer:machine-1:2"]');await error.waitFor({state:'visible'});assert.equal(await error.locator('.pm-popup-ignore').count(),0,'Errors cannot use ignore warning');assert.match(await error.locator('.pm-notice-severity').textContent(),/Lỗi/);
  await page.evaluate(()=>{showSystemNotificationPopup(PlatePrinterMonitor.events().find(e=>e.id==='printer:machine-0:1'),{sound:false});});assert.equal(await warning.count(),0,'Ignored warning does not re-popup');assert.equal(await page.evaluate(()=>operations.events.length),0,'Printer messages never mutate operations history');
  await page.evaluate(()=>document.querySelectorAll('.system-notification-popup').forEach(closeSystemNotificationPopup));await page.waitForTimeout(250);
+ await assertPrinterAlerts(page,profile,theme,seed);
  await page.locator('[data-pm-action="history"]').click();const historyRun=page.locator('.pm-run[data-run="run-0"]');assert.match(await historyRun.textContent(),/Có khoảng trống dữ liệu/);assert.match(await historyRun.textContent(),/Chưa ghép model/);
  assert.ok(await historyRun.locator('.pm-model-links').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Unmapped-model explanation wraps inside history on narrow screens');
  assert.ok(await historyRun.locator('.pm-model-links>small').evaluate(el=>{const s=getComputedStyle(el);return s.whiteSpace==='normal'&&el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1;}),'History explanation cannot be truncated by shared text styles');

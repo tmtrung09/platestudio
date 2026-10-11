@@ -287,8 +287,20 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
   tự đánh dấu đã đọc khi chỉ mở. Giữ lọc người nhận/quyền, lịch sử và âm thanh;
   click xem, đọc hết, Escape, click ngoài và tải nền phải giữ trạng thái đúng.
 - Pop-up sự kiện và toast phản hồi dùng chung vị trí/kiểu không viền, icon SVG,
-  không chồng nhau hay bảng thả. Tạm dừng tự đóng khi hover/focus; không sửa/xóa
+  không chồng nhau hay bảng thả. Ngoại lệ đã chốt ngày 2026-10-11: sự kiện máy in
+  xong/tạm dừng/thất bại/dừng in dùng pop-up giữa màn hình, không tự đóng, chỉ
+  xác nhận bằng “Đã biết” hoặc “Xem máy”. Escape, click ngoài, vuốt hay đọc hết
+  bảng thông báo không được làm mất thông báo cần xác nhận. Warning thông thường
+  và trạng thái bắt đầu/tiếp tục/kết nối vẫn dùng góc trên phải; mất kết nối không
+  tự chứng minh máy dừng. Tạm dừng tự đóng pop-up thường khi hover/focus; không sửa/xóa
   dữ liệu camera hay nghiệp vụ để thay giao diện. Guard: tools/notifications-qa.mjs.
+- Pop-up máy cần xác nhận phải xếp hàng, chống trùng ID, giữ qua reload theo
+  workspace + người dùng trên thiết bị; chờ form/dialog/camera đang mở, không
+  ghi đè nháp/focus. Có nhãn trạng thái, thời điểm sự kiện và nút xem đúng máy;
+  xác nhận chỉ là đã nhận thông báo, không xóa lỗi hay gửi lệnh máy, không tự QC
+  hoặc cộng tồn. Giữ riêng xác nhận với trạng thái đã đọc; có guard cho hàng chờ,
+  reload, Escape/click ngoài, form, quyền/workspace, mobile/desktop và hai theme
+  trong `tools/printer-alerts-probe.mjs` (chạy từ `printer-ui-qa.mjs`).
 - Header dùng chung phải chừa chỗ cho chuông mà không ép tên trang thành cột hẹp
   trên mobile. Guard sticky đo mốc ghim từ vị trí thực thay vì giả định chiều cao
   header; vẫn kiểm tra thanh thao tác nằm đúng mép vùng cuộn sau khi vượt mốc đó.

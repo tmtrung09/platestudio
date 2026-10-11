@@ -4016,6 +4016,16 @@ body.model-signal-open :is(.cam-fab,.fab-wrap){visibility:hidden!important;point
   min-width: 0;
   font-family:'Be Vietnam Pro',sans-serif;
 }
+#printer-required-alert{position:fixed;inset:0;z-index:3500;display:grid;place-items:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));background:rgba(0,0,0,.42);backdrop-filter:blur(6px);font-family:'Be Vietnam Pro',sans-serif}
+.pm-alert-card{width:min(440px,100%);max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;min-width:0;background:var(--s);color:var(--t);border:0;border-radius:22px;box-shadow:var(--sl);padding:22px;overflow-wrap:anywhere}
+.pm-alert-card header{display:flex;gap:12px;align-items:flex-start}.pm-alert-card header>div{min-width:0}
+.pm-alert-icon{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:14px;background:var(--acb);color:var(--ac)}.pm-alert-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#printer-required-alert[data-severity="success"] .pm-alert-icon{background:color-mix(in srgb,var(--gr) 12%,transparent);color:var(--gr)}
+#printer-required-alert[data-severity="error"] .pm-alert-icon{background:color-mix(in srgb,var(--re) 12%,transparent);color:var(--re)}
+.pm-alert-card h2{font-size:20px;line-height:1.35;margin:3px 0 0}.pm-alert-card small{display:block;color:var(--t2);font-size:12px;line-height:1.5;white-space:normal}
+.pm-alert-card p{line-height:1.55;font-size:14px;margin:16px 0 8px}.pm-alert-card .pm-alert-queue{margin-top:8px;color:var(--ac)}.pm-alert-card .pm-alert-status{color:var(--re);font-size:12px}.pm-alert-status:empty{display:none}
+.pm-alert-card footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;flex-wrap:wrap}.pm-alert-card footer .btn{min-height:44px;min-width:90px;border:0;border-radius:14px;margin:0}
+@media(max-width:400px){.pm-alert-card{padding:18px}.pm-alert-card h2{font-size:18px}}
 .pm-content{display:grid;gap:14px;align-items:start;min-width:0}
 .pm-list{min-width:0}
 .pm-live{container-name:printer-list;container-type:inline-size}
@@ -9104,6 +9114,7 @@ function appIcon(kind) {
     trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v5M14 11v5M9 6V3h6v3"/>',
     plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     check:'<polyline points="5 12 10 17 20 7"/>',
+    pause:'<path d="M8 5v14M16 5v14"/>',
     close:'<path d="m6 6 12 12M6 18 18 6"/>',
     bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
     volume:'<path d="m11 5-6 4H2v6h3l6 4zM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/>',
@@ -21718,7 +21729,7 @@ function enableSystemNotificationSwipe(card){
   });
 }
 function showSystemNotificationPopup(event,{sound=true}={}){
-  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE||!event?.id||!eventIsForCurrentUser(event)||window.PlatePrinterMonitor?.ignored(event))return;const host=ensureNotificationPopups();if([...host.children].some(card=>card.dataset.eventId===event.id))return;
+  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE||!event?.id||!eventIsForCurrentUser(event)||window.PlatePrinterMonitor?.ignored(event))return;if(window.PlatePrinterMonitor?.requiredAlert(event))return;const host=ensureNotificationPopups();if([...host.children].some(card=>card.dataset.eventId===event.id))return;
   const card=document.createElement('div');card.className='system-notification-popup notification-card';card.dataset.eventId=event.id;card.innerHTML=`<button type="button" class="system-popup-open"><span class="system-popup-icon" aria-hidden="true">${notificationIcon(event)}</span><span><b>${esc(event.title||'Hoạt động mới')}</b>${event.detail?`<small>${esc(event.detail)}</small>`:''}</span></button><button type="button" class="notification-dismiss" aria-label="Đóng thông báo">${appIcon('close')}</button>`;enableSystemNotificationSwipe(card);host.prepend(card);requestAnimationFrame(()=>card.classList.add('is-visible'));armNotificationDismiss(card,7000,closeSystemNotificationPopup);if(sound)playNotificationSound();
   if(event.type?.startsWith('printer_')){const label=document.createElement('span');label.className='pm-notice-severity pm-notice-'+event.severity;label.textContent=event.severity==='error'?'Lỗi':event.severity==='warning'?'Cảnh báo':'Thông tin';card.querySelector('.system-popup-open>span:last-child').append(label);if(event.severity==='warning'){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost pm-popup-ignore';button.textContent='Bỏ qua cảnh báo';button.onclick=click=>{click.stopPropagation();window.PlatePrinterMonitor?.ignoreEvent(event);closeSystemNotificationPopup(card);};card.append(button);}}
 }

@@ -35,6 +35,12 @@
     detailSelection = null,
     detailReturnScroll = 0;
   const detailRequests = new Set(), detailErrors = new Map();
+  const requiredTypes = new Set(['printer_finished','printer_paused','printer_failed','printer_stopped']);
+  let requiredAlerts=new Map(), alertOverlay=null, alertFocus=null, alertRelease=null, alertLockPending=false, alertBusy=false, alertStoreDirty=true;
+  const alertInert=new Map();
+  const alertPrefix=()=>`ps_printer_alerts_v1_${encodeURIComponent(scope)}:`;
+  const alertKey=id=>alertPrefix()+encodeURIComponent(id);
+  const needsConfirmation=event=>requiredTypes.has(event?.type);
   const icon = (name) => appIcon(name),
     e = (value) => esc(String(value ?? ""));
   const context = () => ({
@@ -131,6 +137,124 @@
     if (!response.ok || data.error){const error=new Error(data.error || "Chưa nhận được dữ liệu máy in.");error.status=response.status;throw error;}
     return data;
   }
+  // Each event has its own durable record: concurrent tabs cannot overwrite a
+  // different event or turn an acknowledgment back into a pending array entry.
+  function readAlert(id) {
+    try {return JSON.parse(localStorage.getItem(alertKey(id))||'null');} catch {return null;}
+  }
+  function syncRequiredAlerts() {
+    if(!scope||!alertStoreDirty)return;
+    try {
+      for(let i=0;i<localStorage.length;i++) {
+        const name=localStorage.key(i);if(!name?.startsWith(alertPrefix()))continue;
+        let row;try{row=JSON.parse(localStorage.getItem(name)||'null');}catch{continue;}
+        if(!row?.event?.id||!needsConfirmation(row.event)||name!==alertKey(row.event.id))continue;
+        if(row.acknowledged)requiredAlerts.delete(row.event.id);
+        else requiredAlerts.set(row.event.id,row);
+      }
+      alertStoreDirty=false;
+    }catch {/* Pending in-memory alerts are kept if local persistence is unavailable. */}
+  }
+  function enqueueRequiredAlert(event) {
+    const ctx=context();
+    if(!needsConfirmation(event))return false;
+    if(!ctx.allowed||scope!==ctx.workspace+':'+ctx.user||!eventIsForCurrentUser(event))return true;
+    const saved=readAlert(event.id);
+    if(saved?.acknowledged)return true;
+    if(!requiredAlerts.has(event.id)) {
+      const device=snapshot.devices[event.printerId||event.deviceId];
+      const issues=event.type!=='printer_finished'&&device?.run?.id===event.jobKey?(device.issues||[]):[];
+      const row=saved||{event:{...event},issues,acknowledged:false};
+      row.durable=true;
+      try {localStorage.setItem(alertKey(event.id),JSON.stringify(row));}
+      catch {row.durable=false;}
+      requiredAlerts.set(event.id,row);
+    }
+    pumpRequiredAlerts();return true;
+  }
+  function closeRequiredAlert({restoreFocus=true}={}) {
+    alertOverlay?.remove();alertOverlay=null;
+    alertInert.forEach((value,node)=>{node.inert=value;});alertInert.clear();
+    if(restoreFocus&&alertFocus?.isConnected)alertFocus.focus({preventScroll:true});
+    alertFocus=null;
+    const release=alertRelease;alertRelease=null;release?.();
+  }
+  function alertBlocked() {
+    return [...document.querySelectorAll('.dlg-ov,[aria-modal="true"],.auth-ov,#ov-order-form,#ov-project-detail,#ov-batch-report,#confirm-ov,.cloud-loading-ov,.guide-tour-ov')].some(node=>{
+      if(node.closest('#printer-required-alert'))return false;
+      const style=getComputedStyle(node);
+      return node.getClientRects().length&&style.visibility!=='hidden'&&style.opacity!=='0'&&node.getAttribute('aria-hidden')!=='true';
+    });
+  }
+  async function openEventMachine(event) {
+    if(!context().allowed)return false;
+    const deviceId=event.printerId||event.deviceId;
+    if(snapshot.devices[deviceId]) {
+      closeSystemNotifications(false);query='';view='live';goPage('printer-monitor');selectDetail('machine',deviceId);return true;
+    }
+    const gen=generation;
+    if(event.jobKey) {
+      if(!historyRows.some(row=>row.id===event.jobKey))await loadDetailRun(event.jobKey);
+      if(gen!==generation||!context().allowed)return false;
+      if(historyRows.some(row=>row.id===event.jobKey)) {
+        closeSystemNotifications(false);query='';view='history';goPage('printer-monitor');selectDetail('run',event.jobKey);return true;
+      }
+    }
+    return false;
+  }
+  async function acknowledgeRequiredAlert(viewMachine=false) {
+    if(!alertOverlay||alertBusy)return;
+    const id=alertOverlay.dataset.eventId,row=requiredAlerts.get(id),gen=generation;
+    if(!row)return;
+    const status=alertOverlay.querySelector('.pm-alert-status');
+    alertBusy=true;alertOverlay.querySelectorAll('button').forEach(button=>button.disabled=true);
+    try {
+      if(viewMachine&&!await openEventMachine(row.event)) {
+        if(gen===generation)setText(status,'Chưa mở được đúng máy hoặc mẻ. Thử lại hoặc chọn Đã biết.');return;
+      }
+      if(gen!==generation)return;
+      try {localStorage.setItem(alertKey(id),JSON.stringify({event:{id,type:row.event.type},acknowledged:true,acknowledgedAt:new Date().toISOString()}));}
+      catch {setText(status,'Chưa lưu được xác nhận trên thiết bị. Hãy thử lại; thông báo vẫn được giữ.');return;}
+      requiredAlerts.delete(id);
+      readIds[id]=true;
+      const event=events.find(event=>event.id===id);if(event)event.readBy=[notificationUserKey()];
+      save();closeRequiredAlert({restoreFocus:!viewMachine});ensureSystemNotificationButton();
+      if(viewMachine)document.querySelector('.pm-detail h2')?.focus({preventScroll:true});
+    }finally {
+      alertBusy=false;
+      if(gen===generation)alertOverlay?.querySelectorAll('button').forEach(button=>button.disabled=false);
+    }
+  }
+  function showRequiredAlert(row) {
+    const event=row.event;
+    closeSystemNotifications(false);
+    alertFocus=document.activeElement;
+    const overlay=document.createElement('div');overlay.id='printer-required-alert';overlay.dataset.eventId=event.id;
+    overlay.innerHTML=`<section class="pm-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="pm-alert-title" aria-describedby="pm-alert-detail pm-alert-time"><header><span class="pm-alert-icon" aria-hidden="true">${icon(event.type==='printer_finished'?'check':event.type==='printer_failed'?'warning':'pause')}</span><div><small class="pm-alert-kind">${event.type==='printer_finished'?'Hoàn thành':event.type==='printer_failed'?'Lỗi':'Máy đã ngừng in'}</small><h2 id="pm-alert-title">${e(event.title)}</h2></div></header><p id="pm-alert-detail">${e(event.detail||'Trạng thái do máy in báo.')}</p><small id="pm-alert-time">${e(date(event.createdAt))}</small><div class="pm-alert-issues">${(row.issues||[]).slice(0,4).map(issue=>`<p><span class="pm-notice-severity pm-notice-${e(issue.severity)}">${issue.severity==='error'?'Lỗi':issue.severity==='warning'?'Cảnh báo':'Thông tin'}</span> ${e(issue.text||issue.original||'Máy đang báo mã')} <small>${e(issue.code||'')}</small></p>`).join('')}${(row.issues||[]).length>4?'<small>Xem máy để đọc tất cả mã.</small>':''}</div><small class="pm-alert-queue"></small><p class="pm-alert-status" role="status"></p><footer><button type="button" class="btn btn-ghost" data-alert-ack>Đã biết</button><button type="button" class="btn btn-ac" data-alert-view>Xem máy</button></footer></section>`;
+    overlay.dataset.severity=event.type==='printer_finished'?'success':event.type==='printer_failed'?'error':'paused';
+    overlay.querySelector('[data-alert-ack]').onclick=()=>void acknowledgeRequiredAlert();
+    overlay.querySelector('[data-alert-view]').onclick=()=>void acknowledgeRequiredAlert(true);
+    document.body.append(overlay);alertOverlay=overlay;
+    for(const node of document.body.children)if(node!==overlay){alertInert.set(node,node.inert);node.inert=true;}
+    if(row.durable===false)setText(overlay.querySelector('.pm-alert-status'),'Chưa lưu được thông báo trên thiết bị. Đừng tải lại trang trước khi xác nhận.');
+    overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});playNotificationSound();
+  }
+  function pumpRequiredAlerts() {
+    const ctx=context(),valid=ctx.allowed&&scope===ctx.workspace+':'+ctx.user;
+    if(!valid||document.hidden){closeRequiredAlert();return;}
+    syncRequiredAlerts();
+    if(alertOverlay&&!requiredAlerts.has(alertOverlay.dataset.eventId))closeRequiredAlert();
+    if(alertOverlay) {setText(alertOverlay.querySelector('.pm-alert-queue'),requiredAlerts.size>1?`${requiredAlerts.size} thông báo · hiển thị lần lượt`:'');return;}
+    if(alertBusy||alertLockPending||!requiredAlerts.size||alertBlocked())return;
+    const present=()=>{if(context().allowed&&!document.hidden&&!alertBlocked()){syncRequiredAlerts();const row=[...requiredAlerts.values()].sort((a,b)=>Date.parse(a.event.createdAt)-Date.parse(b.event.createdAt))[0];if(row)showRequiredAlert(row);}};
+    if(!navigator.locks){present();return;}
+    alertLockPending=true;const gen=generation;
+    void navigator.locks.request('ps-printer-alert-presenter:'+scope,{ifAvailable:true},async lock=>{
+      if(!lock||gen!==generation)return;
+      let release;const held=new Promise(resolve=>release=resolve);alertRelease=release;
+      present();if(!alertOverlay){alertRelease=null;release();}await held;
+    }).catch(()=>{}).finally(()=>{if(gen===generation)alertLockPending=false;});
+  }
   function receive(data, { initial = false } = {}) {
     connected = !!data.connected;
     snapshot = data.state || snapshot;
@@ -149,6 +273,7 @@
       known.set(event.id, event);
       cursor = Math.max(cursor, Number(row.seq));
       if (primed && !initial && !isIgnored(event.printerId, event)) {
+        if(needsConfirmation(event))enqueueRequiredAlert(event);
         if (navigator.locks)
           void navigator.locks.request("ps-printer-notify:" + scope, () =>
             announceSystemEvent(event),
@@ -176,6 +301,7 @@
     ensureSystemNotificationButton();
     render();
     renderPin();
+    pumpRequiredAlerts();
   }
   async function poll({ initial = false, force = false } = {}) {
     const cameraPending=typeof batchCameraHasPending==='function'&&batchCameraHasPending();
@@ -275,6 +401,7 @@
     }
   }
   function reset(next) {
+    closeRequiredAlert();requiredAlerts=new Map();alertLockPending=false;alertBusy=false;alertStoreDirty=true;
     generation++;
     abort?.abort();
     abort = null;
@@ -314,6 +441,7 @@
     render();
     renderPin();
     if (next) void poll({ initial: true, force: true });
+    pumpRequiredAlerts();
   }
   function tick() {
     const ctx = context(),
@@ -322,6 +450,7 @@
     else if (next) void poll();
     renderPin();
     if (curPage === "printer-monitor") render();
+    pumpRequiredAlerts();
   }
   function ignore(device, issue) {
     if (issue.severity !== "warning") return;
@@ -949,7 +1078,9 @@
     ov.querySelector('[type="search"]').focus();
   }
   window.PlatePrinterMonitor = {
-    render,
+    render:()=>{render();pumpRequiredAlerts();},
+    requiredAlert: enqueueRequiredAlert,
+    openEvent: openEventMachine,
     allowClose: (id) => {
       const ov = document.getElementById(id);
       if (id !== "dlg-mv" || !modal || ov?.firstElementChild !== modal.node)
@@ -1010,6 +1141,7 @@
     true,
   );
   window.addEventListener("storage", (event) => {
+    if(scope&&event.key?.startsWith(alertPrefix())){alertStoreDirty=true;pumpRequiredAlerts();}
     if (event.key === key()) {
       try {
         const prefs = JSON.parse(event.newValue || "{}");
@@ -1035,10 +1167,23 @@
     render();
   });
   document.addEventListener("visibilitychange", () => {
+    alertStoreDirty=true;
     if (!document.hidden) {
       lastPoll = 0;
       tick();
     }
   });
-  window.addEventListener("pagehide", () => abort?.abort());
+  window.addEventListener("pagehide", () => {abort?.abort();closeRequiredAlert({restoreFocus:false});});
+  // Window capture precedes the libraries' document-level selection shortcuts.
+  // Native Enter/Space still activate buttons, but Delete/Escape never act behind this modal.
+  window.addEventListener('keydown',event=>{
+    if(!alertOverlay)return;
+    if(event.key==='Escape'||event.key==='Delete')event.preventDefault();
+    if(event.key==='Tab'){
+      const controls=[...alertOverlay.querySelectorAll('button:not(:disabled)')],first=controls[0],last=controls.at(-1);
+      if(!alertOverlay.contains(document.activeElement)||event.shiftKey&&document.activeElement===first||!event.shiftKey&&document.activeElement===last){event.preventDefault();(event.shiftKey?last:first)?.focus();}
+    }
+    event.stopImmediatePropagation();
+  },true);
+  document.addEventListener('focusin',event=>{if(alertOverlay&&!alertOverlay.contains(event.target))alertOverlay.querySelector('button:not(:disabled)')?.focus({preventScroll:true});});
 })();

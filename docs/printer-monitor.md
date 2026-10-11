@@ -21,8 +21,16 @@ không cần gọi preference lần nữa. Lỗi nêu đúng bước và mã/HTT
 hiển thị nguyên nội dung có thể chứa thông tin tài khoản. Mã sai/hết hạn có
 thông báo riêng; lỗi giữ form và phiên cũ. Không gửi mã mới đồng thời với xác nhận.
 
-Thông báo bắt đầu/tạm dừng/tiếp tục/in xong/thất bại/mất/kết nối lại dùng bảng
-thả và pop-up hiện có. Cảnh báo, lỗi, thông tin có nhãn riêng. “Bỏ qua cảnh báo”
+Thông báo in xong/tạm dừng/dừng in/thất bại hiện giữa màn hình và chờ “Đã biết”
+hoặc “Xem máy”; không tự tắt, không đóng bằng Escape/click ngoài. Nhiều sự kiện
+xếp hàng, lưu riêng trên thiết bị theo workspace/người dùng, giữ qua reload.
+Đang mở form/camera thì chờ đóng form để không mất nháp; “Đọc hết” không thay
+thế xác nhận. “Xem máy” mở đúng máy (hoặc đúng mẻ lịch sử nếu máy không còn).
+Xác nhận không gửi lệnh máy, không tự QC/cộng tồn. Nếu bộ nhớ thiết bị không ghi
+được thì có cảnh báo; không hứa giữ qua reload trong tình huống đó.
+Thông báo bắt đầu/tiếp tục/mất/kết nối lại và warning vẫn dùng pop-up góc phải,
+bảng thả vẫn giữ lịch sử. Mất kết nối không chứng minh máy ngừng in.
+Cảnh báo, lỗi, thông tin có nhãn riêng. “Bỏ qua cảnh báo”
 chỉ áp dụng warning theo máy + mã + đợt xuất hiện, giữ lịch sử và có Hiện lại.
 Trạng thái máy không bị biến thành lỗi chỉ vì có warning; không có lệnh xóa
 cảnh báo hoặc điều khiển pause/resume/tốc độ. Quyền điều khiển Bambu của
