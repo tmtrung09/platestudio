@@ -200,6 +200,23 @@ Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng
 
 ## Định nghĩa hoàn tất
 
+### Sắp plate không phụ thuộc thư viện model (yêu cầu ngày 2026-10-11)
+
+- Cho phép cùng plate có dòng model/part và dòng nhập tay cho đồ mới, decor hoặc
+  việc in khác; không bắt tạo model giả hay ghép nhầm vào thư viện. Dòng nhập tay
+  có tên, số lượng, ghi chú, màu tùy chọn và file cần in từ thiết bị.
+- File là chỉ định đầu vào, không tự slice/phân tích hay gửi lệnh máy. Giữ file
+  gốc trong IndexedDB trước khi cho thêm/lưu; upload riêng tư theo xưởng, có trạng
+  thái thật, thử lại và tự tiếp tục khi có mạng/mở lại. Không đặt blob vào settings
+  hoặc xóa file lịch sử khi chỉ gỡ tham chiếu. Giới hạn hiện tại 50 MB/file; nhận
+  3MF, STL, OBJ, G-code, BGCODE, STEP/STP, ZIP; lỗi/quota không báo thành công.
+- Giữ nháp nhập tay và file qua đóng/mở/reload, giữ DOM/focus khi thêm model hoặc
+  cập nhật nền. Plate đổi ở phiên khác phải giữ nháp và chặn ghi đè mù. Tên món
+  không phải định danh; các món cùng tên có ID riêng, không tự gộp.
+- Đối chiếu mẻ phải giữ tên/ghi chú/file và kết quả đạt/lỗi/chưa in của mục nhập
+  tay; không tự cộng tồn hay tiến độ Order/model, không suy model từ tên file.
+  Guard: `tools/plate-manual-qa.mjs`, `tools/plate-files-sql-qa.mjs` và QA plate.
+
 ### Demo tích hợp trạng thái máy in lên web (yêu cầu ngày 2026-10-10)
 
 - Người dùng yêu cầu kế thừa flow/yêu cầu app Windows PrintPeek, cho xem demo,
