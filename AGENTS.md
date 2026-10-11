@@ -38,6 +38,13 @@ UX hoặc yêu cầu có vẻ sẽ lặp lại:
 4. Cùng một loại công việc dùng chung danh sách, tìm kiếm và sắp xếp. Ưu tiên danh
    mục/bộ lọc/nhãn (ví dụ “Ghép”) thay vì tạo tab hoặc màn hình riêng chỉ vì dữ liệu
    có thêm thuộc tính. Phải có lý do về luồng công việc nếu cần tách.
+5. Phản hồi ngày 2026-10-11 về chọn màu: không dùng select dài chỉ có tên cho màu
+   nhựa. Nhập tay, khay nhựa, đối chiếu/khai báo mẻ, AI và đổi màu theo đơn dùng
+   primitive tìm theo tên/hãng/chất liệu/mã không dấu, có mẫu màu, số kết quả và
+   không khớp; giữ Chưa chỉ định và không tự chọn. Menu không bị vùng cuộn cắt,
+   hỗ trợ Escape/bàn phím/chạm 44px và giữ nháp/focus/ảnh. Native select còn lại
+   phải có color-scheme và nền/chữ option theo theme, không trắng trên trắng.
+   Guard: `tools/filament-picker-qa.mjs` và QA plate/workflow.
 
 ### Tương tác và trạng thái
 

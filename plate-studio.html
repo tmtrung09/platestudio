@@ -3144,6 +3144,32 @@ html body .pp-quantity-control :is(button,input):is(:focus,:focus-visible){outli
 @media(max-width:700px){#dlg-mv .pp-edit-dlg{width:100%;max-width:100%;height:calc(100dvh - 24px);max-height:100%;border-radius:22px!important}.pp-edit-head{padding:16px}.pp-edit-head h2{font-size:21px}.pp-edit-body{display:block}.pp-picker{padding:16px}.pp-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-height:240px}.pp-edit-workspace{padding:16px;border-left:0;border-top:1px solid var(--b)}.pp-edit-footer{gap:8px;padding:12px 14px max(12px,env(safe-area-inset-bottom))}.pp-edit-footer .btn{padding-inline:14px}.pp-edit-total small{display:none}.pp-selection-empty{padding:14px}.pp-selection-empty>span{display:none}.pp-selection-empty b{font-size:13px}.pp-remove{width:44px;height:44px}.pp-queue{margin-top:16px;padding-top:14px}}
 @media(max-width:360px){.pp-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pp-edit-total b{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.pp-picker-card{transition:none}}
+/* Native fallbacks and the shared searchable filament-picker family. */
+html:not([data-theme="light"]) select{color-scheme:dark}
+html[data-theme="light"] select{color-scheme:light}
+select option,select optgroup{background-color:var(--s)!important;color:var(--t)!important}
+.filament-picker{min-width:0;text-transform:none;letter-spacing:0}
+.filament-picker>select{display:none!important}
+.filament-picker .br-color-picker-toggle{min-height:44px;font-size:14px;letter-spacing:0;text-transform:none;box-shadow:none}
+.filament-picker .br-color-picker-toggle>svg{width:16px;height:16px;flex:0 0 16px;margin-left:auto}
+.filament-picker svg,.filament-menu svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.filament-picker .br-color-picker-toggle:focus-visible,.filament-menu button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.filament-picker .br-color-picker-toggle:disabled{opacity:.55;cursor:not-allowed}
+.filament-menu{position:fixed!important;z-index:12000!important;right:auto!important;max-height:none!important;box-sizing:border-box;color:var(--t);text-transform:none;letter-spacing:0}
+.filament-menu[hidden]{display:none!important}.filament-menu:not([hidden]){display:block!important}
+.filament-picker-head{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:4px}
+.filament-menu .br-color-picker-search{min-width:0;padding:0;border:0}
+.filament-menu .br-color-picker-search svg{width:16px;height:16px;flex:0 0 16px}
+.filament-menu .br-color-picker-search input{box-sizing:border-box;min-width:0!important;width:100%!important;min-height:44px!important;margin:0!important;padding:8px!important;font:inherit!important;font-size:16px!important;color:var(--t)!important;background:var(--s2)!important}
+.filament-menu .br-color-picker-search input::placeholder{color:var(--t2);opacity:1}
+.filament-picker-count{display:block;padding:6px 8px;color:var(--t2);font-size:12px;line-height:1.5}
+.filament-menu .br-color-picker-options{padding:2px;overscroll-behavior:contain}
+.filament-menu .br-color-picker-option{min-height:44px;color:var(--t);box-sizing:border-box;font-size:14px}
+.filament-menu .br-color-picker-option-copy b,.filament-menu .br-color-picker-option-copy small{white-space:normal;overflow-wrap:anywhere;font-size:13px;color:var(--t)}
+.filament-menu .br-color-picker-option-copy small{font-size:11px;color:var(--t2)}
+.filament-menu .br-color-picker-option>svg{width:16px;height:16px;flex:0 0 16px;color:var(--t)}
+.filament-menu .br-color-picker-empty{color:var(--t2);font-size:13px}
+.filament-picker-more{min-height:44px;width:100%;border:0;border-radius:10px;background:var(--s2);color:var(--t);font:inherit;font-size:13px;cursor:pointer}
 .pp-demand-card-action{width:100%;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.pp-demand-card-action:hover,.pp-demand-card-action:focus-visible{transform:translateY(-2px);background:color-mix(in srgb,var(--pu) 13%,var(--s3));box-shadow:0 12px 24px color-mix(in srgb,var(--pu) 18%,transparent);outline:2px solid color-mix(in srgb,var(--pu) 50%,transparent);outline-offset:2px}.pp-demand-cta{display:block;margin-top:8px;color:var(--pu2,var(--pu));font-size:10px;font-weight:850}.night-color-detail-ov{position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;padding:20px;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(12px)}.night-color-detail{width:min(740px,100%);max-height:min(82vh,760px);overflow:auto;padding:18px;border-radius:24px;background:var(--s2);color:var(--t);box-shadow:0 24px 80px color-mix(in srgb,#000 58%,transparent)}.night-color-detail header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.night-color-detail header>div{display:flex;align-items:center;gap:10px;min-width:0}.night-color-detail header .pp-demand-dot{width:18px;height:18px;flex-basis:18px}.night-color-detail header small{display:block;color:var(--t3);font-size:10px;font-weight:850;letter-spacing:.05em}.night-color-detail h3{margin:2px 0 0;font-size:20px}.pp-demand-detail-summary{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 12px}.pp-demand-detail-summary>*{padding:7px 10px;border-radius:999px;background:var(--s3);font-size:12px}.pp-demand-detail-summary b{background:color-mix(in srgb,var(--pu) 18%,var(--s3));color:var(--t)}.pp-demand-detail-mount{padding:12px;border-radius:16px;background:var(--s3)}.pp-demand-detail-mount>b{display:block;margin-bottom:8px;font-size:12px}.pp-demand-detail-slots{display:flex;gap:7px;flex-wrap:wrap}.pp-demand-detail-slots span{padding:6px 8px;border-radius:10px;background:var(--s2);color:var(--t2);font-size:11px}.pp-demand-detail-slots .is-confirmed{background:color-mix(in srgb,#47d892 16%,var(--s2));color:#61dba0}.pp-demand-detail-muted{display:block;color:var(--t3);font-size:11px;line-height:1.45}.pp-demand-detail-list{display:grid;gap:7px;margin-top:14px}.pp-demand-detail-list>div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}.pp-demand-detail-list>div b{font-size:13px}.pp-demand-detail-list>div small{color:var(--t3);font-size:10px}.pp-demand-detail-row{display:flex;align-items:center;gap:10px;min-width:0;padding:9px;border-radius:14px;background:var(--s3)}.pp-demand-detail-row img,.pp-demand-detail-icon{width:44px;height:44px;flex:0 0 44px;border-radius:11px;object-fit:cover;background:var(--s2)}.pp-demand-detail-icon{display:grid;place-items:center;color:var(--t3)}.pp-demand-detail-copy{min-width:0;flex:1}.pp-demand-detail-copy b,.pp-demand-detail-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp-demand-detail-copy b{font-size:12px}.pp-demand-detail-copy small{margin-top:3px;color:var(--t2);font-size:11px}.pp-demand-detail-copy em{display:inline-block;margin-top:4px;color:var(--t3);font-size:10px;font-style:normal}.pp-demand-detail-row strong{font-size:14px;white-space:nowrap}.night-color-detail footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}@media(max-width:560px){.night-color-detail-ov{padding:12px}.night-color-detail{max-height:88vh;padding:15px;border-radius:20px}.night-color-detail h3{font-size:17px}.pp-demand-detail-row{align-items:flex-start}.pp-demand-detail-row strong{padding-top:5px}}
 /* Hộp duyệt part trước khi xếp máy: mỗi thẻ ưu tiên đọc đủ Model → Part → Màu → Số lượng. */
 .pp-suggest-dlg{width:min(1120px,calc(100vw - 32px));max-width:1120px}.pp-suggest-summary{align-items:end}.pp-suggest-summary .card{flex:1;min-width:260px;padding:11px 13px}.pp-suggest-summary .card b,.pp-suggest-summary .card small{display:block}.pp-suggest-summary .card small{margin-top:4px;color:var(--t2);line-height:1.4}.pp-suggest-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-height:min(54vh,570px);overflow:auto;padding:3px}.pp-suggest-row{display:grid;grid-template-columns:28px 64px minmax(0,1fr);grid-template-areas:"check thumb copy" "qty qty qty";align-items:start;gap:10px;min-width:0;padding:13px!important;border-radius:18px}.pp-suggest-row.is-companion{background:color-mix(in srgb,var(--pu) 9%,var(--s3))}.pp-suggest-check{grid-area:check;display:grid;place-items:center;min-height:58px;margin:0!important}.pp-suggest-check input{width:18px;height:18px;accent-color:var(--pu)}.pp-suggest-row .pp-suggest-thumb{grid-area:thumb;width:64px;height:64px;border-radius:14px}.pp-suggest-copy{grid-area:copy;display:grid;gap:4px;min-width:0;padding-top:1px}.pp-suggest-copy b{display:-webkit-box;overflow:hidden;font-size:14px;line-height:1.24;-webkit-box-orient:vertical;-webkit-line-clamp:2}.pp-suggest-copy strong{overflow:hidden;color:var(--t2);font-size:12px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}.pp-suggest-copy small{overflow:hidden;color:var(--t3);font-size:11px;text-overflow:ellipsis;white-space:nowrap}.pp-suggest-copy em{justify-self:start;margin-top:1px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--pu) 17%,var(--s2));color:var(--pu2);font-size:9px;font-style:normal;font-weight:850}.pp-suggest-color{display:flex;align-items:center;gap:6px}.pp-suggest-qty{grid-area:qty;display:flex!important;align-items:center;justify-content:space-between;gap:10px;min-width:0;margin:4px 0 0!important;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--t) 9%,transparent);color:var(--t3);font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase}.pp-suggest-qty input{width:96px!important;min-width:0;margin:0!important;padding:8px 10px!important;border:0!important;border-radius:11px!important;background:var(--s2)!important;color:var(--t)!important;font:inherit!important;font-size:14px!important;font-weight:850!important;text-align:center}.pp-suggest-list::-webkit-scrollbar{height:10px;width:10px}@media(max-width:720px){.pp-suggest-dlg{width:calc(100vw - 18px);max-width:none}.pp-suggest-summary{display:grid!important;grid-template-columns:1fr;gap:8px!important}.pp-suggest-summary label,.pp-suggest-summary label input{width:100%}.pp-suggest-summary .card{min-width:0}.pp-suggest-list{grid-template-columns:1fr;max-height:48vh}.pp-suggest-row{padding:11px!important}}
@@ -9142,6 +9168,7 @@ function appIcon(kind) {
     'arrow-down':'<path d="M12 5v14m-6-6 6 6 6-6"/>',
     'chevron-left':'<path d="m15 5-7 7 7 7"/>',
     'chevron-right':'<path d="m9 5 7 7-7 7"/>',
+    chevron:'<path d="m6 9 6 6 6-6"/>',
     copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5V3H3v12h2"/>',
     close:'<path d="m6 6 12 12M6 18 18 6"/>',
     bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
@@ -12595,6 +12622,7 @@ function renderAiBatchReview(){
   const ov=document.getElementById('dlg-mv');
   ov.innerHTML=`<div class="dlg wide" onclick="event.stopPropagation()"><div class="dlg-title">✦ Duyệt bản nháp Gemini</div><div style="color:var(--t3);font-size:12px;line-height:1.5;margin:-2px 0 12px">AI chỉ đề xuất. Em chọn từng dòng, chỉnh Model/Part/Số lượng; hệ thống sẽ tự đối chiếu phần còn thiếu trong Order trước khi ghi nhận.</div><div class="field"><label>Màu nhựa cho mẻ này</label><select onchange="setAiDraftFilament(this.value)">${colorOptions}</select></div><div class="br-section-title">Các dòng AI nhận diện</div>${rows}<div class="dlg-actions"><button class="btn btn-ghost" onclick="brAiDraft=null;viewBatchReport('${report.id}')">Hủy</button><button class="btn btn-ac" onclick="applyAiBatchDraft()">✓ Áp dụng các dòng đã chọn</button></div></div>`;
   ov.style.display='flex'; ov.onclick=e=>{if(e.target===ov){brAiDraft=null;closeDialog('dlg-mv');}};
+  window.FilamentPickers?.init(ov);
 }
 function applyAiBatchColor(reportId,filamentId){
   const r=batchReports.find(x=>x.id===reportId); if(!r || !getFil(filamentId)) return;
@@ -14345,29 +14373,13 @@ function batchManualPartPickerHtml(index,model,item){
 }
 function toggleBatchManualPartPicker(index){
   document.querySelectorAll('.br-part-picker.open').forEach(node=>{if(node.id!==`br-part-picker-${index}`)node.classList.remove('open');});
-  document.querySelectorAll('.br-color-picker.open').forEach(node=>node.classList.remove('open'));
+  window.FilamentPickers?.close(false);
   const picker=document.getElementById(`br-part-picker-${index}`);if(!picker)return;const open=picker.classList.toggle('open');picker.querySelector('.br-part-picker-toggle')?.setAttribute('aria-expanded',String(open));
 }
 function pickBatchManualPart(index,partId){setBatchManualItemPart(index,partId);renderBatchManual();}
 function batchManualColorPickerHtml(index,filamentId){
-  const selected=getFil(filamentId), label=selected?`${selected.brand?selected.brand+' · ':''}${selected.name}`:'Chọn màu đã in';
-  return `<div class="br-color-picker" id="br-color-picker-${index}"><button type="button" class="br-color-picker-toggle" aria-haspopup="listbox" aria-expanded="false" onclick="toggleBatchManualColorPicker(${index})"><span class="br-color-picker-dot" style="background:${selected?.hex||'repeating-conic-gradient(#9b9b9b 0 25%,#ddd 0 50%)'}"></span><span>${esc(label)}</span><span class="br-color-picker-chevron">⌄</span></button><div class="br-color-picker-menu"><label class="br-color-picker-search"><span aria-hidden="true">⌕</span><input id="br-color-search-${index}" type="search" autocomplete="off" placeholder="Tìm tên, hãng hoặc mã màu…" oninput="filterBatchManualColorPicker(${index},this.value)" onkeydown="if(event.key==='Escape')closeBatchManualColorPicker(${index})"/></label><div id="br-color-options-${index}" class="br-color-picker-options" role="listbox">${batchManualColorPickerOptionsHtml(index,'')}</div></div></div>`;
+  return `<select class="br-color-native" aria-label="Màu đã in dòng ${index+1}" onchange="setBatchManualItemFilament(${index},this.value)"><option value="">Chọn màu đã in</option>${fils.map(f=>`<option value="${esc(f.id)}" ${f.id===filamentId?'selected':''}>${esc([f.brand,f.name].filter(Boolean).join(' · '))}</option>`).join('')}</select>`;
 }
-function batchManualColorPickerOptionsHtml(index,query){
-  const selectedId=brManualItems[index]?.filamentId||'', term=String(query||'').trim();
-  const list=fils.filter(f=>!term||fuzzyTextMatch(`${f.brand||''} ${f.name||''} ${f.hex||''} ${f.mat||''}`,term)).sort((a,b)=>(a.id===selectedId?0:1)-(b.id===selectedId?0:1)||`${a.brand||''} ${a.name||''}`.localeCompare(`${b.brand||''} ${b.name||''}`,'vi')).slice(0,80);
-  const clear=selectedId?`<button type="button" class="br-color-picker-option" onclick="pickBatchManualColor(${index},'')"><span class="br-color-picker-dot" style="background:repeating-conic-gradient(#9b9b9b 0 25%,#ddd 0 50%)"></span><span class="br-color-picker-option-copy"><b>Bỏ chọn màu</b><small>Chọn lại màu thực tế đã in</small></span></button>`:'';
-  return clear+(list.length?list.map(f=>`<button type="button" class="br-color-picker-option ${f.id===selectedId?'selected':''}" role="option" aria-selected="${f.id===selectedId}" onclick="pickBatchManualColor(${index},'${esc(f.id)}')"><span class="br-color-picker-dot" style="background:${esc(f.hex||'#aaa')}"></span><span class="br-color-picker-option-copy"><b>${esc(f.brand?f.brand+' · ':'')}${esc(f.name)}</b><small>${esc([f.mat,f.hex].filter(Boolean).join(' · ')||'Màu nhựa')}</small></span>${f.id===selectedId?'<em>✓</em>':''}</button>`).join(''):'<div class="br-color-picker-empty">Không tìm thấy màu phù hợp</div>');
-}
-function toggleBatchManualColorPicker(index){
-  document.querySelectorAll('.br-color-picker.open').forEach(node=>{if(node.id!==`br-color-picker-${index}`)node.classList.remove('open');});
-  document.querySelectorAll('.br-part-picker.open').forEach(node=>node.classList.remove('open'));
-  const picker=document.getElementById(`br-color-picker-${index}`); if(!picker)return;
-  const open=picker.classList.toggle('open'); picker.querySelector('.br-color-picker-toggle')?.setAttribute('aria-expanded',String(open));
-  if(open) requestAnimationFrame(()=>picker.querySelector('input')?.focus());
-}
-function closeBatchManualColorPicker(index){const picker=document.getElementById(`br-color-picker-${index}`);if(picker){picker.classList.remove('open');picker.querySelector('.br-color-picker-toggle')?.setAttribute('aria-expanded','false');}}
-function filterBatchManualColorPicker(index,query){const el=document.getElementById(`br-color-options-${index}`);if(el)el.innerHTML=batchManualColorPickerOptionsHtml(index,query);}
 function pickBatchManualColor(index,filamentId){setBatchManualItemFilament(index,filamentId);}
 function setBatchManualItemFilament(index,filamentId){
   const item=brManualItems[index]; if(!item)return;
@@ -14376,7 +14388,7 @@ function setBatchManualItemFilament(index,filamentId){
 }
 document.addEventListener('pointerdown',event=>{
   if(!event.target.closest?.('.br-part-picker'))document.querySelectorAll('.br-part-picker.open').forEach(node=>node.classList.remove('open'));
-  if(!event.target.closest?.('.br-color-picker'))document.querySelectorAll('.br-color-picker.open').forEach(node=>node.classList.remove('open'));
+  if(!event.target.closest?.('.br-color-picker,.filament-menu'))document.querySelectorAll('.br-color-picker.open').forEach(node=>node.classList.remove('open'));
 },true);
 function newManualEntry(source={}) {
   if(source.kind==='manual')return JSON.parse(JSON.stringify(source));
@@ -14518,6 +14530,7 @@ function renderBatchManual(){
   const compactTools=canManage?`<div class="br-manual-tools"><div class="br-manual-tool"><span class="br-dot" style="background:${f?.hex||'#ccc'}"></span><div class="br-manual-tool-copy"><b>${esc(colorLabel)}</b><small>Dùng cho Part không có màu riêng</small></div><button class="btn btn-ghost btn-xs br-manual-color-change" onclick="brView='color';renderBatchReport()">Áp dụng chung</button></div>${renderBatchMachinePlanPanel(r,{compact:true})}${renderBatchAiCard(r,{compact:true})}</div>`:`<div class="access-note" style="margin:0 0 12px">📋 Khai báo Model, Part, màu thực tế và số lượng.</div>`;
   const handoverControl=`<label class="br-workshop-handover" title="Đưa mẻ đã gỡ sang luồng gia công"><input id="br-handover-now" type="checkbox" ${r.handoverAfterPrint?'checked':''} onchange="setBatchWorkshopHandoverIntent(this.checked)"/><span><b>Đưa mẻ vào luồng Gia công</b><small>Hiện ngay tại trang Gia công.</small></span></label>`;
   document.getElementById('br-content').innerHTML=`<div class="br-manual-layout"><div class="br-manual-visual"><img src="${esc(r.image)}" alt="Ảnh mẻ in"/></div><div class="br-manual-detail">${compactTools}<div class="field" style="margin:0 0 12px;position:relative"><label>Thêm model hoặc part</label><input id="br-manual-quick-search" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="Tìm model, part hoặc màu…" oninput="searchManualBatchSources(this.value)"/><div id="br-manual-quick-results"></div></div><div class="br-section-title">Khai báo trong mẻ</div>${rows}${handoverControl}<div class="br-actions">${canManage?`<button class="btn btn-danger" onclick="deleteCurrentBatchManualReport()">🗑 Xoá báo cáo</button>`:''}<button class="btn btn-ghost" onclick="deferBatchReport()">Lưu, điền sau</button><button class="btn btn-ac" onclick="saveBatchManualReport()">✓ Lưu báo cáo mẻ in (${brManualItems.length})</button></div></div></div>`;
+  window.FilamentPickers?.init(document.getElementById('br-content'));
 }
 async function deleteCurrentBatchManualReport(){
   if(!canManageBatchReports()){toast('Chỉ quản lý mới được xoá báo cáo mẻ.');return;}
@@ -16821,6 +16834,7 @@ function renderCart(){
     }).join('');
   }
   renderPreview();
+  window.FilamentPickers?.init(document.getElementById('of-cart-list')||document.getElementById('ov-order-form'));
 
   const totalQty = cart.reduce((s,c)=>s+c.qty,0);
   document.getElementById('of-cf-total').textContent = totalQty;
@@ -17571,6 +17585,7 @@ function renderMachineSetupPage(){
   const plan=getNightPrintPlan();
   const filamentOptions=`<option value="">— Chưa lắp cuộn —</option>${fils.map(f=>`<option value="${esc(f.id)}">${esc((f.brand?f.brand+' · ':'')+f.name)}</option>`).join('')}`;
   root.innerHTML=`<div class="pp-page"><div class="pp-toolbar"><div class="pp-toolbar-copy"><b>Chuẩn bị máy cho ca đêm</b><small>Xác nhận cuộn nhựa và trạng thái khay.</small></div><input type="date" value="${esc(plan.date)}" onchange="activePrintPlanDate=this.value;renderMachineSetupPage()"/><button class="btn btn-ac" onclick="goPage('print-plans')">← Về kế hoạch in</button></div><div class="ms-machine-grid">${PRINT_MACHINES.map(machine=>{const state=plan.machines[machine.id];return `<article class="ms-machine-card"><h3>🖨️ ${esc(machine.name)} · ${esc(machine.model)}</h3><p>${esc(machine.ams)}${machine.ams.includes('AMS')?' · khay từ trái sang phải':''}</p>${state.slots.map((slot,index)=>`<div class="ms-slot ${slot.offline?'offline':''}"><div class="ms-slot-top"><i class="pp-slot-dot" style="background:${esc(planFilamentHex(slot.filamentId))}"></i><b>${esc(slot.label)}</b><span style="margin-left:auto;color:var(--t3);font-size:10px">${slot.offline?'OFFLINE':slot.confirmed?'Đã xác nhận':'Chưa xác nhận'}</span></div><select ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'filamentId',this.value)">${filamentOptions.replace(`value=\"${esc(slot.filamentId||'')}\"`,`value=\"${esc(slot.filamentId||'')}\" selected`)}</select><div class="ms-slot-controls"><label><input type="checkbox" ${slot.confirmed?'checked':''} ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'confirmed',this.checked)"/> Đã lắp</label><label><input type="checkbox" ${slot.autoRefill?'checked':''} ${slot.offline?'disabled':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'autoRefill',this.checked)"/> Auto refill</label><label style="margin-left:auto"><input type="checkbox" ${slot.offline?'checked':''} onchange="updatePrintPlanSlot('${machine.id}',${index},'offline',this.checked)"/> Khay lỗi</label></div></div>`).join('')}</article>`;}).join('')}</div></div>`;
+  window.FilamentPickers?.init(root);
 }
 function updatePrintPlanSlot(machineId,index,field,value){const plan=getNightPrintPlan(),slot=plan?.machines?.[machineId]?.slots?.[index];if(!slot)return;slot[field]=['offline','autoRefill','confirmed'].includes(field)?!!value:value||null;if(field==='offline'&&slot.offline)slot.confirmed=false;savePrintPlan(plan);}
 function scheduledPrintQtyByKey(exclude={}){
@@ -17850,6 +17865,7 @@ async function attachManualPlanFiles(input){
 }
 function renderManualPlanFiles(){
   const host=document.getElementById('pp-manual-file-list');if(!host)return;
+  window.FilamentPickers?.init(document.querySelector('.pp-manual'));
   const input=document.getElementById('pp-manual-files');if(input&&!input.previousElementSibling?.matches('.pp-select-file')){input.hidden=true;input.insertAdjacentHTML('beforebegin','<button type="button" class="btn btn-ghost pp-select-file" onclick="event.preventDefault();document.getElementById(\'pp-manual-files\').click()">Chọn file từ thiết bị</button>');}
   host.innerHTML=printPlanEditState.manual.files.map((file,index)=>`<div class="pp-manual-file">${PlatePlanFiles.html([file])}<button type="button" class="pp-file-remove" aria-label="Gỡ file ${esc(file.name)}" onclick="removeManualPlanFile(${index})">${appIcon('close')}</button></div>`).join('');PlatePlanFiles.refresh();
 }
@@ -17921,7 +17937,7 @@ function captureNightPlanEditorView(){
  const ov=document.getElementById('dlg-mv');
  const dialog=ov?.querySelector('.pp-edit-body');
  const grid=ov?.querySelector('#night-plan-model-picker .pp-picker-grid');
- const search=ov?.querySelector('#night-plan-model-picker input[type="search"]');
+ const search=ov?.querySelector('#night-plan-model-picker .pp-picker-search input[type="search"]');
  return {dialogScroll:dialog?.scrollTop||0,gridScroll:grid?.scrollTop||0,query:search?.value||'',searchFocused:document.activeElement===search};
 }
 function renderNightPlanEditor(){
@@ -17977,7 +17993,7 @@ function renderNightPlanEditor(){
   picker?.querySelectorAll('.pp-picker-art').forEach(el=>{if(!el.querySelector('svg'))el.innerHTML=appIcon('model');});
   ov.querySelectorAll('.pp-picker-selected-art,.pp-selection-empty>span').forEach(el=>el.innerHTML=appIcon('model'));
   window.PlatePlanFiles?.refresh();
-  const pickerSearch=ov.querySelector('#night-plan-model-picker input[type="search"]');
+  const pickerSearch=ov.querySelector('#night-plan-model-picker .pp-picker-search input[type="search"]');
   if(pickerSearch){pickerSearch.value=previousView.query;filterNightPlanModels(previousView.query);}
   const restoredDialog=ov.querySelector('.pp-edit-body');
   const restoredGrid=ov.querySelector('#night-plan-model-picker .pp-picker-grid');
@@ -18076,6 +18092,7 @@ function renderBatchPlanReview(){
   document.getElementById('br-content').innerHTML=`<div class="br-plan-review"><div class="br-plan-photo"><img src="${esc(r.image||'')}" alt="Ảnh mẻ in"></div><section class="br-plan-detail"><div class="br-plan-source"><b>${esc(getPrintMachine(review.machineId)?.name||review.machineId)}</b><label>Đêm bắt đầu<select aria-label="Kế hoạch cần đối chiếu" onchange="changeBatchReviewPlan(this.value)" ${locked?'disabled':''}>${plans.map(plan=>`<option value="${esc(plan.id)}" ${plan.id===review.planId?'selected':''} ${isReportedPrintPlate(plan.machines[review.machineId].plate)&&plan.id!==review.planId?'disabled':''}>${esc(fmtDate(plan.date))}${isReportedPrintPlate(plan.machines[review.machineId].plate)?' · đã báo cáo':''}</option>`).join('')}</select></label></div>${review.rows.map((row,index)=>{const view=planItemView(row);return `<article class="br-plan-actual" data-plan-actual="${index}"><header><div><b>${esc(view.name)}</b><small>${esc(view.partName)}${view.variantName?' · '+esc(view.variantName):''}</small></div><span>Dự kiến ${row.plannedQty}</span></header><label class="br-plan-color">Màu thực tế<select aria-label="Màu thực tế dòng ${index+1}" onchange="setBatchPlanActualColor(${index},this.value)"><option value="">Chọn màu</option>${fils.map(f=>`<option value="${esc(f.id)}" ${f.id===row.filamentId?'selected':''}>${esc(planFilamentLabel(f.id))}</option>`).join('')}</select></label><div class="br-plan-quantities">${[['goodQty','Đạt','good'],['failedQty','Lỗi','failed']].map(([key,label,attr])=>`<label>${label}<span class="br-plan-stepper"><button type="button" aria-label="Giảm ${label.toLowerCase()} dòng ${index+1}" onclick="updateBatchPlanActual(${index},'${key}',batchReports.find(r=>r.id===brCurrentId).planReview.rows[${index}].${key}-1)">−</button><input type="number" inputmode="numeric" min="0" max="${row.plannedQty}" data-actual-${attr} aria-label="${label} dòng ${index+1}" value="${row[key]}" oninput="updateBatchPlanActual(${index},'${key}',this.value)"><button type="button" aria-label="Tăng ${label.toLowerCase()} dòng ${index+1}" onclick="updateBatchPlanActual(${index},'${key}',batchReports.find(r=>r.id===brCurrentId).planReview.rows[${index}].${key}+1)">+</button></span></label>`).join('')}</div><footer><output>Chưa in: ${row.unprintedQty}</output><button class="btn btn-ghost" onclick="updateBatchPlanActual(${index},'unprinted',0)">Chưa in cả dòng</button></footer></article>`;}).join('')}<div class="br-actions"><button class="btn btn-ghost" onclick="deferBatchReport()">Lưu nháp</button><button class="btn btn-ac" onclick="saveBatchPlanReview()">Xác nhận thực tế</button></div></section></div>`;
   review.rows.forEach((row,index)=>{const card=document.querySelector(`[data-plan-actual="${index}"]`);if(row.kind==='manual'&&card){card.querySelector('header small').textContent='Nhập tay · không cộng tồn model';card.querySelector('header').insertAdjacentHTML('afterend',`${row.note?`<p class="pp-item-note">${esc(row.note)}</p>`:''}${window.PlatePlanFiles?.html(row.files)||''}`);}});
   window.PlatePlanFiles?.refresh();
+  window.FilamentPickers?.init(document.getElementById('br-content'));
 }
 function setBatchPlanActualColor(index,id){const r=batchReports.find(x=>x.id===brCurrentId);if(!r?.planReview?.rows[index])return;r.planReview.rows[index].filamentId=id||null;sv(K.batchReports,batchReports);}
 function validateBatchPlanReview(r){
@@ -22040,5 +22057,6 @@ installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNo
 <div id="app-context-menu" class="app-context-menu" role="menu" aria-label="Thao tác theo ngữ cảnh"></div>
 <script src="printer-monitor.js"></script>
 <script src="plate-plan-files.js"></script>
+<script src="filament-picker.js"></script>
 </body>
 </html>
