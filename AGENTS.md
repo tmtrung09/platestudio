@@ -1,556 +1,385 @@
-# Quy tắc chất lượng giao diện Plate Studio
+# Quy tắc hệ thống và phát triển Plate Studio
 
-## Hợp đồng UX mặc định — áp dụng cả tính năng mới (mandatory)
+## Mục đích và cách duy trì file
 
-Người dùng không phải nhắc lại các yêu cầu đã thống nhất cho mỗi màn hình mới.
-Các quy tắc dưới đây được tổng hợp từ yêu cầu và các luồng đã sửa trong repository;
-không coi việc chưa có lời nhắc trong task hiện tại là lý do để bỏ qua.
+- `AGENTS.md` là bộ quy tắc của hệ thống và cách phát triển hệ thống theo yêu cầu
+  người dùng. Không dùng file làm nhật ký trao đổi/công việc hoặc báo cáo tiến độ;
+  không ghi ngày giao việc, diễn biến triển khai, commit, kết quả QA từng lượt hay
+  trạng thái một sự cố cụ thể.
+- Chuyển yêu cầu bằng ngôn ngữ tự nhiên thành quy tắc chuyên nghiệp: rõ phạm vi,
+  hành vi bắt buộc và điều kiện kiểm chứng. Giữ đúng ý nghĩa; không tự thêm nghiệp
+  vụ, mở rộng phạm vi hoặc biến ví dụ/dữ liệu một lần giao việc thành quy tắc chung.
+- Xem xét mỗi yêu cầu để nhận diện quy tắc mới hoặc quy tắc cần sửa. Chỉ cập nhật
+  khi có nội dung như vậy, không ghi mọi câu hỏi/câu trả lời/thao tác. Đề xuất chưa
+  được người dùng chấp thuận không phải quy tắc của hệ thống.
+- Thêm quy tắc bằng gạch đầu dòng trong nhóm chức năng phù hợp. Gộp nội dung trùng;
+  yêu cầu mới thay thế yêu cầu cũ thì sửa quy tắc cũ, không chồng các phiên bản hoặc
+  kể lại quá trình thay đổi. Giữ các quy tắc khác còn hiệu lực.
+- Cập nhật quy tắc và kiểm thử hồi quy liên quan trong cùng lượt thay đổi, trước
+  kiểm tra/bàn giao. Thay đổi chỉ liên quan tài liệu không cần tạo tính năng hoặc
+  chạy QA ứng dụng chỉ để ghi một quy tắc.
+- Người dùng không phải nhắc lại các quy tắc đã thống nhất khi yêu cầu tính năng
+  hoặc màn hình mới. Áp dụng ngay từ thiết kế trong phạm vi tương ứng.
 
-## Vòng đời file ghi nhớ yêu cầu — mandatory
+## Hợp đồng UX dùng chung
 
-Mỗi yêu cầu mới của người dùng đều phải làm `AGENTS.md` được xem xét và cập nhật
-ngay trong cùng lượt thực hiện. Đây là bước bắt buộc cho **mọi yêu cầu**, không chỉ
-UX hoặc yêu cầu có vẻ sẽ lặp lại:
+### Nhận diện, tìm kiếm và chọn dữ liệu
 
-1. Trước khi kết thúc task, ghi vào file này nguyên tắc, điều kiện chấp nhận, lựa
-   chọn đã thống nhất hoặc giới hạn mới mà yêu cầu bổ sung. Viết đủ cụ thể để task
-   sau có thể áp dụng mà không cần người dùng nhắc lại.
-2. Giữ các quy tắc trước đó còn hiệu lực. Nếu yêu cầu mới thay thế hoặc mâu thuẫn,
-   sửa quy tắc cũ và ghi rõ phạm vi mới; không chồng thêm câu mơ hồ.
-3. Quy tắc về một lần giao việc (phạm vi/tên/mẫu/dữ liệu cụ thể) vẫn phải được ghi
-   thành quyết định/ngữ cảnh có thể tái sử dụng nếu liên quan; không bịa thành quy
-   tắc chung cho toàn dự án. Chỉ ghi điều người dùng đã nói hoặc đã chấp thuận.
-4. Cập nhật file và regression guard phù hợp trước khi QA, commit/push hoặc báo xong.
-   Nếu task thuần hỏi đáp và không đổi dự án, ghi lại điều mới trực tiếp vào mục phù
-   hợp trong file này; không cần tạo mã hay chạy QA ứng dụng chỉ để lưu một quy tắc.
+- Bộ chọn model/sản phẩm/part/biến thể có nhiều mục phải có tìm kiếm ngay trong
+  nơi chọn, không dùng dropdown chỉ có tên để duyệt thư viện. Dùng tìm kiếm chung
+  hỗ trợ tiếng Việt có/không dấu theo tên và thuộc tính liên quan như biến thể,
+  part, danh mục; có số kết quả và trạng thái không tìm thấy.
+- Mục có ảnh phải có thumbnail trong kết quả và phần đã chọn. Ảnh thiếu/lỗi dùng
+  fallback cùng kích thước, giữ tên/nhãn/thao tác. Không tạo ảnh giả thay dữ liệu
+  thật; lazy-load, giới hạn kết quả với thư viện lớn và có đường xem tiếp.
+- Hiển thị đủ tên model và biến thể để phân biệt. Model không biến thể vẫn chọn
+  được; không tự chọn model đầu tiên hoặc biến thể thay người dùng.
+- Cùng loại công việc dùng chung danh sách/tìm kiếm/sắp xếp. Ưu tiên danh mục,
+  bộ lọc/nhãn thay vì tách tab/màn hình chỉ vì thêm thuộc tính. Việc tách phải có
+  lý do về luồng công việc.
+- Chọn màu nhựa trong nhập tay, khay máy, đối chiếu/khai báo mẻ, AI và đổi màu theo
+  đơn dùng bộ chọn chung: tìm không dấu theo tên/hãng/chất liệu/mã, mẫu màu, số
+  kết quả và trạng thái không khớp. Giữ chưa chỉ định, không tự chọn; hỗ trợ bàn
+  phím/Escape/chạm 44px. Menu không bị vùng cuộn cắt hoặc làm mất nháp/focus/ảnh.
+  Native select còn lại có color-scheme và nền/chữ option theo theme, không trắng
+  trên trắng. Kiểm thử: `tools/filament-picker-qa.mjs`.
+- Các thư viện Đơn, Plate, Project, Màu nhựa và Model có tìm kiếm không dấu cạnh
+  tiêu đề trên desktop, xuống hàng an toàn trên mobile, lọc theo thuộc tính người
+  dùng nhìn thấy; không chỉ đồng bộ CSS mà thiếu tìm kiếm dữ liệu.
 
-### Nhận diện và chọn dữ liệu
+### Tương tác, trạng thái và bảo toàn dữ liệu
 
-1. Bộ chọn model/sản phẩm/part/biến thể có thể có nhiều mục phải có ô tìm kiếm ngay
-   trong nơi chọn. Không dùng dropdown chỉ có tên để duyệt cả thư viện. Tìm theo
-   tên và các thuộc tính liên quan (biến thể, part, danh mục); dùng hàm tìm kiếm
-   chung, hỗ trợ tiếng Việt có/không dấu. Có số kết quả và trạng thái không tìm thấy.
-2. Mục có ảnh phải hiển thị thumbnail cả trong kết quả chọn và phần đã chọn.
-   Mục thiếu ảnh/ảnh lỗi dùng fallback cùng kích thước, không mất tên, nhãn hay nút.
-   Không tự tạo ảnh giả để thay dữ liệu thật. Lazy-load/giới hạn kết quả với thư viện lớn.
-3. Hiển thị đủ tên model + biến thể để phân biệt; model không biến thể vẫn chọn được.
-   Không âm thầm thêm model đầu tiên hay chọn một biến thể bất kỳ thay người dùng.
-4. Cùng một loại công việc dùng chung danh sách, tìm kiếm và sắp xếp. Ưu tiên danh
-   mục/bộ lọc/nhãn (ví dụ “Ghép”) thay vì tạo tab hoặc màn hình riêng chỉ vì dữ liệu
-   có thêm thuộc tính. Phải có lý do về luồng công việc nếu cần tách.
-5. Phản hồi ngày 2026-10-11 về chọn màu: không dùng select dài chỉ có tên cho màu
-   nhựa. Nhập tay, khay nhựa, đối chiếu/khai báo mẻ, AI và đổi màu theo đơn dùng
-   primitive tìm theo tên/hãng/chất liệu/mã không dấu, có mẫu màu, số kết quả và
-   không khớp; giữ Chưa chỉ định và không tự chọn. Menu không bị vùng cuộn cắt,
-   hỗ trợ Escape/bàn phím/chạm 44px và giữ nháp/focus/ảnh. Native select còn lại
-   phải có color-scheme và nền/chữ option theo theme, không trắng trên trắng.
-   Guard: `tools/filament-picker-qa.mjs` và QA plate/workflow.
+- Gõ/chọn/thêm dòng/đổi số lượng không dựng lại toàn bộ dialog. Giữ nội dung đang
+  nhập, truy vấn, focus/caret, cuộn và ảnh đã tải; chỉ cập nhật vùng thay đổi.
+- Số lượng có giới hạn hợp lệ và thao tác chạm thuận tiện; dùng − / nhập / + khi
+  chỉnh lặp lại. Nút chính/control cảm ứng có vùng bấm tối thiểu 44×44px; icon/ô
+  đánh dấu có thể nhỏ hơn vùng bấm để không lấn ảnh hoặc nội dung.
+- Form dài có vùng cuộn rõ, nút lưu/đóng luôn tiếp cận được, không che nội dung/
+  bàn phím hoặc tràn ngang. Kiểm tra Tab/Enter/Escape/focus/hover/active; control
+  ghép chỉ có một vòng focus, không viền chồng viền.
+- Lưu/thêm/upload có phản hồi thật: đang xử lý, thành công, thất bại, thử lại.
+  File lên Storage chưa có nghĩa bản ghi nghiệp vụ đã lưu. Chỉ báo lưu cloud sau
+  xác nhận server; lỗi phụ không xóa kết quả đã lưu.
+- Thao tác nội bộ không làm mất thay đổi chưa lưu; rời form giữ nháp hoặc cảnh
+  báo bỏ thay đổi. Xóa có xác nhận/khả năng phục hồi phù hợp; không xóa model
+  nguồn khi chỉ xóa sản phẩm ghép hoặc gỡ nhãn.
+- Kiểm tra tạo → sửa → lưu → tải lại → đọc cloud. Tách thời điểm nghiệp vụ khỏi
+  upload/sync; cạnh tranh giữa thiết bị không ghi đè hoặc dọn nhầm dữ liệu đang dùng.
+- Chọn nhiều desktop theo Windows: Ctrl + click bật/tắt từng mục, Shift + click
+  chọn dải từ mục neo, Ctrl + Shift + click cộng dải. Dải theo thứ tự hiển thị sau
+  lọc/sắp xếp; phím bổ trợ không đồng thời mở chi tiết.
+- Trong chọn nhiều thư viện, Esc hủy chọn, Delete mở xóa có xác nhận, trừ khi nhập
+  liệu/ở dialog. Có hành động hàng loạt cho trạng thái hợp lệ, gồm “Bỏ qua”; không
+  áp dụng lên mục hoàn tất, phản hồi số lượng đã đổi. Cảm ứng có nút/chế độ chọn
+  nhiều riêng, không phụ thuộc bàn phím.
+- Thanh số mục chọn/thao tác hàng loạt ghim trong vùng cuộn, luôn thấy khi lướt;
+  có nền/độ nổi tách nội dung, không che header an toàn. Mobile bọc nút, không tràn
+  ngang; hướng dẫn phím tắt không chiếm dòng riêng.
 
-### Tương tác và trạng thái
+### Mật độ thông tin, control và icon
 
-1. Gõ, chọn, thêm dòng, đổi số lượng không dựng lại toàn bộ dialog. Giữ tên đang
-   nhập, truy vấn, focus/caret, vị trí cuộn và ảnh đã tải; cập nhật đúng vùng thay đổi.
-2. Số lượng có giới hạn hợp lệ và thao tác chạm thuận tiện (− / nhập / + khi cần
-   chỉnh lặp lại). Nút chính và control cảm ứng dùng vùng chạm tối thiểu 44×44px.
-   Icon/ô đánh dấu có thể nhỏ hơn vùng chạm để tránh lấn ảnh hoặc nội dung, nhưng
-   vùng bấm thực vẫn phải đủ 44×44px.
-3. Form dài có vùng cuộn rõ ràng, nút lưu/đóng luôn tiếp cận được; không che nội dung
-   hoặc bàn phím, không tràn ngang. Kiểm tra focus, Tab, Enter, Escape, hover/active.
-   Control ghép chỉ có một vòng focus, không viền chồng viền.
-4. Lưu/thêm/tải ảnh phải có phản hồi trạng thái thật: đang xử lý, thành công, thất bại
-   và đường thử lại. File lên Storage chưa có nghĩa là bản ghi nghiệp vụ đã lưu.
-   Không báo “đã lưu cloud” trước khi server xác nhận; lỗi phụ không xóa kết quả đã lưu.
-5. Không mất thay đổi chưa lưu khi thao tác nội bộ; khi rời form phải giữ nháp hoặc
-   cảnh báo bỏ thay đổi. Xóa có xác nhận/khả năng phục hồi phù hợp và không xóa nhầm
-   model nguồn khi người dùng chỉ xóa sản phẩm ghép hay gỡ nhãn.
-6. Kiểm tra tạo → sửa → lưu → tải lại → đọc từ cloud, không chỉ trạng thái vừa tạo.
-   Tách thời điểm nghiệp vụ (ngày chụp/in) khỏi thời điểm upload/sync; xử lý cạnh tranh
-   giữa thiết bị mà không ghi đè hoặc dọn nhầm dữ liệu đang sử dụng.
-7. Danh sách hoặc lưới có chọn nhiều trên desktop phải hỗ trợ quy ước quen thuộc của
-   Windows: `Ctrl` + click bật/tắt từng mục, `Shift` + click chọn dải liên tiếp từ mục
-   neo, và `Ctrl` + `Shift` + click cộng thêm dải. Dải chọn tính theo thứ tự mục đang
-   hiển thị sau lọc/sắp xếp; thao tác có phím bổ trợ không được đồng thời mở chi tiết.
-8. Khi đang chọn nhiều ở thư viện, `Esc` phải hủy chế độ chọn và `Delete` mở luồng
-   xóa có xác nhận, trừ khi người dùng đang nhập liệu hoặc đang ở dialog. Thanh thao
-   tác phải có hành động hàng loạt cho mọi trạng thái hợp lệ, gồm đánh dấu “Bỏ qua”;
-   không được áp dụng lên mục đã hoàn tất và phải phản hồi rõ số lượng đã đổi.
-   Trên thiết bị cảm ứng vẫn giữ nút/chế độ “Chọn nhiều” rõ ràng, không phụ thuộc bàn phím.
-8. Khi người dùng đang chọn nhiều mục trong một danh sách dài, thanh hiển thị số mục
-   đã chọn và các thao tác hàng loạt phải ghim trong vùng cuộn, luôn nhìn thấy khi lướt.
-   Thanh cần có nền/độ nổi đủ tách khỏi nội dung phía sau, không che header an toàn,
-   và trên mobile phải bọc nút thay vì tràn ngang.
+- Giao diện toàn hệ thống gọn: tiêu đề, khoảng cách trang, thẻ, thống kê và điều
+  hướng nhất quán trên desktop/mobile, light/dark. Không zoom/transform:scale toàn
+  trang; giữ tỷ lệ ảnh, vùng cuộn, dữ liệu và hành vi lưu/sync. Ô nhập mobile giữ
+  chữ 16px để tránh Safari tự zoom. Guard: `tools/density-qa.mjs`.
+- Không lặp tên trang/nhãn nhóm/số lượng/thao tác đã rõ ở vị trí kế cận. Bỏ phần
+  dư thừa phải quét cả họ header/toolbar, giữ điểm nhận diện và hành động chính.
+  Tiêu đề gồm tên và mô tả ngắn, không liệt kê lại menu/thẻ/bộ lọc.
+- Nhãn stepper/nút/chip/nhóm ngắn. Chỉ giữ mô tả làm rõ hệ quả quan trọng như ảnh
+  hưởng tồn, khả năng hoàn tác, quyền hoặc điều kiện thao tác.
+- Hàng chờ/trạng thái nền phụ nằm gọn trong toolbar/chip cạnh luồng liên quan,
+  có số lượng/trạng thái thật/một hành động chính; không tự chiếm cả hàng ngang.
+- Control cùng toolbar có cùng chiều cao/bán kính/vùng chạm; không trộn kích thước
+  mặc định của select, button, menu ba chấm, tìm kiếm và chip.
+- Nội dung nút hành động phải căn giữa theo cả hai chiều, kể cả nút có chiều rộng
+  tối thiểu, giãn rộng hoặc nhãn xuống dòng. Nút có icon và chữ căn giữa cả cụm;
+  không chèn khoảng trắng để căn chữ. Chỉ căn trái khi nút là dòng danh sách/menu
+  có chủ đích, bằng override rõ ràng. Kiểm thử vị trí nội dung thực ở trạng thái
+  thường, hover, active, focus và disabled trên mobile/desktop, light/dark.
+- Không dùng emoji hệ thống cho icon thao tác/trạng thái mới. Khi sửa họ giao diện,
+  thay emoji còn thấy của chính họ bằng SVG từ primitive icon chung để nét/kích
+  thước/màu đồng nhất.
+- Nút phụ chỉ có icon (sửa/đóng/làm mới/bỏ mục/sao chép/chuyển trang, tháng, thứ tự)
+  dùng `.btn-icon-only`: SVG căn giữa, không nền/viền/vòng sáng/bóng hoặc dịch chuyển
+  của nút có chữ trong mọi theme và hover/active. Giữ vùng bấm 44×44px, tên truy
+  cập, focus và disabled. Không tự chuyển nút có chữ, nút chính, stepper, nút chụp
+  hoặc điều hướng riêng chỉ vì chứa icon. Guard: `tools/icon-actions-qa.mjs`.
+- Thẻ tóm tắt không lặp mọi tên model thành nhiều chip. Dùng thumbnail stack, số
+  model/sản phẩm, xem chi tiết; chỉ hiện từng tên khi mở chi tiết hoặc cần ra quyết định.
 
-### Mật độ thông tin, ảnh và thời gian
+### Tìm kiếm, ảnh và thời gian
 
-1. Không lặp lại tên trang, nhãn nhóm, số lượng hoặc thao tác đã được thể hiện rõ ở
-   vị trí kế cận. Với một nhận xét đánh dấu phần dư thừa, quét cùng họ header/thanh
-   công cụ trước khi bỏ, nhưng vẫn giữ một điểm nhận diện và thao tác chính.
-2. Thanh tìm kiếm nằm trong vùng làm việc lớn chỉ chiếm diện tích khi cần: ở trạng
-   thái nghỉ dùng phiên bản gọn; khi focus/nhập thì bung rộng để tìm. Việc chuyển
-   trạng thái không được đẩy nội dung, làm mất truy vấn/focus, hoặc che control.
-   Toàn bộ vỏ của trạng thái gọn là vùng chạm tối thiểu 44×44px và nhấn/click bất kỳ
-   chỗ nào trên vỏ (kể cả icon) phải chuyển focus vào input; không để input rộng 0
-   khiến icon nhìn thấy nhưng không bấm được.
-3. Lưới ảnh phải dùng khung tỷ lệ thống nhất, ảnh canh giữa bằng `object-fit` phù hợp
-   và không có viền/nền sáng tạo cảm giác đứt đoạn ở dark mode. Quy tắc này áp dụng
-   cho mọi card ảnh của cùng thư viện, kể cả ảnh dọc, ngang, thiếu hoặc lỗi.
-4. Khi công việc liên quan một khoảng ngày hoặc lịch sử theo ngày, ưu tiên lịch trực
-   quan có thể chọn khoảng và hiển thị rõ ngày đã có dữ liệu/ngày còn thiếu. Không
-   chỉ bắt người dùng chọn hai ô ngày rời rạc nếu lịch có thể truyền trạng thái đó.
-5. Bộ lọc lịch sử phải nêu rõ khoảng đang xem, giữ lối trở lại toàn bộ dữ liệu và
-   không xóa hay làm rỗng dữ liệu gốc khi đổi tag. Bộ lọc kết hợp tháng/ngày phải
-   đồng bộ lựa chọn để không tạo trạng thái giao nhau rỗng bất ngờ. Khoảng tùy chọn
-   chọn được trên lịch; các mốc nhanh cần định nghĩa ranh giới nhất quán (tuần bắt đầu thứ Hai,
-   khoảng 7/30 ngày tính cả hôm nay). Biểu đồ nhiều ngày phải cho phép cuộn tới mọi
-   ngày trong khoảng đã chọn, mở ở đoạn mới nhất và cung cấp chuyển động cột tôn
-   trọng cài đặt giảm chuyển động của thiết bị.
-6. Riêng Thư viện báo cáo mẻ tạm thời không có bộ lọc hoặc timeline theo ngày vì
-   phiên bản hiện tại không ổn định. Giữ tìm kiếm, lọc trạng thái và sắp xếp; không
-   khôi phục ngày cũ từ localStorage hoặc gửi điều kiện ngày lên cloud. Chỉ đưa lọc
-   ngày trở lại khi có một thiết kế mới được người dùng yêu cầu và kiểm thử lại.
+- Tìm kiếm chung kế thừa Tiến độ in: SVG nhỏ, cao tối thiểu 42px, nền gọn, focus
+  rõ. Đặt cạnh tiêu đề/toolbar khi an toàn, không tự thêm hàng.
+- Tìm kiếm trong vùng làm việc lớn nghỉ ở dạng gọn, bung khi focus/nhập; không
+  đẩy nội dung, mất truy vấn/focus hoặc che control. Toàn bộ vỏ gọn tối thiểu
+  44×44px và bấm được; click vỏ/icon focus input, không để input rộng 0 làm mất tương tác.
+- Lưới ảnh dùng tỷ lệ khung thống nhất, canh giữa bằng object-fit phù hợp, không
+  viền/nền sáng gây đứt đoạn ở dark mode; áp dụng ảnh dọc/ngang/thiếu/lỗi.
+- Hàng công việc theo model, kể cả nhóm plate/màu, có thumbnail thật khi có dữ
+  liệu; ảnh lỗi giữ khung fallback, tên và bố cục.
+- Công việc theo khoảng ngày ưu tiên lịch trực quan chọn khoảng, phân biệt ngày
+  có/thiếu dữ liệu; không chỉ dùng hai ô ngày rời nếu lịch truyền được trạng thái.
+- Lọc lịch sử nêu rõ khoảng xem, có đường về toàn bộ dữ liệu, không làm rỗng/xóa
+  nguồn khi đổi tag. Tháng/ngày đồng bộ để tránh giao nhau rỗng; khoảng tùy chọn
+  chọn trên lịch. Tuần bắt đầu thứ Hai, 7/30 ngày gồm hôm nay. Biểu đồ cuộn tới mọi
+  ngày, mở đoạn mới nhất, tôn trọng reduced-motion.
+- Thư viện báo cáo mẻ không có lọc/timeline theo ngày. Giữ tìm kiếm/trạng thái/
+  sắp xếp; không khôi phục ngày từ localStorage hoặc gửi điều kiện ngày lên cloud.
+  Chỉ khôi phục khi người dùng yêu cầu thiết kế mới và đã kiểm thử lại.
 
-### Quy trình bắt buộc trước khi bàn giao
+## Khởi động, đồng bộ và camera
 
-1. Đọc file này; tìm component tương tự đã có và regression test đi kèm trước khi
-   thiết kế control mới. Kế thừa cả hành vi, không chỉ CSS. Ví dụ bộ chọn trong xếp
-   plate đã có tìm kiếm, ảnh, stepper, giữ DOM và thanh lưu cố định.
-2. Với mỗi bề mặt mới/sửa, tự kiểm tra: nhận diện bằng gì? tìm mục thế nào? thao tác
-   lặp lại có nhanh không? focus/cuộn/dữ liệu có giữ không? biết đã lưu bằng gì?
-   quay lại/xóa/lỗi ảnh/mất mạng ra sao? Không chờ người dùng chỉ từng thiếu sót.
-3. Dùng dữ liệu đại diện: thư viện hàng trăm mục, tên dài, có/không biến thể, ảnh
-   thật/thiếu/lỗi, danh sách rỗng/không khớp, nhiều dòng và thao tác lặp lại.
-4. Thêm assertion cụ thể cho hợp đồng UX liên quan, kiểm tra mobile + desktop và
-   light + dark; xem ảnh chụp/render thực tế. Chạy QA tổng và diff check như bên dưới.
-   Test pass không thay thế việc xem và đánh giá giao diện.
-5. Khi người dùng bổ sung một yêu cầu UX có tính lặp lại, cập nhật quy tắc và test
-   của họ component trong cùng task. Không mở rộng thành thiết kế lại toàn ứng dụng
-   ngoài phạm vi; ghi rõ phần chưa thể kiểm chứng thay vì khẳng định đã hoàn tất.
-6. Tự áp dụng các chi tiết UX đã thống nhất; chỉ hỏi lại khi thiếu quyết định nghiệp
-   vụ, phạm vi hoặc quyền thao tác. Trong lúc chỉnh, ưu tiên test mục tiêu + xem ảnh;
-   chốt thay đổi rồi chạy QA tổng để giảm vòng lặp, thời gian và quota. Bàn giao ngắn
-   gọn: thay đổi chính, nơi sử dụng, kết quả kiểm tra và giới hạn còn lại.
+- Local-first: reload dựng từ cache gần nhất rồi sync thay đổi ở nền, không chặn
+  thao tác để tải lại toàn bộ dữ liệu đã biết. Cache có version/migration/độ mới;
+  server là nguồn xác nhận cuối cùng.
+- Realtime không ghi đè mù local. Bản ghi có ID ổn định, revision/mốc server, cập
+  nhật có điều kiện, tombstone và idempotency key. Offline lưu outbox bền vững,
+  retry an toàn, có trạng thái chờ/lỗi/xung đột.
+- Camera là fast path độc lập, mở trực tiếp không đợi thư viện/lịch sử/ảnh. Chụp
+  liên tiếp, lưu blob/metadata tối thiểu vào local ngay; nén/thumbnail/upload/liên
+  kết chạy nền bằng queue bền vững. Không mất ảnh khi reload/mất mạng/đóng app.
+- Tách “đã lưu trên máy”, “đang tải”, “đã lên Storage”, “đã gắn bản ghi”. Không đợi
+  upload mới cho chụp tiếp; retry/resume chống trùng, chỉ dọn local sau xác nhận
+  đầy đủ. Worker tối ưu theo chính sách đã thống nhất, không tự giảm chất lượng gốc.
+- Tải delta/cursor/field cần dùng, tránh request tuần tự, phân trang thư viện lớn,
+  cache thumbnail/lazy-load. Cache/preload app shell và camera khi mạng yếu; dữ
+  liệu nền không tranh ưu tiên upload ảnh chờ.
+- Service worker network-first online, cache fallback offline; PWA có shortcut
+  `?capture=1`. Reload dùng RPC manifest so revision/số bản ghi, chỉ tải collection
+  đổi và fallback REST an toàn khi migration chưa có.
+- Blob camera lưu IndexedDB theo workspace + user trước upload, giữ reportId/
+  image hash khi resume. Cho đóng camera sau lưu local bền vững, không cảnh báo
+  rời trang cho ảnh IndexedDB đã giữ.
+- Mỗi lần mở web tự quét/upload nền ảnh chưa được server xác nhận, không đòi mở
+  camera hoặc bấm “Thử lại”. Retry backoff, đánh thức khi online/quay lại tab; nút
+  thử lại là dự phòng. Tương thích queue cũ, không đổi ID/blob hoặc dọn sớm.
+- Nhiều thiết bị cùng không upload được phải kiểm tra đường tải chung: Edge
+  Function, token staff, Storage, ghi batch_reports. Không yêu cầu chụp lại/xóa dữ
+  liệu trình duyệt; giữ local để retry sau khi dịch vụ được sửa.
+- Upload upsert:true vào plate-media có đủ SELECT/INSERT/UPDATE giới hạn bucket
+  và thư mục auth.uid(). Xác minh cả link staff qua Edge Function và tài khoản
+  upload trực tiếp, migration live, ảnh cũ tự retry; không kết luận sửa xong chỉ
+  bằng client hoặc tạo được bản ghi khi file vẫn lỗi.
+- Âm chụp tùy chọn, không chặn camera/âm local mặc định khi metadata cloud chậm.
+  Nạp mặc định độc lập, đổi âm riêng sau tải xong. QA mô phỏng cloud chậm/không
+  phản hồi và chờ buffer bất đồng bộ.
+- Thay đổi hiệu năng đo trước/sau, có guard cho thời gian tương tác từ cache, mở
+  camera, chụp tới lần tiếp, sync/upload mạng chậm; thử offline → reload → online,
+  hai thiết bị cùng sửa, retry/xóa.
 
-## Không vá một điểm (mandatory)
+## Không gian Sản xuất
 
-Mọi lỗi giao diện do người dùng báo phải được coi là một lỗi của **họ thành phần**
-(component family), không phải chỉ của màn hình đang được chụp. Ví dụ: stepper số
-lượng, select, bottom sheet, card ảnh, thanh tìm kiếm, nút nổi, modal, navigation.
+### Điều hướng và nhu cầu in
 
-Không được kết luận “đã sửa” chỉ vì đúng điểm trong ảnh đã ổn. Trước khi hoàn tất,
-bắt buộc làm đủ các bước sau:
+- Hợp nhất Tiến độ in, Plate in, Nhắc part thiếu, Cần in lại trong Sản xuất:
+  Cần in / Plate & máy / Tiến độ; không phân mảnh cùng công việc ở nhiều nơi.
+- Cần in dùng danh sách/tìm kiếm chung, ghi nguồn theo đơn/ngoài đơn/QC/đối chiếu/
+  bù hàng. Đơn chưa bắt đầu xuất hiện, đơn hủy không đề xuất. Mẻ in chờ đối chiếu
+  không cộng vào nhu cầu mới.
+- QC của pitem là lý do của thiếu đã có, không cộng trùng. SKU có gợi ý theo bán/
+  tồn chỉ một hàng, người dùng chọn chính sách, không cộng hai mức. QC thiếu ID
+  part/mất pitem giữ hàng cần kiểm tra, không đoán part.
+- Làm mới gộp cập nhật xưởng và index bán khi có quyền KiotViet. Giữ ID model/
+  biến thể/part/màu, tham chiếu pitem/đơn, chỉ xếp lượng chưa trong kế hoạch. Giữ
+  quyền đọc từng nguồn/ghi riêng và đường xem tiếp.
+- Plate & máy giữ thư viện plate, Lịch máy/Khay nhựa. Tiến độ có đơn/model/plate/
+  ngoài đơn. Route cũ mở đúng góc nhìn; Back/Forward/reload giữ scope đơn/dự án,
+  tìm kiếm và bộ lọc.
 
-1. Xác định selector/component gốc, biến theme, breakpoint và trạng thái có liên
-   quan (light/dark, mobile/desktop, mở/đóng, trống/có dữ liệu).
-2. Dùng `rg` quét toàn bộ project để tìm tất cả instance, selector và CSS override
-   cùng họ. Sửa từ primitive/token/component dùng chung; chỉ dùng vá cục bộ khi
-   chứng minh được thành phần đó thực sự đặc thù.
-3. Kiểm tra tối thiểu cả mobile và desktop, cùng mọi theme/trạng thái mà lỗi có thể
-   lặp lại. Với control có thao tác, kiểm tra cả focus, hover/active và vùng chạm.
-4. Thêm hoặc cập nhật regression test QA tái hiện **lớp lỗi** đó. Test phải thất bại
-   trước bản vá hoặc có assertion cụ thể; không chỉ dựa vào ảnh chụp thủ công.
-5. Chạy `npm run qa:all` và `git diff --check`. Không đẩy bản sửa nếu còn failure.
-6. Khi báo lại người dùng, nêu rõ: phạm vi đã quét, các nhóm đã sửa, và kết quả QA.
+### Tiến độ in
 
-## Mẫu tư duy khi xử lý lỗi
+- Tiến độ là trang native trong Sản xuất, dùng header/toolbar/theme và vùng cuộn
+  `.pg-content` chung. Không mount legacy, sidebar/drawer hoặc navigation mobile
+  riêng, không chồng CSS vá layout.
+- Giữ bốn góc xem, handler part/QC/gia công/giao, liên kết đơn/dự án. Đổi giao
+  diện không chuyển/xóa dữ liệu.
+- Tìm không dấu theo đơn/model/biến thể/part/màu, có số kết quả/bỏ lọc. Stepper
+  part thống nhất, vùng bấm 44px, thẻ mở bàn phím. Giữ focus/cuộn/ảnh/fallback;
+  URL giữ góc xem/truy vấn/trạng thái/scope.
+- Guard mọi góc xem, mobile/tablet/desktop/landscape, hai theme; không tràn ngang,
+  khoảng trắng viewport, cuộn lồng hoặc đổi hình học trang kế cận.
 
-- Màu/nền/contrast sai: kiểm tra toàn bộ component trong light + dark mode và mọi
-  hard-coded color nằm sau theme override; ưu tiên token `var(--...)`.
-- Tràn, che nội dung, layout lệch: kiểm tra breakpoint, safe area, fixed/floating
-  layer, overflow và thứ tự z-index cho tất cả page/overlay cùng pattern.
-- Chậm, giật, mất dữ liệu: lần theo lifecycle và shared storage/sync handler; kiểm
-  tra các luồng tạo, sửa, tải lại, đổi thiết bị và thao tác đồng thời.
-- Một ảnh hoặc item hiển thị lỗi: kiểm tra tất cả đường dẫn render/fallback/lazy-load
-  cùng loại, không chỉ record xuất hiện trong ảnh.
+### Sắp plate và file in
 
-## Nội dung giao diện (mandatory)
+- Plate có thể gồm model/part và mục nhập tay cho đồ mới/decor/việc khác, không
+  bắt tạo model giả/ghép nhầm thư viện. Nhập tay có tên/số lượng/ghi chú/màu tùy
+  chọn/file từ thiết bị.
+- File là chỉ định đầu vào, không tự slice/phân tích/gửi lệnh máy. Giữ gốc trong
+  IndexedDB trước thêm/lưu; upload riêng tư theo xưởng, trạng thái thật/retry/tự
+  tiếp tục khi có mạng/mở lại. Không đặt blob trong settings hoặc xóa file lịch
+  sử khi chỉ gỡ tham chiếu.
+- Nhận 3MF, STL, OBJ, G-code, BGCODE, STEP/STP, ZIP, tối đa 50 MB/file; lỗi/quota
+  không báo thành công.
+- Giữ nháp/file qua đóng/mở/reload, DOM/focus khi thêm model/tải nền. Plate đổi
+  ở phiên khác giữ nháp/chặn ghi đè mù. Mục cùng tên có ID riêng, không tự gộp;
+  tên không phải định danh.
+- Đối chiếu giữ tên/ghi chú/file/kết quả đạt/lỗi/chưa in nhập tay; không tự cộng
+  tồn/tiến độ đơn/model hoặc suy model từ tên file. Guard:
+  `tools/plate-manual-qa.mjs`, `tools/plate-files-sql-qa.mjs` và QA plate.
 
-Mỗi bề mặt chỉ hiển thị thông tin cần để nhận biết trạng thái hoặc ra quyết định.
+### Máy in và lịch sử mẻ
 
-1. Tiêu đề trang: tên + một mô tả ngắn; không liệt kê lại các mục đã có ở menu,
-   thẻ, bộ lọc hoặc bước bên dưới.
-2. Stepper, nút, chip và tiêu đề nhóm: ưu tiên nhãn ngắn. Không đặt thêm câu giải
-   thích nếu nhãn, số lượng hoặc trạng thái đã truyền đủ ý.
-3. Mô tả chỉ được giữ khi nó làm rõ một hệ quả quan trọng (dữ liệu không ảnh hưởng
-   tồn kho, thao tác không thể hoàn tác, quyền hạn, hay điều kiện cần thực hiện).
-4. Trạng thái nền hoặc hàng chờ phụ chỉ cần một số lượng và một hành động chính phải
-   nằm gọn trong toolbar/chip cạnh luồng liên quan, không tự chiếm nguyên một hàng
-   ngang; vẫn giữ được số lượng, trạng thái thực và hành động đó trên desktop lẫn mobile.
-5. Khi rút gọn copy, quét cả họ component và mọi breakpoint; thêm regression check
-   cho nguyên tắc mới thay vì chỉ cắt chữ ở ảnh người dùng gửi.
-6. Các control là anh em trong cùng toolbar phải dùng cùng chiều cao, bán kính bo và
-   vùng chạm; không trộn kích thước mặc định của select, button, menu ba chấm và ô tìm
-   kiếm. Khi có chip/trạng thái nền chen vào toolbar, khung bao của nó cũng theo chuẩn đó.
-7. Hàng công việc theo model (kể cả khi đang gộp theo plate/màu) phải kèm thumbnail
-   model thật khi có dữ liệu; ảnh lỗi chỉ được ẩn/fallback cùng khung, không bỏ tên hoặc
-   làm đổi bố cục. Không dùng emoji hệ thống cho icon thao tác/trạng thái mới; mỗi họ
-   giao diện được chạm tới phải thay icon emoji còn thấy được của chính họ bằng SVG từ
-   primitive icon chung để nét vẽ, kích thước và màu đồng nhất.
-8. Thẻ tóm tắt không được lặp toàn bộ tên model thành nhiều chip. Giữ thumbnail stack,
-   số model/sản phẩm và hành động xem chi tiết; chỉ hiển thị từng tên khi người dùng mở
-   phần chi tiết hoặc khi tên đó cần ra quyết định.
-9. Thanh tìm kiếm dùng chung trên các trang phải kế thừa bề mặt của tìm kiếm Tiến độ
-   In: icon SVG nhỏ, chiều cao tối thiểu 42px, nền gọn và focus rõ. Vị trí/rộng theo
-   workspace nhưng không được tự chiếm thêm một hàng nếu còn đặt cạnh tiêu đề/toolbar
-   một cách an toàn. Hướng dẫn phím tắt không được chiếm một dòng riêng trong thanh
-   chọn nhiều khi nút và hành vi đã rõ.
-10. Các thư viện chính (Đơn, Plate, Project, Màu nhựa và Model) phải có tìm kiếm
-    không dấu ngay cạnh tiêu đề trên desktop, tự xuống hàng an toàn trên mobile và lọc
-    theo các thuộc tính người dùng nhìn thấy. Không chỉ chuẩn hóa CSS mà để một trang
-    còn không có cách tìm dữ liệu của chính nó.
-11. Quyết định ngày 2026-10-11: nút hành động phụ chỉ có icon (sửa, đóng, làm mới,
-    bỏ mục, sao chép, chuyển trang/tháng/thứ tự) dùng primitive `.btn-icon-only`:
-    chỉ hiện SVG căn chính giữa, không nền/viền/vòng sáng/bóng hay hiệu ứng dịch
-    chuyển của nút có chữ trong mọi theme và trạng thái hover/active. Giữ vùng
-    bấm 44×44px, tên truy cập, focus bàn phím và disabled. Nút có chữ, nút chính,
-    stepper số lượng, nút chụp và nút điều hướng riêng không bị chuyển thành kiểu
-    này chỉ vì chứa icon. Guard: `tools/icon-actions-qa.mjs`, cùng QA máy in.
+- Tích hợp web kế thừa flow PrintPeek; demo ghi rõ minh họa, chỉ triển khai phương
+  án được duyệt. Demo/giả lập không chứng minh hoạt động máy thật/quyền điều khiển;
+  không tự mua/cấp dịch vụ hosting mới.
+- Hỗ trợ đội máy 2 A1, 2 P1S, 1 P2S, 1 H2S qua Bambu Cloud độc lập, không LAN,
+  không bắt buộc Bambu Connect/PrintPeek Windows. Giữ biệt danh/tiến độ/layer/
+  thời gian; phân biệt error/warning/thông tin, Việt hóa kèm mã gốc.
+- Theo dõi trong Sản xuất / Plate & máy qua trang native `printer-monitor`, có
+  máy trực tiếp/lịch sử mẻ. Dùng Supabase hiện có theo phiên web, không tự cấp
+  hosting 24/7 hoặc cam kết miễn phí ngoài hạn mức tài khoản.
+- Chỉ thu khi có web mở; đóng mọi phiên/mất mạng có thể tạo khoảng trống. Mở lại
+  không giả thời điểm bắt đầu/kết thúc hoặc sự kiện bỏ lỡ. Trung gian kết nối hữu
+  hạn tự nối lại, giữ state/chống trùng.
+- Web chỉ ghim bảng trong web, không hứa overlay đè ứng dụng Windows. Phân biệt
+  bộ thu/lưu dữ liệu, thông báo trong web, push ngoài web; không coi là cùng khả
+  năng hoặc tự thêm dịch vụ để đổi phạm vi theo dõi.
+- Token Bambu chỉ ở server, mã hóa, không đọc bằng quyền web; kiểm tra workspace/
+  quyền, không log mật khẩu/token/email/mã xác nhận. Chỉ chủ xưởng kết nối/ngắt;
+  đọc theo quyền Tiến độ hoặc Plate, ghép model theo quyền Plate.
+- Kết nối chấp nhận thành công có code:null; ưu tiên username MQTT trong token,
+  preference chỉ fallback. Xác minh MQTT trước thay phiên cũ. Lỗi nêu bước gửi mã/
+  xác nhận mã/đọc định danh/đọc máy và HTTP/mã an toàn, không gộp thành mã email sai
+  hoặc lộ dữ liệu nhạy cảm. Giữ form/dữ liệu để thử lại, không đòi xóa dữ liệu web.
+- Ảnh đúng dòng máy, thumbnail đúng mẻ. Lịch sử giữ tổng thời gian in, bắt đầu/
+  kết thúc, máy/model; tách giờ thực/ước tính/lần đầu quan sát, tạm dừng/khoảng
+  thiếu dữ liệu. In xong không tự là QC đạt hoặc cộng tồn.
+- Ghép ảnh/mẻ bằng ID, không chỉ tên/mẻ gần nhất; thiếu ảnh/chưa ghép hiện rõ,
+  không đoán hoặc dùng ảnh demo làm thật. Ghép model/biến thể/số lượng bằng bộ
+  chọn tìm kiếm/ảnh, giữ nháp khi lưu lỗi, kiểm tra revision. Telemetry không
+  ghi đè ghép; ngắt tài khoản không xóa lịch sử.
+- Hai máy mỗi hàng trên desktop/mobile; màn hình hẹp dùng thẻ gọn, không ép chữ
+  cạnh ảnh. Giữ ảnh/trạng thái/chỉ số/thao tác. Thẻ cùng hàng cao bằng nhau, căn
+  trên, cụm ảnh/khoảng cách ổn định; tự tăng theo tên/mẻ dài/lỗi mở, không cắt
+  thông tin hoặc đặt chiều cao cứng.
+- Click thẻ/tên mở chi tiết máy; lịch sử mở chi tiết mẻ. Có ảnh lớn/trạng thái/
+  layer/nhiệt độ/mốc và thời gian đã theo dõi/model ghép/diễn biến/lỗi/cảnh báo.
+  Đọc đúng ID, thiếu/lỗi có trạng thái/retry. Desktop rộng đặt bên phải, màn nhỏ
+  trên lưới; nhận diện chọn, bàn phím/chạm, đóng/Escape trả focus. Không thêm quyền
+  điều khiển qua chi tiết; chức năng điều khiển chưa được xác thực trên máy thật
+  không được trình bày như đã hoạt động.
+- Chi tiết mở/đóng co giãn mượt: desktop thu/giãn danh sách nhường chỗ bên phải,
+  màn nhỏ bung/thu trên lưới, vẫn hai máy mỗi hàng. Không scale trang/dựng lại
+  DOM/ảnh/mất cuộn/chạy lại hiệu ứng theo telemetry. Bấm nhanh không kẹt; thu bỏ
+  khỏi Tab ngay. Reduced-motion tức thời, mất quyền/đổi xưởng ẩn ngay. Đổi máy/
+  mẻ không giữ nhầm ảnh/model.
+- Thông báo chuyển trạng thái thật: bắt đầu/tạm dừng/tiếp tục/hoàn thành/thất bại/
+  mất và nối lại; chống trùng telemetry/reconnect/nhiều tab. Warning không biến
+  đang in thành lỗi; error không bỏ qua bằng nút warning.
+- Bỏ qua warning theo máy + mã, có hiện lại, giữ qua reload/lịch sử, không gửi
+  lệnh xóa lỗi. Delta thiếu HMS không chứng minh hết cảnh báo; chỉ báo tái phát
+  khi nguồn xác nhận mã đã biến mất rồi xuất hiện lại. Mã chưa hiểu giữ mã/nội
+  dung gốc, không đoán nguyên nhân/an toàn.
+- Guard: `tools/printer-core-qa.mjs`, `tools/printer-sql-qa.mjs`,
+  `tools/printer-ui-qa.mjs`, `tools/printer-motion-probe.mjs`,
+  `tools/printer-api-qa.ts`. API QA dùng Deno/dữ liệu cô lập; phân biệt deploy/live
+  QA, không báo hoàn tất máy thật chỉ từ demo.
 
-## Định nghĩa hoàn tất
+## Thông báo
 
-### Sắp plate không phụ thuộc thư viện model (yêu cầu ngày 2026-10-11)
+- Pop-up thường/toast ở góc trên bên phải, bảng thông báo thả gọn, đơn giản, không
+  border, dùng SVG; không chồng nhau/bảng thả. Hover/focus tạm dừng tự đóng; không
+  sửa/xóa dữ liệu camera/nghiệp vụ để đổi giao diện.
+- X chỉ hiện khi hover trên thiết bị có hover, vẫn hiện khi focus bàn phím và
+  có cách đóng rõ trên thiết bị không hover; vùng đóng 44px.
+- Bảng thả không mở dialog giữa màn hình, ghi đè form hoặc tự đánh dấu đã đọc
+  khi mở. Giữ người nhận/quyền/lịch sử/âm thanh/trạng thái đúng khi xem, đọc hết,
+  Escape, click ngoài và tải nền.
+- Máy in xong/tạm dừng/thất bại/dừng in dùng pop-up giữa màn hình, không tự đóng,
+  chỉ xác nhận “Đã biết” hoặc “Xem máy”. Escape/click ngoài/vuốt/đọc hết bảng
+  không làm mất thông báo cần xác nhận. Warning thường, bắt đầu/tiếp tục/kết nối
+  dùng góc trên phải; mất kết nối không chứng minh máy dừng.
+- Pop-up máy cần xác nhận xếp hàng/chống trùng ID/bền qua reload theo workspace
+  + người dùng trên thiết bị. Chờ form/dialog/camera, không ghi đè nháp/focus.
+  Hiện trạng thái/thời điểm/xem đúng máy; xác nhận tách khỏi đã đọc, không xóa
+  lỗi/gửi lệnh/tự QC/cộng tồn.
+- Header chừa chỗ cho chuông, không ép tên trang thành cột hẹp trên mobile.
+  Thanh ghim đo mốc vị trí thực, không giả định chiều cao header.
+- Hành động phụ pop-up đặt dưới nội dung, không chia ba cột ép tên/mô tả thành
+  từng chữ. Đóng 44px góc trên, chữ đọc được, không tràn ngang.
+- Guard: `tools/notifications-qa.mjs`, `tools/printer-alerts-probe.mjs` từ printer
+  UI QA; bao phủ quyền/workspace/queue/reload/form/các cách đóng/bàn phím/chạm/
+  mobile/desktop/hai theme.
 
-- Cho phép cùng plate có dòng model/part và dòng nhập tay cho đồ mới, decor hoặc
-  việc in khác; không bắt tạo model giả hay ghép nhầm vào thư viện. Dòng nhập tay
-  có tên, số lượng, ghi chú, màu tùy chọn và file cần in từ thiết bị.
-- File là chỉ định đầu vào, không tự slice/phân tích hay gửi lệnh máy. Giữ file
-  gốc trong IndexedDB trước khi cho thêm/lưu; upload riêng tư theo xưởng, có trạng
-  thái thật, thử lại và tự tiếp tục khi có mạng/mở lại. Không đặt blob vào settings
-  hoặc xóa file lịch sử khi chỉ gỡ tham chiếu. Giới hạn hiện tại 50 MB/file; nhận
-  3MF, STL, OBJ, G-code, BGCODE, STEP/STP, ZIP; lỗi/quota không báo thành công.
-- Giữ nháp nhập tay và file qua đóng/mở/reload, giữ DOM/focus khi thêm model hoặc
-  cập nhật nền. Plate đổi ở phiên khác phải giữ nháp và chặn ghi đè mù. Tên món
-  không phải định danh; các món cùng tên có ID riêng, không tự gộp.
-- Đối chiếu mẻ phải giữ tên/ghi chú/file và kết quả đạt/lỗi/chưa in của mục nhập
-  tay; không tự cộng tồn hay tiến độ Order/model, không suy model từ tên file.
-  Guard: `tools/plate-manual-qa.mjs`, `tools/plate-files-sql-qa.mjs` và QA plate.
+## KiotViet, bán hàng và tồn kho
 
-### Demo tích hợp trạng thái máy in lên web (yêu cầu ngày 2026-10-10)
+- Đồng bộ giữ danh mục/báo cáo bán/ghép SKU/sổ đối chiếu và đường nhập file/Chrome/
+  bù ngày. Trạng thái thật, không coi chưa kết nối/thiếu dữ liệu là thành công;
+  giữ focus/caret/ảnh khi tìm hoặc tải nền.
+- Rà soát gồm nhập file/Chrome/bù ngày/cache/archive/sync/lịch sử/lọc/biểu đồ/in
+  lại. Phân biệt lỗi tái hiện với live chưa xác minh; dữ liệu QA cô lập, không
+  sửa/xóa live để thử. QA giao diện không chứng minh dữ liệu bán an toàn.
+- Chênh lệch số bán giữa trang Bán hàng/model không tự chứng minh mất báo cáo;
+  đối chiếu nguồn/kỳ trước kết luận. Bảng model/tóm tắt Kiot/metrics AI dùng kỳ
+  đang chọn ở Bán hàng, fallback cùng lọc ngày, ghi rõ kỳ; xem nhanh 30 ngày ghi
+  kỳ riêng.
+- Chi tiết dựa salesImports/archive; cache chỉ dùng khi revision khớp. Chưa tải/
+  lỗi là chưa biết, không là 0, có retry hữu hạn. AI chờ đủ chi tiết/quyền, kết
+  quả khác báo cáo/revision không là kỳ hiện tại. Chỉ cập nhật vùng Kiot, giữ
+  ảnh/cuộn, không mở lại model đã đóng/đổi; giữ nguồn/ledger.
+- Báo cáo/ledger lưu/xóa nguyên tử, kiểm tra revision, retry cùng request ID.
+  Bản chưa xác nhận lưu bền trước gửi; không cắt lịch sử/compact chi tiết chưa
+  archive. Tải đủ trang, không báo cloud thành công/xác nhận ngày bridge khi lỗi.
+  File nhiều ngày không gán ngày cuối.
+- Ngày chỉ hoàn tất khi có chi tiết hoặc metadata xác nhận SKU/số lượng/doanh
+  thu lớn hơn 0; rỗng hiện riêng, có đường bù ngày.
+- Nhập Chrome đối chiếu kỳ file với ngày job; sai thì dừng/giữ báo cáo cũ, không
+  gắn ngày khác. Bù chỉ thay cùng ngày sau parse dòng hợp lệ và lưu xong. Không
+  tự lấy lại/ghi đè ngày có doanh số hợp lệ; thiếu/rỗng chạy lại, không cộng lặp tồn.
+- Parser nhận header KiotViet theo tiền tố/biến thể như “Mã hàng hóa”, “Tên hàng
+  hóa”, không phụ thuộc một cách viết; loại tổng, chỉ lưu SKU có lượng bán hợp
+  lệ. In bù đủ thành phần/hệ số, không tự chọn model thay thế.
+- QA gồm ngày thiếu/rỗng/hợp lệ, file sai kỳ/rỗng, reload, archive/cache lệch
+  revision, tải nền/lỗi/retry/zero thật/bảng model/tóm tắt/AI, hai theme và mobile/
+  desktop. Guard model: `tools/model-sales-qa.mjs`.
 
-- Người dùng yêu cầu kế thừa flow/yêu cầu app Windows PrintPeek, cho xem demo,
-  chỉnh sửa và phê duyệt trước khi triển khai lên web. Sau demo người dùng đã
-  đồng ý và yêu cầu làm thông báo khi máy đổi trạng thái, phân biệt warning/error
-  và thêm bỏ qua warning. Đây là phê duyệt tính năng thông báo, không phải quyền
-  gửi lệnh điều khiển máy hay tự mua/cấp dịch vụ hosting mới.
-- Ngữ cảnh gốc: 2 A1, 2 P1S, 1 P2S, 1 H2S; dùng Bambu Cloud độc lập, không LAN,
-  không bắt buộc Bambu Connect. Giữ biệt danh, tiến độ/layer/thời gian, phân biệt
-  lỗi/cảnh báo/thông tin, nội dung Việt hóa có mã gốc và bỏ qua/hiện lại cảnh báo.
-  Điều khiển pause/resume/tốc độ của PrintPeek đang bị từ chối xác thực trên máy
-  thật; demo không được trình bày như đã giải quyết quyền điều khiển cloud.
-- Bổ sung đã yêu cầu: hình mô tả đúng dòng máy, thumbnail đúng mẻ, lưu lịch sử mẻ
-  có tổng thời gian in, thời điểm bắt đầu/kết thúc, máy và các model trong mẻ;
-  thiết kế dữ liệu để mở rộng về sau. Không ghép ảnh/mẻ chỉ bằng tên hoặc lấy mẻ
-  gần nhất. Thiếu thumbnail hay chưa ghép model phải hiện rõ, không đoán dữ liệu.
-- Bề mặt đề xuất trong Sản xuất / Plate & máy có máy trực tiếp và lịch sử mẻ.
-  Người dùng chốt không cần theo dõi/lưu liên tục khi đóng web vì thường mở web.
-  Triển khai theo phiên web đang mở, không tự thuê dịch vụ 24/7 hay buộc chạy
-  PrintPeek Windows. Có thể dùng trung gian Supabase hiện có; không cam kết miễn
-  phí ngoài hạn mức của tài khoản. Tách giờ thực/ước tính/lần đầu quan sát, thời
-  gian tạm dừng và khoảng mất dữ liệu. Không coi kết thúc máy là QC đạt/tự cộng tồn.
-- Web chỉ ghim bảng trạng thái trong trang web; overlay đè ứng dụng khác của
-  Windows không được hứa là web tái tạo tương đương. Dữ liệu demo phải có nhãn
-  minh họa rõ ràng; ảnh mẫu không được coi là ảnh mẻ thật của xưởng.
-- Thông báo trạng thái phải dựa trên chuyển trạng thái thật (bắt đầu, tạm dừng,
-  tiếp tục, hoàn thành, thất bại, mất/kết nối lại), chống báo trùng do telemetry,
-  reconnect hoặc nhiều tab. Warning không đổi trạng thái đang in thành lỗi;
-  error không được bỏ qua bằng nút dành cho warning. Bỏ qua theo máy + mã cảnh
-  báo, có Hiện lại, giữ qua reload và giữ lịch sử; không gửi lệnh xóa lỗi lên máy.
-  Delta thiếu HMS không được coi là cảnh báo đã hết. Chỉ khi nguồn xác nhận mã
-  đã biến mất mới cho cảnh báo tái phát được báo lại. Mã chưa hiểu phải giữ mã
-  và nội dung gốc, không đoán nguyên nhân hoặc mức độ an toàn.
-- Quyết định nơi chạy đã chốt: dùng trung gian Supabase hiện có theo phiên web,
-  không phụ thuộc PrintPeek và không cấp hosting mới. Token Bambu chỉ ở server,
-  mã hóa và không đọc được bằng quyền web. Chỉ chủ xưởng kết nối/ngắt liên kết;
-  đọc theo quyền Tiến độ hoặc Plate, ghép model theo quyền Plate. Không báo hoàn
-  tất trên máy thật chỉ bằng demo/lõi giả lập; phải phân biệt deploy và live QA.
-- Lựa chọn đã chốt thay cho câu hỏi nơi chạy ở trên: chỉ thu trạng thái khi có
-  web mở. Đóng mọi phiên web hoặc mất mạng thì có thể có khoảng trống dữ liệu;
-  mở lại không tạo giả thời điểm bắt đầu/kết thúc hay sự kiện đã bỏ lỡ. Token
-  cloud phải giữ phía server có kiểm tra workspace/quyền, không log mật khẩu/mã
-  email/token. Trung gian kết nối hữu hạn phải tự nối lại và giữ state/dedup.
-- Khi người dùng hỏi chưa hiểu lựa chọn nơi chạy bộ thu, giải thích bằng tình huống
-  bật/tắt máy tính: bộ thu trên Windows ngừng cập nhật khi máy tính tắt/ngủ hoặc
-  app ngừng chạy; bộ thu cloud độc lập không phụ thuộc máy tính cá nhân. Phân biệt
-  bộ thu dữ liệu/lưu lịch sử với nơi hiển thị thông báo: đóng web vẫn có thể ghi
-  lịch sử nếu bộ thu còn chạy, nhưng pop-up trong web chỉ hiện khi web mở; push
-  ngoài web là khả năng riêng cần quyền và triển khai tương ứng. Không tự cấp
-  hosting hoặc tính phí; quyết định chỉ theo dõi khi web mở ở trên là lựa chọn mới.
-- Bảng máy dùng trang native `printer-monitor` trong Plate & máy. Không đoán
-  model từ tên file; chủ động ghép model/biến thể/số lượng vào mẻ bằng bộ chọn
-  có tìm kiếm/ảnh, giữ nháp khi lưu lỗi và kiểm tra revision khi hai thiết bị sửa.
-  Telemetry không ghi đè ghép model. Ngắt tài khoản không xóa lịch sử đã lưu.
-  Guard: `tools/printer-core-qa.mjs`, `printer-sql-qa.mjs`, `printer-ui-qa.mjs`,
-  `printer-api-qa.ts`; API QA bằng Deno, chỉ dùng dữ liệu cô lập.
-- Sự cố kết nối Bambu người dùng báo ngày 2026-10-10: phản hồi thành công có
-  `code: null` không phải lỗi. Lấy username MQTT từ token khi có, chỉ gọi preference
-  để fallback; vẫn xác nhận quyền MQTT trước khi thay phiên cũ. Lỗi phải nêu bước
-  gửi mã/xác nhận mã/đọc định danh/đọc máy và HTTP hoặc mã lỗi an toàn, không gộp
-  mọi lỗi thành “mã email sai”, không lộ token/email/mã xác nhận trong chẩn đoán.
-  Lỗi giữ dữ liệu đã lưu và thông tin form để thử lại, không yêu cầu xóa dữ liệu web.
-- Người dùng yêu cầu hai máy mỗi hàng ở Máy trực tiếp; giữ đúng hai cột trên
-  desktop/mobile, dùng bố cục thẻ gọn ở màn hình hẹp thay vì ép chữ cạnh ảnh.
-  Giữ ảnh máy/ảnh mẻ, trạng thái, chỉ số và đường xem/bỏ qua cảnh báo; không đổi
-  dữ liệu hoặc kết nối để chỉnh lưới. Guard đo hai cột và tràn bên trong từng thẻ.
-- Phản hồi thẻ máy lỏm chỏm: hai thẻ cùng hàng phải cao bằng nhau, nội dung căn
-  trên và ảnh máy/ảnh mẻ nằm trong một cụm với khoảng cách ổn định. Chiều cao hàng
-  tự tăng theo tên/mẻ dài hoặc chi tiết lỗi đang mở, không đặt chiều cao cứng hay
-  cắt thông tin để làm đều. Guard kiểm tra cả có/không lỗi, mở chi tiết và cập nhật
-  telemetry trên desktop/mobile, light/dark; giữ hai máy mỗi hàng và DOM ảnh/focus.
-- Phản hồi thiếu luồng demo ngày 2026-10-11: bấm thẻ/tên máy phải chọn máy và mở
-  bảng chi tiết có ảnh mẻ lớn, trạng thái/layer/nhiệt độ, các mốc/thời gian đã theo
-  dõi, model đã ghép và diễn biến/lỗi/cảnh báo. Mẻ lịch sử cũng mở được chi tiết.
-  Desktop rộng đặt chi tiết bên phải; màn hình nhỏ đặt trên lưới, vẫn giữ hai máy
-  mỗi hàng. Có nhận diện máy được chọn, mở bằng bàn phím/chạm, đóng/Escape trả focus.
-  Dữ liệu nền không dựng lại bảng/ảnh hoặc mất vị trí cuộn; đổi máy/mẻ/workspace
-  không được giữ nhầm model/ảnh. Chỉ đọc đúng ID mẻ, thiếu/lỗi có trạng thái và thử
-  lại; không lấy mẫu demo làm dữ liệu thật hoặc thêm quyền điều khiển máy.
-- Yêu cầu ngày 2026-10-11: mở/đóng chi tiết máy hoặc mẻ phải co giãn bố cục mượt:
-  desktop thu/giãn danh sách để nhường chỗ bên phải, màn hình nhỏ bung/thu khung
-  trên lưới, vẫn hai máy mỗi hàng. Không scale toàn trang hay dựng lại ảnh/DOM;
-  không chạy lại hiệu ứng khi telemetry cập nhật. Đóng trả focus và cuộn, bấm
-  nhanh không để khung kẹt; thu khung phải bỏ khỏi Tab ngay. Giảm chuyển động
-  phải chuyển trạng thái tức thời; mất quyền/xưởng phải ẩn dữ liệu ngay.
-  Guard: `tools/printer-ui-qa.mjs` và `tools/printer-motion-probe.mjs`.
+### Tín hiệu bán và tồn trên model
 
-### Duyệt thiết kế thông báo (yêu cầu ngày 2026-10-10)
+- Thẻ model xem nhanh bán/tồn Kiot/tồn xưởng khi hover, có bàn phím/chạm tương
+  đương, không thay đổi chọn/drag/mở model.
+- Ngưỡng tồn ít/bán chạy linh động theo dữ liệu bán thực tế, không số cố định.
+  Nêu kỳ/nguồn/độ phủ/tiêu chí; báo cáo thiếu/chưa tải, SKU chưa ghép hoặc ghép
+  thay thế không biến thành 0/tín hiệu chắc chắn. Không cộng trùng báo cáo giao nhau.
+- Tồn Kiot là snapshot riêng; tồn xưởng là thành phẩm sẵn giao sau gửi/QC và tồn
+  đầu kỳ đã kiểm, không phải tổng part in. SKU nhiều model/biến thể giữ hệ số,
+  không đoán thay thế hoặc sửa nguồn.
+- Hiệu ứng gọn có nhãn/SVG, không chỉ màu/nhấp nháy liên tục, tôn trọng reduced-
+  motion. Bảng không bị card/viewport cắt, Escape đóng, đọc được khi hover bảng,
+  không che navigation mobile.
+- Guard phép tính/hệ số, thiếu dữ liệu/quyền, giao/QC, nhiều model, hai theme,
+  hover/focus/chạm/cạnh viewport/cuộn/tải nền không dựng lại lưới.
 
-- Người dùng yêu cầu chuyển thông báo lên góc trên bên phải và tinh gọn, đơn giản
-  hơn. Phải cho xem thiết kế và chờ người dùng chốt trước khi sửa ứng dụng.
-- Sau khi xem bản minh họa, người dùng đã chốt và yêu cầu triển khai cả pop-up
-  nhỏ góc trên bên phải và bảng thông báo dạng thả gọn; cả hai không có border.
-  Đây là phê duyệt thay cho yêu cầu khoan triển khai ở lượt xem trước.
-- Dấu X chỉ hiện khi đưa chuột vào thông báo trên thiết bị có hover. Vẫn phải
-  hiện khi focus bàn phím, và có đường đóng rõ ràng trên thiết bị không có hover;
-  vùng bấm đóng 44px. Không dùng cách ẩn khiến bàn phím hoặc cảm ứng không đóng được.
-- Bảng thả không mở dialog giữa màn hình, không ghi đè dialog đang nhập, không
-  tự đánh dấu đã đọc khi chỉ mở. Giữ lọc người nhận/quyền, lịch sử và âm thanh;
-  click xem, đọc hết, Escape, click ngoài và tải nền phải giữ trạng thái đúng.
-- Pop-up sự kiện và toast phản hồi dùng chung vị trí/kiểu không viền, icon SVG,
-  không chồng nhau hay bảng thả. Ngoại lệ đã chốt ngày 2026-10-11: sự kiện máy in
-  xong/tạm dừng/thất bại/dừng in dùng pop-up giữa màn hình, không tự đóng, chỉ
-  xác nhận bằng “Đã biết” hoặc “Xem máy”. Escape, click ngoài, vuốt hay đọc hết
-  bảng thông báo không được làm mất thông báo cần xác nhận. Warning thông thường
-  và trạng thái bắt đầu/tiếp tục/kết nối vẫn dùng góc trên phải; mất kết nối không
-  tự chứng minh máy dừng. Tạm dừng tự đóng pop-up thường khi hover/focus; không sửa/xóa
-  dữ liệu camera hay nghiệp vụ để thay giao diện. Guard: tools/notifications-qa.mjs.
-- Pop-up máy cần xác nhận phải xếp hàng, chống trùng ID, giữ qua reload theo
-  workspace + người dùng trên thiết bị; chờ form/dialog/camera đang mở, không
-  ghi đè nháp/focus. Có nhãn trạng thái, thời điểm sự kiện và nút xem đúng máy;
-  xác nhận chỉ là đã nhận thông báo, không xóa lỗi hay gửi lệnh máy, không tự QC
-  hoặc cộng tồn. Giữ riêng xác nhận với trạng thái đã đọc; có guard cho hàng chờ,
-  reload, Escape/click ngoài, form, quyền/workspace, mobile/desktop và hai theme
-  trong `tools/printer-alerts-probe.mjs` (chạy từ `printer-ui-qa.mjs`).
-- Header dùng chung phải chừa chỗ cho chuông mà không ép tên trang thành cột hẹp
-  trên mobile. Guard sticky đo mốc ghim từ vị trí thực thay vì giả định chiều cao
-  header; vẫn kiểm tra thanh thao tác nằm đúng mép vùng cuộn sau khi vượt mốc đó.
-- Pop-up có hành động phụ (như Bỏ qua cảnh báo) phải đặt hành động dưới nội dung,
-  không chia ba cột khiến tên/mô tả bị ép xuống từng chữ. Giữ nút đóng 44px ở góc
-  trên, phần chữ có chiều rộng đọc được, không tràn ngang ở mọi theme/breakpoint.
+## Quy trình kiểm tra và bàn giao
 
-### Trao đổi về trang Cài đặt (ngày 2026-10-10)
-
-- Người dùng hỏi nếu làm trang Cài đặt thì có thể làm những gì. Phạm vi lượt này
-  là tư vấn khả năng và cách tổ chức, chưa phải yêu cầu xây dựng hay phát hành.
-- Khi tiếp tục trao đổi, phân biệt các tùy chỉnh đã có có thể gom lại (âm thanh
-  chụp/thông báo, thông báo đẩy, sao lưu, quản lý thiết bị/quyền) với tính năng
-  đề xuất mới. Các nhóm hoặc thứ tự ưu tiên trong tư vấn chưa được người dùng
-  chấp thuận; không tự coi là phạm vi triển khai đã thống nhất.
-
-### Trang đồng bộ KiotViet (yêu cầu ngày 2026-10-10)
-
-- Người dùng yêu cầu dùng năng lực mô hình 6.1 Sol làm lại trang Đồng bộ KiotViet
-  vì giao diện rối. Phạm vi là tổ chức lại trang và các control liên quan; giữ dữ
-  liệu danh mục, báo cáo bán, ghép SKU và sổ đối chiếu hiện có.
-- Áp dụng hợp đồng UX đã có cho cả nhóm nhập dữ liệu, lịch nền, danh mục SKU và
-  đối chiếu: thông tin gọn, trạng thái thật, giữ focus/caret/ảnh khi tìm kiếm và
-  cập nhật nền; không coi chưa kết nối hoặc chưa có dữ liệu là thành công.
-- Việc làm lại vẫn phải giữ các đường nhập file/Chrome/bù ngày và ghép SKU theo
-  các quy tắc KiotViet bên dưới; kiểm tra mobile/desktop, hai theme và regression
-  trước khi bàn giao theo quy trình chung.
-
-### Không gian Sản xuất tập trung (yêu cầu ngày 2026-10-08)
-
-- Người dùng yêu cầu phân tích bằng mô hình 6.1 Sol và làm lại bốn trang Tiến độ
-  in, Plate in, Nhắc part còn thiếu, Cần in lại vì chức năng phân mảnh. Hợp nhất
-  điều hướng thành một mục Sản xuất, gồm Cần in / Plate & máy / Tiến độ.
-- Cần in dùng một danh sách và tìm kiếm chung; ghi rõ nguồn theo đơn, ngoài đơn,
-  QC lỗi, đối chiếu mẻ, bù hàng. Đơn chưa bắt đầu vẫn xuất hiện; đơn hủy không
-  được đề xuất. Mẻ đã in chờ đối chiếu không được cộng vào số lượng cần in mới.
-- QC của pitem là lý do của phần thiếu đã có, không cộng trùng. Cùng SKU có gợi ý
-  theo bán và theo tồn chỉ có một hàng; người dùng chọn chính sách, không cộng hai
-    mức. QC ngoài đơn thiếu ID part hoặc QC đơn đã mất tham chiếu pitem phải giữ
-    hàng cần kiểm tra, không đoán part. Làm mới danh sách gộp phải cập nhật cả
-    dữ liệu xưởng và index báo cáo bán khi tài khoản có quyền KiotViet.
-- Giữ định danh model/biến thể/part/màu và tham chiếu pitem/đơn khi lập kế hoạch;
-  chỉ xếp lượng chưa có trong kế hoạch. Giữ quyền đọc theo từng nguồn và quyền
-  ghi riêng, không cấp thêm quyền khi gom trang. Danh sách lớn có đường xem tiếp.
-- Plate & máy giữ thư viện plate và có Lịch máy/Khay nhựa; Tiến độ dùng các cách
-  xem đơn/model/plate. Các route cũ vẫn mở đúng góc nhìn trong cùng không gian,
-  giữ liên kết theo đơn/dự án, tìm kiếm/bộ lọc khi Back/Forward hoặc tải lại.
-
-### Tín hiệu bán và tồn trên thẻ model (yêu cầu ngày 2026-10-09)
-
-- Thư viện model phải cho xem nhanh lượng bán, tồn Kiot và tồn xưởng khi rê chuột;
-  có đường tương đương bằng bàn phím và nút chạm, không làm thay đổi chọn/drag/mở model.
-- Người dùng yêu cầu ngưỡng linh động theo tình hình bán thực tế, không dùng một
-  số lượng cố định để gắn nhãn tồn ít hoặc bán chạy. Nêu rõ kỳ, nguồn, độ phủ dữ liệu
-  và tiêu chí suy ra; báo cáo thiếu/chưa tải, SKU chưa ghép hay ghép thay thế không
-  được biến thành số 0 hoặc tín hiệu chắc chắn. Không cộng trùng báo cáo giao nhau.
-- Tồn Kiot là snapshot riêng; tồn xưởng là thành phẩm sẵn giao còn lại sau gửi/QC
-  và tồn đầu kỳ đã kiểm, không phải tổng part từng in. Công thức SKU nhiều model/
-  biến thể phải giữ hệ số và không đoán thành phần thay thế. Không sửa dữ liệu nguồn.
-- Hiệu ứng gọn có nhãn/icon SVG, không chỉ dựa vào màu, không nhấp nháy liên tục;
-  tôn trọng reduced-motion. Bảng xem nhanh không bị card/viewport cắt, đóng được
-  bằng Escape, đọc được khi đưa chuột vào chính bảng và không che navigation mobile.
-- Guard phải kiểm tra phép tính/hệ số, thiếu dữ liệu/quyền, hàng đã giao/QC, nhiều
-  model, light/dark, hover/focus/chạm, cạnh viewport, cuộn và tải nền không dựng lại lưới.
-
-### Tiến độ in native (yêu cầu viết lại ngày 2026-10-09)
-
-- Trang Tiến độ phải là bề mặt native trong Sản xuất, dùng cùng header, toolbar,
-  theme và vùng cuộn `.pg-content` với các trang khác. Không mount cửa sổ legacy,
-  không có sidebar/drawer hay navigation mobile riêng, không chồng CSS vá layout.
-- Giữ bốn góc xem đơn/model/plate/ngoài đơn, liên kết đơn/dự án và các handler
-  cập nhật part, QC, gia công/giao hàng. Viết lại giao diện không chuyển/xóa dữ liệu.
-- Tìm không dấu theo đơn, model, biến thể, part, màu; có số kết quả và đường bỏ
-  bộ lọc. Chỉnh số part dùng stepper thống nhất, vùng bấm 44px; thẻ mở được bằng
-  bàn phím. Giữ focus, cuộn và ảnh đã tải khi cập nhật; ảnh lỗi giữ khung fallback.
-  Back/tải lại phải giữ góc xem, tìm kiếm, trạng thái và scope đơn/dự án trong URL.
-- Guard phải kiểm tra mọi góc xem, chiều rộng nhỏ/tablet/desktop và landscape,
-  hai theme, không tràn ngang, không khoảng trắng do chiều cao viewport, không
-  có vùng cuộn lồng hay ảnh hưởng hình học trang kế cận khi chuyển trang.
-
-### Mật độ giao diện mặc định (yêu cầu ngày 2026-10-08)
-
-- Người dùng yêu cầu thu gọn giao diện toàn hệ thống: áp dụng chung cho tiêu đề,
-  khoảng cách trang, thẻ, thống kê và thanh điều hướng; không chỉ sửa một trang.
-- Giữ mật độ gọn trên desktop và mobile, light/dark. Không dùng `zoom` hoặc
-  `transform:scale` toàn trang để thu nhỏ; giữ tỷ lệ ảnh và các vùng cuộn hiện có.
-- Không đổi dữ liệu hay hành vi lưu/đồng bộ để chỉnh kích thước. Nút chính và
-  control cảm ứng vẫn có vùng bấm tối thiểu 44px, ô nhập mobile giữ chữ 16px để
-  tránh Safari tự zoom. Kiểm tra bằng `tools/density-qa.mjs` cùng QA hiện có.
-
-Một sửa lỗi UI chỉ hoàn tất khi đã có: sửa ở nguồn dùng chung hoặc lý do rõ ràng cho
-ngoại lệ; regression guard; QA pass; và thay đổi được đẩy lên remote theo quyền đã
-được người dùng cấp. Quy tắc này áp dụng cho mọi thay đổi tương lai trong repository.
-
-## Hiệu năng khởi động, đồng bộ và chụp ảnh (mandatory)
-
-1. Ứng dụng phải ưu tiên local-first: khi reload, dựng giao diện và dữ liệu đọc gần
-   nhất từ cache cục bộ trước, rồi đồng bộ phần thay đổi từ server ở nền; không chặn
-   thao tác ban đầu chỉ để tải lại toàn bộ dữ liệu đã biết. Cache phải có version,
-   migration và trạng thái độ mới rõ ràng; server vẫn là nguồn xác nhận cuối cùng.
-2. Realtime không được ghi đè mù dữ liệu local. Mỗi bản ghi đồng bộ phải có định danh
-   ổn định, version/revision hoặc mốc server, cơ chế cập nhật có điều kiện, tombstone
-   cho xóa và idempotency key cho thao tác gửi lại. Thay đổi khi offline được lưu vào
-   outbox bền vững, retry an toàn và có trạng thái chờ/lỗi/xung đột để người dùng biết.
-3. Luồng camera là fast path độc lập: phải có đường vào trực tiếp và mở được camera
-   mà không đợi tải toàn bộ thư viện, lịch sử hay ảnh. Cho phép chụp liên tiếp và lưu
-   ảnh/blob cùng metadata tối thiểu vào local ngay; việc nén, tạo thumbnail, upload và
-   liên kết bản ghi chạy nền, có hàng đợi bền vững và không làm mất ảnh khi reload,
-   mất mạng hoặc đóng ứng dụng giữa chừng.
-4. Upload ảnh phải tách trạng thái “đã chụp/lưu trên máy”, “đang tải”, “đã lên
-   Storage” và “đã gắn vào bản ghi nghiệp vụ”. Không buộc người dùng đợi upload xong
-   mới chụp ảnh tiếp; có retry/resume, chống upload trùng và chỉ dọn bản local sau khi
-   server xác nhận đầy đủ. Tối ưu kích thước/thumbnail ở worker khi phù hợp, nhưng
-   không tự làm giảm chất lượng bản gốc ngoài chính sách đã được thống nhất.
-5. Tải dữ liệu theo delta/cursor và chỉ lấy field cần cho màn hình; tránh chuỗi request
-   tuần tự, giới hạn/phân trang thư viện lớn, cache thumbnail và lazy-load ảnh ngoài
-   viewport. App shell và route camera cần được cache/preload phù hợp để reload hoặc
-   mở lại nhanh, kể cả mạng yếu; dữ liệu nền không được tranh băng thông ưu tiên của
-   upload ảnh đang chờ.
-6. Mọi thay đổi hiệu năng phải có đo trước/sau và regression guard cho ít nhất: thời
-   gian tới giao diện tương tác được từ cache, thời gian mở camera, thời gian từ bấm
-   chụp tới khi có thể chụp ảnh kế tiếp, thời gian đồng bộ nền/upload ở mạng chậm, và
-   tính đúng khi offline → reload → online, hai thiết bị cùng sửa, retry và xóa.
-7. Kiến trúc đã thống nhất cho Plate Studio: app shell dùng service worker theo hướng
-   network-first khi online và cache fallback khi offline; PWA có shortcut mở thẳng
-   `?capture=1`. Reload dùng RPC manifest một lượt để so revision + số bản ghi rồi chỉ
-   tải collection thay đổi, nhưng phải fallback an toàn về REST khi migration chưa có.
-   Ảnh camera được ghi vào IndexedDB theo workspace + user trước khi upload, giữ cùng
-   `reportId`/image hash khi resume và chỉ xóa blob local sau xác nhận server. Người
-   dùng được đóng camera ngay khi ảnh đã bền vững trên máy; queue tự tiếp tục khi có
-   mạng hoặc lần mở sau, không hiện cảnh báo rời trang cho ảnh đã được IndexedDB giữ.
-8. Lượt triển khai local-first/camera nhanh ngày 2026-10-02 chỉ được coi là bàn giao
-   xong sau khi runner Windows hoạt động lại, QA được chạy lại trên diff cuối, migration
-   `202610020001_workspace_sync_manifest.sql` được đẩy lên Supabase, và commit chọn lọc
-   được push lên remote. Không gộp nhầm các thay đổi KiotViet đang tồn tại song song;
-   lỗi runner `CreateProcessWithLogonW 1909` là trạng thái hạ tầng, không phải QA pass.
-   Khi tiếp tục deploy, phải xác nhận migration đã áp dụng và kiểm tra nội dung staged
-   trước commit để chỉ đưa phần local-first/camera lên remote. Lỗi `CreateProcessWithLogonW
-   1909` có thể thuộc tài khoản sandbox riêng của Codex (`CodexSandboxOffline`), không
-   chứng minh màn hình hay tài khoản người dùng đang bị khóa. Khi gặp lỗi này, thử lại và
-   kiểm tra runner/tài khoản sandbox trước; chỉ đề nghị đăng nhập lại hoặc khởi động lại
-   Codex khi lỗi còn kéo dài sau kiểm tra, và không được báo đã triển khai khi chưa xác nhận.
-9. Âm thanh chụp là tùy chọn, không được chặn camera hoặc âm mặc định local vì đang
-   chờ metadata/thư viện âm thanh cloud. Nạp asset mặc định độc lập; nếu tài khoản có
-   âm riêng thì chuyển sang âm đó sau khi tải xong. QA phải mô phỏng truy vấn cloud
-   chậm/không phản hồi và chờ buffer theo trạng thái bất đồng bộ, không kiểm tra đồng bộ.
-10. Mỗi lần mở web phải tự quét IndexedDB để khôi phục mọi ảnh camera chưa được server
-   xác nhận và tự tải nền, không phụ thuộc người dùng mở lại giao diện camera hoặc bấm
-   “Thử lại”. Lỗi tạm thời phải retry có backoff và được đánh thức khi online/quay lại
-   tab; nút thử lại chỉ là đường chủ động dự phòng. Giữ tương thích với hàng chờ đã có,
-   không đổi ID/blob và không xóa bản local cho tới khi server xác nhận bản ghi nghiệp vụ.
-11. Nếu ảnh mới đồng loạt không gửi được trên nhiều thiết bị, coi đây là sự cố đường tải
-   dùng chung chứ không chỉ là lỗi retry phía client: phải kiểm tra Edge Function, hiệu
-   lực token nhân viên, Storage và bước ghi `batch_reports`. Không yêu cầu chụp lại hoặc
-   xóa dữ liệu trình duyệt; hàng local phải tiếp tục được giữ và thử lại sau khi dịch vụ
-   được sửa. Không báo đã khắc phục chỉ bằng thay đổi client khi bản deploy chưa xác nhận.
-12. Commit `efb62c2` ngày 2026-10-05 chỉ sửa startup/retry của phiên staff, không được
-   coi là đã khép sự cố ảnh chung. HAR sau deploy cho thấy luồng tài khoản đăng nhập tạo
-   được `batch_reports` nhưng ảnh gốc và thumbnail đều bị Storage trả `403 new row
-   violates row-level security policy`: upload bền vững dùng `upsert:true`, nên policy
-   `plate-media` phải có đủ `SELECT`, `INSERT`, `UPDATE` giới hạn đúng bucket + thư mục
-   `auth.uid()`. Mọi kết luận sửa xong phải kiểm tra cả link staff qua Edge Function và
-   tài khoản đăng nhập upload trực tiếp, áp dụng migration live, xác nhận ảnh cũ tự retry;
-   không yêu cầu nhân viên chụp lại hoặc xóa dữ liệu trang.
-
-## Nhập báo cáo bán hàng KiotViet (mandatory)
-
-Phạm vi rà soát ngày 2026-10-08: người dùng báo trang Bán hàng có nhiều lỗi và
-mất dữ liệu; phải kiểm tra toàn luồng nhập file/Chrome/bù ngày, cache, archive,
-đồng bộ, lịch sử, lọc/biểu đồ và in lại. Phân biệt lỗi đã tái hiện với dữ liệu live
-chưa xác minh; kiểm thử trên dữ liệu cô lập. Không coi QA giao diện trước đây là
-bằng chứng dữ liệu bán đã an toàn. Kết quả rà soát: docs/sales-audit-2026-10-08.md.
-
-Đối chiếu ngày 2026-10-09: người dùng hỏi vì sao SP012001 / Lót ly hoa / Flower
-Coasters có 3 bán, 131.552 đ ở trang Bán hàng nhưng 0 bán, 0 đ trong chi tiết model,
-trong khi tồn cửa hàng vẫn là 9. Đã tái hiện bằng dữ liệu cô lập: trang Bán hàng đọc
-`salesImports`/archive, còn `getModelKiotMetrics` và `modelKiotVariantRows` đọc cache
-phiên cũ `kiotViet.sales`; settings cloud chủ động bỏ cache này khi archive đã sẵn
-sàng. Chênh lệch hiển thị không tự chứng minh báo cáo bị mất; phải đối chiếu nguồn
-và kỳ trước khi kết luận. Người dùng đã đồng ý sửa đồng bộ bảng chi tiết và metrics
-gửi AI; không chỉ phần xem nhanh trên thẻ model. Dùng báo cáo cùng kỳ đang chọn ở
-trang Bán hàng (fallback cùng bộ lọc ngày), ghi rõ kỳ; cache chỉ dùng khi revision
-khớp, chi tiết chưa tải/lỗi phải là chưa biết, có tải lại, không coi là số 0. AI
-chờ chi tiết đầy đủ và không gửi khi thiếu dữ liệu/quyền; kết quả cũ khác báo cáo/
-revision không được trình bày như đánh giá kỳ hiện tại. Chỉ patch vùng Kiot trong
-dialog, giữ ảnh, cuộn và không mở lại model khi người dùng đã đóng/đổi model. Giữ
-nguyên báo cáo nguồn và ledger; QA dùng dữ liệu cô lập, không sửa dữ liệu live.
-Regression: tools/model-sales-qa.mjs kiểm tra cả bảng model, tóm tắt Kiot, metrics
-AI, tải lại/cache lệch revision, tải nền/lỗi/thử lại, kỳ cũ và zero thật, hai theme
-trên mobile/desktop. Phần xem nhanh 30 ngày phải tiếp tục ghi rõ kỳ riêng.
-
-Người dùng đã yêu cầu sửa các lỗi rà soát này. Báo cáo và ledger bán phải lưu/xóa
-nguyên tử, kiểm tra revision và retry cùng request ID. Bản nhập chưa xác nhận phải
-được lưu bền trước khi gửi, không cắt lịch sử, không compact chi tiết chưa archive,
-không báo cloud thành công hoặc xác nhận ngày cho bridge khi còn lỗi. File nhiều
-ngày không được ghi vào ngày cuối. Cache chi tiết phải khớp revision, tải đủ mọi
-trang và có trạng thái lỗi/thử lại hữu hạn. In bù dùng đủ thành phần và hệ số của
-SKU; không tự chọn model thay thế. Không sửa/xóa dữ liệu live cũ để kiểm thử.
-
-1. Không coi việc có bản ghi theo ngày là đã nhập thành công: ngày chỉ được
-   hoàn tất nếu báo cáo có chi tiết bán hoặc metadata tổng hợp xác nhận SKU/số
-   lượng/doanh thu lớn hơn 0. Báo cáo rỗng phải hiển thị riêng và có thể đưa vào
-   luồng bù ngày.
-2. Trước khi lưu file từ Chrome cho một ngày được yêu cầu, đối chiếu kỳ ghi bên
-   trong file với ngày của job. Nếu không khớp, dừng và giữ nguyên báo cáo cũ;
-   không âm thầm gắn file của ngày khác vào ngày đang xử lý.
-3. Luồng bù chỉ thay bản ghi cùng ngày sau khi file đúng kỳ được parse có dòng
-   bán hợp lệ và thao tác lưu hoàn tất. Ngày đã có doanh số hợp lệ không bị lấy
-   lại/ghi đè tự động; ngày thiếu hoặc bản ghi rỗng được phép chạy lại.
-4. QA phải bao gồm ngày chưa nhập, ngày có báo cáo rỗng, ngày có doanh số hợp
-   lệ, file sai kỳ và file rỗng; kiểm tra rằng bù ngày rỗng không xóa dữ liệu
-   tốt, không cộng lặp biến động tồn kho và chỉ xác nhận lượt sau khi lưu xong.
-5. Parser báo cáo phải nhận diện header hàng hóa theo tiền tố/biến thể KiotViet
-   (ví dụ “Mã hàng hóa”, “Tên hàng hóa”), không phụ thuộc đúng một cách viết;
-   vẫn phải loại trừ dòng tổng và chỉ lưu SKU có số lượng bán hợp lệ.
+- Đọc file, tìm component tương tự/regression test trước thiết kế; kế thừa hành
+  vi, không chỉ CSS. Tự kiểm tra nhận diện/tìm/thao tác lặp/focus/cuộn/dữ liệu/
+  lưu/quay lại/xóa/lỗi ảnh/mất mạng.
+- Lỗi UI thuộc họ thành phần, không chỉ điểm trong ảnh. Xác định selector/token/
+  breakpoint/theme/trạng thái; rg quét mọi instance/override, sửa primitive/token/
+  component chung, chỉ vá cục bộ khi chứng minh đặc thù.
+- Màu/contrast: kiểm tra hard-coded color sau override, ưu tiên token. Layout:
+  safe area/fixed/floating/overflow/z-index/breakpoint. Chậm/mất dữ liệu: lần
+  lifecycle/storage/sync, thử reload/đổi thiết bị/cạnh tranh. Ảnh lỗi: quét mọi
+  render/fallback/lazy-load cùng loại.
+- Dữ liệu đại diện hàng trăm mục/tên dài/có và không biến thể/ảnh thật, thiếu,
+  lỗi/rỗng/không khớp/nhiều dòng/thao tác lặp. Kiểm tra mobile/desktop, light/dark,
+  trạng thái liên quan, focus/hover/active/vùng chạm.
+- Thêm assertion tái hiện lớp lỗi, thất bại trước bản vá hoặc điều kiện chấp
+  nhận cụ thể. Xem render/screenshot thực tế; test pass không thay đánh giá UI.
+  Ưu tiên test mục tiêu, chốt diff rồi QA tổng.
+- Sửa ứng dụng phải qua `npm run qa:all`, `git diff --check`, không đẩy khi có
+  failure. Nêu phần chưa kiểm chứng, phân biệt warning/failure, không kết luận
+  hoàn tất từ một điểm đã ổn hoặc QA cũ.
+- Không thiết kế lại toàn ứng dụng ngoài phạm vi; chỉ hỏi khi thiếu nghiệp vụ/
+  phạm vi/quyền. Tư vấn Cài đặt/khả năng mới không cấp quyền triển khai; phân biệt
+  tính năng có sẵn và đề xuất.
+- Phát hành cần QA trên diff cuối, migration cần thiết đã áp dụng, staged diff
+  chỉ gồm phần được giao, push theo quyền đã cấp, xác nhận revision/asset đang
+  phục vụ. Không gộp thay đổi song song không liên quan hoặc báo xong khi web/
+  server còn bản cũ.
+- Lỗi runner không là QA pass hoặc bằng chứng người dùng/máy bị khóa. Với
+  CreateProcessWithLogonW 1909, kiểm tra runner/tài khoản sandbox, thử lại trước;
+  chỉ đề nghị đăng nhập lại/khởi động lại Codex nếu lỗi kéo dài sau kiểm tra.
+- Bàn giao ngắn: thay đổi chính/nơi áp dụng/phạm vi quét/kết quả kiểm tra/giới hạn
+  còn lại. Không ghi báo cáo bàn giao hoặc lịch sử phát hành vào `AGENTS.md`.

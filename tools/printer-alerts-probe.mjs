@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
+import {assertButtonContentCentered} from './button-content-probe.mjs';
 
 export async function assertPrinterAlerts(page, profile, theme, seed) {
   const alert = page.getByRole('alertdialog');
@@ -14,6 +15,7 @@ export async function assertPrinterAlerts(page, profile, theme, seed) {
   assert.equal(await alert.count(),0,'Printer alert waits behind an existing form');
   assert.equal(await input.inputValue(),'draft@example.invalid');assert.equal(await input.evaluate(el=>el===document.activeElement),true);
   await page.keyboard.press('Escape');await alert.waitFor({state:'visible'});
+  for(const button of await alert.locator('footer .btn').all())await assertButtonContentCentered(button,'required printer alert');
   assert.equal(await page.locator('.system-notification-popup[data-event-id="printer:machine-0:alert-1"]').count(),0,'Critical transition never uses a timed corner popup');
   assert.equal(await alert.locator('.notification-dismiss').count(),0,'Required alert has no dismiss X');
   assert.ok(await alert.locator('.pm-alert-icon svg').evaluate(el=>getComputedStyle(el).fill==='none'&&getComputedStyle(el).stroke!=='none'),'SVG primitive retains its stroke outside the printer page');
