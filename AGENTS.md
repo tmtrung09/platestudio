@@ -120,6 +120,12 @@
   liệu; ảnh lỗi giữ khung fallback, tên và bố cục.
 - Công việc theo khoảng ngày ưu tiên lịch trực quan chọn khoảng, phân biệt ngày
   có/thiếu dữ liệu; không chỉ dùng hai ô ngày rời nếu lịch truyền được trạng thái.
+- Lịch chọn ngày dùng khung có giới hạn chiều rộng gọn, co theo vùng chứa trên
+  mobile; không kéo giãn theo toàn hàng của trang. Ô ngày có chiều cao ổn định,
+  không dùng aspect-ratio vuông khiến chiều cao tăng theo chiều rộng màn hình.
+  Giữ đủ tuần, chọn khoảng, dấu có/thiếu dữ liệu và thao tác tháng/đóng; không
+  cắt hàng cuối hoặc thay đổi dữ liệu báo cáo để thu gọn. Áp dụng chung cho lịch
+  Bán hàng, lịch sử bán và bù ngày. Guard: `tools/sales-calendar-qa.mjs`.
 - Lọc lịch sử nêu rõ khoảng xem, có đường về toàn bộ dữ liệu, không làm rỗng/xóa
   nguồn khi đổi tag. Tháng/ngày đồng bộ để tránh giao nhau rỗng; khoảng tùy chọn
   chọn trên lịch. Tuần bắt đầu thứ Hai, 7/30 ngày gồm hôm nay. Biểu đồ cuộn tới mọi
