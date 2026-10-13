@@ -1,6 +1,6 @@
 /* Plate Studio — app shell local-first + thông báo đẩy. */
-const APP_SHELL_CACHE='plate-studio-shell-v5';
-const APP_SHELL=['./','./index.html','./plate-studio.html','./printer-monitor.js','./plate-plan-files.js','./filament-picker.js','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3'];
+const APP_SHELL_CACHE='plate-studio-shell-v6';
+const APP_SHELL=['./','./index.html','./plate-studio.html','./printer-monitor.js','./plate-plan-files.js','./filament-picker.js','./kiot-pending-store.js','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(APP_SHELL_CACHE).then(cache=>Promise.allSettled(APP_SHELL.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));
 });
@@ -10,13 +10,19 @@ self.addEventListener('activate',event=>{
 self.addEventListener('fetch',event=>{
   const request=event.request;if(request.method!=='GET')return;
   const url=new URL(request.url);if(url.origin!==self.location.origin)return;
+  let cacheWrite=Promise.resolve();
+  const fresh=fetch(request).then(response=>{
+    // Clone synchronously while the response body is still unused.
+    if(response.ok){const copy=response.clone();cacheWrite=caches.open(APP_SHELL_CACHE).then(cache=>cache.put(request,copy));}
+    return response;
+  });
+  event.waitUntil(fresh.then(()=>cacheWrite).catch(()=>{}));
   if(request.mode==='navigate'){
-    event.respondWith(fetch(request).then(response=>{const copy=response.clone();caches.open(APP_SHELL_CACHE).then(cache=>cache.put(request,copy));return response;}).catch(async()=>await caches.match(request)||await caches.match('./plate-studio.html')));
+    event.respondWith(fresh.catch(async()=>await caches.match(request)||await caches.match('./plate-studio.html')||Response.error()));
     return;
   }
   event.respondWith(caches.match(request).then(cached=>{
-    const network=fetch(request).then(response=>{if(response.ok)caches.open(APP_SHELL_CACHE).then(cache=>cache.put(request,response.clone()));return response;});
-    return cached||network;
+    return cached||fresh;
   }));
 });
 self.addEventListener('push', event => {

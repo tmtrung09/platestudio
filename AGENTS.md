@@ -322,6 +322,19 @@
   Bản chưa xác nhận lưu bền trước gửi; không cắt lịch sử/compact chi tiết chưa
   archive. Tải đủ trang, không báo cloud thành công/xác nhận ngày bridge khi lỗi.
   File nhiều ngày không gán ngày cuối.
+- Cache KiotViet chỉ thu gọn hoặc loại chi tiết có revision đã được cloud xác
+  nhận; không xóa báo cáo legacy, bản phục hồi, hàng chờ hay file gốc để giải
+  phóng chỗ. Khi localStorage đầy, bản nhập mới có đường lưu bền dự phòng theo
+  workspace + người dùng, giữ request ID qua reload; chỉ dọn sau xác nhận server.
+  Khôi phục hàng chờ khi mở web độc lập với kết nối Chrome/tải cloud ban đầu;
+  không đổi workspace hoặc người dùng sở hữu bản nhập khi tiếp tục gửi.
+- Đồng bộ Chrome phải phân biệt lỗi kết nối, đọc file, kiểm tra kỳ, lưu local,
+  lưu cloud và xác nhận bridge. Hiện lý do thật, không gộp thành mất kết nối.
+  File đã tải hoặc bản nhập đang chờ phải được dùng lại khi thử lưu, không bắt
+  xuất lại báo cáo; chưa lưu cloud không được xác nhận ngày hoặc tiến hàng bù.
+- Service worker sao chép response trước khi trả cho trình duyệt, giữ tác vụ
+  cache bằng waitUntil và xử lý lỗi mạng/cache nền; lỗi cache không làm hỏng
+  phản hồi đang dùng hoặc tạo promise rejection không được xử lý.
 - Ngày chỉ hoàn tất khi có chi tiết hoặc metadata xác nhận SKU/số lượng/doanh
   thu lớn hơn 0; rỗng hiện riêng, có đường bù ngày.
 - Nhập Chrome đối chiếu kỳ file với ngày job; sai thì dừng/giữ báo cáo cũ, không

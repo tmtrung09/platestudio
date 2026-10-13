@@ -11,13 +11,13 @@ function fn(name){
 }
 function context(){
  const store=new Map(),c=vm.createContext({console:{warn(){}},crypto:webcrypto,kiotViet:{salesImports:[]},kiotSalesDetailCache:{},KIOT_SALES_DETAIL_CACHE_LIMIT:31,
- K:{kiotSalesDetails:'details'},saveLocalValue(){},currentUser:{id:'user'},cloudWorkspaceId:()=> 'workspace',
+ K:{kiotSalesDetails:'details',kiotViet:'kiot'},window:{},structuredClone,saveLocalValue(){},currentUser:{id:'user'},cloudWorkspaceId:()=> 'workspace',
  localStorage:{get length(){return store.size},key:i=>[...store.keys()][i],getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},
  kiotSalesArchiveAvailable:true,kiotSalesArchiveReadyForSettings:true,kiotSalesArchiveLoaded:false,KIOT_SALES_LINES_TABLE:'lines',KIOT_SALES_REPORTS_TABLE:'reports',
  kiotInventoryLedger:{},kiotInventoryUpsertLocalMovements(){},kiotInventoryDayEnd:d=>d,curPage:'test',setTimeout:()=>0,clearTimeout(){},saveKiotViet(){},markKiotDailyImport(){},toast(){},loadKiotSalesArchiveIndex:async()=>[],
  sb:{rpc:async()=>({data:[{id:'cloud',updated_at:'rev'}]})}});
- for(const name of ['kvNorm','persistKiotSalesDetail','hydrateKiotSalesDetail','compactKiotSalesInMemory','kiotSalesProductRow','kiotSalesRows','kiotSalesImportMetrics','kiotSalesReportDay','kiotSalesSingleDay','persistKiotSalesArchive','kiotSalesArchiveRow','kiotSalesImportKey','sortKiotSalesImports','mergeKiotSalesArchiveIndex','loadKiotSalesArchiveDetail','kiotSalesArchiveEntry','kiotVietForCloudSettings','kiotSalesPendingPrefix','preserveKiotSalesLegacy','kiotSalesPendingEntries','saveKiotSalesPending','retryKiotSalesPending','deleteKiotSalesArchive','kvMappingComponents','salesRestockComponents'])vm.runInContext(fn(name),c);
- vm.runInContext('let kiotSalesPendingSync=null,kiotSalesPendingTimer=0;const kiotSalesDetailRequests=new WeakMap();',c);vm.runInContext(fn('fetchKiotSalesArchiveDetail'),c);vm.runInContext(fn('preserveKiotSalesBeforeRefresh'),c);vm.runInContext(fn('retainKiotSalesLocalDetails'),c);return c;
+ for(const name of ['kiotVietForLocalCache','releaseConfirmedKiotCache','kiotSalesSameContent','loadKiotSalesPendingFallback','saveKiotSalesPendingDurable','removeKiotSalesPendingDurable','kvNorm','persistKiotSalesDetail','hydrateKiotSalesDetail','compactKiotSalesInMemory','kiotSalesProductRow','kiotSalesRows','kiotSalesImportMetrics','kiotSalesReportDay','kiotSalesSingleDay','persistKiotSalesArchive','kiotSalesArchiveRow','kiotSalesImportKey','sortKiotSalesImports','mergeKiotSalesArchiveIndex','loadKiotSalesArchiveDetail','kiotSalesArchiveEntry','kiotVietForCloudSettings','kiotSalesPendingPrefix','preserveKiotSalesLegacy','kiotSalesPendingEntries','saveKiotSalesPending','retryKiotSalesPending','deleteKiotSalesArchive','kvMappingComponents','salesRestockComponents'])vm.runInContext(fn(name),c);
+ vm.runInContext("let kiotSalesPendingSync=null,kiotSalesPendingTimer=0,kiotSalesPendingFallback={scope:'',entries:[]};const kiotSalesDetailRequests=new WeakMap(),kiotSalesPendingReceipts=new Map();",c);vm.runInContext(fn('fetchKiotSalesArchiveDetail'),c);vm.runInContext(fn('preserveKiotSalesBeforeRefresh'),c);vm.runInContext(fn('retainKiotSalesLocalDetails'),c);return c;
 }
 let passed=0;
 async function test(name,run){await run();passed++;console.log('PASS',name)}

@@ -450,6 +450,7 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .batch-model-editor{ z-index:2350!important; }
 .action-dialog{ max-width:500px; }
 .action-dialog-icon{ width:44px; height:44px; display:grid; place-items:center; flex:0 0 44px; border-radius:15px; background:var(--acb); color:var(--ach); font-size:22px; }
+.action-dialog-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .action-dialog-copy{ color:var(--t2); font-size:13px; line-height:1.55; }
 .action-dialog-copy b{ color:var(--t); }
 .action-dialog-context{ display:flex; gap:10px; align-items:center; margin-top:13px; padding:10px; border-radius:14px; background:var(--s2); }
@@ -458,7 +459,8 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .action-dialog-context b{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
 .action-dialog-context span{ display:block; margin-top:3px; color:var(--t3); font-size:11.5px; }
 .action-dialog .dlg-actions{ margin-top:16px; }
-.action-dialog .dlg-actions .btn{ min-height:42px; }
+.action-dialog .dlg-actions .btn{ min-height:44px; }
+@media(prefers-reduced-motion:reduce){.action-dialog{animation:none}}
 .eo-items { display:flex; flex-direction:column; gap:7px; max-height:38vh; overflow:auto; padding-right:2px }
 .eo-item { display:grid; grid-template-columns:38px minmax(0,1fr) 72px 28px; gap:8px; align-items:center; padding:8px; border:1px solid var(--b); border-radius:var(--r); background:var(--bg) }
 .eo-item-thumb { width:38px; height:38px; border-radius:8px; overflow:hidden; background:var(--s2); display:grid; place-items:center; font-size:17px }
@@ -6409,7 +6411,28 @@ function lightLocalValue(key, value) {
   if(key===K.models) return value.map(m=>({...m, images:(m.images||[]).filter(x=>!isInlineImage(x))}));
   if(key===K.plates) return value.map(p=>({...p, confirmImg:isInlineImage(p.confirmImg)?null:p.confirmImg}));
   if(key===K.batchReports) return value.map(r=>({...r, image:isInlineImage(r.image)?null:r.image, thumb:isInlineImage(r.thumb)?null:r.thumb}));
+  if(key===K.kiotViet)return kiotVietForLocalCache(value);
   return value;
+}
+function kiotVietForLocalCache(value){
+  const imports=Array.isArray(value?.salesImports)?value.salesImports:[],confirmed=entry=>entry.archiveMigrated&&entry.archiveRevision&&!entry.syncError&&!entry.syncConflict;
+  const legacy=Array.isArray(value?.sales)?value.sales:[],legacyRaw=JSON.stringify(legacy);
+  const reusable=legacy.length&&imports.some(entry=>confirmed(entry)&&Array.isArray(entry.sales)&&JSON.stringify(entry.sales)===legacyRaw);
+  return {...value,sales:reusable?[]:legacy,salesImports:imports.map(entry=>{
+    if(!confirmed(entry))return entry;
+    const {sales,detailLoading,detailError,detailLoaded,...meta}=entry;
+    const rows=Array.isArray(sales)?sales:[];
+    return {...meta,skuCount:entry.skuCount??rows.length,qtyTotal:entry.qtyTotal??rows.reduce((n,row)=>n+(Number(row.qty)||0),0),revenueTotal:entry.revenueTotal??rows.reduce((n,row)=>n+(Number(row.revenue)||0),0),detailLoaded:false};
+  })};
+}
+function releaseConfirmedKiotCache(){
+  // Only replace regenerable snapshots. Pending/recovery keys are never touched.
+  for(const key of [K.kiotViet,K.kiotSalesDetails]){
+    try{const old=JSON.parse(localStorage.getItem(key)||'null');if(!old)continue;
+      const next=key===K.kiotViet?kiotVietForLocalCache(old):Object.fromEntries(Object.entries(old).filter(([,entry])=>!entry?.revision));
+      localStorage.setItem(key,JSON.stringify(next));
+    }catch(error){console.warn('Giữ nguyên cache chưa thể thu gọn',key,error);}
+  }
 }
 function saveLocalValue(key, value) {
   try { localStorage.setItem(key, JSON.stringify(lightLocalValue(key,value))); }
@@ -19855,7 +19878,37 @@ function kiotSalesPendingEntries(){
   const prefix=kiotSalesPendingPrefix();if(!prefix)return [];
   const entries=[];
   for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key?.startsWith(prefix))continue;try{const entry=JSON.parse(localStorage.getItem(key));if(entry?.requestId&&Array.isArray(entry.sales))entries.push(entry);}catch(error){console.warn('Giữ nguyên bản nhập bán hàng chưa đọc được',key,error);}}
-  return entries;
+  const merged=new Map(entries.map(entry=>[entry.requestId,entry]));
+  if(kiotSalesPendingFallback.scope===prefix)kiotSalesPendingFallback.entries.forEach(entry=>merged.set(entry.requestId,entry));
+  return [...merged.values()];
+}
+let kiotSalesPendingFallback={scope:'',entries:[]};
+const kiotSalesPendingReceipts=new Map();
+async function loadKiotSalesPendingFallback(){
+  const scope=kiotSalesPendingPrefix();if(!scope||!window.KiotPendingStore)return;
+  const entries=await window.KiotPendingStore.list(scope);
+  if(scope===kiotSalesPendingPrefix())kiotSalesPendingFallback={scope,entries};
+}
+async function saveKiotSalesPendingDurable(entry){
+  const scope=kiotSalesPendingPrefix();if(!scope)throw new Error('Cần đăng nhập workspace trước khi nhập báo cáo.');
+  if(kiotSalesPendingFallback.scope===scope&&kiotSalesPendingFallback.entries.some(row=>row.requestId===entry.requestId)){
+    await window.KiotPendingStore.put(scope,entry);if(scope!==kiotSalesPendingPrefix())throw new Error('Workspace đã đổi; bản nhập vẫn giữ trong kho ban đầu.');
+    kiotSalesPendingFallback.entries=kiotSalesPendingFallback.entries.map(row=>row.requestId===entry.requestId?structuredClone(entry):row);return;
+  }
+  try{saveKiotSalesPending(entry);return;}
+  catch(error){if(error.name!=='QuotaExceededError'&&error.name!=='NS_ERROR_DOM_QUOTA_REACHED')throw error;}
+  releaseConfirmedKiotCache();
+  try{saveKiotSalesPending(entry);return;}catch(error){if(error.name!=='QuotaExceededError'&&error.name!=='NS_ERROR_DOM_QUOTA_REACHED')throw error;}
+  if(!window.KiotPendingStore)throw new Error('Bộ nhớ localStorage đầy và kho dự phòng chưa sẵn sàng. Giữ file Excel để thử lại.');
+  await window.KiotPendingStore.put(scope,entry);
+  if(scope!==kiotSalesPendingPrefix())throw new Error('Workspace đã đổi; bản nhập vẫn giữ trong kho của workspace ban đầu.');
+  if(kiotSalesPendingFallback.scope!==scope)await loadKiotSalesPendingFallback();
+  const rows=kiotSalesPendingFallback.entries.filter(row=>row.requestId!==entry.requestId);rows.push(structuredClone(entry));kiotSalesPendingFallback={scope,entries:rows};
+}
+async function removeKiotSalesPendingDurable(scope,id){
+  if(window.KiotPendingStore)await window.KiotPendingStore.remove(scope,id);
+  localStorage.removeItem(scope+id);
+  if(kiotSalesPendingFallback.scope===scope)kiotSalesPendingFallback.entries=kiotSalesPendingFallback.entries.filter(row=>row.requestId!==id);
 }
 function saveKiotSalesPending(entry){
   const prefix=kiotSalesPendingPrefix();if(!prefix)throw new Error('Cần đăng nhập workspace trước khi nhập báo cáo.');
@@ -19867,18 +19920,19 @@ async function retryKiotSalesPending(){
   if(kiotSalesPendingSync)return kiotSalesPendingSync;
   const prefix=kiotSalesPendingPrefix();if(!prefix||!sb)return false;
   kiotSalesPendingSync=(async()=>{
+    await loadKiotSalesPendingFallback();if(kiotSalesPendingPrefix()!==prefix)return false;
     let allSaved=true;
     for(const entry of kiotSalesPendingEntries()){
       if(kiotSalesPendingPrefix()!==prefix)break;
       if(entry.syncConflict){allSaved=false;continue;}
-      if(!await persistKiotSalesArchive(entry)){allSaved=false;if(kiotSalesPendingPrefix()===prefix)saveKiotSalesPending(entry);continue;}
+      if(!await persistKiotSalesArchive(entry)){allSaved=false;if(kiotSalesPendingPrefix()===prefix)await saveKiotSalesPendingDurable(entry);continue;}
       if(kiotSalesPendingPrefix()!==prefix)break;
       const key=kiotSalesImportKey(entry),old=(kiotViet.salesImports||[]).find(row=>kiotSalesImportKey(row)===key);
       if(old&&!old.archiveRevision)preserveKiotSalesLegacy(old);
       kiotViet.salesImports=(kiotViet.salesImports||[]).filter(row=>kiotSalesImportKey(row)!==key);kiotViet.salesImports.push(entry);sortKiotSalesImports();
       kiotViet.sales=entry.sales;kiotViet.lastSalesImportAt=entry.importedAt;kiotViet.lastSalesFile=entry.fileName;salesPageReportId=entry.id;
       // Server receipt is durable before the pending payload can be removed.
-      saveKiotViet();localStorage.removeItem(prefix+entry.requestId);markKiotDailyImport(entry.period);
+      saveKiotViet();await removeKiotSalesPendingDurable(prefix,entry.requestId);kiotSalesPendingReceipts.set(prefix+entry.requestId,{day:entry.period.from,revision:entry.archiveRevision});if(kiotSalesPendingPrefix()===prefix)markKiotDailyImport(entry.period);
     }
     compactKiotSalesInMemory();if(allSaved&&kiotSalesPendingPrefix()===prefix)loadKiotSalesArchiveIndex({force:true}).then(()=>{if(curPage==='sales')renderSalesPage();});return allSaved;
   })().catch(error=>{console.warn('Bản nhập bán hàng vẫn được giữ trên máy',error);return false;}).finally(()=>{
@@ -19898,7 +19952,7 @@ async function resolveKiotSalesPending(requestId){
   const current=(kiotViet.salesImports||[]).find(row=>kiotSalesImportKey(row)===kiotSalesImportKey(entry)&&row.archiveRevision);
   if(!confirm(`Ngày ${kiotSalesSingleDay(entry)}: cloud có ${current?kiotSalesImportMetrics(current).qty:0} sản phẩm; bản trên máy có ${kiotSalesImportMetrics(entry).qty}. Dùng bản trên máy thay báo cáo cloud và cập nhật lại sổ tồn?`))return;
   entry.expectedRevision=current?.archiveRevision||null;entry.syncConflict=false;delete entry.syncError;
-  saveKiotSalesPending(entry);await retryKiotSalesPending();
+  await saveKiotSalesPendingDurable(entry);await retryKiotSalesPending();
 }
 function downloadKiotSalesPending(){
   const recovery=[],prefix=kiotSalesPendingPrefix().replace('pending','recovery');
@@ -19912,7 +19966,9 @@ async function retryKiotSalesDetail(id,comparison=false){
 function persistKiotSalesDetail(entry){
   if(!entry?.id||!Array.isArray(entry.sales))return;
   kiotSalesDetailCache[entry.id]={sales:entry.sales,revision:entry.archiveRevision||'',updatedAt:entry.importedAt||new Date().toISOString()};
-  const keep=Object.entries(kiotSalesDetailCache).sort(([,a],[,b])=>String(b?.updatedAt||'').localeCompare(String(a?.updatedAt||''))).slice(0,KIOT_SALES_DETAIL_CACHE_LIMIT);
+  let bytes=0,count=0;const keep=Object.entries(kiotSalesDetailCache).sort(([,a],[,b])=>String(b?.updatedAt||'').localeCompare(String(a?.updatedAt||''))).filter(([,row])=>{
+    if(!row.revision)return true;const size=JSON.stringify(row).length*2;if(count>=KIOT_SALES_DETAIL_CACHE_LIMIT||bytes+size>1024*1024)return false;count++;bytes+=size;return true;
+  });
   kiotSalesDetailCache=Object.fromEntries(keep);saveLocalValue(K.kiotSalesDetails,kiotSalesDetailCache);
 }
 function compactKiotSalesInMemory(){
@@ -20035,7 +20091,9 @@ async function fetchKiotSalesArchiveDetail(entry){
 }
 async function persistKiotSalesArchive(entry){
   const day=kiotSalesSingleDay(entry),workspace=cloudWorkspaceId();
-  if(!sb||!currentUser||!workspace||!kiotSalesArchiveAvailable||!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Array.isArray(entry?.sales))return false;
+  if(!sb||!currentUser||!workspace){if(entry)entry.syncError='Cần đăng nhập đúng workspace để lưu báo cáo lên cloud.';return false;}
+  if(!kiotSalesArchiveAvailable){if(entry)entry.syncError='Kho báo cáo bán trên cloud chưa sẵn sàng. Bản nhập được giữ trên máy.';return false;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Array.isArray(entry?.sales)){if(entry)entry.syncError='Báo cáo phải đúng một ngày và có chi tiết bán hợp lệ.';return false;}
   const rows=kiotSalesRows(entry),grouped=new Map();
   if(!rows.length||rows.some(row=>!String(row.sku||'').trim())){entry.syncError='Báo cáo rỗng hoặc có dòng thiếu SKU; bản cũ được giữ nguyên.';return false;}
   rows.forEach(row=>{const sku=String(row.sku).trim(),prior=grouped.get(sku)||{sku,name:String(row.name||''),category:String(row.category||''),quantity:0,revenue:0};prior.quantity+=Math.max(0,Number(row.qty)||0);prior.revenue+=Math.max(0,Number(row.revenue)||0);grouped.set(sku,prior);});
@@ -20052,7 +20110,7 @@ async function persistKiotSalesArchive(entry){
     kiotInventoryUpsertLocalMovements(`sales:${day}`,'sale',kiotInventoryDayEnd(day),lines.map(row=>({sku:row.sku,name:row.name,quantityDelta:-row.quantity})),entry.note||'');kiotInventoryLedger.loaded=false;kiotInventoryLedger.remoteReconciliation=[];
     return true;
   }catch(error){
-    entry.syncError=String(error.message||error);entry.syncConflict=error.code==='40001';
+    entry.syncError=String(error.message||error);entry.syncErrorCode=String(error.code||'');entry.syncConflict=error.code==='40001';
     console.warn('Không lưu được báo cáo bán vào kho dữ liệu riêng',error);return false;
   }
 }
@@ -20578,7 +20636,7 @@ function updateKiotChromeSyncPopup(){
 function updateKiotChromeSyncUI(){
   const status=document.getElementById('kiot-chrome-sync-status'),button=document.getElementById('kiot-chrome-sync-button');
   if(status){status.textContent=kiotChromeSyncLabel();status.style.color=kiotChromeSync.status==='error'?'var(--re)':kiotChromeSync.status==='imported'?'var(--gr)':'var(--t3)';}
-  if(button){const busy=['requested','claimed','running','downloaded'].includes(kiotChromeSync.status);button.disabled=busy;button.innerHTML=appIcon('refresh')+(busy?'Đang lấy…':kiotChromeSync.status==='error'?'Thử lại Hôm qua':'Lấy Hôm qua');}
+  if(button){const busy=['requested','claimed','running','downloaded'].includes(kiotChromeSync.status);button.disabled=busy;button.innerHTML=appIcon('refresh')+(busy?'Đang lấy…':kiotChromeSync.status==='error'?(kiotChromeSync.jobId?'Thử lưu lại':'Thử lại Hôm qua'):'Lấy Hôm qua');}
   updateKiotChromeSyncPopup();
 }
 async function kiotChromeSyncRequest(path,options={}){
@@ -20595,6 +20653,8 @@ function updateKiotDailyScheduleUI(){const current=document.getElementById('kiot
 async function refreshKiotDailySchedule(){try{kiotDailySchedule={available:true,...await kiotChromeSyncRequest('/schedule')};updateKiotDailyScheduleUI();}catch{kiotDailySchedule={...kiotDailySchedule,available:false};updateKiotDailyScheduleUI();}}
 async function checkKiotDailyScheduleOnOpen(){
   try{
+    const previous=await kiotChromeSyncRequest('/job');
+    if(previous?.status==='error'&&previous.fileName){kiotChromeSync={status:'error',detail:'File đã tải được giữ lại. Chọn file đó để thử nhập, không cần xuất lại từ Chrome.',jobId:previous.id,jobSnapshot:previous,poll:0,importedJobId:''};updateKiotChromeSyncUI();return;}
     const result=await kiotChromeSyncRequest('/schedule/check',{method:'POST',body:'{}'});kiotDailySchedule={available:true,...result};updateKiotDailyScheduleUI();
     const job=result.job;if(job?.id&&['requested','claimed','running','downloaded'].includes(job.status)){kiotChromeSync={status:job.status,detail:job.detail||'',jobId:job.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();}
   }catch{}
@@ -20615,6 +20675,17 @@ async function forgetKiotDailyImport(period){
    Bộ quan sát này nhận file vừa tải và đưa vào cùng luồng import an toàn như nút tay. */
 let kiotScheduledWatch=0;
 async function watchKiotScheduledImport(){
+  // Restore the overflow outbox independently of Chrome/cloud bootstrap.
+  try{
+    const scope=kiotSalesPendingPrefix();
+    if(scope&&kiotSalesPendingFallback.scope!==scope){
+      await loadKiotSalesPendingFallback();
+      if(scope===kiotSalesPendingPrefix()&&kiotSalesPendingFallback.entries.length){
+        if(curPage==='sales')renderSalesPage();
+        void retryKiotSalesPending();
+      }
+    }
+  }catch(error){console.warn('Chưa đọc được hàng báo cáo đang giữ trên máy',error);}
   try{
     const job=await kiotChromeSyncRequest('/job');
     if(['scheduled','range'].includes(job?.origin)&&job.status==='downloaded'&&kiotChromeSync.importedJobId!==job.id&&kiotChromeSync.jobId!==job.id){
@@ -20623,37 +20694,111 @@ async function watchKiotScheduledImport(){
   }catch{}finally{kiotScheduledWatch=setTimeout(watchKiotScheduledImport,8000);}
 }
 setTimeout(()=>{checkKiotDailyScheduleOnOpen();watchKiotScheduledImport();},2500);
+function showKiotChromeSyncFailure(error,stage='bridge',result={}){
+  stopKiotChromeSyncPolling();
+  const titles={bridge:'Web chưa truy cập được cầu nối Chrome',request:'Chưa gửi được yêu cầu đồng bộ',download:'Không đọc được file Excel đã tải',parse:'Không đọc được báo cáo Excel',period:'Báo cáo chưa đúng kỳ hoặc nội dung',local:'Chưa giữ được bản nhập trên máy',cloud:'Báo cáo chưa lưu được cloud',scope:'Workspace đã thay đổi',ack:'Báo cáo đã lưu, chưa xác nhận được lượt đồng bộ',extension:'Chrome chưa xuất được báo cáo'};
+  const detail=String(result.message||error?.message||error||'Hãy thử lại.').slice(0,1600);
+  kiotChromeSync.status='error';kiotChromeSync.detail=detail;kiotChromeSync.errorStage=stage;
+  if(result.requestId){kiotChromeSync.pendingRequestId=result.requestId;kiotChromeSync.scope=result.scope||kiotSalesPendingPrefix();}
+  updateKiotChromeSyncUI();
+  const job=kiotChromeSync.jobSnapshot,file=job?.fileName;
+  const guidance=stage==='bridge'?'Kiểm tra công cụ đồng bộ và quyền truy cập mạng cục bộ của trang. Nếu công cụ đã chạy, không cần cài lại Chrome.':stage==='cloud'?'Bản đang chờ vẫn được giữ trên máy. Chỉ chuyển ngày sau khi cloud xác nhận.':'Giữ file Excel gốc; không xóa dữ liệu trình duyệt.';
+  const context=stage!=='scope'&&file&&!kiotChromeSync.pendingRequestId&&!kiotChromeSync.confirmed?'<div class="field"><label>Nhập lại file đã tải: '+esc(file)+'</label><input id="kiot-resume-file" type="file" accept=".xls,.xlsx" onchange="resumeKiotChromeSyncFile(this)"></div>':'';
+  const retry=!!kiotChromeSync.pendingRequestId||!!kiotChromeSync.confirmed;
+  showActionDialog({title:titles[stage]||'Chưa hoàn tất đồng bộ KiotViet',icon:appIcon('warning'),message:esc(detail)+'<br><small>'+esc(guidance)+'</small>',context,primaryLabel:retry?'Thử lưu lại':'Đã hiểu',primaryAction:retry?'closeActionDialog();retryKiotChromeSync()':'closeActionDialog()',secondaryLabel:retry?'Đóng':'',secondaryAction:'closeActionDialog()'});
+}
+async function finishKiotChromeSyncJob(job){
+  const scope=kiotChromeSync.scope||kiotSalesPendingPrefix();
+  if(scope!==kiotSalesPendingPrefix())throw Object.assign(new Error('Workspace đã đổi; không xác nhận lượt của workspace khác.'),{kiotStage:'scope'});
+  const current=await kiotChromeSyncRequest('/job');
+  if(current?.id!==job.id)throw Object.assign(new Error('Lượt đồng bộ đã đổi. Báo cáo đã lưu, không xác nhận nhầm lượt mới.'),{kiotStage:'ack'});
+  if(scope!==kiotSalesPendingPrefix())throw Object.assign(new Error('Workspace đã đổi; không xác nhận lượt của workspace khác.'),{kiotStage:'scope'});
+  const acknowledged=await kiotChromeSyncRequest('/acknowledge',{method:'POST',body:JSON.stringify({id:job.id})}),next=acknowledged?.job;
+  if(scope!==kiotSalesPendingPrefix())return;
+  if(job.origin==='range'&&next?.id&&next.id!==job.id&&['requested','claimed','running','downloaded'].includes(next.status)){
+    kiotChromeSync={status:next.status,detail:next.detail||'Đang lấy ngày tiếp theo…',jobId:next.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();return;
+  }
+  kiotChromeSync.status='imported';kiotChromeSync.detail='Đã nhập báo cáo bán hàng và xác nhận lượt đồng bộ.';kiotChromeSync.confirmed=false;kiotChromeSync.pendingRequestId='';updateKiotChromeSyncUI();
+  setTimeout(()=>{if(curPage==='kiotviet')renderKiotVietPage();},450);stopKiotChromeSyncPolling();
+}
+async function importKiotChromeJobFile(job,file){
+  const scope=kiotSalesPendingPrefix(),day=job.reportDay||job.scheduledFor||'',periodOverride=/^\d{4}-\d{2}-\d{2}$/.test(day)?{from:day,to:day}:null;
+  kiotChromeSync.jobSnapshot=job;kiotChromeSync.scope=scope;
+  let result;
+  const saved=await importKiotSalesFile({files:[file],value:''},job.origin==='scheduled'?'scheduled':job.origin==='range'?'range':'chrome',periodOverride,'',{onResult:value=>{result=value;}});
+  if(scope!==kiotSalesPendingPrefix()){showKiotChromeSyncFailure(new Error('Workspace đã đổi; bản nhập giữ nguyên trong workspace ban đầu.'),'scope');return;}
+  if(!saved){showKiotChromeSyncFailure(new Error(result?.message||'Chưa hoàn tất nhập báo cáo.'),result?.stage||'cloud',result||{});return;}
+  kiotChromeSync.confirmed=true;
+  try{await finishKiotChromeSyncJob(job);}catch(error){showKiotChromeSyncFailure(error,error.kiotStage||'ack');}
+}
+async function resumeKiotChromeSyncFile(input){
+  const file=input.files?.[0];input.value='';if(!file)return;
+  const expected=kiotChromeSync.jobSnapshot;
+  try{
+    const job=await kiotChromeSyncRequest('/job');
+    if(!expected?.id||job.id!==expected.id)throw Object.assign(new Error('Lượt đồng bộ đã đổi; giữ file gốc và kiểm tra lại.'),{kiotStage:'scope'});
+    closeActionDialog();await importKiotChromeJobFile(job,file);
+  }catch(error){showKiotChromeSyncFailure(error,error.kiotStage||'bridge');}
+}
+async function retryKiotChromeSync(){
+  try{
+    if(kiotChromeSync.confirmed){await finishKiotChromeSyncJob(kiotChromeSync.jobSnapshot);return;}
+    if(kiotChromeSync.pendingRequestId){
+      const scope=kiotChromeSync.scope,id=kiotChromeSync.pendingRequestId,job=kiotChromeSync.jobSnapshot;
+      if(scope!==kiotSalesPendingPrefix())throw Object.assign(new Error('Chuyển về đúng workspace để gửi lại bản đang chờ.'),{kiotStage:'scope'});
+      await retryKiotSalesPending();
+      const receipt=kiotSalesPendingReceipts.get(scope+id),pending=kiotSalesPendingEntries().find(row=>row.requestId===id);
+      if(receipt?.revision&&receipt.day===(job.reportDay||job.scheduledFor)&&!pending){kiotChromeSync.confirmed=true;await finishKiotChromeSyncJob(job);return;}
+      showKiotChromeSyncFailure(new Error(pending?.syncError||'Chưa nhận được xác nhận cloud; bản đang chờ vẫn được giữ.'),'cloud',{requestId:id,scope,pending:true});return;
+    }
+    const job=await kiotChromeSyncRequest('/job');kiotChromeSync.jobSnapshot=job;kiotChromeSync.jobId=job.id||'';
+    if(job.status==='downloaded'){kiotChromeSync.importedJobId='';await pollKiotChromeSync();return;}
+    if(job.status==='error'&&job.fileName){showKiotChromeSyncFailure(new Error('Chọn file Excel đã tải để thử nhập, không cần xuất lại từ Chrome.'),'local');return;}
+    kiotChromeSync={status:'idle',detail:'',poll:0};await startKiotSalesChromeSync();
+  }catch(error){showKiotChromeSyncFailure(error,error.kiotStage||(kiotChromeSync.confirmed?'ack':'bridge'));}
+}
 async function pollKiotChromeSync(){
+  let stage='bridge';
   try{
     const job=await kiotChromeSyncRequest('/job');if(!job?.id||job.id!==kiotChromeSync.jobId){stopKiotChromeSyncPolling();return;}
-    kiotChromeSync.status=job.status||'running';kiotChromeSync.detail=job.detail||'';updateKiotChromeSyncUI();
+    kiotChromeSync.jobSnapshot=job;kiotChromeSync.status=job.status||'running';kiotChromeSync.detail=job.detail||'';updateKiotChromeSyncUI();
     if(job.status==='downloaded'&&kiotChromeSync.importedJobId!==job.id){
-      kiotChromeSync.importedJobId=job.id;const download=await fetch(KIOT_CHROME_SYNC_API+'/download');if(!download.ok)throw new Error('Không đọc được file Excel vừa tải từ Chrome.');
+      stage='download';kiotChromeSync.importedJobId=job.id;
+      const download=await fetch(KIOT_CHROME_SYNC_API+'/download');
+      if(!download.ok){const detail=await download.json().catch(()=>({}));throw new Error(detail.error||'Không đọc được file Excel vừa tải từ Chrome.');}
       const blob=await download.blob(),file=new File([blob],job.fileName||'Bao-cao-KiotViet.xls',{type:blob.type||'application/vnd.ms-excel'});
-      const source=job.origin==='scheduled'?'scheduled':job.origin==='range'?'range':'chrome',day=job.reportDay||job.scheduledFor||'',periodOverride=/^\d{4}-\d{2}-\d{2}$/.test(day)?{from:day,to:day}:null,imported=await importKiotSalesFile({files:[file],value:''},source,periodOverride);if(!imported){await kiotChromeSyncRequest('/extension/error',{method:'POST',body:JSON.stringify({id:job.id,detail:'Plate Studio không đọc được file Excel vừa tải.'})});throw new Error('Không thể nhập file Excel vừa tải.');}
-      const acknowledged=await kiotChromeSyncRequest('/acknowledge',{method:'POST',body:JSON.stringify({id:job.id})});
-      const next=acknowledged?.job;
-      if(job.origin==='range'&&next?.id&&['requested','claimed','running','downloaded'].includes(next.status)){
-        kiotChromeSync={status:next.status,detail:next.detail||'Đang lấy ngày tiếp theo…',jobId:next.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();return;
-      }
-      kiotChromeSync.status='imported';kiotChromeSync.detail='✓ Đã nhập báo cáo bán hàng từ Chrome.';updateKiotChromeSyncUI();setTimeout(()=>{if(curPage==='kiotviet')renderKiotVietPage();},450);stopKiotChromeSyncPolling();return;
+      await importKiotChromeJobFile(job,file);return;
     }
-    if(job.status==='error'){stopKiotChromeSyncPolling();showActionDialog({title:'Không thể đồng bộ Chrome',icon:'⚠️',message:esc(job.detail||'Chrome không hoàn thành thao tác. Hãy mở KiotViet và thử lại.'),primaryLabel:'Đã hiểu'});return;}
+    if(job.status==='error'){showKiotChromeSyncFailure(new Error(job.detail||'Chrome chưa hoàn thành xuất báo cáo.'),job.fileName?'local':'extension');return;}
     if(job.status==='imported'){stopKiotChromeSyncPolling();return;}
     kiotChromeSync.poll=setTimeout(pollKiotChromeSync,1000);
-  }catch(error){stopKiotChromeSyncPolling();kiotChromeSync.status='error';kiotChromeSync.detail=String(error?.message||error);updateKiotChromeSyncUI();showActionDialog({title:'Chưa kết nối được Chrome',icon:'⚠️',message:'Hãy mở <b>tools\\start-kiotviet-sync.cmd</b> và cài extension KiotViet vào Chrome đang dùng. Sau đó bấm đồng bộ lại.',primaryLabel:'Đã hiểu'});}
+  }catch(error){showKiotChromeSyncFailure(error,stage);}
 }
 async function startKiotSalesChromeSync(){
   if(['requested','claimed','running','downloaded'].includes(kiotChromeSync.status))return;
+  if(kiotChromeSync.status==='error'&&kiotChromeSync.jobId){await retryKiotChromeSync();return;}
+  let stage='bridge';
   kiotChromeSync={status:'requested',detail:'Đang kết nối tiến trình Chrome…',jobId:'',poll:0,importedJobId:''};updateKiotChromeSyncUI();
-  try{await kiotChromeSyncRequest('/health');const job=await kiotChromeSyncRequest('/run',{method:'POST',body:JSON.stringify({report:'sales-by-product',categoryParent:'Rùm Beng',category:'3D Rùm Beng',period:'yesterday'})});kiotChromeSync={status:job.status||'requested',detail:job.detail||'',jobId:job.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();}
-  catch(error){kiotChromeSync.status='error';kiotChromeSync.detail=String(error?.message||error);updateKiotChromeSyncUI();showActionDialog({title:'Chưa sẵn sàng đồng bộ Chrome',icon:'⚠️',message:'Hãy khởi động tiến trình local và cài extension KiotViet một lần vào Chrome đang dùng.',primaryLabel:'Đã hiểu'});}
+  try{
+    await kiotChromeSyncRequest('/health');stage='request';const current=await kiotChromeSyncRequest('/job');
+    if(current?.id&&(current.fileName||['requested','claimed','running','downloaded'].includes(current.status))&&current.status!=='imported'){
+      kiotChromeSync={status:current.status,detail:current.detail||'',jobId:current.id,jobSnapshot:current,poll:0,importedJobId:''};updateKiotChromeSyncUI();await pollKiotChromeSync();return;
+    }
+    const job=await kiotChromeSyncRequest('/run',{method:'POST',body:JSON.stringify({report:'sales-by-product',categoryParent:'Rùm Beng',category:'3D Rùm Beng',period:'yesterday'})});
+    kiotChromeSync={status:job.status||'requested',detail:job.detail||'',jobId:job.id,poll:0,importedJobId:''};updateKiotChromeSyncUI();pollKiotChromeSync();
+  }catch(error){showKiotChromeSyncFailure(error,stage);}
 }
-async function importKiotSalesFile(input,source='manual',periodOverride=null,note=''){
+function kiotSalesSameContent(a,b){
+  const key=rows=>JSON.stringify((rows||[]).map(row=>[String(row.sku||''),String(row.name||''),Number(row.qty)||0,Number(row.revenue)||0,String(row.category||'')]).sort((x,y)=>x[0].localeCompare(y[0])));
+  return key(a)===key(b);
+}
+async function importKiotSalesFile(input,source='manual',periodOverride=null,note='',options={}){
   const file=input.files?.[0];input.value='';if(!file)return;
-  const scope=kiotSalesPendingPrefix();
+  const scope=kiotSalesPendingPrefix();let stage='parse';
+  const report=result=>{try{options.onResult?.({...result,scope,fileName:file.name});}catch(error){console.warn('Không cập nhật được trạng thái nhập',error);}};
   try{
     const [rows,period]=await Promise.all([kvReadRows(file),kvReadSalesReportPeriod(file)]);
+    stage='period';
     const useOverride=/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.from||'')&&/^\d{4}-\d{2}-\d{2}$/.test(periodOverride?.to||'');
     if(useOverride&&period?.from&&period?.to&&(period.from!==periodOverride.from||period.to!==periodOverride.to))throw new Error(`File KiotViet là kỳ ${fmtDate(period.from)} – ${fmtDate(period.to)}, không phải ngày yêu cầu ${fmtDate(periodOverride.from)}. Báo cáo cũ được giữ nguyên; hãy thử bù lại.`);
     const parsed=rows.map(row=>{const sku=String(kvField(row,['Mã hàng','SKU','Mã sản phẩm'])).trim(),name=String(kvField(row,['Tên hàng','Tên sản phẩm','Tên'])).trim()||sku,qty=kiotSalesQuantityForRow(row),revenue=kiotSalesRevenueForRow(row),sale={sku,name,qty,revenue,category:String(kvField(row,['Nhóm hàng','Danh mục'])).trim()};return kiotSalesProductRow(sale)?sale:null;}).filter(Boolean);
@@ -20663,16 +20808,25 @@ async function importKiotSalesFile(input,source='manual',periodOverride=null,not
     const reportPeriod=useOverride?{from:periodOverride.from,to:periodOverride.to}:period;
     const entry={id:uid(),requestId:crypto.randomUUID(),importedAt:new Date().toISOString(),fileName:file.name,source,period:reportPeriod,note:String(note||''),sales};
     if(!kiotSalesSingleDay(entry))throw new Error('Chỉ nhận báo cáo đúng một ngày. File nhiều ngày không được gắn vào ngày cuối; hãy xuất từng ngày.');
+    stage='local';await loadKiotSalesPendingFallback();
+    if(scope!==kiotSalesPendingPrefix())throw new Error('Workspace hoặc tài khoản đã đổi; giữ file gốc và nhập trong đúng workspace.');
     const key=kiotSalesImportKey(entry),pending=kiotSalesPendingEntries().find(row=>kiotSalesImportKey(row)===key);
-    if(pending){await retryKiotSalesPending();toast('Ngày này có bản nhập đang chờ. Giữ file mới, kiểm tra hàng chờ trước khi nhập thay thế.',6000);return false;}
+    if(pending){
+      await retryKiotSalesPending();const receipt=kiotSalesPendingReceipts.get(scope+pending.requestId),same=kiotSalesSameContent(pending.sales,sales);
+      const left=kiotSalesPendingEntries().find(row=>row.requestId===pending.requestId),saved=!!(same&&receipt?.revision&&receipt.day===reportPeriod.from&&!left&&scope===kiotSalesPendingPrefix());
+      report({saved,stage:saved?'complete':'cloud',requestId:pending.requestId,message:left?.syncError||'Ngày này có bản nhập đang chờ; giữ file gốc để thử lại.',code:left?.syncErrorCode||'',pending:!!left});
+      toast(saved?'Đã lưu bản báo cáo đang chờ trên cloud.':'Ngày này có bản nhập đang chờ. Giữ file mới, kiểm tra hàng chờ trước khi nhập thay thế.',6000);return saved;
+    }
     const existing=(kiotViet.salesImports||[]).find(row=>kiotSalesImportKey(row)===key);entry.expectedRevision=existing?.archiveRevision||null;
     if(scope!==kiotSalesPendingPrefix())throw new Error('Workspace hoặc tài khoản đã đổi; hãy nhập lại file trong đúng workspace.');
-    saveKiotSalesPending(entry);await retryKiotSalesPending();
-    if(scope!==kiotSalesPendingPrefix())return false;
+    stage='local';await saveKiotSalesPendingDurable(entry);stage='cloud';await retryKiotSalesPending();
+    if(scope!==kiotSalesPendingPrefix()){report({saved:false,stage:'scope',message:'Workspace đã đổi; bản nhập vẫn giữ trong workspace ban đầu.'});return false;}
     const saved=!kiotSalesPendingEntries().some(row=>row.requestId===entry.requestId);
     closeDialog('dlg-mv');if(curPage==='sales')renderSalesPage();
+    const pendingEntry=kiotSalesPendingEntries().find(row=>row.requestId===entry.requestId);
+    report({saved,stage:saved?'complete':'cloud',requestId:entry.requestId,pending:!saved,message:pendingEntry?.syncError||(!saved?'Báo cáo được giữ trên máy, chưa được cloud xác nhận.':''),code:pendingEntry?.syncErrorCode||''});
     toast(saved?`Đã lưu trên cloud: ${sales.length} SKU ngày ${fmtDate(reportPeriod.from)}.`:'Báo cáo được giữ trên máy, chưa lưu cloud. Báo cáo cũ không bị thay thế.',6000);return saved;
-  }catch(error){toast('Không thể nhập báo cáo bán hàng: '+error.message,6000);return false;}
+  }catch(error){const quota=error.name==='QuotaExceededError'||error.name==='NS_ERROR_DOM_QUOTA_REACHED';const message=quota?'Bộ nhớ trên máy đã đầy; chưa giữ được bản nhập mới. File Excel gốc vẫn cần được giữ để thử lại.':String(error.message||error);report({saved:false,stage,message,code:error.code||'',pending:false});toast('Không thể nhập báo cáo bán hàng: '+message,6000);return false;}
 }
 function kvMappingComponents(mapping){
   if(Array.isArray(mapping?.components)&&mapping.components.length)return mapping.components.map(component=>({qty:Math.max(1,Number(component.qty)||1),mode:component.mode==='alternative'?'alternative':'required',...component}));
@@ -22058,5 +22212,6 @@ installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNo
 <script src="printer-monitor.js"></script>
 <script src="plate-plan-files.js"></script>
 <script src="filament-picker.js"></script>
+<script src="kiot-pending-store.js"></script>
 </body>
 </html>
