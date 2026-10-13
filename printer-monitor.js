@@ -35,8 +35,10 @@
     detailSelection = null,
     detailReturnScroll = 0;
   const detailRequests = new Set(), detailErrors = new Map();
-  const requiredTypes = new Set(['printer_finished','printer_paused','printer_failed','printer_stopped']);
+  const requiredTypes = new Set(['printer_finished','printer_paused','printer_failed','printer_stopped','printer_error']);
   let requiredAlerts=new Map(), alertOverlay=null, alertFocus=null, alertRelease=null, alertLockPending=false, alertBusy=false, alertStoreDirty=true;
+  let acknowledgedAlertKeys=new Set();
+  let lastPrinterTransitions={};
   const alertInert=new Map();
   const alertPrefix=()=>`ps_printer_alerts_v1_${encodeURIComponent(scope)}:`;
   const alertKey=id=>alertPrefix()+encodeURIComponent(id);
@@ -58,7 +60,7 @@
     try {
       localStorage.setItem(
         key(),
-        JSON.stringify({ aliases, ignored, readIds, snapshot, events, cursor }),
+        JSON.stringify({ aliases, ignored, readIds, snapshot, events, cursor, lastPrinterTransitions }),
       );
     } catch {
       /* Server history is not removed on a full local cache. */
@@ -142,6 +144,45 @@
   function readAlert(id) {
     try {return JSON.parse(localStorage.getItem(alertKey(id))||'null');} catch {return null;}
   }
+  function alertAssessment(event) {
+    const device=snapshot.devices[event.printerId||event.deviceId];
+    if(!primed||!device||stale(device)||device.online===false)return {status:'wait'};
+    if(!event.jobKey||!device.run?.id)return {status:'obsolete'};
+    if(device.run.id!==event.jobKey)return {status:'obsolete'};
+    const time=Date.parse(event.createdAt),reported=Date.parse(device.lastReport);
+    if(!Number.isFinite(time)||!Number.isFinite(reported)||reported<time||!['RUNNING','PREPARE','PAUSE','FAILED','FINISH','IDLE'].includes(device.phase))return {status:'wait'};
+    const transitions=events.filter(row=>(row.printerId||row.deviceId)===(event.printerId||event.deviceId)&&row.jobKey===event.jobKey&&['printer_started','printer_resumed','printer_paused','printer_failed','printer_stopped','printer_finished'].includes(row.type));
+    const retained=lastPrinterTransitions[event.printerId||event.deviceId];
+    if(retained?.jobKey===event.jobKey)transitions.push(retained);
+    const latest=transitions.sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||Number(b.printerSequence||0)-Number(a.printerSequence||0))[0];
+    if(latest&&(Date.parse(latest.createdAt)>time||latest.createdAt===event.createdAt&&event.type!=='printer_error'&&Number(latest.printerSequence||0)>Number(event.printerSequence||0)))return {status:'obsolete'};
+    const base=JSON.stringify([event.printerId||event.deviceId,event.jobKey]);
+    if(event.type==='printer_finished')return {status:['FINISH','IDLE'].includes(device.phase)&&device.run.result==='finished'?'active':'obsolete',key:base+':finished',issues:[]};
+    const halted=device.phase==='PAUSE'||device.phase==='FAILED'||device.phase==='IDLE'&&['failed','stopped'].includes(device.run.result);
+    if(!halted)return {status:'obsolete'};
+    const issues=(device.issues||[]).filter(issue=>issue.severity==='error');
+    if(device.phase!=='FAILED'&&!issues.length)return {status:'obsolete'};
+    if(event.type==='printer_error'&&!issues.some(issue=>issue.code===event.code&&(!event.episode||issue.episode===event.episode)))return {status:'obsolete'};
+    const halt=latest&&['printer_paused','printer_failed','printer_stopped'].includes(latest.type)?latest.id:event.episode||event.id;
+    return {status:'active',key:base+':halt:'+halt,issues};
+  }
+  function retireRequiredAlert(id,row,reason) {
+    requiredAlerts.delete(id);
+    try{localStorage.setItem(alertKey(id),JSON.stringify({...row,resolved:true,resolution:reason,resolvedAt:new Date().toISOString()}));}catch{}
+  }
+  function reconcileRequiredAlerts() {
+    const grouped=new Map();
+    for(const [id,row] of requiredAlerts){
+      const assessment=alertAssessment(row.event);
+      if(assessment.status==='wait')continue;
+      if(assessment.status!=='active'){retireRequiredAlert(id,row,'no-longer-actionable');continue;}
+      row.confirmationKey=assessment.key;row.issues=assessment.issues;
+      if(acknowledgedAlertKeys.has(assessment.key)){retireRequiredAlert(id,row,'already-dismissed');continue;}
+      const earlier=grouped.get(assessment.key);
+      if(earlier){retireRequiredAlert(id,row,'same-incident');continue;}
+      grouped.set(assessment.key,row);
+    }
+  }
   function syncRequiredAlerts() {
     if(!scope||!alertStoreDirty)return;
     try {
@@ -149,7 +190,7 @@
         const name=localStorage.key(i);if(!name?.startsWith(alertPrefix()))continue;
         let row;try{row=JSON.parse(localStorage.getItem(name)||'null');}catch{continue;}
         if(!row?.event?.id||!needsConfirmation(row.event)||name!==alertKey(row.event.id))continue;
-        if(row.acknowledged)requiredAlerts.delete(row.event.id);
+        if(row.acknowledged||row.resolved){requiredAlerts.delete(row.event.id);if(row.acknowledged&&row.confirmationKey)acknowledgedAlertKeys.add(row.confirmationKey);}
         else requiredAlerts.set(row.event.id,row);
       }
       alertStoreDirty=false;
@@ -157,20 +198,22 @@
   }
   function enqueueRequiredAlert(event) {
     const ctx=context();
-    if(!needsConfirmation(event))return false;
+    if(!event?.type?.startsWith('printer_'))return false;
+    if(!needsConfirmation(event))return true;
     if(!ctx.allowed||scope!==ctx.workspace+':'+ctx.user||!eventIsForCurrentUser(event))return true;
     const saved=readAlert(event.id);
-    if(saved?.acknowledged)return true;
+    if(saved?.acknowledged||saved?.resolved)return true;
+    const assessment=alertAssessment(event);
+    if(assessment.status==='obsolete'||assessment.key&&acknowledgedAlertKeys.has(assessment.key))return true;
     if(!requiredAlerts.has(event.id)) {
-      const device=snapshot.devices[event.printerId||event.deviceId];
-      const issues=event.type!=='printer_finished'&&device?.run?.id===event.jobKey?(device.issues||[]):[];
-      const row=saved||{event:{...event},issues,acknowledged:false};
+      const issues=assessment.issues||[];
+      const row=saved||{event:{...event},issues,confirmationKey:assessment.key,acknowledged:false};
       row.durable=true;
       try {localStorage.setItem(alertKey(event.id),JSON.stringify(row));}
       catch {row.durable=false;}
       requiredAlerts.set(event.id,row);
     }
-    pumpRequiredAlerts();return true;
+    queueMicrotask(pumpRequiredAlerts);return true;
   }
   function closeRequiredAlert({restoreFocus=true}={}) {
     alertOverlay?.remove();alertOverlay=null;
@@ -183,7 +226,7 @@
     return [...document.querySelectorAll('.dlg-ov,[aria-modal="true"],.auth-ov,#ov-order-form,#ov-project-detail,#ov-batch-report,#confirm-ov,.cloud-loading-ov,.guide-tour-ov')].some(node=>{
       if(node.closest('#printer-required-alert'))return false;
       const style=getComputedStyle(node);
-      return node.getClientRects().length&&style.visibility!=='hidden'&&style.opacity!=='0'&&node.getAttribute('aria-hidden')!=='true';
+      return node.getClientRects().length&&style.visibility!=='hidden'&&node.getAttribute('aria-hidden')!=='true';
     });
   }
   async function openEventMachine(event) {
@@ -202,7 +245,7 @@
     }
     return false;
   }
-  async function acknowledgeRequiredAlert(viewMachine=false) {
+  async function acknowledgeRequiredAlert(viewMachine=false,{dismiss=false}={}) {
     if(!alertOverlay||alertBusy)return;
     const id=alertOverlay.dataset.eventId,row=requiredAlerts.get(id),gen=generation;
     if(!row)return;
@@ -213,8 +256,9 @@
         if(gen===generation)setText(status,'Chưa mở được đúng máy hoặc mẻ. Thử lại hoặc chọn Đã biết.');return;
       }
       if(gen!==generation)return;
-      try {localStorage.setItem(alertKey(id),JSON.stringify({event:{id,type:row.event.type},acknowledged:true,acknowledgedAt:new Date().toISOString()}));}
-      catch {setText(status,'Chưa lưu được xác nhận trên thiết bị. Hãy thử lại; thông báo vẫn được giữ.');return;}
+      try {localStorage.setItem(alertKey(id),JSON.stringify({event:{id,type:row.event.type},confirmationKey:row.confirmationKey,acknowledged:true,acknowledgedAt:new Date().toISOString()}));}
+      catch {if(!dismiss){setText(status,'Chưa lưu được xác nhận trên thiết bị. Hãy thử lại; thông báo vẫn được giữ.');return;}toast('Đã đóng trong phiên này; chưa lưu được xác nhận nên có thể hiện lại khi tải lại trang.');}
+      if(row.confirmationKey)acknowledgedAlertKeys.add(row.confirmationKey);
       requiredAlerts.delete(id);
       readIds[id]=true;
       const event=events.find(event=>event.id===id);if(event)event.readBy=[notificationUserKey()];
@@ -231,7 +275,7 @@
     alertFocus=document.activeElement;
     const overlay=document.createElement('div');overlay.id='printer-required-alert';overlay.dataset.eventId=event.id;
     overlay.innerHTML=`<section class="pm-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="pm-alert-title" aria-describedby="pm-alert-detail pm-alert-time"><header><span class="pm-alert-icon" aria-hidden="true">${icon(event.type==='printer_finished'?'check':event.type==='printer_failed'?'warning':'pause')}</span><div><small class="pm-alert-kind">${event.type==='printer_finished'?'Hoàn thành':event.type==='printer_failed'?'Lỗi':'Máy đã ngừng in'}</small><h2 id="pm-alert-title">${e(event.title)}</h2></div></header><p id="pm-alert-detail">${e(event.detail||'Trạng thái do máy in báo.')}</p><small id="pm-alert-time">${e(date(event.createdAt))}</small><div class="pm-alert-issues">${(row.issues||[]).slice(0,4).map(issue=>`<p><span class="pm-notice-severity pm-notice-${e(issue.severity)}">${issue.severity==='error'?'Lỗi':issue.severity==='warning'?'Cảnh báo':'Thông tin'}</span> ${e(issue.text||issue.original||'Máy đang báo mã')} <small>${e(issue.code||'')}</small></p>`).join('')}${(row.issues||[]).length>4?'<small>Xem máy để đọc tất cả mã.</small>':''}</div><small class="pm-alert-queue"></small><p class="pm-alert-status" role="status"></p><footer><button type="button" class="btn btn-ghost" data-alert-ack>Đã biết</button><button type="button" class="btn btn-ac" data-alert-view>Xem máy</button></footer></section>`;
-    overlay.dataset.severity=event.type==='printer_finished'?'success':event.type==='printer_failed'?'error':'paused';
+    overlay.dataset.severity=event.type==='printer_finished'?'success':'error';
     overlay.querySelector('[data-alert-ack]').onclick=()=>void acknowledgeRequiredAlert();
     overlay.querySelector('[data-alert-view]').onclick=()=>void acknowledgeRequiredAlert(true);
     document.body.append(overlay);alertOverlay=overlay;
@@ -242,11 +286,16 @@
   function pumpRequiredAlerts() {
     const ctx=context(),valid=ctx.allowed&&scope===ctx.workspace+':'+ctx.user;
     if(!valid||document.hidden){closeRequiredAlert();return;}
-    syncRequiredAlerts();
-    if(alertOverlay&&!requiredAlerts.has(alertOverlay.dataset.eventId))closeRequiredAlert();
-    if(alertOverlay) {setText(alertOverlay.querySelector('.pm-alert-queue'),requiredAlerts.size>1?`${requiredAlerts.size} thông báo · hiển thị lần lượt`:'');return;}
+    syncRequiredAlerts();reconcileRequiredAlerts();
+    if(alertOverlay&&(!requiredAlerts.has(alertOverlay.dataset.eventId)||alertAssessment(requiredAlerts.get(alertOverlay.dataset.eventId).event).status!=='active'))closeRequiredAlert();
+    if(alertOverlay) {
+      const row=requiredAlerts.get(alertOverlay.dataset.eventId),issues=JSON.stringify(row.issues||[]);
+      if(alertOverlay.dataset.issues!==issues){alertOverlay.dataset.issues=issues;alertOverlay.querySelector('.pm-alert-issues').innerHTML=(row.issues||[]).slice(0,4).map(issue=>`<p><span class="pm-notice-severity pm-notice-error">Lỗi</span> ${e(issue.text||issue.original||'Máy đang báo mã')} <small>${e(issue.code||'')}</small></p>`).join('')+((row.issues||[]).length>4?'<small>Xem máy để đọc tất cả mã.</small>':'');}
+      const count=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').length;
+      setText(alertOverlay.querySelector('.pm-alert-queue'),count>1?`${count} thông báo · hiển thị lần lượt`:'');return;
+    }
     if(alertBusy||alertLockPending||!requiredAlerts.size||alertBlocked())return;
-    const present=()=>{if(context().allowed&&!document.hidden&&!alertBlocked()){syncRequiredAlerts();const row=[...requiredAlerts.values()].sort((a,b)=>Date.parse(a.event.createdAt)-Date.parse(b.event.createdAt))[0];if(row)showRequiredAlert(row);}};
+    const present=()=>{if(context().allowed&&!document.hidden&&!alertBlocked()){syncRequiredAlerts();reconcileRequiredAlerts();const row=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').sort((a,b)=>Date.parse(a.event.createdAt)-Date.parse(b.event.createdAt))[0];if(row)showRequiredAlert(row);}};
     if(!navigator.locks){present();return;}
     alertLockPending=true;const gen=generation;
     void navigator.locks.request('ps-printer-alert-presenter:'+scope,{ifAvailable:true},async lock=>{
@@ -260,25 +309,26 @@
     snapshot = data.state || snapshot;
     const known = new Map(events.map((event) => [event.id, event]));
     const rows = [...(data.events || [])].sort((a, b) => a.seq - b.seq);
+    const fresh=[];
     for (const row of rows) {
       const event = {
         ...row.data,
         id: "printer:" + row.data.id,
         printerId: row.data.deviceId,
+        printerSequence: Number(row.seq),
         permissions: ["progress.view", "plates.plan"],
         readBy: readIds["printer:" + row.data.id]
           ? [notificationUserKey()]
           : [],
       };
       known.set(event.id, event);
+      if(['printer_started','printer_resumed','printer_paused','printer_failed','printer_stopped','printer_finished'].includes(event.type)){
+        const prior=lastPrinterTransitions[event.printerId],at=Date.parse(event.createdAt),before=Date.parse(prior?.createdAt);
+        if(!prior||at>before||at===before&&event.printerSequence>Number(prior.printerSequence||0))lastPrinterTransitions[event.printerId]=event;
+      }
       cursor = Math.max(cursor, Number(row.seq));
       if (primed && !initial && !isIgnored(event.printerId, event)) {
-        if(needsConfirmation(event))enqueueRequiredAlert(event);
-        if (navigator.locks)
-          void navigator.locks.request("ps-printer-notify:" + scope, () =>
-            announceSystemEvent(event),
-          );
-        else announceSystemEvent(event);
+        fresh.push(event);
       }
     }
     events = [...known.values()]
@@ -289,6 +339,11 @@
       events.forEach((event) => seen.add(event.id));
       saveSeenNotificationIds(seen);
       primed = true;
+    }
+    for(const event of fresh){
+      enqueueRequiredAlert(event);
+      if(navigator.locks)void navigator.locks.request('ps-printer-notify:'+scope,()=>announceSystemEvent(event));
+      else announceSystemEvent(event);
     }
     const all = new Map(historyRows.map((row) => [row.id, row]));
     (data.history || []).forEach((row) => all.set(row.id, row));
@@ -401,7 +456,7 @@
     }
   }
   function reset(next) {
-    closeRequiredAlert();requiredAlerts=new Map();alertLockPending=false;alertBusy=false;alertStoreDirty=true;
+    closeRequiredAlert();requiredAlerts=new Map();acknowledgedAlertKeys=new Set();lastPrinterTransitions={};alertLockPending=false;alertBusy=false;alertStoreDirty=true;
     generation++;
     abort?.abort();
     abort = null;
@@ -437,6 +492,7 @@
         snapshot = saved.snapshot || snapshot;
         events = saved.events || [];
         cursor = saved.cursor || 0;
+        lastPrinterTransitions = saved.lastPrinterTransitions || {};
       } catch {}
     }
     render();
@@ -1210,10 +1266,11 @@
   });
   window.addEventListener("pagehide", () => {abort?.abort();closeRequiredAlert({restoreFocus:false});});
   // Window capture precedes the libraries' document-level selection shortcuts.
-  // Native Enter/Space still activate buttons, but Delete/Escape never act behind this modal.
+  // Escape dismisses this incident, never an underlying form or selection.
   window.addEventListener('keydown',event=>{
     if(!alertOverlay)return;
-    if(event.key==='Escape'||event.key==='Delete')event.preventDefault();
+    if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();void acknowledgeRequiredAlert(false,{dismiss:true});return;}
+    if(event.key==='Delete')event.preventDefault();
     if(event.key==='Tab'){
       const controls=[...alertOverlay.querySelectorAll('button:not(:disabled)')],first=controls[0],last=controls.at(-1);
       if(!alertOverlay.contains(document.activeElement)||event.shiftKey&&document.activeElement===first||!event.shiftKey&&document.activeElement===last){event.preventDefault();(event.shiftKey?last:first)?.focus();}

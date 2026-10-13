@@ -264,7 +264,7 @@
   DOM/ảnh/mất cuộn/chạy lại hiệu ứng theo telemetry. Bấm nhanh không kẹt; thu bỏ
   khỏi Tab ngay. Reduced-motion tức thời, mất quyền/đổi xưởng ẩn ngay. Đổi máy/
   mẻ không giữ nhầm ảnh/model.
-- Thông báo chuyển trạng thái thật: bắt đầu/tạm dừng/tiếp tục/hoàn thành/thất bại/
+- Lưu sự kiện chuyển trạng thái thật: bắt đầu/tạm dừng/tiếp tục/hoàn thành/thất bại/
   mất và nối lại; chống trùng telemetry/reconnect/nhiều tab. Warning không biến
   đang in thành lỗi; error không bỏ qua bằng nút warning.
 - Bỏ qua warning theo máy + mã, có hiện lại, giữ qua reload/lịch sử, không gửi
@@ -286,10 +286,21 @@
 - Bảng thả không mở dialog giữa màn hình, ghi đè form hoặc tự đánh dấu đã đọc
   khi mở. Giữ người nhận/quyền/lịch sử/âm thanh/trạng thái đúng khi xem, đọc hết,
   Escape, click ngoài và tải nền.
-- Máy in xong/tạm dừng/thất bại/dừng in dùng pop-up giữa màn hình, không tự đóng,
-  chỉ xác nhận “Đã biết” hoặc “Xem máy”. Escape/click ngoài/vuốt/đọc hết bảng
-  không làm mất thông báo cần xác nhận. Warning thường, bắt đầu/tiếp tục/kết nối
-  dùng góc trên phải; mất kết nối không chứng minh máy dừng.
+- Chỉ ngắt luồng bằng pop-up máy khi dữ liệu hiện tại xác nhận đúng mẻ đã in
+  xong hoặc máy thực sự dừng vì lỗi: PAUSE có mã error, FAILED, hoặc mẻ dừng có
+  error. Tạm dừng thủ công/warning đơn thuần/bắt đầu/tiếp tục/kết nối chỉ lưu
+  trong bảng thông báo và trạng thái máy, không bật popup/âm thanh. Không suy
+  máy dừng chỉ từ một mã lỗi, warning hoặc mất kết nối.
+- Trước khi hiện và khi nhận cập nhật, đối chiếu máy + ID mẻ + lần chuyển trạng
+  thái. Máy đã in tiếp, đổi mẻ, lỗi hết hoặc sự kiện bị thay thế thì bỏ popup/
+  hàng chờ cũ, kể cả qua reload/nhiều tab; vẫn giữ lịch sử. Cache cũ/chưa kết nối/
+  chưa có telemetry mới không đủ để bật popup. Gom mã lỗi cùng một lần dừng
+  thành một thông báo; lần dừng mới sau khi in tiếp vẫn được thông báo.
+- Pop-up còn hợp lệ không tự hết giờ. “Đã biết”, “Xem máy” và Esc đóng/xác nhận
+  thông báo đang hiện, không gửi lệnh, bỏ qua mã error hoặc tác động form/chọn
+  nhiều phía sau. Click ngoài/vuốt/đọc hết bảng không xác nhận. Lưu việc đóng
+  theo workspace + người dùng để không hiện lại; nếu không lưu được, Esc vẫn
+  đóng trong phiên và phản hồi rõ giới hạn qua reload.
 - Pop-up máy cần xác nhận xếp hàng/chống trùng ID/bền qua reload theo workspace
   + người dùng trên thiết bị. Chờ form/dialog/camera, không ghi đè nháp/focus.
   Hiện trạng thái/thời điểm/xem đúng máy; xác nhận tách khỏi đã đọc, không xóa

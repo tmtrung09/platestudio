@@ -1,5 +1,5 @@
 /* Plate Studio — app shell local-first + thông báo đẩy. */
-const APP_SHELL_CACHE='plate-studio-shell-v6';
+const APP_SHELL_CACHE='plate-studio-shell-v7';
 const APP_SHELL=['./','./index.html','./plate-studio.html','./printer-monitor.js','./plate-plan-files.js','./filament-picker.js','./kiot-pending-store.js','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(APP_SHELL_CACHE).then(cache=>Promise.allSettled(APP_SHELL.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));
@@ -22,7 +22,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
   event.respondWith(caches.match(request).then(cached=>{
-    return cached||fresh;
+    return cached||fresh.catch(async()=>await caches.match(request,{ignoreSearch:true})||Response.error());
   }));
 });
 self.addEventListener('push', event => {
