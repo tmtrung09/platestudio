@@ -27,7 +27,7 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  };
  let calendar=await measure('#sales-page .kiot-sales-calendar','sales');
  await calendar.locator('time[datetime="2026-08-11"]').click();await page.locator('#sales-page time[datetime="2026-08-12"]').click();
- assert.deepEqual(await page.evaluate(()=>salesPageCustomRange),{from:'2026-08-11',to:'2026-08-12'});assert.equal(await page.locator('#sales-period option').count(),2);await page.getByRole('button',{name:'Bỏ chọn',exact:true}).click();assert.equal(await page.locator('#sales-period option').count(),3);
+ assert.deepEqual(await page.evaluate(()=>salesPageCustomRange),{from:'2026-08-11',to:'2026-08-12'});assert.equal(await page.locator('.sales-history-button').count(),2);assert.equal(await page.locator('#sales-period').count(),0);assert.equal(await page.locator('.sales-kpi b').first().textContent(),'7');await page.getByRole('button',{name:'Bỏ chọn',exact:true}).click();assert.equal(await page.locator('.sales-history-button').count(),3);
  await page.locator('#sales-page .kiot-sales-calendar').getByRole('button',{name:'Tháng trước',exact:true}).focus();assert.equal(await page.locator('#sales-page .kiot-sales-calendar').getByRole('button',{name:'Tháng trước',exact:true}).evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>salesPageCalendarMonth),'2026-07');
  await page.locator('#sales-page .kiot-sales-calendar').getByRole('button',{name:'Tháng sau',exact:true}).click();assert.equal(await page.evaluate(()=>salesPageCalendarMonth),'2026-08');
  await page.getByRole('button',{name:'Đóng lịch',exact:true}).click();assert.equal(await page.locator('#sales-page .kiot-sales-calendar').count(),0);

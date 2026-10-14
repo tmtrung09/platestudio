@@ -17,7 +17,7 @@ function context(){
  kiotInventoryLedger:{},kiotInventoryUpsertLocalMovements(){},kiotInventoryDayEnd:d=>d,curPage:'test',setTimeout:()=>0,clearTimeout(){},saveKiotViet(){},markKiotDailyImport(){},toast(){},loadKiotSalesArchiveIndex:async()=>[],
  sb:{rpc:async()=>({data:[{id:'cloud',updated_at:'rev'}]})}});
  for(const name of ['kiotVietForLocalCache','releaseConfirmedKiotCache','kiotSalesSameContent','loadKiotSalesPendingFallback','saveKiotSalesPendingDurable','removeKiotSalesPendingDurable','kvNorm','persistKiotSalesDetail','hydrateKiotSalesDetail','compactKiotSalesInMemory','kiotSalesProductRow','kiotSalesRows','kiotSalesImportMetrics','kiotSalesReportDay','kiotSalesSingleDay','persistKiotSalesArchive','kiotSalesArchiveRow','kiotSalesImportKey','sortKiotSalesImports','mergeKiotSalesArchiveIndex','loadKiotSalesArchiveDetail','kiotSalesArchiveEntry','kiotVietForCloudSettings','kiotSalesPendingPrefix','preserveKiotSalesLegacy','kiotSalesPendingEntries','saveKiotSalesPending','retryKiotSalesPending','deleteKiotSalesArchive','kvMappingComponents','salesRestockComponents'])vm.runInContext(fn(name),c);
- vm.runInContext("let kiotSalesPendingSync=null,kiotSalesPendingTimer=0,kiotSalesPendingFallback={scope:'',entries:[]};const kiotSalesDetailRequests=new WeakMap(),kiotSalesPendingReceipts=new Map();",c);vm.runInContext(fn('fetchKiotSalesArchiveDetail'),c);vm.runInContext(fn('preserveKiotSalesBeforeRefresh'),c);vm.runInContext(fn('retainKiotSalesLocalDetails'),c);return c;
+ vm.runInContext("let kiotSalesPendingSync=null,kiotSalesPendingTimer=0,kiotSalesPendingFallback={scope:'',entries:[]};const kiotSalesDetailRequests=new WeakMap(),kiotSalesPendingReceipts=new Map();",c);vm.runInContext(fn('kiotSalesDetailReady'),c);vm.runInContext(fn('fetchKiotSalesArchiveDetail'),c);vm.runInContext(fn('preserveKiotSalesBeforeRefresh'),c);vm.runInContext(fn('retainKiotSalesLocalDetails'),c);return c;
 }
 let passed=0;
 async function test(name,run){await run();passed++;console.log('PASS',name)}
@@ -47,7 +47,11 @@ await test('Network failure stops automatic detail retry loop',async()=>{
  const c=context();let calls=0;c.sb.from=()=>({select(){return this},eq(){return this},order(){return this},range:async()=>{calls++;return {error:new Error('offline')}}});
  const e={id:'r',skuCount:4,qtyTotal:4};await c.loadKiotSalesArchiveDetail(e);await c.loadKiotSalesArchiveDetail(e);
  assert.ok(e.detailError);assert.equal(calls,1);assert.equal(c.kiotSalesImportMetrics(e).qty,4);
- assert.ok(fn('renderSalesPageContent').includes('!report.detailError'));assert.ok(fn('openKiotSalesComparison').includes('!current.detailError'));
+ assert.ok(fn('renderSalesPageContent').includes('!entry.detailError'));assert.ok(fn('openKiotSalesComparison').includes('!current.detailError'));
+});
+await test('Positive metadata with empty detail errors once, never becomes loaded zero',async()=>{
+ const c=context();let calls=0;c.sb.from=()=>({select(){return this},eq(){return this},order(){return this},range:async()=>{calls++;return {data:[]}}});
+ const e={id:'incomplete',sales:[],detailLoaded:true,qtyTotal:3};await c.loadKiotSalesArchiveDetail(e);await c.loadKiotSalesArchiveDetail(e);assert.match(e.detailError,/chi tiết rỗng/);assert.equal(calls,1);assert.equal(c.kiotSalesDetailReady(e),false);
 });
 await test('Concurrent detail consumers share one request',async()=>{
  const c=context();let release,calls=0;c.sb.from=()=>({select(){return this},eq(){return this},order(){return this},range:()=>{calls++;return new Promise(resolve=>release=resolve)}});

@@ -321,6 +321,12 @@
 
 ## KiotViet, bán hàng và tồn kho
 
+- Trang Bán hàng dùng khoảng ngày trên lịch/lọc nhanh làm kỳ thống kê duy nhất;
+  không có dropdown chọn file báo cáo. Tổng bán, doanh thu, SKU, nhóm hàng,
+  sản phẩm bán nhiều, số liệu model/AI và gợi ý in bù cùng khoảng. Biểu đồ/lịch
+  sử mở báo cáo riêng mà không đổi kỳ tổng. Giữ báo cáo gốc; không cộng trùng
+  kỳ giao nhau hoặc phân bổ báo cáo nhiều ngày vào ngày cuối. Chi tiết chưa đủ,
+  kỳ không thể tách hoặc ngoài biên phải nêu rõ, không coi là 0 hay số liệu đầy đủ.
 - Đồng bộ giữ danh mục/báo cáo bán/ghép SKU/sổ đối chiếu và đường nhập file/Chrome/
   bù ngày. Trạng thái thật, không coi chưa kết nối/thiếu dữ liệu là thành công;
   giữ focus/caret/ảnh khi tìm hoặc tải nền.
