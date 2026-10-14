@@ -126,6 +126,11 @@
   Giữ đủ tuần, chọn khoảng, dấu có/thiếu dữ liệu và thao tác tháng/đóng; không
   cắt hàng cuối hoặc thay đổi dữ liệu báo cáo để thu gọn. Áp dụng chung cho lịch
   Bán hàng, lịch sử bán và bù ngày. Guard: `tools/sales-calendar-qa.mjs`.
+- Lịch chọn khoảng trên Bán hàng mở thành pop-up neo ngay nút “Khoảng ngày”,
+  không thêm hàng hoặc đẩy bố cục trang. Canh trong viewport, đổi hướng khi
+  thiếu chỗ và cuộn bên trong trên màn hình thấp; không bị vùng cuộn cắt.
+  Có nút đóng, Esc/click ngoài và trả focus phù hợp. Mở/đổi tháng/đóng không
+  dựng lại dữ liệu trang, không đổi kỳ đã áp dụng hoặc mất nháp chọn khoảng.
 - Lọc lịch sử nêu rõ khoảng xem, có đường về toàn bộ dữ liệu, không làm rỗng/xóa
   nguồn khi đổi tag. Tháng/ngày đồng bộ để tránh giao nhau rỗng; khoảng tùy chọn
   chọn trên lịch. Tuần bắt đầu thứ Hai, 7/30 ngày gồm hôm nay. Biểu đồ cuộn tới mọi

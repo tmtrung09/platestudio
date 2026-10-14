@@ -805,7 +805,7 @@ const results = await page.evaluate(async () => {
   check('Bỏ lọc khôi phục tổng 4 báo cáo và không có dropdown file', document.querySelectorAll('.sales-history-button').length===4 && !document.getElementById('sales-period') && salesPageReport().qtyTotal===10);
   toggleSalesPageCalendar();
   salesPageCalendarMonth='2026-08'; renderSalesPage();
-  const salesFilterCalendar=document.querySelector('#sales-page .sales-date-calendar-wrap .kiot-sales-calendar');
+  const salesFilterCalendar=document.querySelector('#sales-date-calendar-popup .kiot-sales-calendar');
   check('Bộ lọc ngày mở lịch có ngày đã nhập và vùng chọn tối thiểu 44px', Boolean(salesFilterCalendar?.querySelector('.kiot-sales-calendar-day.is-recorded') && [...salesFilterCalendar.querySelectorAll('.kiot-sales-calendar-day')].every(day=>day.getBoundingClientRect().width>=30&&day.getBoundingClientRect().height>=44)), salesFilterCalendar?`${salesFilterCalendar.querySelectorAll('.kiot-sales-calendar-day').length} ngày`:'thiếu lịch');
   selectSalesPageRangeDay('2026-05-11'); selectSalesPageRangeDay('2026-08-14');
   const salesOptionsAfterRange=[...document.querySelectorAll('.sales-history-button')].map(option=>option.textContent.trim()), chartAfterRange=document.querySelector('#sales-page .sales-daily-chart')?.textContent||'';
