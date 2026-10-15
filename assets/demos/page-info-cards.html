@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi" data-theme="light" data-motion="playing" data-view="single" data-device="desktop">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Duyệt thẻ thông tin · Plate Studio</title>
+  <link rel="stylesheet" href="page-info-cards.css">
+  <script src="page-info-cards.js" defer></script>
+</head>
+<body>
+  <header class="review-header">
+    <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m16 3 12 7v13l-12 7L4 23V10z"/><path d="m4 10 12 7 12-7M16 17v13"/></svg></div>
+    <div class="review-brand"><b>Plate Studio <span>/ Design review</span></b><small>Thẻ thông tin & chuyển động</small></div>
+    <span class="demo-label">Bản duyệt · 24 trang</span>
+  </header>
+  <main class="review-layout">
+    <aside class="page-directory" aria-label="Danh sách trang">
+      <div class="directory-heading"><h1>Các trang</h1><span id="directory-count">24 / 24</span></div>
+      <label class="directory-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="page-search" type="search" placeholder="Tìm trang..." aria-label="Tìm trang trong demo" autocomplete="off"></label>
+      <nav id="page-directory" aria-label="Chọn trang để duyệt"></nav>
+      <p id="directory-empty" hidden>Không tìm thấy trang.</p>
+    </aside>
+    <section class="review-main" aria-label="Xem trước thẻ thông tin">
+      <div class="review-intro"><div><span class="review-kicker">MỘT HỆ THẺ, MỖI TRANG MỘT CÂU CHUYỆN</span><h2>Thông tin rõ. Đồ họa có chuyển động.</h2><p>Chọn từng trang hoặc xem trọn bộ để duyệt nội dung và cách chuyển động.</p></div></div>
+      <div class="review-tools" aria-label="Tùy chọn xem trước">
+        <div class="segmented" role="group" aria-label="Cách xem"><button type="button" data-view-choice="single" aria-pressed="true">Từng trang</button><button type="button" data-view-choice="all" aria-pressed="false">Tất cả 24</button></div>
+        <div class="segmented" role="group" aria-label="Kích thước xem"><button type="button" data-device-choice="desktop" aria-pressed="true">Desktop</button><button type="button" data-device-choice="mobile" aria-pressed="false">Mobile</button></div>
+        <div class="segmented" role="group" aria-label="Giao diện"><button type="button" data-theme-choice="light" aria-pressed="true">Sáng</button><button type="button" data-theme-choice="dark" aria-pressed="false">Tối</button></div>
+        <button class="motion-control" id="motion-toggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Dừng chuyển động</span></button>
+      </div>
+      <div id="single-view">
+        <div class="preview-caption"><span id="preview-page-name"></span><span id="preview-index"></span></div>
+        <div class="product-preview" id="product-preview"></div>
+        <div class="scene-caption"><span class="caption-dot" aria-hidden="true"></span><span id="scene-caption"></span></div>
+        <div class="page-stepper"><button type="button" id="previous-page" aria-label="Trang trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>Trang trước</button><button type="button" id="next-page">Trang tiếp<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
+      </div>
+      <section class="all-pages" id="all-pages" aria-label="Bộ mẫu đầy đủ" hidden></section>
+      <footer class="review-note"><span class="review-note-mark" aria-hidden="true"></span><p><b>Demo để duyệt thiết kế.</b> Các nút trên thẻ chỉ minh họa, không kết nối tài khoản hoặc thay đổi dữ liệu xưởng. Chuyển động tự tắt khi thiết bị yêu cầu giảm chuyển động.</p></footer>
+    </section>
+  </main>
+  <div class="demo-toast" id="demo-toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

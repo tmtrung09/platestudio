@@ -106,6 +106,12 @@
   hoặc điều hướng riêng chỉ vì chứa icon. Guard: `tools/icon-actions-qa.mjs`.
 - Thẻ tóm tắt không lặp mọi tên model thành nhiều chip. Dùng thumbnail stack, số
   model/sản phẩm, xem chi tiết; chỉ hiện từng tên khi mở chi tiết hoặc cần ra quyết định.
+- Mỗi trang chức năng có thẻ thông tin đầu trang theo cùng ngôn ngữ thiết kế,
+  với đồ họa động riêng phù hợp công việc của trang. Tận dụng thẻ sẵn có, không
+  chồng thêm tiêu đề/mô tả trùng. Đồ họa không che chữ/control, không giả số liệu
+  nghiệp vụ; hỗ trợ light/dark, mobile và reduced-motion.
+- Thiết kế thẻ thông tin phải có demo đủ các trang để người dùng duyệt trước
+  khi áp dụng vào giao diện chính; demo ghi rõ minh họa và không ghi dữ liệu xưởng.
 
 ### Tìm kiếm, ảnh và thời gian
 
