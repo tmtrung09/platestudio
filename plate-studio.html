@@ -3786,6 +3786,51 @@ html:not([data-theme="light"]) .batch-sort-select option:checked{background:#4d8
 .btn-icon{display:inline-grid;place-items:center;width:15px;height:15px;vertical-align:-2px}.btn-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .list-header-search{width:min(310px,30vw);min-width:190px;margin:0 0 0 8px!important}
 @media(max-width:860px){.list-header-search{order:8;flex:1 1 100%;width:100%;margin:7px 0 0!important}.list-header-search input{min-width:0}}
+/* Order filters: one compact row; long libraries live in searchable menus. */
+#page-orders .order-library-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+#page-orders .order-library-toolbar .list-header-search{order:0;flex:1 1 220px;width:auto;max-width:440px;min-width:0;margin:0!important;min-height:44px!important}
+#page-orders .order-library-toolbar .btn{min-height:44px!important;border-radius:13px!important;white-space:nowrap}
+.order-library-create{margin-left:auto}
+.order-filter-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
+.order-filter-toggle [hidden],.order-filter-workspace [hidden]{display:none!important}
+.order-filter-badge{display:grid;place-items:center;min-width:19px;height:19px;padding:0 4px;border-radius:6px;background:var(--ac);color:#fff;font-size:10px}
+.order-filter-workspace{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#filters-orders{display:flex;flex:1 1 550px;gap:8px;min-width:0;max-width:740px}
+#filters-orders.collapsed{display:none}
+.order-filter-field{display:flex;align-items:center;gap:10px;flex:1;min-width:0;min-height:54px;padding:8px 12px;border:1px solid var(--b);border-radius:13px;background:var(--s2);color:var(--t);font-family:inherit;text-align:left;cursor:pointer}
+.order-filter-field:hover,.order-filter-field[aria-expanded="true"]{border-color:var(--ac);background:var(--s)}
+.order-filter-field:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.order-filter-field.is-filtered{border-color:color-mix(in srgb,var(--ac) 48%,var(--b));background:color-mix(in srgb,var(--ac) 7%,var(--s2))}
+.order-filter-field>span{flex:1;min-width:0}
+.order-filter-field small,.order-filter-field b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-filter-field small{margin-bottom:3px;color:var(--t2);font-size:10px;font-weight:500}
+.order-filter-field b{font-size:12px;font-weight:600;line-height:1.4}
+.order-filter-field svg{flex-shrink:0;width:14px;height:14px;fill:none;stroke:var(--t3);stroke-width:2}
+.order-filter-summary{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--t2);font-size:12px;flex-wrap:wrap}
+.order-filter-summary .btn{min-height:44px!important;padding:6px 10px;font-size:12px}
+.order-filter-menu{position:fixed;z-index:1200;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid var(--b);border-radius:16px;background:var(--s);color:var(--t);box-shadow:var(--sl);overflow:hidden}
+.order-filter-menu[hidden]{display:none}
+.order-filter-menu header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:5px;font-size:13px}
+.order-filter-menu .page-smart-search{flex-shrink:0;margin:0!important;min-height:44px!important}
+.order-filter-menu input{width:100%;min-width:0}
+.order-filter-menu-results{margin:0 5px;color:var(--t2);font-size:11px}
+.order-filter-options{overflow:auto;overscroll-behavior:contain;min-height:0}
+.order-filter-option{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:9px 10px;border:0;border-radius:9px;background:transparent;color:var(--t);font:500 12px var(--font);text-align:left;cursor:pointer}
+.order-filter-option:hover,.order-filter-option:focus-visible{background:var(--s2);outline:2px solid var(--ac);outline-offset:-2px}
+.order-filter-option[aria-pressed="true"]{background:var(--acb);color:var(--t)}
+.order-filter-option span{flex:1;min-width:0;overflow-wrap:anywhere}
+.order-filter-option small{color:var(--t2);font-size:11px;font-variant-numeric:tabular-nums}
+.order-filter-option svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
+.order-filter-empty{padding:18px 10px;color:var(--t2);font-size:12px;text-align:center}
+@media(max-width:600px){
+  #page-orders .order-library-toolbar .list-header-search{flex:1 1 100%;max-width:none}
+  #page-orders .order-library-toolbar .list-header-search input{font-size:16px!important}
+  .order-library-create{flex:1}.order-library-create .btn{width:100%}
+  .order-filter-workspace{gap:6px;margin-bottom:12px}
+  #filters-orders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex-basis:100%;gap:7px}
+  #order-filter-orderer{grid-column:1/-1}
+  .order-filter-field{padding:7px 10px}.order-filter-summary{width:100%;justify-content:space-between}
+}
 .kiot-sales-range-chosen{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--s2);color:var(--t3);font-size:11px}.kiot-sales-range-chosen b{color:var(--t);font-size:13px}.kiot-sales-calendar{width:min(100%,380px);min-width:0;margin:10px 0;padding:10px;border-radius:17px;background:var(--s2)}.kiot-sales-calendar>header{display:flex;align-items:center;justify-content:space-between;gap:8px}.kiot-sales-calendar>header b{text-transform:capitalize;font-size:13px}.kiot-sales-calendar-weekdays,.kiot-sales-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.kiot-sales-calendar-weekdays{margin:10px 0 4px;color:var(--t3);font-size:9px;font-weight:800;text-align:center}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{aspect-ratio:auto;height:44px;min-height:44px}.kiot-sales-calendar-day{position:relative;display:grid;place-items:center;padding:0;border:0;border-radius:10px;background:transparent;color:var(--t);font:700 11px var(--font);cursor:pointer}.kiot-sales-calendar-day:hover:not(:disabled),.kiot-sales-calendar-day:focus-visible{background:var(--acb);color:var(--ac);outline:0}.kiot-sales-calendar-day i{position:absolute;bottom:4px;left:50%;width:4px;height:4px;border-radius:50%;background:transparent;transform:translateX(-50%)}.kiot-sales-calendar-day.is-recorded i,.kiot-sales-calendar>footer i.is-recorded{background:var(--gr)}.kiot-sales-calendar-day.is-missing i,.kiot-sales-calendar>footer i.is-missing{background:var(--am)}.kiot-sales-calendar-day.is-in-range{background:color-mix(in srgb,var(--ac) 12%,transparent)}.kiot-sales-calendar-day.is-selected{background:var(--ac)!important;color:#fff!important}.kiot-sales-calendar-day:disabled{opacity:.28;cursor:not-allowed}.kiot-sales-calendar>footer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px;margin-top:10px;color:var(--t3);font-size:10px}.kiot-sales-calendar>footer span{grid-column:1;display:inline-flex;align-items:center;gap:5px}.kiot-sales-calendar>footer i{width:6px;height:6px;border-radius:50%}.kiot-sales-calendar>footer .btn{grid-column:2;grid-row:1/span 2;margin-left:0}
 @media(max-width:480px){.kiot-sales-calendar{padding:10px}.kiot-sales-calendar-day,.kiot-sales-calendar-gap{min-height:44px}.kiot-sales-calendar>footer{gap:7px}.kiot-sales-calendar>footer .btn{margin-left:0}}
 .kiot-sales-calendar>header .btn,.kiot-sales-calendar>footer .btn{min-width:44px;min-height:44px}.sales-month-chip{min-height:48px!important}
@@ -5228,17 +5273,22 @@ html body .btn.btn-icon-only.btn-ghost:hover:not(:disabled){color:var(--t)!impor
 
     <!-- ORDER -->
     <div class="page" id="page-orders">
-      <div class="sect-hd">
+      <div class="sect-hd order-library-toolbar" role="region" aria-label="Tìm và lọc đơn hàng">
+        <span class="catalog-redundant-heading" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
         Order <span class="sect-count" id="cnt-orders">0</span>
-        <button class="filter-toggle-btn" id="ftbtn-orders" onclick="toggleFilterBars('orders')" title="Ẩn/hiện bộ lọc"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
-        <div class="page-smart-search list-header-search" title="Tìm đơn, người đặt, model hoặc biến thể"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="order-smart-search" autocomplete="off" placeholder="Tìm đơn hoặc model..." oninput="setOrderSmartSearch(this.value)"></div>
-        <div style="margin-left:auto"><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo Order</button></div>
+        </span>
+        <div class="page-smart-search list-header-search" title="Tìm đơn, người đặt, model hoặc biến thể"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="order-smart-search" aria-label="Tìm đơn, người đặt, model hoặc biến thể" autocomplete="off" placeholder="Tìm đơn hoặc model..." oninput="setOrderSmartSearch(this.value)"></div>
+        <button type="button" class="btn btn-ghost btn-sm order-filter-toggle" id="ftbtn-orders" onclick="toggleFilterBars('orders')" aria-controls="filters-orders" aria-expanded="true" title="Ẩn bộ lọc"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg>Bộ lọc <span class="order-filter-badge" id="order-filter-badge" hidden></span></button>
+        <div class="order-library-create"><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo Order</button></div>
       </div>
-      <div class="filter-bars-wrap" id="filters-orders">
-      <div class="filter-bar-row"><div class="filter-bar" id="order-filter-status"></div></div>
-      <div class="filter-bar-row"><div class="filter-bar" id="order-filter-project"></div></div>
-      <div class="filter-bar-row"><div class="filter-bar" id="order-filter-orderer"></div></div>
+      <div class="order-filter-workspace">
+        <div class="filter-bars-wrap" id="filters-orders" role="group" aria-label="Bộ lọc đơn hàng">
+          <button type="button" class="order-filter-field" id="order-filter-status" onclick="openOrderFilterMenu('status')" aria-haspopup="dialog" aria-expanded="false"><span><small>Trạng thái</small><b>Tất cả</b></span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+          <button type="button" class="order-filter-field" id="order-filter-project" onclick="openOrderFilterMenu('projectId')" aria-haspopup="dialog" aria-expanded="false"><span><small>Dự án</small><b>Tất cả</b></span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+          <button type="button" class="order-filter-field" id="order-filter-orderer" onclick="openOrderFilterMenu('orderedBy')" aria-haspopup="dialog" aria-expanded="false"><span><small>Người đặt</small><b>Tất cả</b></span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+        </div>
+        <div class="order-filter-summary"><span id="order-filter-result" role="status" aria-live="polite"></span><button type="button" class="btn btn-ghost" id="order-filter-clear" onclick="clearOrderFilters()" hidden>Xóa lọc</button></div>
       </div>
       <div id="order-list" class="order-list"></div>
     </div>
@@ -7827,6 +7877,10 @@ function applyFilterVisibility(page) {
   const btn = document.getElementById('ftbtn-'+page);
   const hidden = !!FILTER_HIDDEN[page];
   if (wrap) wrap.classList.toggle('collapsed', hidden);
+  if (page==='orders') {
+    btn?.setAttribute('aria-expanded', String(!hidden));
+    if(hidden) closeOrderFilterMenu(false);
+  }
   if (page==='models') document.getElementById('page-models')?.classList.toggle('categories-hidden', hidden);
   if (btn) { btn.classList.toggle('active', hidden); btn.title = hidden ? 'Hiện bộ lọc' : 'Ẩn bộ lọc'; }
 }
@@ -15495,20 +15549,16 @@ function renderOrders() {
   all.forEach(o => { statusCounts[o.status] = (statusCounts[o.status]||0)+1; });
   const statusChips = [{val:'all', label:'Tất cả', count:all.length}]
     .concat(Object.keys(ORDER_ST).filter(k=>statusCounts[k]).map(k => ({val:k, label:ORDER_ST[k].lbl, count:statusCounts[k]})));
-  document.getElementById('order-filter-status').innerHTML =
-    statusChips.length > 1 ? filterChipsHTML(statusChips, FILTERS.orders.status, 'setOrderFilterStatus') : '';
 
   /* Bộ lọc dự án */
   const projCounts = {};
   all.forEach(o => { const key = o.projectId||'none'; projCounts[key] = (projCounts[key]||0)+1; });
   const projChips = [{val:'all', label:'Tất cả dự án', count:all.length}]
     .concat(Object.keys(projCounts).map(key => {
-      if (key === 'none') return {val:'none', label:'Không gắn project', count:projCounts[key]};
+      if (key === 'none') return {val:'none', label:'Chưa gắn dự án', count:projCounts[key]};
       const p = projects.find(x=>x.id===key);
       return {val:key, label:p?.name || '(đã xoá)', count:projCounts[key]};
     }));
-  document.getElementById('order-filter-project').innerHTML =
-    projChips.length > 1 ? filterChipsHTML(projChips, FILTERS.orders.projectId, 'setOrderFilterProject') : '';
 
   /* Bộ lọc người đặt */
   const ordererCounts = {};
@@ -15517,8 +15567,19 @@ function renderOrders() {
     .concat(Object.keys(ordererCounts).map(key => ({
       val:key, label: key==='none' ? 'Không rõ' : key, count:ordererCounts[key],
     })));
-  document.getElementById('order-filter-orderer').innerHTML =
-    ordererChips.length > 1 ? filterChipsHTML(ordererChips, FILTERS.orders.orderedBy||'all', 'setOrderFilterOrderer') : '';
+  orderFilterChoices = {status:statusChips, projectId:projChips, orderedBy:ordererChips};
+  Object.entries(ORDER_FILTER_FIELDS).forEach(([key, field]) => {
+    const button=document.getElementById(field.id), value=FILTERS.orders[key]||'all';
+    const label=orderFilterChoices[key].find(option=>option.val===value)?.label || (value==='all'?'Tất cả':'Không còn trong danh sách');
+    button.querySelector('b').textContent=value==='all'?'Tất cả':label;
+    button.title=`${field.label}: ${label}`;
+    button.classList.toggle('is-filtered',value!=='all');
+  });
+  const activeCount=Object.keys(ORDER_FILTER_FIELDS).filter(key=>FILTERS.orders[key]&&FILTERS.orders[key]!=='all').length;
+  const hasFilters=activeCount>0||Boolean(FILTERS.orders.search);
+  const badge=document.getElementById('order-filter-badge');badge.textContent=activeCount;badge.hidden=!activeCount;
+  document.getElementById('order-filter-clear').hidden=!hasFilters;
+  if(orderFilterMenuKey) renderOrderFilterOptions();
 
   const sorted = all
     .filter(o => FILTERS.orders.status==='all' || o.status===FILTERS.orders.status)
@@ -15526,6 +15587,7 @@ function renderOrders() {
     .filter(o => !FILTERS.orders.orderedBy || FILTERS.orders.orderedBy==='all' || (FILTERS.orders.orderedBy==='none' ? !o.orderedBy : o.orderedBy===FILTERS.orders.orderedBy))
     .filter(o => {const q=kvNorm(FILTERS.orders.search||'');if(!q)return true;const project=projects.find(project=>project.id===o.projectId);const itemText=(o.items||[]).map(item=>`${item.modelName||''} ${item.variantName||''} ${item.productName||''}`).join(' ');return kvNorm(`${o.note||''} ${o.orderedBy||''} ${project?.name||''} ${itemText}`).includes(q);});
 
+  document.getElementById('order-filter-result').textContent=hasFilters?`${sorted.length} / ${all.length} đơn`:`${all.length} đơn`;
   if (!sorted.length) {
     el.innerHTML = `<div class="empty">
       <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
@@ -15566,6 +15628,85 @@ function renderOrders() {
       ${rel.length ? `<div class="oc-progress"><div class="oc-progress-text">${done}/${rel.length} part · ${pct}%</div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div></div>` : ''}
     </div>`;
   }).join('');
+}
+const ORDER_FILTER_FIELDS={status:{id:'order-filter-status',label:'Trạng thái'},projectId:{id:'order-filter-project',label:'Dự án'},orderedBy:{id:'order-filter-orderer',label:'Người đặt'}};
+let orderFilterChoices={}, orderFilterMenuKey='', orderFilterMenuLimit=60;
+function closeOrderFilterMenu(restoreFocus=true){
+  const trigger=document.getElementById(ORDER_FILTER_FIELDS[orderFilterMenuKey]?.id);
+  document.getElementById('order-filter-menu')?.setAttribute('hidden','');
+  trigger?.setAttribute('aria-expanded','false');
+  trigger?.removeAttribute('aria-controls');
+  orderFilterMenuKey='';
+  if(restoreFocus)trigger?.focus();
+}
+function positionOrderFilterMenu(){
+  if(!orderFilterMenuKey)return;
+  const trigger=document.getElementById(ORDER_FILTER_FIELDS[orderFilterMenuKey].id), menu=document.getElementById('order-filter-menu');
+  const rect=trigger.getBoundingClientRect();
+  if(!trigger.getClientRects().length||rect.bottom<0||rect.top>innerHeight||curPage!=='orders'){closeOrderFilterMenu(false);return;}
+  const width=Math.min(320,innerWidth-16), below=innerHeight-rect.bottom-16, above=rect.top-16;
+  const upwards=below<240&&above>below, available=Math.max(120,upwards?above:below);
+  menu.style.width=`${width}px`;menu.style.maxHeight=`${Math.min(420,available)}px`;
+  menu.style.left=`${Math.max(8,Math.min(rect.left,innerWidth-width-8))}px`;
+  menu.style.top=upwards?'auto':`${Math.max(8,rect.bottom+6)}px`;
+  menu.style.bottom=upwards?`${innerHeight-rect.top+6}px`:'auto';
+}
+function openOrderFilterMenu(key){
+  if(orderFilterMenuKey===key){closeOrderFilterMenu();return;}
+  closeOrderFilterMenu(false);
+  let menu=document.getElementById('order-filter-menu');
+  if(!menu){
+    menu=document.createElement('div');menu.id='order-filter-menu';menu.className='order-filter-menu';
+    menu.setAttribute('role','dialog');menu.setAttribute('aria-labelledby','order-filter-menu-title');
+    menu.innerHTML=`<header role="presentation"><b id="order-filter-menu-title"></b><button type="button" class="btn btn-icon-only" aria-label="Đóng bộ chọn" onclick="closeOrderFilterMenu()">${appIcon('close')}</button></header><div class="page-smart-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><input id="order-filter-query" type="search" autocomplete="off" placeholder="Tìm trong bộ lọc..." oninput="orderFilterMenuLimit=60;renderOrderFilterOptions()"></div><p class="order-filter-menu-results" id="order-filter-menu-results" role="status"></p><div class="order-filter-options" id="order-filter-options" role="group" aria-labelledby="order-filter-menu-title"></div>`;
+    document.body.append(menu);
+    menu.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeOrderFilterMenu();}
+      else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)&&event.target.closest('.order-filter-options')){
+        const buttons=[...menu.querySelectorAll('.order-filter-option')], index=buttons.indexOf(document.activeElement);
+        const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;
+        event.preventDefault();buttons[next]?.focus();
+      }else if(event.key==='ArrowDown'&&event.target.id==='order-filter-query'){event.preventDefault();menu.querySelector('.order-filter-option')?.focus();}
+    });
+    document.addEventListener('pointerdown',event=>{if(orderFilterMenuKey&&!menu.contains(event.target)&&!event.target.closest('.order-filter-field'))closeOrderFilterMenu(false);});
+    document.addEventListener('focusin',event=>{if(orderFilterMenuKey&&!menu.contains(event.target)&&!event.target.closest('.order-filter-field'))closeOrderFilterMenu(false);});
+    window.addEventListener('resize',positionOrderFilterMenu);
+    document.addEventListener('scroll',positionOrderFilterMenu,true);
+    new MutationObserver(()=>{if(orderFilterMenuKey&&!document.getElementById('page-orders').classList.contains('active'))closeOrderFilterMenu(false);}).observe(document.getElementById('page-orders'),{attributes:true,attributeFilter:['class']});
+  }
+  orderFilterMenuKey=key;orderFilterMenuLimit=60;
+  document.getElementById(ORDER_FILTER_FIELDS[key].id).setAttribute('aria-expanded','true');
+  document.getElementById(ORDER_FILTER_FIELDS[key].id).setAttribute('aria-controls','order-filter-menu');
+  menu.hidden=false;document.getElementById('order-filter-menu-title').textContent=ORDER_FILTER_FIELDS[key].label;
+  const query=document.getElementById('order-filter-query');query.value='';query.setAttribute('aria-label',`Tìm ${ORDER_FILTER_FIELDS[key].label.toLowerCase()}`);
+  renderOrderFilterOptions();positionOrderFilterMenu();query.focus();
+}
+function renderOrderFilterOptions(){
+  if(!orderFilterMenuKey)return;
+  const query=kvNorm(document.getElementById('order-filter-query').value), key=orderFilterMenuKey;
+  const options=(orderFilterChoices[key]||[]).filter(option=>!query||kvNorm(option.label).includes(query));
+  document.getElementById('order-filter-menu-results').textContent=`${options.length} lựa chọn`;
+  const host=document.getElementById('order-filter-options');
+  const signature=JSON.stringify([key,FILTERS.orders[key]||'all',query,orderFilterMenuLimit,options]);
+  if(host.dataset.signature===signature)return;
+  host.dataset.signature=signature;
+  const previous=new Map([...host.children].filter(button=>button.orderFilterKey===key).map(button=>[button.orderFilterValue,button]));
+  const nodes=options.slice(0,orderFilterMenuLimit).map(option=>{
+    const button=previous.get(option.val)||document.createElement('button');button.type='button';button.className='order-filter-option';
+    button.orderFilterKey=key;button.orderFilterValue=option.val;
+    button.setAttribute('aria-pressed',String(option.val===(FILTERS.orders[key]||'all')));
+    button.innerHTML=`<span>${esc(option.label)}</span><small>${option.count}</small>${option.val===(FILTERS.orders[key]||'all')?appIcon('check'):''}`;
+    button.onclick=()=>{closeOrderFilterMenu();FILTERS.orders[key]=option.val;renderOrders();};return button;
+  });
+  if(!options.length){const empty=document.createElement('div');empty.className='order-filter-empty';empty.textContent='Không tìm thấy lựa chọn';nodes.push(empty);}
+  if(options.length>orderFilterMenuLimit){const more=document.createElement('button');more.type='button';more.className='order-filter-option';more.textContent=`Xem thêm (${options.length-orderFilterMenuLimit})`;more.onclick=()=>{const top=host.scrollTop;orderFilterMenuLimit+=60;renderOrderFilterOptions();host.scrollTop=top;host.querySelectorAll('.order-filter-option')[orderFilterMenuLimit-60]?.focus();};nodes.push(more);}
+  const wanted=new Set(nodes);[...host.children].forEach(node=>{if(!wanted.has(node))node.remove();});
+  nodes.forEach((node,index)=>{if(host.children[index]!==node)host.insertBefore(node,host.children[index]||null);});
+}
+function clearOrderFilters(){
+  closeOrderFilterMenu(false);
+  Object.assign(FILTERS.orders,{status:'all',projectId:'all',orderedBy:'all',search:''});
+  renderOrders();document.getElementById('order-smart-search')?.focus();
 }
 function setOrderFilterStatus(status) { FILTERS.orders.status = status; renderOrders(); }
 function setOrderFilterProject(projectId) { FILTERS.orders.projectId = projectId; renderOrders(); }
