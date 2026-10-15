@@ -11,7 +11,7 @@
     const tracked=new Set();
     const visuals=new Map();
     const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-    const icon=kind=>kind==='pause'?'<path d="M8 5v14M16 5v14"/>':kind==='play'?'<path d="m8 5 11 7-11 7z"/>':kind==='guide'?'<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3h.01"/>':'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>';
+    const icon=kind=>kind==='pause'?'<path d="M8 5v14M16 5v14"/>':'<path d="m8 5 11 7-11 7z"/>';
     const svg=kind=>`<svg viewBox="0 0 24 24" aria-hidden="true">${icon(kind)}</svg>`;
     const paused=()=>document.documentElement.dataset.pageInfoMotion==='paused';
     const visibility=new IntersectionObserver(entries=>entries.forEach(entry=>{
@@ -32,7 +32,7 @@
         card.append(picture);
       }
       let button=card.querySelector('.page-info-motion');
-      if(!button){button=visuals.get(record.id)?.button||document.createElement('button');button.type='button';button.className='btn btn-icon-only page-info-motion';(card.querySelector('.page-info-tools')||card).append(button);}
+      if(!button){button=visuals.get(record.id)?.button||document.createElement('button');button.type='button';button.className='btn btn-icon-only page-info-motion';card.append(button);}
       visuals.set(record.id,{picture:card.querySelector(':scope > .page-info-art'),button});
       card.querySelectorAll('.dashboard-role-actions button').forEach(action=>{
         if(action.textContent.trim().startsWith('📷')&&!action.querySelector('svg')){
@@ -46,7 +46,7 @@
     function heading(host,key,meta){
       const record=records.get(key);if(!record||existing[key])return false;
       if(host.dataset.infoPage!==key){
-        host.innerHTML=`<div class="page-heading-main"><div class="page-info-copy"><div class="page-heading-eyebrow">${esc(record.group)} / ${esc(record.name)}</div><h1>${esc(record.title)}</h1><p>${esc(record.description)}</p></div><div class="gap-row page-info-tools"><button type="button" class="btn btn-ghost btn-sm page-guide-btn" data-page-guide="${key}" onclick="openPageGuide('${key}')" title="Mở hướng dẫn trang này">${svg('guide')}Hướng dẫn <span class="guide-replay-cue" aria-hidden="true">${svg('play')}</span></button><button type="button" class="btn btn-ghost btn-sm page-layout-btn" onclick="openPageLayoutManager('${key}')" title="Sắp xếp các khối hiển thị">${svg('layout')}Bố cục</button></div></div>`;
+        host.innerHTML=`<div class="page-heading-main"><div class="page-info-copy"><div class="page-heading-eyebrow">${esc(record.group)} / ${esc(record.name)}</div><h1>${esc(record.title)}</h1><p>${esc(record.description)}</p></div></div>`;
       }
       host.classList.add('page-info-heading');decorate(host,record);return true;
     }

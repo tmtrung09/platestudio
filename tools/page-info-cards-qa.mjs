@@ -41,10 +41,11 @@ try{
     const host=document.querySelector('.page.active'),cards=host.querySelectorAll('.page-info-card'),card=cards[0];
     const copy=card?.querySelector('h1,h2'),picture=card?.querySelector('.page-info-art'),pause=card?.querySelector('.page-info-motion');
     const rect=card?.getBoundingClientRect(),button=pause?.getBoundingClientRect();
-    return {page:host.id,cards:cards.length,key:card?.dataset.infoPage,art:picture?.querySelectorAll('svg.scene>*').length,clipped:copy?copy.scrollWidth>copy.clientWidth+1:true,overflow:document.documentElement.scrollWidth>innerWidth+1,button:button?{width:button.width,height:button.height}:null,width:rect?.width,height:rect?.height};
+    return {page:host.id,cards:cards.length,key:card?.dataset.infoPage,art:picture?.querySelectorAll('svg.scene>*').length,clipped:copy?copy.scrollWidth>copy.clientWidth+1:true,utilityInside:!!card?.querySelector('.page-guide-btn,.page-layout-btn'),utilityCount:document.querySelectorAll('#page-options-tools').length,overflow:document.documentElement.scrollWidth>innerWidth+1,button:button?{width:button.width,height:button.height}:null,width:rect?.width,height:rect?.height};
    });
    assert.equal(metrics.page,`page-${route}`,`${route}: route preserved`);
    assert.equal(metrics.cards,1,`${width}/${theme}/${route}: one info card`);
+   assert.equal(metrics.utilityInside,false,`${route}: secondary utilities outside info card`);assert.equal(metrics.utilityCount,1,'One shared utility menu');
    assert.equal(metrics.key,route);assert.ok(metrics.art>2,`${route}: approved scene present`);
    assert.equal(metrics.clipped,false,`${width}/${theme}/${route}: title fits`);
    assert.equal(metrics.overflow,false,`${width}/${theme}/${route}: viewport overflow`);
@@ -56,6 +57,19 @@ try{
    }
   }
   await page.evaluate(()=>goPage('orders',{historyMode:'none'}));
+  const options=page.locator('#page-options-toggle');
+  await options.click();
+  const toolsGeometry=await page.evaluate(()=>{const panel=document.getElementById('page-options-panel').getBoundingClientRect(),toggle=document.getElementById('page-options-toggle').getBoundingClientRect(),bell=document.getElementById('system-notification-button').getBoundingClientRect(),brand=document.querySelector('.platedio-mobile-brand').getBoundingClientRect();return {contained:panel.left>=0&&panel.right<=innerWidth&&panel.bottom<=innerHeight,apart:toggle.right<=bell.left,brand:brand.width===0||brand.right<=toggle.left,target:toggle.width>=44&&toggle.height>=44};});
+  assert.ok(Object.values(toolsGeometry).every(Boolean),JSON.stringify({width,theme,toolsGeometry}));
+  assert.equal(await page.locator('#page-options-tools').getAttribute('data-page'),'orders');
+  if([390,1440].includes(width))await page.screenshot({path:`${out}/${width}-${theme}-page-tools.png`});
+  await page.evaluate(()=>{currentUser={id:'page-tools-local-qa',email:'qa@example.invalid'};});
+  await page.locator('#page-options-tools .page-guide-btn').click();assert.equal(await page.evaluate(()=>activeGuide?.page),'orders','Guide acts on current route');
+  await page.evaluate(()=>{closePageGuide(false);currentUser=null;});
+  await page.evaluate(()=>goPage('models',{historyMode:'none'}));await page.waitForFunction(()=>document.activeElement===document.getElementById('model-smart-search'));await options.click();await page.locator('#page-options-tools .page-layout-btn').click();assert.equal(await page.locator('#dlg-mv').isVisible(),true,'Layout remains available for a page with multiple blocks');await page.evaluate(()=>{closeDialog('dlg-mv');goPage('orders',{historyMode:'none'});});
+  await options.click();await page.keyboard.press('Escape');assert.equal(await page.locator('#page-options-tools').evaluate(el=>el.open),false);assert.equal(await options.evaluate(el=>el===document.activeElement),true,'Escape restores utility focus');
+  await options.click();await page.locator('#system-notification-button').click();assert.equal(await page.locator('#page-options-tools').evaluate(el=>el.open),false);await options.click();assert.equal(await page.locator('#system-notification-panel').isVisible(),false,'Page tools and notifications do not overlap');
+  await page.evaluate(()=>goPage('models',{historyMode:'none'}));assert.equal(await page.locator('#page-options-tools').evaluate(el=>el.open),false,'Route changes close stale menu');await page.evaluate(()=>goPage('orders',{historyMode:'none'}));
   const search=page.locator('#order-smart-search');await search.fill('Bản nháp tìm kiếm');
   await page.evaluate(()=>{window.qaInfoArt=document.querySelector('#page-orders .page-info-art');window.qaInfoInput=document.getElementById('order-smart-search');window.qaInfoData=JSON.stringify({orders,models,pitems,projects,batchReports,operations});renderOrders();});
   assert.ok(await page.evaluate(()=>window.qaInfoArt===document.querySelector('#page-orders .page-info-art')&&document.activeElement===window.qaInfoInput),'Background update preserves SVG, input and focus');
@@ -97,6 +111,7 @@ try{
  await page.evaluate(()=>{document.getElementById('auth-ov').style.display='none';goPage('orders',{historyMode:'none'});});
  assert.equal(await page.locator('#order-smart-search').count(),1,'Order workflow remains available when artwork dependency is missing');
  assert.ok(await page.evaluate(()=>typeof openBatchReportHub==='function'&&!window.PlatePageInfoCards),'Camera entry is independent of optional artwork');
+ assert.equal(await page.locator('#page-orders .page-guide-btn,#page-orders .page-layout-btn').count(),0,'Fallback heading also keeps secondary tools outside');assert.equal(await page.locator('#page-options-toggle').count(),1,'Utilities do not depend on artwork');
  await fallback.close();
 }finally{await browser.close();}
 console.log(`Page info cards PASS: ${checks} actual route/viewport/theme checks, approved scenes, one card per page, touch targets, preserved search/focus/SVG, printer updates, pause/reduced motion and unchanged business data.`);

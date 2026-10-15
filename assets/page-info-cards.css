@@ -8,14 +8,9 @@
 .page .page-info-heading .page-info-copy h1{margin:6px 0 9px!important;font-size:28px!important;line-height:1.2!important;letter-spacing:-.035em!important;overflow-wrap:anywhere}
 .page .page-info-heading .page-info-copy p{font-size:13px!important;line-height:1.6!important;margin:0!important;color:var(--t2)}
 .page .page-info-heading .page-heading-eyebrow{font-size:10px!important;line-height:1.5;color:var(--t2);letter-spacing:.07em}
-.page .page-info-card .page-info-tools{margin-top:15px;gap:7px;flex-wrap:wrap}
-.page .page-info-card .page-info-tools .btn{min-height:44px!important;border-radius:12px!important;padding:7px 11px!important;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.page-info-tools svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.page-info-tools .guide-replay-cue svg{width:10px;height:10px}
 .page .page-info-card .page-info-art{position:absolute;z-index:1;right:13px;top:50%;width:270px;height:185px;transform:translateY(-50%);pointer-events:none;color:var(--t2)}
 .page-info-art>svg{display:block;width:100%;height:100%;overflow:visible}
 .page .page-info-card .page-info-motion{position:absolute!important;z-index:3;right:7px;bottom:5px;min-width:44px!important;min-height:44px!important;color:var(--t2)!important}
-.page .page-info-card.page-info-heading .page-info-motion{position:static!important;padding:0!important}
 .page .page-info-card:not(.page-info-heading){display:block!important}
 .page .page-info-card:not(.page-info-heading)>.page-info-content+.page-info-content{margin-top:13px}
 .page .page-info-card:not(.page-info-heading) h2{font-size:24px!important;line-height:1.25!important;margin:6px 0 9px!important;overflow-wrap:anywhere}
@@ -33,7 +28,6 @@
   .page .page-info-card>.page-info-content{max-width:100%}
   .page .page-info-heading .page-info-copy h1{font-size:24px!important;line-height:1.22!important;margin-top:7px!important}
   .page .page-info-card .page-info-art{right:-8px;top:auto;bottom:-4px;width:190px;height:130px;transform:none;opacity:.6}
-  .page .page-info-card .page-info-tools{max-width:calc(100% - 30px)}
   .page .page-info-card:not(.page-info-heading) h2{font-size:22px!important}
   .page .page-info-card .sales-hero-actions .btn{flex:0 1 auto}
   .page .page-info-card .dashboard-role-actions .btn{flex:0 1 auto}

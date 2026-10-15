@@ -110,6 +110,8 @@
   với đồ họa động riêng phù hợp công việc của trang. Tận dụng thẻ sẵn có, không
   chồng thêm tiêu đề/mô tả trùng. Đồ họa không che chữ/control, không giả số liệu
   nghiệp vụ; hỗ trợ light/dark, mobile và reduced-motion.
+- Hướng dẫn và Bố cục là công cụ phụ, đặt ngoài thẻ thông tin trong vùng tùy
+  chọn trang có mức nhấn thấp; thẻ ưu tiên nội dung và hành động chính.
 - Thiết kế thẻ thông tin phải có demo đủ các trang để người dùng duyệt trước
   khi áp dụng vào giao diện chính; demo ghi rõ minh họa và không ghi dữ liệu xưởng.
 

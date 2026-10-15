@@ -3272,7 +3272,22 @@ select option,select optgroup{background-color:var(--s)!important;color:var(--t)
 #system-notification-button:hover{background:var(--s2)!important;color:var(--t)!important}
 .system-notification-icon{display:grid;place-items:center}.system-notification-label{display:none}
 #system-notification-button b{position:absolute!important;left:auto!important;right:0!important;top:0!important;min-width:16px!important;height:16px!important;padding:0 4px!important;display:grid!important;place-items:center;border-radius:10px;background:var(--ac);color:var(--s);font:800 9px/1 sans-serif}
-.page-heading-main{padding-right:64px;box-sizing:border-box}
+.page-heading-main{padding-right:114px;box-sizing:border-box}
+/* Secondary page utilities live outside the information card. */
+#page-options-tools{position:fixed;z-index:950;top:calc(12px + env(safe-area-inset-top));right:calc(max(16px,env(safe-area-inset-right)) + 50px);color:var(--t2)}
+#page-options-tools[hidden]{display:none!important}
+#page-options-tools>summary{display:flex!important;align-items:center;justify-content:center;list-style:none;width:44px;height:44px;padding:0!important;color:var(--t2)!important;cursor:pointer}
+#page-options-tools>summary::-webkit-details-marker{display:none}
+#page-options-tools svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+#page-options-tools>summary:focus-visible{outline:2px solid var(--ac)!important;outline-offset:2px}
+#page-options-tools:not([open])>#page-options-panel{display:none}
+#page-options-panel{position:absolute;top:calc(100% + 10px);right:0;width:min(224px,calc(100vw - 88px));max-height:calc(100dvh - 90px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;padding:8px;border:0;border-radius:14px;background:var(--s);color:var(--t);box-shadow:var(--sd)}
+#page-options-title{display:block;font-size:10px;color:var(--t3);padding:7px 10px;overflow-wrap:anywhere}
+#page-options-panel>button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:44px;margin:0;border:0;border-radius:9px;padding:10px;background:transparent;box-shadow:none;transform:none;color:var(--t2);font:600 12px var(--font);text-align:left;cursor:pointer}
+#page-options-panel>button[hidden]{display:none}
+#page-options-panel>button:hover{background:var(--s2);color:var(--t)}
+#page-options-panel>button:focus-visible{outline:2px solid var(--ac);outline-offset:-2px}
+body.staff-report-mode #page-options-tools{display:none!important}
 /* One borderless component family for dropdown, event popups and feedback. */
 #system-notification-button svg,.notification-card svg,#system-notification-panel svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 #system-notification-button[aria-expanded="true"]{background:var(--ac-d)!important;color:var(--ac)!important}
@@ -4735,7 +4750,7 @@ html:is([data-platedio-startup="entering"],[data-platedio-startup="loading"],[da
 .platedio-brand:focus-visible{outline:2px solid var(--pu);outline-offset:2px}
 .platedio-mobile-brand{display:none}
 .la-brand-mark.platedio-auth-brand{width:max-content;height:auto;min-height:44px;border-radius:0;background:none;box-shadow:none;margin:0 auto 20px;padding:0}.platedio-auth-brand .platedio-mark{width:32px;height:36px}.platedio-auth-brand b{font-size:32px;color:var(--la-text)}
-@media(max-width:860px){.platedio-mobile-brand{display:flex;align-items:center;align-self:flex-start;flex:0 0 48px;min-height:48px;max-width:calc(100% - 74px);margin:4px 0 0 16px;padding:0;border:0;background:none;box-shadow:none;color:var(--t);cursor:pointer}.platedio-mobile-brand b{font-size:24px}.platedio-mobile-brand .platedio-mark{width:26px;height:29px}}
+@media(max-width:860px){.platedio-mobile-brand{display:flex;align-items:center;align-self:flex-start;flex:0 0 48px;min-height:48px;max-width:calc(100% - 124px);margin:4px 0 0 16px;padding:0;border:0;background:none;box-shadow:none;color:var(--t);cursor:pointer}.platedio-mobile-brand b{font-size:24px}.platedio-mobile-brand .platedio-mark{width:26px;height:29px}}
 body.staff-report-mode .platedio-mobile-brand{display:none!important}
 
 </style>
@@ -8387,14 +8402,36 @@ window.addEventListener('popstate',event=>{
   if(!validHistoryPage(page))return;
   goPage(page,{historyMode:'none',restoreScroll:Number(event.state?.plateStudioScroll)||0});
 });
+function closePageOptions(returnFocus=false){
+  const host=document.getElementById('page-options-tools');if(!host?.open)return;
+  host.open=false;if(returnFocus)host.querySelector('summary')?.focus({preventScroll:true});
+}
+function updatePageOptions(pageKey){
+  let host=document.getElementById('page-options-tools');
+  if(!host){
+    host=document.createElement('details');host.id='page-options-tools';
+    host.innerHTML=`<summary class="btn btn-icon-only" id="page-options-toggle" aria-label="Tùy chọn trang" title="Tùy chọn trang" aria-controls="page-options-panel">${appIcon('more-dots')}</summary><div id="page-options-panel"><small id="page-options-title"></small><button type="button" class="page-guide-btn" data-page-guide="" onclick="closePageOptions(true);openPageGuide(curPage)">${appIcon('help')}<span>Hướng dẫn</span></button><button type="button" class="page-layout-btn" onclick="closePageOptions(true);openPageLayoutManager(curPage)">${appIcon('dashboard')}<span>Bố cục</span></button></div>`;
+    document.querySelector('.main').append(host);
+    host.addEventListener('toggle',()=>{if(host.open){updatePageOptions(curPage);closeSystemNotifications(false);updateGuideReopenButton();}});
+  }
+  host.hidden=!!(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE);
+  host.dataset.page=pageKey;
+  host.querySelector('#page-options-title').textContent=PAGE_META[pageKey]?.title||'Trang hiện tại';
+  host.querySelector('[data-page-guide]').dataset.pageGuide=pageKey;
+  host.querySelector('.page-layout-btn').hidden=['progress','reminders','inventory'].includes(pageKey);
+}
+document.addEventListener('pointerdown',event=>{const host=document.getElementById('page-options-tools');if(host?.open&&!host.contains(event.target))closePageOptions(false);});
+document.addEventListener('keydown',event=>{const host=document.getElementById('page-options-tools');if(event.key==='Escape'&&host?.open){event.preventDefault();event.stopImmediatePropagation();closePageOptions(true);}},true);
+document.addEventListener('focusin',event=>{const host=document.getElementById('page-options-tools');if(host?.open&&!host.contains(event.target))closePageOptions(false);});
 function updatePageHeading(pageKey) {
+  closePageOptions(false);updatePageOptions(pageKey);
   const page = document.getElementById('page-'+pageKey), meta = PAGE_META[pageKey];
   if(!page || !meta) return;
   let heading = page.querySelector(':scope > .page-heading');
   if(pageKey==='dashboard'){heading?.remove();return;}
   if(!heading) { heading=document.createElement('header'); heading.className='page-heading'; page.prepend(heading); }
   if(window.PlatePageInfoCards?.heading(heading,pageKey,meta))return;
-  heading.innerHTML=`<div class="page-heading-main"><div><div class="page-heading-eyebrow">${meta.eyebrow}</div><h1>${meta.title}</h1><p>${meta.subtitle}</p></div><div class="gap-row"><button class="btn btn-ghost btn-sm page-guide-btn" data-page-guide="${esc(pageKey)}" type="button" onclick="openPageGuide('${pageKey}')" title="Mở lại hướng dẫn sử dụng trang này">? Hướng dẫn <span class="guide-replay-cue" aria-hidden="true">↻</span></button><button class="btn btn-ghost btn-sm page-layout-btn" type="button" onclick="openPageLayoutManager('${pageKey}')" title="Sắp xếp các khối hiển thị trên trang này">☷ Bố cục</button></div></div>`;
+  heading.innerHTML=`<div class="page-heading-main"><div><div class="page-heading-eyebrow">${meta.eyebrow}</div><h1>${meta.title}</h1><p>${meta.subtitle}</p></div></div>`;
 }
 
 /* ═══════════════════════════════════════
@@ -8406,7 +8443,7 @@ const GUIDE_TOURS={
   dashboard:{title:'Tình hình xưởng',steps:[
     ['Bắt đầu từ bức tranh tổng quan','Đây là nơi nhìn nhanh việc đang chờ, tiến độ và các cảnh báo cần xử lý trước.', '#dashboard-command', 'Ưu tiên xử lý các thẻ cảnh báo trước khi tạo việc mới.'],
     ['Đi theo luồng công việc','Thanh bên chia hệ thống theo vận hành, sản xuất, hoàn thiện và bán hàng. Chỉ các mục bạn có quyền mới hiển thị.', '#sidebar', 'Không cần nhớ tất cả: hãy đi từ đơn hàng → in → hoàn thiện → giao hàng.'],
-    ['Tùy biến theo cách làm của bạn','Nút Hướng dẫn ở góc trên luôn mở lại tour này; nút Bố cục cho phép mỗi người tự sắp xếp các khối trên trang.', 'button[onclick="openPageGuide()"]', 'Bạn có thể học lại bất cứ lúc nào mà không ảnh hưởng dữ liệu.']
+    ['Tùy biến theo cách làm của bạn','Menu Tùy chọn trang cạnh chuông chứa Hướng dẫn và Bố cục để bạn mở lại tour hoặc sắp xếp các khối trên trang.', '#page-options-toggle', 'Bạn có thể học lại bất cứ lúc nào mà không ảnh hưởng dữ liệu.']
   ]},
   models:{title:'Model 3D',steps:[
     ['Thư viện nguồn của mọi đơn hàng','Mỗi model chứa ảnh, part, biến thể và màu. Đơn hàng dùng model ở đây để tạo phần việc cần in.', '#model-grid .model-card', 'Tạo model một lần, sau đó tái sử dụng cho nhiều order.'],
@@ -9373,6 +9410,8 @@ function legacyRenderSb() {
 /* Thư viện icon SVG nội bộ: một nguồn nét vẽ cho sidebar, toolbar và trạng thái. */
 function appIcon(kind) {
   const icons = {
+    'more-dots':'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+    help:'<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3h.01"/>',
     warning:'<path d="m12 3 10 18H2z"/><path d="M12 9v5M12 17h.01"/>',
     edit:'<path d="M12 20h9M16 4l4 4M4 20l1-5L16 4a3 3 0 0 1 4 4L9 19z"/>',
     user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
@@ -22475,7 +22514,7 @@ function renderSystemNotificationRows(){
 }
 function toggleSystemNotifications(event){const panel=ensureSystemNotificationPanel();if(panel.hidden)openSystemNotifications({focus:event?.detail===0});else closeSystemNotifications();}
 function openSystemNotifications({focus=false}={}){
-  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE)return;ensureSystemNotificationButton();const panel=ensureSystemNotificationPanel();panel.hidden=false;document.body.classList.add('notifications-open');document.getElementById('system-notification-button')?.setAttribute('aria-expanded','true');renderSystemNotificationRows();refreshNotificationVisibility();
+  if(STAFF_REPORT_MODE||STAFF_RECEIVING_MODE)return;closePageOptions(false);ensureSystemNotificationButton();const panel=ensureSystemNotificationPanel();panel.hidden=false;document.body.classList.add('notifications-open');document.getElementById('system-notification-button')?.setAttribute('aria-expanded','true');renderSystemNotificationRows();refreshNotificationVisibility();
   if(focus)panel.querySelector('.notification-panel-head button')?.focus({preventScroll:true});
 }
 function closeSystemNotifications(returnFocus=true){
