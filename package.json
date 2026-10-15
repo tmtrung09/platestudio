@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "qa:loading-demo": "node tools/loading-screen-demo-qa.mjs",
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs",
     "qa:desktop": "node tools/desktop-qa.mjs && node tools/density-qa.mjs && npm run qa:page-info-cards && node tools/icon-actions-qa.mjs",
     "qa:page-info-cards": "node tools/page-info-cards-demo-qa.mjs && node tools/page-info-cards-qa.mjs",

@@ -147,6 +147,9 @@
 
 ## Khởi động, đồng bộ và camera
 
+- Khi mở trang mà giao diện chưa sẵn sàng, hiển thị màn hình loading có đồ họa
+  động; đặt tên `platedio` bên dưới với chữ đậm, nét mạnh và in nghiêng. Thiết kế
+  phải có demo và được người dùng duyệt trước khi tích hợp vào ứng dụng chính.
 - Local-first: reload dựng từ cache gần nhất rồi sync thay đổi ở nền, không chặn
   thao tác để tải lại toàn bộ dữ liệu đã biết. Cache có version/migration/độ mới;
   server là nguồn xác nhận cuối cùng.

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi" data-theme="dark" data-device="desktop" data-state="loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>platedio · Duyệt màn hình loading</title>
+  <link rel="stylesheet" href="loading-screen.css">
+  <script src="loading-screen.js" defer></script>
+</head>
+<body>
+  <header class="review-header">
+    <a class="review-brand" href="loading-screen.html" aria-label="Demo loading platedio"><b>platedio</b><span>DESIGN PREVIEW / 02</span></a>
+    <span class="demo-badge"><i aria-hidden="true"></i>Bản demo để duyệt</span>
+  </header>
+  <main>
+    <div class="review-intro"><div><p class="eyebrow">KHOẢNH KHẮC MỞ KHÔNG GIAN</p><h1>Sẵn sàng cho một ngày tạo hình.</h1></div><p>Đồ họa tạo khối trên plate, chuyển động nhẹ.<br>Tên thương hiệu đậm, nghiêng, nằm dưới hình.</p></div>
+    <div class="review-tools" aria-label="Tùy chọn demo">
+      <div class="segmented" role="group" aria-label="Giao diện"><button data-theme-choice="dark" aria-pressed="true">Tối</button><button data-theme-choice="light" aria-pressed="false">Sáng</button></div>
+      <div class="segmented" role="group" aria-label="Khung xem"><button data-device-choice="desktop" aria-pressed="true">Desktop</button><button data-device-choice="mobile" aria-pressed="false">Mobile</button></div>
+      <button class="secondary" id="motion-toggle" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Dừng chuyển động</span></button>
+      <div class="tool-spacer"></div>
+      <button class="secondary" id="slow-demo">Tải chậm</button><button class="primary" id="play-demo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>Chạy thử</button>
+    </div>
+    <section class="preview-shell" aria-label="Xem trước màn hình mở trang">
+      <div class="preview-caption"><span><i aria-hidden="true"></i><b id="preview-label">Màn hình đang chờ</b></span><span>platedio / startup</span></div>
+      <div class="preview-viewport" id="preview-viewport" data-state="loading" aria-busy="true">
+        <div class="ready-page" id="ready-page" inert>
+          <div class="ready-header"><b>platedio</b><span>KHÔNG GIAN LÀM VIỆC</span></div>
+          <div class="ready-copy"><span class="eyebrow">MỘT NGÀY MỚI, MỘT Ý TƯỞNG MỚI</span><h2>Không gian đã sẵn sàng.</h2><p>Màn hình chờ nhường chỗ cho nội dung trang.</p></div>
+          <div class="ready-grid"><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8V3h14v5M5 17H3V8h18v9h-2M6 13h12v8H6zM17 11h1"/></svg><h3>Sản xuất</h3><p>Từ ý tưởng đến thành phẩm.</p></article><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h12v12H3zM15 9h4l3 4v4h-7M7 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4m11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/></svg><h3>Giao hàng</h3><p>Chuẩn bị cho hành trình tiếp theo.</p></article><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8zm-9 5 9 5 9-5M12 13v9"/></svg><h3>Thư viện</h3><p>Nơi lưu giữ những thiết kế mới.</p></article></div>
+          <span class="sample-note">Nội dung minh họa · không phải dữ liệu xưởng</span>
+        </div>
+        <div class="loading-screen" id="loading-screen">
+          <div class="loading-composition">
+            <div class="loading-art" aria-hidden="true">
+              <svg class="build-scene" viewBox="0 0 360 280" focusable="false">
+                <defs>
+                  <linearGradient id="plate-top" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#b7a7ff"/><stop offset="1" stop-color="#6750ce"/></linearGradient>
+                  <linearGradient id="cube-top" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ede7ff"/><stop offset="1" stop-color="#a996fa"/></linearGradient>
+                  <linearGradient id="cube-left" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#b09bfa"/><stop offset="1" stop-color="#8061de"/></linearGradient>
+                  <linearGradient id="cube-right" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#8163d8"/><stop offset="1" stop-color="#513696"/></linearGradient>
+                  <linearGradient id="beam" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#d7cdff" stop-opacity=".8"/><stop offset="1" stop-color="#b8a4ff" stop-opacity="0"/></linearGradient>
+                </defs>
+                <ellipse class="platform-shadow" cx="180" cy="231" rx="118" ry="19"/>
+                <g class="guide-lines"><path d="m35 184 145-78 145 78-145 78z"/><path d="M59 172V92m242 80V92M86 105l94-50 94 50"/><circle cx="59" cy="88" r="3"/><circle cx="301" cy="88" r="3"/></g>
+                <g class="plate-float moving">
+                  <path class="plate-side" d="m56 192 124 67 124-67v-9L180 125 56 183z"/>
+                  <path fill="url(#plate-top)" d="m56 182 124-67 124 67-124 67z"/>
+                  <path class="plate-inset" d="m72 182 108-58 108 58-108 58z"/>
+                  <path class="plate-line" d="m83 182 97 52 97-52M180 234v7"/>
+                  <g class="cube-body">
+                    <path fill="url(#cube-left)" d="m119 127 61 33v62l-61-33z"/>
+                    <path fill="url(#cube-right)" d="m180 160 61-33v62l-61 33z"/>
+                    <path class="layer-lines" d="m119 141 61 33 61-33m-122 14 61 33 61-33m-122 14 61 33 61-33m-122 14 61 33 61-33"/>
+                    <path class="cube-edge" d="M180 160v62"/>
+                  </g>
+                  <g class="top-layer moving"><path fill="url(#cube-top)" d="m119 125 61-33 61 33-61 33z"/><path class="top-detail" d="m142 125 38-20 38 20-38 20z"/><path class="top-detail" d="m153 125 27-14 27 14-27 14z"/></g>
+                  <g class="scan-light moving"><path fill="url(#beam)" d="m120 111 60-33 60 33v34l-60 33-60-33z"/><path class="scan-edge" d="m120 111 60 33 60-33"/></g>
+                </g>
+                <g class="print-head moving"><path class="head-line" d="M125 64h110"/><rect class="head-body" x="164" y="48" width="32" height="25" rx="7"/><path class="head-nozzle" d="m174 73 6 10 6-10z"/><path class="head-highlight" d="M173 55h14"/></g>
+                <g class="orbit orbit-one moving"><path d="m74 129 8-5 8 5v9l-8 5-8-5z"/><path d="m74 129 8 5 8-5m-8 5v9"/></g>
+                <g class="orbit orbit-two moving"><path d="m276 148 10-6 10 6v12l-10 6-10-6z"/><path d="m276 148 10 6 10-6m-10 6v12"/></g>
+                <circle class="spark spark-one moving" cx="109" cy="83" r="2.5"/><circle class="spark spark-two moving" cx="256" cy="99" r="2"/>
+              </svg>
+            </div>
+            <div class="wordmark" aria-label="platedio">platedio<span class="brand-stop" aria-hidden="true"></span></div>
+            <div class="loading-status" role="status" aria-live="polite" aria-atomic="true"><span id="loading-message">Đang mở không gian làm việc</span><span class="loading-dots" aria-hidden="true"><i class="moving"></i><i class="moving"></i><i class="moving"></i></span></div>
+            <button class="retry-button" id="retry-demo" hidden>Thử lại</button>
+          </div>
+          <span class="loader-bottom">MAKE IDEAS REAL.</span>
+        </div>
+      </div>
+    </section>
+    <footer class="review-note"><p id="demo-explanation">Demo đang giữ màn hình chờ để em duyệt. Bấm <b>Chạy thử</b> để xem chuyển vào trang.</p><p>Chỉ minh họa thiết kế. Chưa áp dụng vào ứng dụng chính; không kết nối hoặc ghi dữ liệu xưởng.</p></footer>
+  </main>
+</body>
+</html>
