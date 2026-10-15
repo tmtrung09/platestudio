@@ -147,6 +147,10 @@
 
 ## Khởi động, đồng bộ và camera
 
+- Lời mời tạo lối tắt platedio có demo để duyệt trước khi tích hợp vào ứng dụng
+  chính; hướng dẫn phù hợp thiết bị/trình duyệt và phân biệt thao tác mô phỏng
+  với việc tạo lối tắt thật.
+
 - Khi mở trang mà giao diện chưa sẵn sàng, hiển thị màn hình loading có đồ họa
   động; đặt tên `platedio` bên dưới với chữ đậm, nét mạnh và in nghiêng. Thiết kế
   phải có demo và được người dùng duyệt trước khi tích hợp vào ứng dụng chính.

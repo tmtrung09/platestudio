@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi" data-theme="dark" data-platform="iphone">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light"><title>platedio · Demo mời tạo lối tắt</title>
+  <link rel="stylesheet" href="shortcut-invite.css?v=1"><script src="shortcut-invite.js?v=1" defer></script>
+</head>
+<body>
+  <header class="review-header"><a class="wordmark" href="shortcut-invite.html">platedio<span>.</span></a><span class="badge">DEMO ĐỂ DUYỆT</span></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">MỘT CHẠM, TRỞ LẠI KHÔNG GIAN QUEN</p><h1>Đặt platedio ngay trên màn hình.</h1></div><p>Một lời mời nhỏ cho lần truy cập tiếp theo.<br>Gọn, dễ bỏ qua, đúng hướng dẫn của thiết bị.</p></div>
+    <div class="tools">
+      <div class="segmented" role="group" aria-label="Thiết bị"><button data-platform="iphone" aria-pressed="true">iPhone / iPad</button><button data-platform="android" aria-pressed="false">Android</button><button data-platform="desktop" aria-pressed="false">Máy tính</button></div>
+      <div class="segmented" role="group" aria-label="Giao diện"><button data-theme="dark" aria-pressed="true">Tối</button><button data-theme="light" aria-pressed="false">Sáng</button></div>
+      <label class="scenario-label">Trạng thái<select id="scenario"><option value="invite">Lời mời</option><option value="unavailable">Chưa thể cài trực tiếp</option><option value="installed">Đang mở từ lối tắt</option></select></label>
+      <button class="secondary" id="replay">Xem lại pop-up</button>
+    </div>
+    <section class="preview" aria-label="Xem trước pop-up trên trang minh họa">
+      <div class="browser-bar"><span class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>platedio / không gian làm việc</span><span id="device-label">Safari · iPhone / iPad</span></div>
+      <div class="workspace">
+        <aside class="sidebar" aria-hidden="true"><b class="wordmark">platedio<span>.</span></b><div class="nav active">Tổng quan</div><div class="nav">Đơn hàng</div><div class="nav">Sản xuất</div><div class="nav">Giao hàng</div><small>MAKE IDEAS REAL.</small></aside>
+        <div class="sample-content"><p class="eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2>Chào một ngày sáng tạo.</h2><p>Mọi công việc, trong một không gian.</p><div class="sample-hero"><span>HÔM NAY BẠN MUỐN LÀM GÌ?</span><h3>Từ ý tưởng<br>đến thành phẩm.</h3><div class="orbit" aria-hidden="true"></div></div><div class="sample-cards" aria-hidden="true"><div>Sản xuất<span></span><span></span></div><div>Giao hàng<span></span><span></span></div></div><small class="sample-label">Nội dung minh họa · không phải dữ liệu xưởng</small></div>
+        <section class="invite" id="invite" aria-labelledby="invite-title" aria-describedby="invite-description">
+          <div class="invite-top"><span class="eyebrow">LUÔN Ở GẦN BẠN</span><button class="btn-icon-only" id="close" aria-label="Đóng lời mời"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+          <div class="art" aria-hidden="true"><div class="art-halo"></div><div class="home-board"><div class="board-top"></div><div class="app-grid"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="app-icon"><svg viewBox="0 0 48 48"><path fill="#d8ccff" d="m24 7 16 9-16 9-16-9z"/><path fill="#a991ff" d="m8 16 16 9v18L8 34z"/><path fill="#7957df" d="m24 25 16-9v18l-16 9z"/><path d="m16 16 8 4 8-4" fill="none" stroke="#fff" stroke-width="1.5"/></svg><span class="add-mark">+</span></div><span class="art-dot one"></span><span class="art-dot two"></span><span class="art-line"></span></div>
+          <div class="invite-copy"><span class="wordmark">platedio<span>.</span></span><h2 id="invite-title">Lần sau, mở nhanh hơn.</h2><p id="invite-description">Thêm platedio vào màn hình chính để trở lại xưởng chỉ bằng một chạm.</p></div>
+          <div class="guide" id="guide" hidden><p id="guide-heading"></p><ol id="steps"></ol><small>Tên menu có thể khác tùy phiên bản trình duyệt.</small></div>
+          <div class="simulation" id="simulation" hidden><span class="eyebrow">MÔ PHỎNG XÁC NHẬN</span><h3>Thêm platedio?</h3><p>Trên ứng dụng thật, trình duyệt sẽ hỏi bạn xác nhận tại bước này.</p><div><button class="secondary" id="cancel-install">Hủy thử</button><button class="primary" id="confirm-install">Xác nhận thử</button></div></div>
+          <div class="invite-actions" id="invite-actions"><button class="primary" id="primary"><span id="primary-label">Xem cách thêm</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button><button class="later" id="later">Để sau</button></div>
+          <p class="demo-inline" id="demo-inline">Demo tương tác · không tạo lối tắt thật</p>
+        </section>
+        <div class="preview-status" id="preview-status" role="status" hidden></div>
+      </div>
+    </section>
+    <div class="review-note"><p id="review-status" role="status">Đang xem lời mời trên iPhone / iPad.</p><p>Đề xuất: hiện sau khi trang sẵn sàng; chờ khi người dùng đang nhập liệu hoặc chụp ảnh. Không mời lại khi đang mở từ lối tắt.</p><p>Chỉ duyệt thiết kế và luồng thao tác. Chưa tích hợp vào ứng dụng chính; không kết nối hoặc ghi dữ liệu xưởng.</p><details><summary>Tham khảo hướng dẫn thiết bị</summary><a href="https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios" target="_blank" rel="noopener">Safari trên iPhone</a> · <a href="https://support.google.com/chrome/answer/9658361" target="_blank" rel="noopener">Ứng dụng web trên Chrome</a></details></div>
+  </main>
+</body>
+</html>
