@@ -18,7 +18,15 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
   kiotSalesRangeToday=()=> '2026-10-14';refreshKiotSalesRangeAutomation=async()=>{};window.qaCalendarData=JSON.stringify(kiotViet);salesPageReportId='calendar-11';salesPageDatePreset='all';salesPageCalendarOpen=false;salesPageCalendarMonth='2026-08';goPage('sales',{historyMode:'none'});
  },theme);
  const measure=async(selector,mode)=>{
-  const calendar=page.locator(selector);await calendar.waitFor({state:'visible'});await page.waitForTimeout(350);
+  const calendar=page.locator(selector);await calendar.waitFor({state:'visible'});
+  await page.waitForFunction(selector=>{
+   const calendar=document.querySelector(selector);if(!calendar)return false;
+   // Dialog entry can overshoot its final scale; measure the resting geometry.
+   for(let node=calendar;node;node=node.parentElement)if(node.getAnimations().some(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime)))return false;
+   const boxes=[calendar,calendar.querySelector('.kiot-sales-calendar-day')].filter(Boolean).flatMap(el=>{const r=el.getBoundingClientRect();return [r.top,r.left,r.width,r.height].map(value=>Math.round(value*100));}).join(':'),now=performance.now();
+   if(window.qaCalendarMeasured?.selector!==selector||window.qaCalendarMeasured.boxes!==boxes){window.qaCalendarMeasured={selector,boxes,since:now};return false;}
+   return now-window.qaCalendarMeasured.since>=150;
+  },selector,{polling:'raf',timeout:5000});
   const box=await calendar.evaluate(el=>{const rect=el.getBoundingClientRect(),grid=el.querySelector('.kiot-sales-calendar-grid'),days=[...el.querySelectorAll('.kiot-sales-calendar-day')];return {width:rect.width,height:rect.height,overflow:el.scrollWidth>el.clientWidth+1,dayHeights:days.map(day=>day.getBoundingClientRect().height),rows:new Set([...grid.children].map(day=>Math.round(day.getBoundingClientRect().top))).size,controls:[...el.querySelectorAll('header button,footer button')].map(button=>({height:button.getBoundingClientRect().height,width:button.getBoundingClientRect().width})),recorded:!!el.querySelector('.is-recorded'),missing:!!el.querySelector('.is-missing')};});
   await calendar.screenshot({path:resolve(out,profile.width+'-'+profile.height+'-'+theme+'-'+mode+'.png')});
   assert.ok(box.width<=380.01&&!box.overflow&&box.height<=430,JSON.stringify({profile,theme,mode,box}));
@@ -32,6 +40,14 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  await toggle.click();await page.evaluate(()=>{salesPageCalendarMonth='2026-08';syncSalesPageCalendar();});
  const popup=page.locator('#sales-date-calendar-popup');
  assert.equal(await toggle.getAttribute('aria-controls'),'sales-date-calendar-popup');
+ // Clicking/focusing can still be scrolling the page. Measure after both boxes settle;
+ // this does not reposition the popup or relax any geometry assertion below.
+ await page.waitForFunction(()=>{
+  const popup=document.getElementById('sales-date-calendar-popup'),anchor=document.querySelector('.sales-date-calendar-toggle');if(!popup||!anchor)return false;
+  const boxes=[popup,anchor].flatMap(el=>{const r=el.getBoundingClientRect();return [r.top,r.left,r.width,r.height].map(value=>Math.round(value*10));}).join(':'),now=performance.now();
+  if(window.qaCalendarStable?.boxes!==boxes){window.qaCalendarStable={boxes,since:now};return false;}
+  return now-window.qaCalendarStable.since>=150;
+ },null,{polling:'raf',timeout:5000});
  const geometry=await popup.evaluate(el=>{const rect=el.getBoundingClientRect(),anchor=document.querySelector('.sales-date-calendar-toggle').getBoundingClientRect(),panel=document.querySelector('.sales-kpis').getBoundingClientRect(),body=el.querySelector('.sales-date-calendar-body');return {top:rect.top,left:rect.left,right:rect.right,bottom:rect.bottom,width:rect.width,anchorTop:anchor.top,anchorBottom:anchor.bottom,side:el.dataset.side,position:getComputedStyle(el).position,shift:Math.abs(panel.top-anchor.top-qaPanelRect.top),sameNodes:qaChartNode===document.querySelector('.sales-chart-bars')&&qaProductNode===document.querySelector('.sales-product-list'),overflow:el.scrollWidth>el.clientWidth+1,bodyScrollable:body.scrollHeight>body.clientHeight+1};});
  assert.equal(geometry.position,'fixed');assert.ok(geometry.shift<0.1,'Opening calendar never pushes page layout');assert.equal(geometry.sameNodes,true,'Opening calendar preserves chart/products DOM');assert.equal(geometry.overflow,false);assert.ok(geometry.left>=7&&geometry.right<=profile.width-7&&geometry.top>=7&&geometry.bottom<=profile.height-7,JSON.stringify(geometry));assert.ok(geometry.width<=380);
  assert.equal(await popup.locator('.sales-date-calendar-head button').count(),3);assert.ok(await popup.locator('.sales-date-calendar-head').evaluate(el=>[...el.querySelectorAll('button')].every(button=>button.getBoundingClientRect().width>=44&&button.getBoundingClientRect().height>=44)),'Month and close controls remain accessible above popup scrolling');

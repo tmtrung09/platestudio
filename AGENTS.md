@@ -357,6 +357,12 @@
 - Đồng bộ giữ danh mục/báo cáo bán/ghép SKU/sổ đối chiếu và đường nhập file/Chrome/
   bù ngày. Trạng thái thật, không coi chưa kết nối/thiếu dữ liệu là thành công;
   giữ focus/caret/ảnh khi tìm hoặc tải nền.
+- Ghép/gỡ ghép/bỏ qua SKU lưu bền nội dung thao tác theo xưởng + người dùng trước
+  khi chuyển mục; cache đầy hoặc lỗi kho local giữ nháp và báo lỗi. Tự phục hồi
+  hàng chờ qua reload/online, gửi lại cùng request ID; chỉ xác nhận lưu cloud sau
+  ACK server. Ghi theo SKU có revision và tombstone, không để snapshot danh mục
+  từ phiên cũ ghi đè ghép mới. Xung đột giữ bản chờ để người dùng đối chiếu.
+  Guard: `tools/kiot-mapping-qa.mjs`, `tools/kiot-mapping-sql-qa.mjs`.
 - Rà soát gồm nhập file/Chrome/bù ngày/cache/archive/sync/lịch sử/lọc/biểu đồ/in
   lại. Phân biệt lỗi tái hiện với live chưa xác minh; dữ liệu QA cô lập, không
   sửa/xóa live để thử. QA giao diện không chứng minh dữ liệu bán an toàn.

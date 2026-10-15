@@ -7,6 +7,24 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+// Wait for the anchored menu's hit point before Playwright initiates scrolling.
+async function clickOrderFilterOption(page){
+  const option=page.locator('#order-filter-options [aria-pressed]');
+  assert.equal(await option.count(),1);
+  await page.waitForFunction(()=>{
+    const option=document.querySelector('#order-filter-options [aria-pressed]');if(!option)return false;
+    const rect=option.getBoundingClientRect(),hit=document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2);
+    if(!hit||!option.contains(hit)){window.qaFilterHit=null;return false;}
+    const box=[rect.x,rect.y,rect.width,rect.height].map(value=>Math.round(value*100)).join(':')+option.textContent,now=performance.now();
+    if(window.qaFilterHit?.box!==box){window.qaFilterHit={box,since:now};return false;}
+    return now-window.qaFilterHit.since>=150;
+  },null,{polling:'raf',timeout:5000}).catch(async error=>{
+    const geometry=await page.evaluate(()=>{const menu=document.getElementById('order-filter-menu'),host=document.getElementById('order-filter-options'),option=host?.querySelector('[aria-pressed]'),rect=option?.getBoundingClientRect(),hit=rect&&document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2);return {width:innerWidth,height:innerHeight,theme:document.documentElement.dataset.theme,key:orderFilterMenuKey,menu:menu?.getBoundingClientRect().toJSON(),host:host?.getBoundingClientRect().toJSON(),option:rect?.toJSON(),hit:hit?.outerHTML.slice(0,200),style:menu?.getAttribute('style'),scroll:document.getElementById('pg-content')?.scrollTop};});
+    console.error('Order filter hit-test failure:',JSON.stringify(geometry));
+    await page.screenshot({path:out+'/hit-test-failure.png'}).catch(()=>{});throw error;
+  });
+  await option.click();
+}
 const out=resolve('qa-results/order-filters');
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--allow-file-access-from-files']});
@@ -50,14 +68,14 @@ try {
     }
     await page.locator('#order-filter-query').fill('du an tet');
     assert.equal(await page.locator('#order-filter-options [aria-pressed]').count(),1,'Accent-insensitive project lookup');
-    await page.locator('#order-filter-options [aria-pressed]').click();
+    await clickOrderFilterOption(page);
     assert.equal(await page.locator('#order-list .order-card').count(),1);
     assert.equal(await page.locator('#order-filter-result').textContent(),'1 / 3 đơn');
     assert.equal(await page.locator('#order-filter-project').getAttribute('aria-expanded'),'false');
     assert.ok(await page.locator('#order-filter-project').evaluate(el=>el===document.activeElement));
     await page.locator('#order-filter-status').click();
     await page.locator('#order-filter-query').fill('hoan thanh');
-    await page.locator('#order-filter-options [aria-pressed]').click();
+    await clickOrderFilterOption(page);
     assert.equal(await page.locator('#order-list .order-card').count(),0,'Filters combine across dimensions');
     assert.equal(await page.locator('#order-filter-result').textContent(),'0 / 3 đơn');
     await page.locator('#ftbtn-orders').click();
@@ -107,17 +125,30 @@ try {
     assert.ok(await page.locator('#order-filter-options [aria-pressed]').evaluate(el=>el===document.activeElement),'Updated counts retain menu focus');
     await page.evaluate(()=>{orders.pop();renderOrders();});
     if([390,1440].includes(width))await page.screenshot({path:`${out}/${width}-${theme}-menu.png`});
-    await page.locator('#order-filter-options [aria-pressed]').click();
+    await clickOrderFilterOption(page);
     assert.equal(await page.locator('#order-list .order-card').count(),1);
     await page.locator('#order-filter-orderer').click();
     await page.locator('#order-filter-query').fill('nguyen');
-    await page.locator('#order-filter-options [aria-pressed]').click();
+    await clickOrderFilterOption(page);
     assert.equal(await page.locator('#order-list .order-card').count(),1,'Quoted names remain selectable');
     await page.locator('#order-filter-status').click();
     await page.evaluate(()=>goPage('plates',{historyMode:'none'}));
     assert.equal(await page.locator('#order-filter-menu').isVisible(),false,'Route change closes the portal');
     await page.evaluate(()=>{orders=[];goPage('orders',{historyMode:'none'});clearOrderFilters();});
     assert.equal(await page.locator('#order-filter-result').textContent(),'0 đơn');
+    if(height===360){
+      // A valid anchor in the middle of a short viewport must leave one usable row.
+      await page.evaluate(()=>{const trigger=document.getElementById('order-filter-status');window.qaMidpointAnchor=trigger;document.body.append(trigger);Object.assign(trigger.style,{position:'fixed',top:'156px',left:'12px',width:'200px',zIndex:'1100'});});
+      await page.locator('#order-filter-status').click();
+      await page.locator('#order-filter-query').fill('tat ca');
+      const geometry=await page.evaluate(()=>{const menu=document.getElementById('order-filter-menu').getBoundingClientRect(),host=document.getElementById('order-filter-options');window.qaMidpointStatus=host.querySelector('[aria-pressed]').orderFilterValue;return {top:menu.top,bottom:menu.bottom,options:host.clientHeight};});
+      assert.ok(geometry.options>=44&&geometry.top>=8&&geometry.bottom<=height-8,'Mid-viewport menu keeps a clickable option inside the viewport: '+JSON.stringify(geometry));
+      await page.screenshot({path:out+'/'+width+'-'+height+'-'+theme+'-midpoint.png'});
+      await clickOrderFilterOption(page);
+      assert.equal(await page.evaluate(()=>FILTERS.orders.status===qaMidpointStatus),true,'The visible option receives a real click');
+      assert.equal(await page.locator('#order-filter-menu').isVisible(),false,'The real option handler closes the menu');
+      await page.evaluate(()=>qaMidpointAnchor.remove());
+    }
     assert.deepEqual(errors,[],`${width}/${theme}: runtime errors`);
     profiles++;await context.close();
   }

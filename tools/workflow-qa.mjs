@@ -41,6 +41,7 @@ const context = await browser.newContext({
 // Installation invitations have separate production QA; use an already-dismissed device for business UI fixtures.
 await context.addInitScript(()=>localStorage.setItem('ps_install_invite_v1',JSON.stringify({until:Date.now()+86400000})));
 const page = await context.newPage();
+await context.route(/^https?:/, route => route.abort()); // Keep fixture layout independent of external fonts/cloud timing.
 const consoleErrors = [];
 page.on('pageerror', error => consoleErrors.push(`pageerror: ${error.message}`));
 page.on('console', message => { if (message.type() === 'error') consoleErrors.push(`console: ${message.text()}`); });

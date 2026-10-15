@@ -34,7 +34,7 @@ async function setup({width=390,height=844,theme='dark',reducedMotion='no-prefer
 try{
  for(const [width,height] of [[320,740],[390,844],[640,360],[768,900],[1024,900],[1440,1000]])for(const theme of ['dark','light']){
   const {context,page,errors}=await setup({width,height,theme,hold:true});
-  await page.waitForTimeout(700);
+  await page.waitForFunction(()=>PlatedioStartup.state==='loading',null,{timeout:5000});
   assert.equal(await page.evaluate(()=>PlatedioStartup.state),'loading');
   assert.equal(await page.locator('.shell').evaluate(el=>el.inert),true);
   assert.equal(await page.locator('#more-sheet-ov').evaluate(el=>el.inert),true);

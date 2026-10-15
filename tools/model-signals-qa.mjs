@@ -28,8 +28,10 @@ try{for(const width of [320,390,640,1024,1440])for(const theme of ['light','dark
  assert.equal(await page.evaluate(()=>modelSignalIndex.get('m1').low),false,'Slow seller with ample coverage is not low');
  await page.evaluate(()=>{kiotViet.salesImports.forEach(entry=>entry.sales[0].qty=1);buildModelSignalIndex();});assert.equal(await page.evaluate(()=>modelSignalIndex.get('m0').low),false,'Same stock ceases to be low when actual sales slow');await page.evaluate(()=>{kiotViet.salesImports.forEach(entry=>entry.sales[0].qty=10);patchModelSignals();});
  const card=page.locator('#model-grid [data-model-id="m0"]'),info=card.locator('.model-signal-button'),panel=page.locator('#model-signal-panel');
- if(width<600)await info.click();else await card.hover();
- await panel.waitFor({state:'visible'});assert.match(await panel.innerText(),/Đã bán.*30 ngày/s);assert.match(await panel.innerText(),/2\/30 ngày/);
+ // The touch-layout popup can cover the card center at tablet widths. Avoid hover
+ // retries scrolling a different card under the pointer while opening the popup.
+ if(width<600)await info.click();else {await card.evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));await card.hover({position:{x:20,y:20}});}
+ await panel.waitFor({state:'visible'});assert.equal(await panel.getAttribute('data-model-id'),'m0','Hover opens the intended model');assert.match(await panel.innerText(),/Đã bán.*30 ngày/s);assert.match(await panel.innerText(),/2\/30 ngày/);
  if(width>=600){await page.evaluate(()=>{document.getElementById('pg-content').scrollTop+=3;});await page.waitForTimeout(220);assert.equal(await panel.isVisible(),true,'Tiny layout/scroll adjustments keep the hovered or focused peek open');}
  assert.equal(await page.locator('.cam-fab').isVisible(),false,'Floating camera does not cover mobile peek');
  assert.equal(await page.locator('#dlg-mv').isVisible(),false,'Peek does not open detail');
