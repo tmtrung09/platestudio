@@ -150,6 +150,9 @@
 - Khi mở trang mà giao diện chưa sẵn sàng, hiển thị màn hình loading có đồ họa
   động; đặt tên `platedio` bên dưới với chữ đậm, nét mạnh và in nghiêng. Thiết kế
   phải có demo và được người dùng duyệt trước khi tích hợp vào ứng dụng chính.
+- Loading có hiệu ứng khi xuất hiện và rời màn hình. Cụm logo góc trên bên trái
+  đồng bộ nhận diện `platedio`; sau khi loading rời và nội dung trang xuất hiện,
+  cụm logo xuất hiện bằng hiệu ứng sượt ngang. Demo bao gồm toàn bộ trình tự này.
 - Local-first: reload dựng từ cache gần nhất rồi sync thay đổi ở nền, không chặn
   thao tác để tải lại toàn bộ dữ liệu đã biết. Cache có version/migration/độ mới;
   server là nguồn xác nhận cuối cùng.

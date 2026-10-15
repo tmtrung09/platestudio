@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark light">
   <title>platedio · Duyệt màn hình loading</title>
-  <link rel="stylesheet" href="loading-screen.css">
-  <script src="loading-screen.js" defer></script>
+  <link rel="stylesheet" href="loading-screen.css?v=20261015-swipe">
+  <script src="loading-screen.js?v=20261015-swipe" defer></script>
 </head>
 <body>
   <header class="review-header">
@@ -14,22 +14,32 @@
     <span class="demo-badge"><i aria-hidden="true"></i>Bản demo để duyệt</span>
   </header>
   <main>
-    <div class="review-intro"><div><p class="eyebrow">KHOẢNH KHẮC MỞ KHÔNG GIAN</p><h1>Sẵn sàng cho một ngày tạo hình.</h1></div><p>Đồ họa tạo khối trên plate, chuyển động nhẹ.<br>Tên thương hiệu đậm, nghiêng, nằm dưới hình.</p></div>
+    <div class="review-intro"><div><p class="eyebrow">KHOẢNH KHẮC MỞ KHÔNG GIAN</p><h1>Một nhịp mở. Một dấu ấn riêng.</h1></div><p>Loading vào, lướt ra để mở nội dung.<br>Logo góc trái xuất hiện bằng một lượt sượt ngang.</p></div>
     <div class="review-tools" aria-label="Tùy chọn demo">
       <div class="segmented" role="group" aria-label="Giao diện"><button data-theme-choice="dark" aria-pressed="true">Tối</button><button data-theme-choice="light" aria-pressed="false">Sáng</button></div>
       <div class="segmented" role="group" aria-label="Khung xem"><button data-device-choice="desktop" aria-pressed="true">Desktop</button><button data-device-choice="mobile" aria-pressed="false">Mobile</button></div>
       <button class="secondary" id="motion-toggle" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Dừng chuyển động</span></button>
       <div class="tool-spacer"></div>
-      <button class="secondary" id="slow-demo">Tải chậm</button><button class="primary" id="play-demo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>Chạy thử</button>
+      <button class="secondary" id="logo-demo" disabled>Xem lại logo</button><button class="secondary" id="slow-demo">Tải chậm</button><button class="primary" id="play-demo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>Chạy thử</button>
     </div>
+    <ol class="sequence" aria-label="Trình tự chuyển động"><li data-phase="entering">01 <span>Vào loading</span></li><li data-phase="loading">02 <span>Chờ sẵn sàng</span></li><li data-phase="exiting">03 <span>Mở nội dung</span></li><li data-phase="revealing">04 <span>Logo sượt ngang</span></li></ol>
     <section class="preview-shell" aria-label="Xem trước màn hình mở trang">
       <div class="preview-caption"><span><i aria-hidden="true"></i><b id="preview-label">Màn hình đang chờ</b></span><span>platedio / startup</span></div>
       <div class="preview-viewport" id="preview-viewport" data-state="loading" aria-busy="true">
         <div class="ready-page" id="ready-page" inert>
-          <div class="ready-header"><b>platedio</b><span>KHÔNG GIAN LÀM VIỆC</span></div>
+          <aside class="ready-sidebar" aria-label="Điều hướng minh họa">
+            <div class="ready-brand" aria-label="platedio"><div class="brand-reveal">
+              <span class="workspace-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path class="mark-top" d="m16 3 12 7-12 7L4 10z"/><path class="mark-left" d="m4 10 12 7v13L4 23z"/><path class="mark-right" d="m16 17 12-7v13l-12 7z"/><path class="mark-detail" d="m10 10 6 3 6-3"/></svg></span>
+              <b>platedio<span aria-hidden="true">.</span></b>
+            </div></div>
+            <div class="sample-nav"><span class="is-selected"><i></i>Tổng quan</span><span><i></i>Đơn hàng</span><span><i></i>Sản xuất</span><span><i></i>Giao hàng</span><small>KHÔNG GIAN SÁNG TẠO</small></div>
+          </aside>
+          <div class="ready-main">
+          <div class="ready-header"><span>KHÔNG GIAN LÀM VIỆC</span><i aria-hidden="true"></i></div>
           <div class="ready-copy"><span class="eyebrow">MỘT NGÀY MỚI, MỘT Ý TƯỞNG MỚI</span><h2>Không gian đã sẵn sàng.</h2><p>Màn hình chờ nhường chỗ cho nội dung trang.</p></div>
           <div class="ready-grid"><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8V3h14v5M5 17H3V8h18v9h-2M6 13h12v8H6zM17 11h1"/></svg><h3>Sản xuất</h3><p>Từ ý tưởng đến thành phẩm.</p></article><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h12v12H3zM15 9h4l3 4v4h-7M7 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4m11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/></svg><h3>Giao hàng</h3><p>Chuẩn bị cho hành trình tiếp theo.</p></article><article><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8zm-9 5 9 5 9-5M12 13v9"/></svg><h3>Thư viện</h3><p>Nơi lưu giữ những thiết kế mới.</p></article></div>
           <span class="sample-note">Nội dung minh họa · không phải dữ liệu xưởng</span>
+          </div>
         </div>
         <div class="loading-screen" id="loading-screen">
           <div class="loading-composition">
