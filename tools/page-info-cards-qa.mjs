@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /* All real routes and the approved artwork; isolated local account and data. */
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
@@ -19,10 +20,11 @@ try{
   const page=await context.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://**/*',route=>route.abort());
   await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'load'});
+ await waitForAppReady(page);
   await page.waitForFunction(()=>!!window.PlatePageInfoCards&&typeof goPage==='function');
   await page.evaluate(theme=>{
    document.documentElement.dataset.theme=theme;
-   document.getElementById('auth-ov').style.setProperty('display','none','important');
+   document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
    window.qaOriginalOwner=isWorkspaceOwner;window.qaOriginalCanAccess=canAccess;
    isWorkspaceOwner=()=>true;canAccess=()=>true;
    sb=null;currentUser=null;orders=[];models=[];pitems=[];projects=[];batchReports=[];
@@ -90,6 +92,7 @@ try{
  await page.route('https://**/*',route=>route.abort());
  await page.addInitScript(()=>Object.defineProperty(window,'PlatePageInfoArt',{value:undefined,writable:false}));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.waitForFunction(()=>typeof goPage==='function');
  await page.evaluate(()=>{document.getElementById('auth-ov').style.display='none';goPage('orders',{historyMode:'none'});});
  assert.equal(await page.locator('#order-smart-search').count(),1,'Order workflow remains available when artwork dependency is missing');

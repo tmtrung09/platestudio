@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {existsSync,mkdirSync} from 'node:fs';
@@ -10,6 +11,7 @@ try{
  for(const width of [320,390,1440])for(const theme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height:850}});await context.route(/^https?:/,route=>route.abort());
   const page=await context.newPage();await page.goto(pathToFileURL(resolve('plate-studio.html')).href);
+ await waitForAppReady(page);
   await page.addStyleTag({content:'#auth-ov{display:none!important}'});
   await page.evaluate(theme=>{
    document.documentElement.dataset.theme=theme;currentUser=null;cloudReady=false;

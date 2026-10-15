@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import {chromium} from 'playwright-core';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -15,8 +16,9 @@ try{
   await context.route('https://qa.invalid/model.svg',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><rect width="60" height="60" fill="#bc98e8"/><circle cx="30" cy="30" r="18" fill="#ddd1f8"/></svg>'}));
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(pathToFileURL(resolve(process.env.KIOT_QA_FILE||'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
   await page.evaluate(theme=>{
-   document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');
+   document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
    cloudReady=false;currentUser=null;sb=null;canAccess=()=>true;
    orders=[];pitems=[];batchReports=[];operations={products:[],deliveries:[],deliveryBatches:[],qualityIssues:[]};normalizeOperations();
    models=[{id:'m',name:'Lót ly hoa',images:['https://qa.invalid/model.svg'],parts:[],variants:[{id:'v',name:'Hoa tím'}]}];

@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -37,9 +38,10 @@ try {
     const context=await browser.newContext({viewport:profile,hasTouch:!!profile.touch,isMobile:!!profile.touch}),page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(error.message));await context.route(/^https?:/,route=>route.abort());
     await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
     await page.waitForFunction(()=>typeof appIcon==='function');
     await page.evaluate(({theme,specs})=>{
-      document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');
+      document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
       const fixture=document.createElement('section');fixture.id='icon-action-fixture';fixture.className='card';fixture.style.cssText='position:fixed;inset:12px;z-index:2000;overflow:auto;padding:16px;';
       fixture.innerHTML='<h2>Nút icon · dữ liệu kiểm thử</h2><div style="display:flex;flex-wrap:wrap;gap:8px">'+specs.map((spec,index)=>`<button type="button" class="${spec.classes}" data-probe="${index}" aria-label="${esc(spec.label)}">${appIcon(spec.kind)}</button>`).join('')+'</div><button class="btn btn-ghost" id="icon-text-control">'+appIcon('refresh')+' Làm mới</button><button class="btn btn-ac" id="icon-primary-control">Lưu</button><button class="btn btn-ghost" id="icon-stepper-control" aria-label="Tăng số lượng">+</button><p id="icon-action-result"></p>';
       window.iconActionCalls=0;fixture.querySelectorAll('[data-probe]').forEach(button=>button.onclick=()=>{iconActionCalls++;document.getElementById('icon-action-result').textContent='Đã bấm '+iconActionCalls;});document.body.append(fixture);

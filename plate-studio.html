@@ -12,6 +12,96 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <script>try{if(localStorage.getItem('ps_theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
+<style id="platedio-startup-style">
+/* Startup styles and SVG are inline so opening the app needs no decorative request. */
+#platedio-startup{--accent:#b6a1ff;--loader:#111017;--muted:#a6a1b5;--word:#fff;--shadow:#0008;position:fixed;z-index:100000;inset:0;display:none;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 43%,#b6a1ff12,transparent 56%),var(--loader);color:var(--word);font-family:Arial,Helvetica,sans-serif;clip-path:polygon(0 0,115% 0,100% 100%,0 100%)}
+html[data-platedio-startup]:not([data-platedio-startup="ready"]):not([data-platedio-startup="revealing"]) #platedio-startup:not([hidden]){display:flex}
+html[data-theme="light"] #platedio-startup{--accent:#6545bf;--loader:#faf9fd;--muted:#716a81;--word:#282032;--shadow:#46387620}
+#platedio-startup[hidden]{display:none!important}
+#platedio-startup .ps-loading-composition{display:flex;flex-direction:column;align-items:center;position:relative;margin-top:-22px;max-width:100%;padding:0 20px}
+#platedio-startup .loading-art{width:300px;height:233px;max-width:82vw;margin-bottom:-1px}
+#platedio-startup .build-scene{display:block;width:100%;height:100%;overflow:visible}
+#platedio-startup .wordmark{display:flex;align-items:baseline;gap:7px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-weight:900;font-style:italic;font-size:76px;line-height:1.12;letter-spacing:-6px;color:var(--word);padding:0 14px 3px 0}
+#platedio-startup .brand-stop{width:9px;height:9px;background:var(--accent);transform:skew(-12deg);border-radius:1px}
+#platedio-startup .loading-status{display:flex;align-items:center;gap:9px;color:var(--muted);margin-top:20px;font-size:11px;line-height:1.6;min-height:21px;text-align:center}
+#platedio-startup .loading-dots{display:flex;gap:3px}
+#platedio-startup .loading-dots i{width:3px;height:3px;border-radius:50%;background:var(--accent);animation:ps-dot-pulse 1.8s ease-in-out infinite}
+#platedio-startup .loading-dots i:nth-child(2){animation-delay:.2s}#platedio-startup .loading-dots i:nth-child(3){animation-delay:.4s}
+#platedio-startup .loader-bottom{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:8px;font-weight:600;letter-spacing:.32em;color:var(--muted);opacity:.65}
+#platedio-startup-retry{display:flex;align-items:center;justify-content:center;min-height:44px;min-width:110px;border:1px solid #a6a1b540;background:transparent;border-radius:11px;color:var(--word);font:600 12px Arial,sans-serif;margin-top:16px;padding:0 15px;cursor:pointer}
+#platedio-startup-retry[hidden]{display:none!important}#platedio-startup-retry:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+html[data-platedio-background] #platedio-startup .moving{animation-play-state:paused!important}
+@media(max-width:600px){#platedio-startup .loading-art{width:265px;height:206px}#platedio-startup .wordmark{font-size:65px;letter-spacing:-5px}#platedio-startup .loading-status{font-size:10px;gap:6px}}
+@media(max-width:350px),(max-height:450px){#platedio-startup .loading-art{width:225px;height:175px}#platedio-startup .wordmark{font-size:58px;letter-spacing:-4.5px}#platedio-startup .ps-loading-composition{margin-top:-8px}#platedio-startup .loading-status{font-size:9px;margin-top:14px}#platedio-startup .loader-bottom{bottom:14px}}
+@media(prefers-reduced-motion:reduce){#platedio-startup .moving{animation:none!important}}
+
+#platedio-startup .platform-shadow{fill:var(--shadow)}#platedio-startup .guide-lines{fill:none;stroke:var(--accent);stroke-width:1;opacity:.17;stroke-linecap:round;stroke-linejoin:round}#platedio-startup .plate-side{fill:#3e2b73}#platedio-startup .plate-inset{fill:#bba9fb;opacity:.13;stroke:#e0d6ff;stroke-width:1}#platedio-startup .plate-line{fill:none;stroke:#d9caff;opacity:.4;stroke-width:1}#platedio-startup .layer-lines{fill:none;stroke:#ede6ff;opacity:.2;stroke-width:1}#platedio-startup .cube-edge{stroke:#e4d8ff;stroke-width:1;opacity:.3}#platedio-startup .top-detail{fill:none;stroke:#f5f0ff;stroke-width:1;opacity:.38}#platedio-startup .scan-edge{stroke:#ede5ff;stroke-width:1.5;fill:none;opacity:.8}#platedio-startup .head-line{stroke:var(--accent);stroke-width:1;opacity:.15}#platedio-startup .head-body{fill:#c0acf7}#platedio-startup .head-nozzle{fill:#8c70cf}#platedio-startup .head-highlight{stroke:#f3edff;stroke-width:2;stroke-linecap:round}#platedio-startup .orbit{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-linejoin:round;opacity:.45}#platedio-startup .spark{fill:var(--accent);opacity:.55}#platedio-startup .plate-float{animation:ps-plate-hover 4.8s ease-in-out infinite}#platedio-startup .top-layer{animation:ps-layer-build 4.8s ease-in-out infinite}#platedio-startup .scan-light{animation:ps-scan-build 4.8s ease-in-out infinite}#platedio-startup .print-head{animation:ps-head-print 4.8s ease-in-out infinite}#platedio-startup .orbit-one{animation:ps-orbit-float 5.8s ease-in-out infinite}#platedio-startup .orbit-two{animation:ps-orbit-float 5.8s -2.9s ease-in-out infinite}#platedio-startup .spark{animation:ps-spark-pulse 4s ease-in-out infinite}#platedio-startup .spark-two{animation-delay:-2s}
+@keyframes ps-plate-hover{0%,100%{transform:translateY(3px)}50%{transform:translateY(-4px)}}@keyframes ps-layer-build{0%,100%{transform:translateY(-17px);opacity:.55}35%,70%{transform:translateY(0);opacity:1}}@keyframes ps-scan-build{0%,100%{transform:translateY(-9px);opacity:0}28%{opacity:.55}68%{transform:translateY(38px);opacity:.1}75%{opacity:0}}@keyframes ps-head-print{0%,100%{transform:translateX(-19px)}50%{transform:translateX(19px)}}@keyframes ps-orbit-float{0%,100%{transform:translateY(5px)}50%{transform:translateY(-6px)}}@keyframes ps-spark-pulse{0%,100%{opacity:.2}50%{opacity:.7}}@keyframes ps-dot-pulse{0%,70%,100%{opacity:.25}35%{opacity:1}}
+</style>
+<script>
+/* Inline by design: the first frame and its recovery path need no network asset. */
+(()=>{
+ const root=document.documentElement,reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const fast=new URLSearchParams(location.search).get('capture')==='1';
+ const blocked=new Map(),callbacks=[],animations=new Set();
+ let observer,watchdog,exitTimer,entryDone=false,localReady=false,released=false;
+ const overlay=()=>document.getElementById('platedio-startup');
+ const stage=value=>{root.dataset.platedioStartup=value;};
+ function block(node){if(node.nodeType!==1||node.id==='platedio-startup'||['SCRIPT','STYLE','LINK','NOSCRIPT'].includes(node.tagName)||node.inert||blocked.has(node))return;blocked.set(node,false);node.inert=true;}
+ function animate(node,frames,options){if(!node?.animate)return null;const animation=node.animate(frames,options);animations.add(animation);animation.finished.then(()=>animations.delete(animation),()=>animations.delete(animation));return animation;}
+ function revealBrand(instant){
+  stage(instant?'ready':'revealing');
+  if(instant)return;
+  document.querySelectorAll('.platedio-brand-reveal').forEach(node=>{
+   animate(node,[{clipPath:'polygon(0 0,0 0,-10% 100%,0 100%)',transform:'translateX(-24px)',opacity:0},{clipPath:'polygon(0 0,115% 0,100% 100%,0 100%)',transform:'translateX(0)',opacity:1}],{duration:720,easing:'cubic-bezier(.16,.75,.2,1)'});
+   animate(node.querySelector('.platedio-brand-glint'),[{left:'-70%',opacity:0},{left:'-20%',opacity:.8,offset:.2},{left:'100%',opacity:.4,offset:.8},{left:'145%',opacity:0}],{duration:660,delay:60,easing:'ease-out'});
+  });
+  exitTimer=setTimeout(()=>stage('ready'),780);
+ }
+ function release(instant=false){
+  if(released){if(instant){clearTimeout(exitTimer);animations.forEach(animation=>animation.cancel());stage('ready');}return;}
+  released=true;clearTimeout(watchdog);clearTimeout(exitTimer);observer?.disconnect();
+  animations.forEach(animation=>animation.cancel());animations.clear();
+  blocked.forEach((wasInert,node)=>{node.inert=wasInert;});blocked.clear();
+  const screen=overlay();if(screen){screen.inert=true;screen.setAttribute('aria-busy','false');screen.hidden=true;}
+  revealBrand(instant||reduced.matches||document.hidden);
+  callbacks.splice(0).forEach(callback=>{try{callback();}catch(error){console.warn('Chưa đặt được focus sau mở trang',error);}});
+ }
+ function finish(){
+  if(released)return;
+  const screen=overlay();if(fast||reduced.matches||!screen){release(true);return;}
+  const composition=screen.querySelector('.ps-loading-composition'),clip=getComputedStyle(screen).clipPath,copyStyle=getComputedStyle(composition),opacity=copyStyle.opacity,transform=copyStyle.transform;
+  animations.forEach(animation=>animation.cancel());animations.clear();
+  stage('exiting');screen.inert=true;
+  animate(screen,[{clipPath:clip},{clipPath:'polygon(115% 0,115% 0,100% 100%,100% 100%)'}],{duration:580,easing:'cubic-bezier(.65,0,.28,1)',fill:'both'});
+  animate(composition,[{opacity,transform},{opacity:0,transform:'translateX(28px)'}],{duration:380,easing:'ease',fill:'both'});
+  exitTimer=setTimeout(()=>release(),620);
+ }
+ function ready(){
+  if(localReady||released)return;localReady=true;clearTimeout(watchdog);
+  if(fast||document.hidden){release(true);return;}
+  requestAnimationFrame(()=>requestAnimationFrame(finish));
+ }
+ function mount(){
+  const screen=overlay();if(!screen)return;
+  if(released){screen.hidden=true;return;}
+  [...document.body.children].forEach(block);
+  observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(block)));observer.observe(document.body,{childList:true});
+  document.getElementById('platedio-startup-retry').addEventListener('click',()=>location.reload());
+  if(!fast&&!reduced.matches){
+   const entry=animate(screen,[{clipPath:'polygon(0 0,-15% 0,0 100%,0 100%)'},{clipPath:'polygon(0 0,115% 0,100% 100%,0 100%)'}],{duration:550,easing:'cubic-bezier(.22,.7,.2,1)'});
+   animate(screen.querySelector('.ps-loading-composition'),[{opacity:0,transform:'translateX(-24px)'},{opacity:1,transform:'translateX(0)'}],{duration:480,delay:120,easing:'cubic-bezier(.2,.7,.25,1)'});
+   entry?.finished.then(()=>{entryDone=true;if(!localReady)stage('loading');},()=>{});
+  }else{entryDone=true;stage('loading');}
+  watchdog=setTimeout(()=>{if(localReady||released)return;stage('stalled');document.getElementById('platedio-startup-message').textContent='Trang đang cần thêm một chút thời gian';document.getElementById('platedio-startup-retry').hidden=false;},12000);
+ }
+ reduced.addEventListener('change',()=>{if(!reduced.matches)return;animations.forEach(animation=>animation.cancel());if(localReady||released)release(true);else{entryDone=true;stage('loading');}});
+ document.addEventListener('visibilitychange',()=>{root.toggleAttribute('data-platedio-background',document.hidden);if(document.hidden&&localReady&&!released)release(true);});
+ window.PlatedioStartup={mount,ready,release:()=>{localReady=true;release(true);},afterReady:callback=>released?callback():callbacks.push(callback),get state(){return root.dataset.platedioStartup;}};
+ stage('entering');
+})();
+
+</script>
 <script>
 /* GitHub Pages can briefly serve an older HTML file after a deploy.  Every
    deployed build carries its commit id; once a newer release is visible, move
@@ -4627,9 +4717,62 @@ html body .btn.btn-icon-only.btn-ghost:hover:not(:disabled){color:var(--t)!impor
     transition: none;
   }
 }
+.sales-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex:1}.sales-chart-heading>div:first-child{min-width:0}.sales-chart-heading .sales-chart-scroll-actions{flex:0 0 auto;margin:0}@media(max-width:700px){.sales-chart-heading{width:100%;flex:none}}
+</style>
+<style id="platedio-brand-style">
+/* Scoped brand geometry; the existing sidebar, route actions and counts stay intact. */
+.platedio-brand-reveal{position:relative;display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0;max-width:100%;isolation:isolate}
+html:is([data-platedio-startup="entering"],[data-platedio-startup="loading"],[data-platedio-startup="exiting"],[data-platedio-startup="stalled"]) .platedio-brand-reveal{opacity:0}
+.platedio-brand-glint{position:absolute;inset:-5px auto -5px -70%;width:45%;background:linear-gradient(90deg,transparent,#b6a1ff70,#ffffffa0,transparent);transform:skewX(-18deg);opacity:0;pointer-events:none}
+.platedio-mark{display:block;width:29px;height:32px;fill:none;stroke:none;flex-shrink:0}.platedio-mark .mark-top{fill:#d5c8ff}.platedio-mark .mark-left{fill:#a68ae9}.platedio-mark .mark-right{fill:#7151b2}.platedio-mark .mark-detail{fill:none;stroke:#f6f0ff;stroke-width:1;opacity:.8}
+.sb-brand.platedio-brand{display:block;width:calc(100% - 8px);min-height:60px;border:0;background:transparent;box-shadow:none;color:var(--t);text-align:left;cursor:pointer;border-radius:10px}
+.sb-brand.platedio-brand .sb-brand-mark{background:none;box-shadow:none;border-radius:0;overflow:visible;flex-shrink:0;width:30px;height:34px}
+.sb-brand.platedio-brand .sb-brand-mark svg{width:29px;height:32px;stroke:none}
+.sb-brand.platedio-brand .sb-brand-title,.platedio-mobile-brand b,.platedio-auth-brand b{font-family:'Arial Black',Arial,Helvetica,sans-serif;font-weight:900;font-style:italic;font-size:26px;line-height:1.3;letter-spacing:-1.9px;color:var(--t)}
+.platedio-brand-dot{color:var(--pu);padding-left:1px}
+.sb-brand.platedio-brand .sb-brand-copy{min-width:0}.sb-brand.platedio-brand .sb-brand-sub{display:block;font-size:9px;line-height:1.6;white-space:normal}
+.sb.compact:not(:hover) .sb-brand.platedio-brand{width:100%;margin-inline:0;padding:10px 0}.sb.compact:not(:hover) .platedio-brand-reveal{justify-content:center}.sb.compact:not(:hover) .sb-brand-copy{display:none}
+.platedio-brand:focus-visible{outline:2px solid var(--pu);outline-offset:2px}
+.platedio-mobile-brand{display:none}
+.la-brand-mark.platedio-auth-brand{width:max-content;height:auto;min-height:44px;border-radius:0;background:none;box-shadow:none;margin:0 auto 20px;padding:0}.platedio-auth-brand .platedio-mark{width:32px;height:36px}.platedio-auth-brand b{font-size:32px;color:var(--la-text)}
+@media(max-width:860px){.platedio-mobile-brand{display:flex;align-items:center;align-self:flex-start;flex:0 0 48px;min-height:48px;max-width:calc(100% - 74px);margin:4px 0 0 16px;padding:0;border:0;background:none;box-shadow:none;color:var(--t);cursor:pointer}.platedio-mobile-brand b{font-size:24px}.platedio-mobile-brand .platedio-mark{width:26px;height:29px}}
+body.staff-report-mode .platedio-mobile-brand{display:none!important}
+
 </style>
 </head>
 <body>
+<div id="platedio-startup" role="status" aria-live="polite" aria-busy="true"><div class="ps-loading-composition"><div class="loading-art" aria-hidden="true">
+              <svg class="build-scene" viewBox="0 0 360 280" focusable="false">
+                <defs>
+                  <linearGradient id="ps-startup-plate-top" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#b7a7ff"/><stop offset="1" stop-color="#6750ce"/></linearGradient>
+                  <linearGradient id="ps-startup-cube-top" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ede7ff"/><stop offset="1" stop-color="#a996fa"/></linearGradient>
+                  <linearGradient id="ps-startup-cube-left" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#b09bfa"/><stop offset="1" stop-color="#8061de"/></linearGradient>
+                  <linearGradient id="ps-startup-cube-right" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#8163d8"/><stop offset="1" stop-color="#513696"/></linearGradient>
+                  <linearGradient id="ps-startup-beam" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#d7cdff" stop-opacity=".8"/><stop offset="1" stop-color="#b8a4ff" stop-opacity="0"/></linearGradient>
+                </defs>
+                <ellipse class="platform-shadow" cx="180" cy="231" rx="118" ry="19"/>
+                <g class="guide-lines"><path d="m35 184 145-78 145 78-145 78z"/><path d="M59 172V92m242 80V92M86 105l94-50 94 50"/><circle cx="59" cy="88" r="3"/><circle cx="301" cy="88" r="3"/></g>
+                <g class="plate-float moving">
+                  <path class="plate-side" d="m56 192 124 67 124-67v-9L180 125 56 183z"/>
+                  <path fill="url(#ps-startup-plate-top)" d="m56 182 124-67 124 67-124 67z"/>
+                  <path class="plate-inset" d="m72 182 108-58 108 58-108 58z"/>
+                  <path class="plate-line" d="m83 182 97 52 97-52M180 234v7"/>
+                  <g class="cube-body">
+                    <path fill="url(#ps-startup-cube-left)" d="m119 127 61 33v62l-61-33z"/>
+                    <path fill="url(#ps-startup-cube-right)" d="m180 160 61-33v62l-61 33z"/>
+                    <path class="layer-lines" d="m119 141 61 33 61-33m-122 14 61 33 61-33m-122 14 61 33 61-33m-122 14 61 33 61-33"/>
+                    <path class="cube-edge" d="M180 160v62"/>
+                  </g>
+                  <g class="top-layer moving"><path fill="url(#ps-startup-cube-top)" d="m119 125 61-33 61 33-61 33z"/><path class="top-detail" d="m142 125 38-20 38 20-38 20z"/><path class="top-detail" d="m153 125 27-14 27 14-27 14z"/></g>
+                  <g class="scan-light moving"><path fill="url(#ps-startup-beam)" d="m120 111 60-33 60 33v34l-60 33-60-33z"/><path class="scan-edge" d="m120 111 60 33 60-33"/></g>
+                </g>
+                <g class="print-head moving"><path class="head-line" d="M125 64h110"/><rect class="head-body" x="164" y="48" width="32" height="25" rx="7"/><path class="head-nozzle" d="m174 73 6 10 6-10z"/><path class="head-highlight" d="M173 55h14"/></g>
+                <g class="orbit orbit-one moving"><path d="m74 129 8-5 8 5v9l-8 5-8-5z"/><path d="m74 129 8 5 8-5m-8 5v9"/></g>
+                <g class="orbit orbit-two moving"><path d="m276 148 10-6 10 6v12l-10 6-10-6z"/><path d="m276 148 10 6 10-6m-10 6v12"/></g>
+                <circle class="spark spark-one moving" cx="109" cy="83" r="2.5"/><circle class="spark spark-two moving" cx="256" cy="99" r="2"/>
+              </svg>
+            </div><div class="wordmark" aria-label="platedio">platedio<span class="brand-stop" aria-hidden="true"></span></div><div class="loading-status"><span id="platedio-startup-message">Đang mở không gian làm việc</span><span class="loading-dots" aria-hidden="true"><i class="moving"></i><i class="moving"></i><i class="moving"></i></span></div><button type="button" id="platedio-startup-retry" hidden>Tải lại trang</button></div><span class="loader-bottom" aria-hidden="true">MAKE IDEAS REAL.</span></div>
+<script>window.PlatedioStartup?.mount();</script>
 
 <!-- THANH TIẾN TRÌNH ĐỒNG BỘ — cố định mép trên, không ảnh hưởng layout -->
 <div class="sync-bar"><div class="sync-bar-fill" id="sync-bar-fill"></div></div>
@@ -5030,7 +5173,7 @@ html body .btn.btn-icon-only.btn-ghost:hover:not(:disabled){color:var(--t)!impor
 </div>
 
 <main class="la-card" id="la-card">
-  <div class="la-brand-mark"><img src="plate-studio-mark.svg" alt="Plate Studio"></div>
+  <div class="la-brand-mark platedio-auth-brand" aria-label="platedio"><span class="platedio-brand-reveal"><svg class="platedio-mark" aria-hidden="true" focusable="false" viewBox="0 0 32 32"><path class="mark-top" d="m16 3 12 7-12 7L4 10z"/><path class="mark-left" d="m4 10 12 7v13L4 23z"/><path class="mark-right" d="m16 17 12-7v13l-12 7z"/><path class="mark-detail" d="m10 10 6 3 6-3"/></svg><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></div>
   <h1 id="la-title">Đăng nhập</h1>
   <p class="la-subtitle" id="la-subtitle">Đăng nhập để đồng bộ dữ liệu.</p>
 
@@ -5129,6 +5272,7 @@ html body .btn.btn-icon-only.btn-ghost:hover:not(:disabled){color:var(--t)!impor
 
 <!-- MAIN -->
 <div class="main">
+<button type="button" class="platedio-mobile-brand platedio-brand" onclick="goPage(isDeliveryReceiveOnlyAccount()?'delivery-receive':'dashboard')" aria-label="platedio — Về trang chính"><span class="platedio-brand-reveal"><svg class="platedio-mark" aria-hidden="true" focusable="false" viewBox="0 0 32 32"><path class="mark-top" d="m16 3 12 7-12 7L4 10z"/><path class="mark-left" d="m4 10 12 7v13L4 23z"/><path class="mark-right" d="m16 17 12-7v13l-12 7z"/><path class="mark-detail" d="m10 10 6 3 6-3"/></svg><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></button>
   <div class="sticky-bar" id="sticky-bar">
     <div class="ctrl-bar" id="ctrl-bar"></div>
   </div>
@@ -6416,7 +6560,7 @@ function showAuth(mode='signin') {
   const ov = document.getElementById('auth-ov'); if(!ov) return;
   ov.style.display = 'flex';
   setAuthMode(mode);
-  setTimeout(() => document.getElementById('auth-email')?.focus(), 80);
+  setTimeout(()=>{const focus=()=>{if(ov.getClientRects().length&&getComputedStyle(ov).display!=='none')document.getElementById('auth-email')?.focus({preventScroll:true});};if(window.PlatedioStartup)PlatedioStartup.afterReady(focus);else focus();},80);
 }
 function authMessage(message, isError=true) {
   const el = document.getElementById('auth-msg'); if(!el) return;
@@ -9283,8 +9427,17 @@ function sidebarNavGroup(key,label,content,{forceOpen=false}={}){
   const collapsed=sidebarGroupCollapsed(key,forceOpen);
   return `<section class="sb-nav-group${collapsed?' is-collapsed':''}"><button type="button" class="sb-nav-group-toggle" aria-expanded="${collapsed?'false':'true'}" onclick="toggleSidebarGroup('${key}')"><span>${label}</span><i aria-hidden="true"></i></button><div class="sb-nav-group-body">${content}</div></section>`;
 }
+function platedioBrandIcon(){return `<svg class="platedio-mark" aria-hidden="true" focusable="false" viewBox="0 0 32 32"><path class="mark-top" d="m16 3 12 7-12 7L4 10z"/><path class="mark-left" d="m4 10 12 7v13L4 23z"/><path class="mark-right" d="m16 17 12-7v13l-12 7z"/><path class="mark-detail" d="m10 10 6 3 6-3"/></svg>`;}
+function sidebarBrandMarkup(page,title,subtitle){return `<button type="button" class="sb-brand platedio-brand" onclick="goPage('${page}')" title="${esc(title)}" aria-label="platedio — ${esc(title)}"><span class="platedio-brand-reveal"><span class="sb-brand-mark">${platedioBrandIcon()}</span><span class="sb-brand-copy"><span class="sb-brand-title">platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></span><span class="sb-brand-sub">${esc(subtitle)}</span></span><span class="platedio-brand-glint" aria-hidden="true"></span></span></button>`;}
+function keepSidebarBrand(host,previous){
+  const next=host.querySelector(':scope > .sb-brand');if(!previous||!next)return;
+  for(const key of ['onclick','title','aria-label'])previous.setAttribute(key,next.getAttribute(key));
+  previous.querySelector('.sb-brand-sub').textContent=next.querySelector('.sb-brand-sub').textContent;
+  next.replaceWith(previous);
+}
 function renderSb() {
   const host = document.querySelector('#sidebar .sb-scroll'); if(!host) return;
+  const previousBrand=host.querySelector(':scope > .sb-brand');
   ensureOperationalManualReports();
   const waiting = platePageEntries().filter(x=>x.status!=='done').length;
   const accountName=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'Chưa đăng nhập';
@@ -9293,21 +9446,16 @@ function renderSb() {
   const item = (page, label, icon, count='') => `<button class="sb-nav-item${canonicalNavigationPage(curPage)===page?' active':''}" data-sidebar-page="${page}" onclick="goPage('${page}')">${sidebarIcon(icon)}<span class="sb-nav-label">${label}</span>${count ? `<span class="sb-nav-count">${count}</span>` : ''}</button>`;
   if(typeof isDeliveryReceiveOnlyAccount==='function'&&isDeliveryReceiveOnlyAccount()){
     host.innerHTML = `
-      <div class="sb-brand" onclick="goPage('delivery-receive')" role="button" tabindex="0" title="Tiếp nhận hàng">
-        <span class="sb-brand-mark"><img src="plate-studio-mark.svg" alt=""></span>
-        <span><span class="sb-brand-title">Plate Studio</span><span class="sb-brand-sub">Tiếp nhận hàng</span></span>
-      </div>
+      ${sidebarBrandMarkup('delivery-receive','Tiếp nhận hàng','Tiếp nhận hàng')}
       <section class="sb-nav-group"><div class="sb-nav-caption">CÔNG VIỆC CỦA BẠN</div><div class="sb-nav-group-body">${item('delivery-receive','Tiếp nhận hàng','order')}</div></section>
       <div class="sb-account" title="${esc(accountEmail)}"><span class="sb-account-avatar">${esc(accountInitial)}</span><span class="sb-account-copy"><b>${esc(accountName)}</b><small>${esc(accountEmail)}</small></span></div>
       <div class="sb-utility"><span class="sb-sync">${esc(document.getElementById('sync-state')?.textContent || 'Đã đăng nhập')}</span><div style="display:flex;align-items:center;gap:3px"><button class="sb-signout" title="Đổi giao diện sáng/tối" onclick="toggleAppTheme()">${document.documentElement.dataset.theme==='light'?'☾':'☀'}</button><button class="sb-signout" onclick="signOutCloud()">Đăng xuất</button></div></div>`;
+    keepSidebarBrand(host,previousBrand);
     setTimeout(()=>applyWorkspaceNavigationPermissions?.(),0);
     return;
   }
   host.innerHTML = `
-    <div class="sb-brand" onclick="goPage('dashboard')" role="button" tabindex="0" title="Về Dashboard">
-      <span class="sb-brand-mark"><img src="plate-studio-mark.svg" alt=""></span>
-      <span><span class="sb-brand-title">Plate Studio</span><span class="sb-brand-sub">${waiting} plate chờ in</span></span>
-    </div>
+    ${sidebarBrandMarkup('dashboard','Về Dashboard',`${waiting} plate chờ in`)}
     <div class="sb-search">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="sb-search-input" placeholder="Tìm trong xưởng..." autocomplete="off" oninput="onSearch(this.value,'sb-search-input','sb-s-drop','sb-s-clear')" onfocus="showSearch('sb-search-input','sb-s-drop')" onblur="setTimeout(()=>hideSearch('sb-s-drop'),180)">
@@ -9342,6 +9490,7 @@ function renderSb() {
     ,{forceOpen:['devices','data','access'].includes(curPage)})}
     <div class="sb-account" title="${esc(accountEmail)}"><span class="sb-account-avatar">${esc(accountInitial)}</span><span class="sb-account-copy"><b>${esc(accountName)}</b><small>${esc(accountEmail)}</small></span></div>
     <div class="sb-utility"><span class="sb-sync">${esc(document.getElementById('sync-state')?.textContent || 'Chưa đăng nhập')}</span><div style="display:flex;align-items:center;gap:3px"><button class="sb-signout" title="Đổi giao diện sáng/tối" onclick="toggleAppTheme()">${document.documentElement.dataset.theme==='light'?'☾':'☀'}</button><button class="sb-signout" onclick="${currentUser ? 'signOutCloud()' : "showAuth('signin')"}">${currentUser ? 'Đăng xuất' : 'Đăng nhập'}</button></div></div>`;
+  keepSidebarBrand(host,previousBrand);
   /* Cloud có thể gọi renderSb ngay khi đăng nhập; trì hoãn một nhịp để cấu hình
      quyền đã sẵn sàng rồi mới gắn mục chỉ dành cho chủ xưởng. */
   if(typeof ensureAccessSidebarLink==='function')setTimeout(()=>{ensureAccessSidebarLink();applyWorkspaceNavigationPermissions?.();},0);
@@ -13033,6 +13182,7 @@ async function revokeStaffAccessLink(id){
 
 function openBatchReportHub(){
   if(!canCaptureBatchReports()){toast('Bạn chỉ có quyền xem hoặc chỉnh sửa báo cáo; chưa được cấp quyền chụp ảnh mẻ mới.');return;}
+  window.PlatedioStartup?.release();
   brView = 'hub'; brCurrentId = null; brMatchQty = {}; brUnifiedSearch=''; brUnifiedScope='all'; brReportDate=localBatchDate();
   return openBatchMultiCamera();
 }
@@ -13248,6 +13398,7 @@ async function handleBatchDrop(event){
 async function openBatchMultiCamera(){
   prepareBatchShutterSound();
   if(!canCaptureBatchReports()){toast('Bạn chưa được cấp quyền chụp ảnh báo cáo mẻ.');return;}
+  window.PlatedioStartup?.release();
   if(document.getElementById('br-multi-cam'))return;
   brCameraReturnFocus=document.activeElement;
   const modal=document.createElement('div');
@@ -16233,7 +16384,7 @@ recordPerformanceMetric('localShellReadyMs',performance.now());
    phiên cloud khi nó sẵn sàng, thay vì giữ parser đứng tại thẻ script ngoài. */
 setTimeout(()=>{(window.__psSupabaseReady||Promise.resolve()).then(()=>initCloudApp(),()=>initCloudApp());},0);
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('push-sw.js',{scope:'./'}).catch(error=>console.warn('Chưa cache được app shell',error));
-setTimeout(()=>document.getElementById('dash-search')?.focus(), 200);
+setTimeout(()=>{const focus=()=>{if(getComputedStyle(document.getElementById('auth-ov')).display==='none')document.getElementById('dash-search')?.focus({preventScroll:true});};if(window.PlatedioStartup)PlatedioStartup.afterReady(focus);else focus();},200);
 
 
 /* ═══════════════════════════════════════
@@ -20695,7 +20846,8 @@ function salesDailyChartHTML(imports,selectedReportId){
   const series=kiotSalesDailySeries(imports),meta=salesChartMetricMeta(),max=Math.max(1,...series.map(row=>Number(row[salesChartMetric])||0));
   const buttons=[['revenue','Doanh thu'],['qty','Sản phẩm'],['sku','SKU'],['average','TB / SP']].map(([id,label])=>`<button class="sales-chart-filter ${salesChartMetric===id?'active':''}" onclick="setSalesChartMetric('${id}')">${label}</button>`).join('');
   const bars=series.map((row,index)=>{const value=Number(row[salesChartMetric])||0,height=value?Math.max(8,Math.round(value/max*100)):3,isCurrent=row.entries.some(entry=>entry.id===selectedReportId);return `<button type="button" class="sales-chart-bar${isCurrent?' active':''}" style="--bar-height:${height}%;--bar-color:${meta.color};--bar-index:${index}" title="${fmtDate(row.day)} · ${meta.label}: ${meta.format(value)}" aria-label="${fmtDate(row.day)} · ${meta.label}: ${meta.format(value)} · xem báo cáo ngày" onclick="setSalesPageReport('${esc(row.latestId)}')"><span class="sales-chart-value">${meta.format(value)}</span><i></i><small>${fmtDate(row.day).slice(0,5)}</small></button>`;}).join('');
-  return `<section class="sales-panel sales-daily-chart"><div class="sales-panel-head"><div><h3>Diễn biến bán theo ngày</h3><small>${series.length?`${series.length} ngày · nhấn cột để xem báo cáo ngày đó`:'Chưa có báo cáo tách theo ngày'}</small></div><div class="sales-chart-filters">${buttons}</div></div>${series.length?`<div class="sales-chart-scroll-actions"><button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Xem ngày cũ hơn" title="Xem ngày cũ hơn" onclick="scrollSalesChart('older')">${appIcon('chevron-left')}</button><button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Xem ngày mới hơn" title="Xem ngày mới hơn" onclick="scrollSalesChart('newer')">${appIcon('chevron-right')}</button></div><div class="sales-chart-bars" onscroll="salesChartScrollLeft=this.scrollLeft">${bars}</div>`:'<div class="dash-quiet">Báo cáo nhiều ngày vẫn có trong lịch sử; không gán số bán của cả kỳ vào ngày cuối.</div>'}</section>`;
+  const scrollActions=series.length?`<div class="sales-chart-scroll-actions"><button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Xem ngày cũ hơn" title="Xem ngày cũ hơn" onclick="scrollSalesChart('older')">${appIcon('chevron-left')}</button><button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Xem ngày mới hơn" title="Xem ngày mới hơn" onclick="scrollSalesChart('newer')">${appIcon('chevron-right')}</button></div>`:'';
+  return `<section class="sales-panel sales-daily-chart"><div class="sales-panel-head"><div class="sales-chart-heading"><div><h3>Diễn biến bán theo ngày</h3><small>${series.length?`${series.length} ngày · nhấn cột để xem báo cáo ngày đó`:'Chưa có báo cáo tách theo ngày'}</small></div>${scrollActions}</div><div class="sales-chart-filters">${buttons}</div></div>${series.length?`<div class="sales-chart-bars" onscroll="salesChartScrollLeft=this.scrollLeft">${bars}</div>`:'<div class="dash-quiet">Báo cáo nhiều ngày vẫn có trong lịch sử; không gán số bán của cả kỳ vào ngày cuối.</div>'}</section>`;
 }
 /* Read-only view over reports: never persist this aggregate or feed it to the
    report/stock ledger writer. Partial multi-day reports cannot be prorated. */
@@ -22461,6 +22613,8 @@ function installPointerControlGlow(){
 }
 installPointerControlGlow();
 installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNotificationButton();renderSb();ensureAccessSidebarLink();},0);
+// A painted local shell is sufficient; cloud, images and optional modules continue in the background.
+window.PlatedioStartup?.ready();
 
 </script>
 <div id="app-context-menu" class="app-context-menu" role="menu" aria-label="Thao tác theo ngữ cảnh"></div>

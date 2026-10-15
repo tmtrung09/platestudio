@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /**
  * Mobile regression check for Plate Studio.
  *
@@ -188,6 +189,7 @@ for (const route of routes) {
   let loadError = '';
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+ await waitForAppReady(page);
     /* App normally requires a cloud session. The QA context is deliberately
        isolated and has no credentials, so only in this temporary browser we
        hide the sign-in layer and exercise the read-only route renderer. */

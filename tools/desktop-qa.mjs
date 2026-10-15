@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /**
  * Desktop regression check for Plate Studio.
  *
@@ -74,6 +75,7 @@ for (const route of routes.filter(route => (profile.id !== 'laptop' || laptopRou
   let loadError = '';
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+ await waitForAppReady(page);
     await page.waitForFunction(() => typeof window.goPage === 'function', { timeout: 8000 });
     await page.evaluate(targetRoute => {
       const style = document.createElement('style');

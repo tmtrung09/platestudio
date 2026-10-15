@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /**
  * Production-flow regression check for Plate Studio.
  *
@@ -43,6 +44,7 @@ page.on('pageerror', error => consoleErrors.push(`pageerror: ${error.message}`))
 page.on('console', message => { if (message.type() === 'error') consoleErrors.push(`console: ${message.text()}`); });
 
 await page.goto(pathToFileURL(appFile).href, { waitUntil: 'domcontentloaded', timeout: 20000 });
+ await waitForAppReady(page);
 await page.waitForFunction(() => typeof window.goPage === 'function', { timeout: 8000 });
 const results = await page.evaluate(async () => {
   const rows = [];

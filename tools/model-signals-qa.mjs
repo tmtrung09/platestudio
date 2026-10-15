@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {resolve} from 'node:path';
@@ -8,6 +9,7 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:
 try{for(const width of [320,390,640,1024,1440])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900},hasTouch:width<600,reducedMotion:'reduce'});await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.evaluate(theme=>{
   document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');currentUser=null;cloudReady=false;
   const photo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="300" height="180" fill="#8374c5"/><circle cx="150" cy="90" r="65" fill="#ffd080"/></svg>');

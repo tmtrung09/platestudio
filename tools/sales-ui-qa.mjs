@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import {chromium} from 'playwright-core';
 import {existsSync,mkdirSync} from 'node:fs';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -10,6 +11,7 @@ for(const width of [390,1280])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await context.newPage();
  await page.route('**/*.supabase.co/**',route=>route.abort());
  await page.goto(pathToFileURL(resolve(root,'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.waitForFunction(()=>typeof renderSalesPage==='function');
  await page.evaluate(theme=>{
   document.documentElement.setAttribute('data-theme',theme);const style=document.createElement('style');style.textContent='#auth-ov{display:none!important}';document.head.append(style);

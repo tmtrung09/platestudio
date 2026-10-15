@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {mkdirSync} from 'node:fs';
@@ -8,9 +9,10 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:
 function contrast(a,b){const lum=c=>c.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>n/255).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);return (Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);}
 try{for(const width of [320,390,640,1280])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:width===640?360:900},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await context.route(/^https?:/,r=>r.abort());
- await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.FilamentPickers);
+ await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);await page.waitForFunction(()=>!!window.FilamentPickers);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');currentUser=null;cloudReady=false;canAccess=()=>true;
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');currentUser=null;cloudReady=false;canAccess=()=>true;
   operations={};models=[];orders=[];plates=[];pitems=[];
   fils=Array.from({length:320},(_,i)=>({id:'f-'+i,brand:i===1?'Generic':'Timory',name:i===1?'Xám xi măng':i===2?'Marble Hồng – tên màu dài để kiểm tra bố cục':'Màu thử '+i,hex:i===1?'#676767':i===2?'#dd88aa':'#ffeecc',mat:i%2?'PETG':'PLA'}));
   sv(K.fils,fils);openNightPlanEditor('lucifer');

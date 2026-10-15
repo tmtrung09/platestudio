@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import {chromium} from 'playwright-core';
 import {mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -11,6 +12,7 @@ try{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*.supabase.co/**',route=>route.abort());
   await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
   await page.waitForFunction(()=>typeof goPage==='function');
   await page.evaluate(theme=>{
    document.documentElement.dataset.theme=theme;
@@ -94,7 +96,8 @@ try{
   await page.evaluate(()=>{currentUser=null;setProductionNeedsFilter('source','stock');setProductionNeedsQuery('san pham 7');goPage('plates');});
   await page.goBack();await page.waitForTimeout(300);
   assert.equal(await page.locator('.page.active input[aria-label="Tìm việc cần in"]').inputValue(),'san pham 7','Back restores search and source');
-  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>typeof goPage==='function');
+  await page.reload({waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);await page.waitForFunction(()=>typeof goPage==='function');
   assert.equal(await page.evaluate(()=>productionNeedsState.query),'san pham 7','Initial route restores query before auth bootstrap');
   // Activate the destination just as authenticated bootstrap does in the app.
   await page.evaluate(()=>{document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');goPage(curPage,{historyMode:'replace'});});

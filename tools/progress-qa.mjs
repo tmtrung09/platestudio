@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /* Native Print Progress: no live writes, real routes, all views and scroll owners. */
 import {chromium} from 'playwright-core';
 import {mkdirSync} from 'node:fs';
@@ -12,6 +13,7 @@ try{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*.supabase.co/**',route=>route.abort());
   await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
   await page.waitForFunction(()=>typeof goPage==='function');
   await page.evaluate(theme=>{
    document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
@@ -76,7 +78,8 @@ try{
   assert.equal(await search.inputValue(),'khan giay','Back restores search');assert.equal(await page.locator('#pp-view').inputValue(),'models');assert.equal(await page.locator('#pp-status').inputValue(),'ready');
   await page.evaluate(()=>{currentUser=null;goPage('orders',{historyMode:'none'});window.siblingRect=document.getElementById('page-orders').getBoundingClientRect().toJSON();goPage('progress',{historyMode:'none'});goPage('orders',{historyMode:'none'});});
   assert.deepEqual(await page.evaluate(()=>{const rect=document.getElementById('page-orders').getBoundingClientRect();return [rect.x,rect.width];}),await page.evaluate(()=>[siblingRect.x,siblingRect.width]),'No layout leakage into adjacent pages');
-  await page.evaluate(()=>goPage('progress'));await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>typeof goPage==='function');
+  await page.evaluate(()=>goPage('progress'));await page.reload({waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);await page.waitForFunction(()=>typeof goPage==='function');
   await page.evaluate(()=>{document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');goPage('progress',{historyMode:'replace'});});
   assert.equal(await page.locator('#pp-search').inputValue(),'khan giay','Reload restores the view before authenticated render');assert.equal(await page.locator('#pp-view').inputValue(),'models');
   assert.deepEqual(errors,[]);

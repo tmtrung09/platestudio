@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {mkdirSync} from 'node:fs';
@@ -8,8 +9,9 @@ const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chr
 try{for(const width of [320,390,640,1280])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');cloudReady=false;currentUser=null;sb=null;canAccess=()=>true;kiotSalesArchiveLoaded=true;kiotSalesDetailCache={};
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser=null;sb=null;canAccess=()=>true;kiotSalesArchiveLoaded=true;kiotSalesDetailCache={};
   orders=[];pitems=[];batchReports=[];operations={products:[],deliveries:[],deliveryBatches:[],qualityIssues:[]};normalizeOperations();
   models=[{id:'flower',name:'Flower Coasters',images:[],variants:[],parts:[{id:'part',name:'Lót ly hoa',qtyPerModel:1}]}];
   kiotSalesRangeToday=()=> '2026-10-14';kiotViet={catalog:[{sku:'A',name:'Lót ly hoa',stock:1}],mappings:[{sku:'A',modelId:'flower'}],sales:[],salesImports:Array.from({length:45},(_,i)=>{const day=salesPageShiftDay('2026-10-14',-i);return {id:'day-'+i,period:{from:day,to:day},sales:[{sku:'A',name:'Lót ly hoa',category:'Decor',qty:i+1,revenue:(i+1)*100},{sku:'B',name:'Sản phẩm có tên dài để kiểm tra bố cục trên màn hình nhỏ',category:'Decor',qty:2,revenue:200}]};}),snapshots:[],aiInsights:[]};

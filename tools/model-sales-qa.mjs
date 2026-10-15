@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {resolve} from 'node:path';
@@ -8,8 +9,9 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:
 try{for(const width of [390,1280])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');cloudReady=false;currentUser=null;sb=null;
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser=null;sb=null;
   orders=[];pitems=[];batchReports=[];operations={products:[],deliveries:[],deliveryBatches:[],qualityIssues:[]};normalizeOperations();
   models=[{id:'flower',name:'Flower Coasters',createdAt:'2026-10-01',images:['data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="pink"/></svg>')],variants:[],parts:[{id:'flower-part',name:'Lót ly hoa',qtyPerModel:1}]}];
   kiotSalesDetailCache={};kiotSalesArchiveLoaded=true;kiotSalesArchiveAvailable=true;modelKiotReadError='';salesPageReportId='day';salesPageDatePreset='all';
@@ -72,7 +74,8 @@ try{for(const width of [390,1280])for(const theme of ['light','dark']){
   kiotViet.salesImports=[report];kiotSalesArchiveReadyForSettings=true;
   saveLocalValue(K.models,models);saveLocalValue(K.kiotViet,kiotVietForCloudSettings());saveLocalValue(K.kiotSalesDetails,{day:{revision:'r1',sales:report.sales}});
  });await page.reload({waitUntil:'domcontentloaded'});
- await page.evaluate(()=>{currentUser=null;sb=null;cloudReady=false;document.getElementById('auth-ov').style.setProperty('display','none','important');viewModel('flower');});
+ await waitForAppReady(page);
+ await page.evaluate(()=>{currentUser=null;sb=null;cloudReady=false;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');viewModel('flower');});
  assert.equal(await page.evaluate(()=>kiotViet.sales.length),0);assert.equal(await page.locator('[data-model-sold]').textContent(),'3','Reload reads archive cache, not erased flat sales');
  assert.deepEqual(errors,[]);console.log(`PASS model sales ${width}/${theme}: archive/cache revision, 3 vs 0 regression, period, lazy load, retry, AI payload, unknown vs zero, permission, preserved DOM/scroll`);await context.close();
 }}finally{await browser.close();}

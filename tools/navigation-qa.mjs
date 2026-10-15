@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /** Mobile navigation regression: isolated session, no cloud writes. */
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
@@ -15,6 +16,7 @@ const browser=await chromium.launch({executablePath,headless:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
  await page.goto(pathToFileURL(join(root,'plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.waitForFunction(()=>typeof renderRoleMobileNavigation==='function');
  assert.equal(await page.evaluate(()=>typeof window.PlateLiquidGlass),'undefined','No glass renderer is bootstrapped');
  await page.addStyleTag({content:'#auth-ov{display:none!important}'});

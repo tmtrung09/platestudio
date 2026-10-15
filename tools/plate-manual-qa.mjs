@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {mkdirSync,readFileSync} from 'node:fs';
@@ -9,9 +10,10 @@ try{for(const width of [320,390,1440])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[];
  await context.route(/^https?:/,r=>r.abort());page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.waitForFunction(()=>!!window.PlatePlanFiles);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');currentUser=null;cloudReady=false;
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');currentUser=null;cloudReady=false;
   operations={};models=[{id:'known',name:'Model thư viện',parts:[{id:'body',name:'Thân',filamentIds:['white']}]}];fils=[{id:'white',name:'Trắng',hex:'#fff'}];pitems=[];orders=[];plates=[];
   sv(K.models,models);sv(K.fils,fils);openNightPlanEditor('lucifer');window.manualNode=document.getElementById('pp-manual-name');
  },theme);
@@ -43,8 +45,9 @@ try{for(const width of [320,390,1440])for(const theme of ['light','dark']){
  await page.locator('#pp-manual-name').fill('');
  await page.getByRole('button',{name:/^Lưu plate/}).click();
  assert.equal(await page.locator('.pp-edit-dlg').isVisible(),false);
- await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.PlatePlanFiles);
- await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');currentUser=null;cloudReady=false;openNightPlanEditor('lucifer');},theme);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);await page.waitForFunction(()=>!!window.PlatePlanFiles);
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');currentUser=null;cloudReady=false;openNightPlanEditor('lucifer');},theme);
  assert.equal(await page.locator('.pp-queued-row').count(),3,'Saved manual rows survive a real reload');
  assert.equal(await page.evaluate(async id=>await (await PlatePlanFiles.get(id)).blob.text(),meta.id),'print-input-original-bytes','Pending file survives reload byte-for-byte');
  await page.locator('.pp-edit-dlg').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));

@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /** Isolated, network-blocked regression for the entire notification family. */
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
@@ -11,8 +12,9 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},hasTouch:!!profile.touch,isMobile:!!profile.touch,reducedMotion:'reduce'});
  await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');cloudReady=false;currentUser=null;sb=null;
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser=null;sb=null;
   isWorkspaceOwner=()=>false;notificationUserKey=()=> 'qa-reader';canAccess=permission=>permission==='assembly.qc';
   orders=[];pitems=[];batchReports=[];models=[];operations={products:[],deliveries:[],deliveryBatches:[],qualityIssues:[],events:[
    {id:'print',type:'print_completed',title:'Mẻ in đã hoàn tất',detail:'Flower Coasters · 3 sản phẩm',createdAt:'2026-10-10T08:00:00Z',permissions:['assembly.qc'],readBy:[]},
@@ -86,7 +88,8 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  await page.evaluate(()=>{const event={id:'keyboard-activation',type:'order_created',title:'Enter mở đơn',recipients:['qa-reader'],readBy:[]};operations.events.unshift(event);showSystemNotificationPopup(event,{sound:false});});
  await page.locator('.system-popup-open').focus();await page.keyboard.press('Enter');await page.locator('.system-notification-popup').waitFor({state:'detached'});assert.equal(await page.evaluate(()=>curPage),'orders');
  await page.reload({waitUntil:'domcontentloaded'});
- await page.evaluate(()=>{document.getElementById('auth-ov').style.setProperty('display','none','important');cloudReady=false;currentUser=null;sb=null;isWorkspaceOwner=()=>false;notificationUserKey=()=> 'qa-reader';canAccess=permission=>permission==='assembly.qc';ensureSystemNotificationButton();openSystemNotifications();});
+ await waitForAppReady(page);
+ await page.evaluate(()=>{document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser=null;sb=null;isWorkspaceOwner=()=>false;notificationUserKey=()=> 'qa-reader';canAccess=permission=>permission==='assembly.qc';ensureSystemNotificationButton();openSystemNotifications();});
  assert.equal(await panel.locator('[data-event-id="print"]').getAttribute('class'),'notification-row','Actual reload retains read state');
  await page.evaluate(()=>{operations.events=[];ensureSystemNotificationButton();});assert.equal(await panel.locator('.notification-row').count(),0);assert.match(await panel.textContent(),/Chưa có thông báo/);
  assert.deepEqual(errors,[]);console.log(`PASS notifications ${profile.width}x${profile.height}/${theme}: dropdown, privacy, durable read state, preserved dialog/focus, all popup close paths/timers, shared borderless rail`);

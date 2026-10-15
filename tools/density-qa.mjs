@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /* Shared density: real routes, both themes and input modes, isolated from cloud. */
 import { chromium } from 'playwright-core';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -16,6 +17,7 @@ try {
     const page = await context.newPage();
     await page.route('**/*.supabase.co/**', route => route.abort());
     await page.goto(pathToFileURL(resolve('plate-studio.html')).href, { waitUntil: 'domcontentloaded' });
+ await waitForAppReady(page);
     await page.waitForFunction(() => typeof goPage === 'function');
     await page.evaluate(theme => {
       document.documentElement.dataset.theme = theme;

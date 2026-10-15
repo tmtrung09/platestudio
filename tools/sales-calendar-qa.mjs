@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {mkdirSync} from 'node:fs';
@@ -9,8 +10,9 @@ const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chr
 try{for(const profile of profiles)for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:profile,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));await context.route(/^https?:/,route=>route.abort());
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');cloudReady=false;currentUser={id:'qa-calendar'};canAccess=()=>true;cloudWorkspaceId=()=> 'qa-calendar';
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser={id:'qa-calendar'};canAccess=()=>true;cloudWorkspaceId=()=> 'qa-calendar';
   sb={rpc:async()=>({data:[]})};maybeStartPageGuide=()=>{};loadKiotSalesArchiveIndex=async()=>[];kiotSalesArchiveLoaded=true;kiotInventoryLedger.loaded=true;loadKiotInventoryLedger=async()=>{kiotInventoryLedger.loaded=true;return true;};
   kiotViet={catalog:[],mappings:[],sales:[],salesImports:[11,12,13].map((day,index)=>({id:'calendar-'+day,period:{from:'2026-08-'+day,to:'2026-08-'+day},importedAt:'2026-08-14T00:00:00Z',sales:index===2?[]:[{sku:'QA',name:'Model kiểm thử',qty:index+3,revenue:1000}]}))};
   kiotSalesRangeToday=()=> '2026-10-14';refreshKiotSalesRangeAutomation=async()=>{};window.qaCalendarData=JSON.stringify(kiotViet);salesPageReportId='calendar-11';salesPageDatePreset='all';salesPageCalendarOpen=false;salesPageCalendarMonth='2026-08';goPage('sales',{historyMode:'none'});

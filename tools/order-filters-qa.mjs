@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 /* Order filter layout and interactions, ephemeral fixture with no cloud access. */
 import { chromium } from 'playwright-core';
 import AxeBuilder from '@axe-core/playwright';
@@ -17,10 +18,11 @@ try {
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.route('https://**/*',route=>route.abort());
     await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ await waitForAppReady(page);
     await page.waitForFunction(()=>typeof goPage==='function');
     await page.evaluate(theme=>{
       document.documentElement.dataset.theme=theme;
-      document.getElementById('auth-ov').style.setProperty('display','none','important');
+      document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
       projects=[{id:'qa-project',name:'Dự án Tết — Bộ trang trí và phụ kiện tên rất dài'}];
       orders=[
         {id:'qa-one',note:'Đơn đèn lồng',status:'processing',orderedBy:'Nguyễn An',projectId:'qa-project',createdAt:'2026-10-15',items:[]},

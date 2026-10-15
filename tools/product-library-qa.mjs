@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright-core';
 import AxeBuilder from '@axe-core/playwright';
@@ -14,9 +15,10 @@ try {
     await context.route(/^https?:/,route=>route.abort());
     const page=await context.newPage();
     await page.goto(pathToFileURL(resolve('plate-studio.html')).href);
+ await waitForAppReady(page);
     await page.evaluate(theme=>{
       document.documentElement.dataset.theme=theme;
-      document.getElementById('auth-ov').style.setProperty('display','none','important');
+      document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
       const canvas=document.createElement('canvas');canvas.width=canvas.height=24;canvas.getContext('2d').fillRect(0,0,24,24);
       models=[{id:'a',name:'Model A',images:['https://qa.invalid/missing.jpg'],parts:[],variants:[{id:'aa',name:'Biến thể aa'},{id:'ab',name:'Biến thể ab'}],cats:['QA']},{id:'b',name:'Model B',images:[canvas.toDataURL()],parts:[],variants:[],cats:[]}];
       operations.products=[];
@@ -115,7 +117,8 @@ try {
     await page.locator('#btn-select-models').click();
     // Reload reads the same recipe from the existing operations persistence.
     await page.reload();
-    await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');goPage('models');setModelFilterCat('all');},theme);
+ await waitForAppReady(page);
+    await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');goPage('models');setModelFilterCat('all');},theme);
     assert.match(await page.locator('#model-grid').innerText(),/Bộ C mới/);
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('.product-library-actions button').filter({hasText:'Xóa'}).click();
