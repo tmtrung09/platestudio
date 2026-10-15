@@ -1,0 +1,51 @@
+/* Shared geometry and approved artwork, scoped to page cards only. */
+.page .page-info-card{--a:var(--info-a);--d:var(--info-d);--p:var(--info-p);--warm:#f1cd87;--paper-local:var(--s);position:relative;isolation:isolate;overflow:hidden!important;min-width:0;min-height:196px!important;padding:24px!important;margin-bottom:16px!important;border:0!important;border-radius:24px!important;background:linear-gradient(108deg,color-mix(in srgb,var(--info-p) 13%,var(--s)) 15%,var(--s) 65%,color-mix(in srgb,var(--pu) 7%,var(--s)))!important;box-shadow:none!important;color:var(--t)}
+.page .page-info-card::before{content:"";position:absolute;inset:auto -30px -60px auto;width:370px;height:260px;border-radius:50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--info-p) 17%,transparent),transparent 70%);z-index:0;pointer-events:none}
+.page .page-info-card::after{display:none!important}
+.page .page-info-card>.page-info-content{position:relative;z-index:2;min-width:0;max-width:calc(100% - 265px)}
+.page .page-info-heading .page-heading-main{display:block!important;padding:0!important;gap:0!important}
+.page .page-info-heading .page-heading-main>div:first-child{width:100%;min-width:0}
+.page .page-info-heading .page-info-copy h1{margin:6px 0 9px!important;font-size:28px!important;line-height:1.2!important;letter-spacing:-.035em!important;overflow-wrap:anywhere}
+.page .page-info-heading .page-info-copy p{font-size:13px!important;line-height:1.6!important;margin:0!important;color:var(--t2)}
+.page .page-info-heading .page-heading-eyebrow{font-size:10px!important;line-height:1.5;color:var(--t2);letter-spacing:.07em}
+.page .page-info-card .page-info-tools{margin-top:15px;gap:7px;flex-wrap:wrap}
+.page .page-info-card .page-info-tools .btn{min-height:44px!important;border-radius:12px!important;padding:7px 11px!important;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.page-info-tools svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.page-info-tools .guide-replay-cue svg{width:10px;height:10px}
+.page .page-info-card .page-info-art{position:absolute;z-index:1;right:13px;top:50%;width:270px;height:185px;transform:translateY(-50%);pointer-events:none;color:var(--t2)}
+.page-info-art>svg{display:block;width:100%;height:100%;overflow:visible}
+.page .page-info-card .page-info-motion{position:absolute!important;z-index:3;right:7px;bottom:5px;min-width:44px!important;min-height:44px!important;color:var(--t2)!important}
+.page .page-info-card.page-info-heading .page-info-motion{position:static!important;padding:0!important}
+.page .page-info-card:not(.page-info-heading){display:block!important}
+.page .page-info-card:not(.page-info-heading)>.page-info-content+.page-info-content{margin-top:13px}
+.page .page-info-card:not(.page-info-heading) h2{font-size:24px!important;line-height:1.25!important;margin:6px 0 9px!important;overflow-wrap:anywhere}
+.page .page-info-card:not(.page-info-heading) p{color:var(--t2);font-size:13px;line-height:1.6}
+.page .page-info-card .packaging-summary{width:max-content;min-width:100px;padding:10px 15px;background:var(--s2)}
+.page .page-info-card .dashboard-shift-card{display:none}
+.page .page-info-card .dashboard-role-actions{justify-content:flex-start;margin-top:0!important;flex-wrap:wrap}
+.page .page-info-card .sales-hero-actions{justify-content:flex-start;flex-wrap:wrap}
+.page .page-info-card>.btn.page-info-content{min-height:44px!important}
+.page-info-host #ov-order-form .of-hd-title,.page-info-host #ov-order-form .of-hd-sub{display:none}
+.page-info-host .delivery-wizard-hero h1,.page-info-host #delivery-receive-page .staff-receive-hero>h1{display:none}
+@media(max-width:1050px){.page .page-info-card>.page-info-content{max-width:calc(100% - 205px)}.page .page-info-card .page-info-art{right:3px;width:215px;height:158px}.page .page-info-heading .page-info-copy h1{font-size:25px!important}}
+@media(max-width:600px){
+  .page .page-info-card{padding:20px!important;min-height:238px!important;margin-left:8px!important;margin-right:8px!important;border-radius:22px!important}
+  .page .page-info-card>.page-info-content{max-width:100%}
+  .page .page-info-heading .page-info-copy h1{font-size:24px!important;line-height:1.22!important;margin-top:7px!important}
+  .page .page-info-card .page-info-art{right:-8px;top:auto;bottom:-4px;width:190px;height:130px;transform:none;opacity:.6}
+  .page .page-info-card .page-info-tools{max-width:calc(100% - 30px)}
+  .page .page-info-card:not(.page-info-heading) h2{font-size:22px!important}
+  .page .page-info-card .sales-hero-actions .btn{flex:0 1 auto}
+  .page .page-info-card .dashboard-role-actions .btn{flex:0 1 auto}
+  .page .page-info-card::before{opacity:.4}
+}
+
+
+.page-info-card .scene .outline{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.page-info-card .scene .a{fill:var(--a)}.page-info-card .scene .d{fill:var(--d)}.page-info-card .scene .p{fill:var(--p)}.page-info-card .scene .warm{fill:var(--warm)}.page-info-card .scene .paper{fill:var(--paper-local)}.page-info-card .scene .ground{fill:var(--a);opacity:.1}.page-info-card .scene .soft-stroke{stroke:var(--a);stroke-width:2;fill:none;stroke-linecap:round}.page-info-card .scene .quiet{opacity:.3}.page-info-card .scene .white-line{stroke:var(--paper-local);stroke-width:2;fill:none;stroke-linecap:round}.page-info-card .scene .track{fill:none;stroke:var(--a);stroke-width:2;stroke-dasharray:3 8;opacity:.65;stroke-linecap:round}
+.page-info-card .scene .animated{transform-box:fill-box;transform-origin:center}html[data-page-info-motion="paused"] .page-info-card .scene .animated{animation-play-state:paused!important}.page-info-card .scene .float{animation:page-info-float 5s ease-in-out infinite}.page-info-card .scene .float-alt{animation:page-info-float 5s -2.4s ease-in-out infinite}.page-info-card .scene .pulse{animation:page-info-pulse 3.8s ease-in-out infinite}.page-info-card .scene .spin{animation:page-info-spin 12s linear infinite}.page-info-card .scene .dash{animation:page-info-dash 5s linear infinite}.page-info-card .scene .shuttle{animation:page-info-shuttle 5s ease-in-out infinite}.page-info-card .scene .scan{animation:page-info-scan 4.8s ease-in-out infinite}.page-info-card .scene .grow{animation:page-info-grow 5s ease-in-out infinite;transform-origin:center bottom}.page-info-card .scene .turn{animation:page-info-turn 6s ease-in-out infinite}.page-info-card .scene .parcel-trip{animation:page-info-parcel-trip 6s ease-in-out infinite}.page-info-card .scene .truck-trip{animation:page-info-truck-trip 7s ease-in-out infinite}.page-info-card .scene .flap{animation:page-info-flap 5s ease-in-out infinite;transform-origin:left center}.page-info-card .scene .draw{stroke-dasharray:160;animation:page-info-draw 5s ease-in-out infinite}.page-info-card .scene .blink{animation:page-info-blink 4s ease-in-out infinite}
+@keyframes page-info-float{0%,100%{transform:translateY(2px)}50%{transform:translateY(-7px)}}@keyframes page-info-pulse{0%,100%{opacity:.45}50%{opacity:1}}@keyframes page-info-spin{to{transform:rotate(360deg)}}@keyframes page-info-dash{to{stroke-dashoffset:-66}}@keyframes page-info-shuttle{0%,100%{transform:translateX(-15px)}50%{transform:translateX(32px)}}@keyframes page-info-scan{0%,100%{transform:translateY(0);opacity:.2}50%{transform:translateY(53px);opacity:1}}@keyframes page-info-grow{0%,100%{transform:scaleY(.7)}50%{transform:scaleY(1)}}@keyframes page-info-turn{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}@keyframes page-info-parcel-trip{0%,12%{transform:translateX(-12px);opacity:0}30%,65%{opacity:1}88%,100%{transform:translateX(34px);opacity:0}}@keyframes page-info-truck-trip{0%,100%{transform:translateX(-8px) translateY(0)}45%,55%{transform:translateX(13px) translateY(-2px)}}@keyframes page-info-flap{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.45)}}@keyframes page-info-draw{0%,15%{stroke-dashoffset:160}55%,90%{stroke-dashoffset:0}100%{stroke-dashoffset:-160}}@keyframes page-info-blink{0%,25%,75%,100%{opacity:.35}45%,55%{opacity:1}}
+
+@media(prefers-reduced-motion:reduce){.page-info-card .scene .animated{animation:none!important;transition:none!important}}
+
+/* Pause rules follow animation shorthands so hidden cards consume no animation work. */
+.page-info-card .scene .animated{animation-play-state:paused}.page-info-card.is-art-visible .scene .animated{animation-play-state:running}

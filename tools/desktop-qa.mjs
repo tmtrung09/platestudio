@@ -45,7 +45,9 @@ mkdirSync(outputDir, { recursive: true });
 
 const now = new Date();
 const stamp = now.toISOString().replace(/[:.]/g, '-');
-const browser = await chromium.launch({ executablePath, headless: true });
+// Axe reads external stylesheets. Only this ephemeral local-file QA browser
+// permits file-origin reads; production browser security is unchanged.
+const browser = await chromium.launch({ executablePath, headless: true, args:['--allow-file-access-from-files'] });
 const report = {
   createdAt: now.toISOString(),
   mode: 'isolated UI/UX audit (không đăng nhập, không ghi dữ liệu)',
@@ -392,3 +394,4 @@ const reportFile = join(outputDir, `report-${stamp}.json`);
 writeFileSync(reportFile, JSON.stringify(report, null, 2));
 writeFileSync(join(outputDir, 'latest.json'), JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ report: `qa-results/desktop/report-${stamp}.json`, latest: 'qa-results/desktop/latest.json', summary: report.summary, failures: report.routes.filter(row => row.errors.length).map(row => ({ route: row.route, errors: row.errors })), warnings: report.routes.filter(row => row.warnings.length).map(row => ({ route: row.route, warnings: row.warnings })) }, null, 2));
+process.exitCode=report.summary.failed?1:0;

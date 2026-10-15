@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const out=resolve('qa-results/order-filters');
 mkdirSync(out,{recursive:true});
-const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--allow-file-access-from-files']});
 let profiles=0;
 try {
   for(const [width,height] of [[320,850],[390,850],[640,360],[640,850],[768,850],[1024,850],[1440,850]])for(const theme of ['light','dark']){

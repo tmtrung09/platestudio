@@ -9,7 +9,7 @@ try{for(const width of [320,390,640,1024,1440])for(const theme of ['light','dark
  const context=await browser.newContext({viewport:{width,height:900},hasTouch:width<600,reducedMotion:'reduce'});await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await page.evaluate(theme=>{
-  document.documentElement.dataset.theme=theme;document.getElementById('auth-ov').style.setProperty('display','none','important');currentUser=null;cloudReady=false;
+  document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');currentUser=null;cloudReady=false;
   const photo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="300" height="180" fill="#8374c5"/><circle cx="150" cy="90" r="65" fill="#ffd080"/></svg>');
   models=Array.from({length:350},(_,i)=>({id:'m'+i,name:i===0?'Model bán chạy tên rất dài để kiểm tra bố cục':'Model '+i,createdAt:new Date(Date.UTC(2026,9,1,0,350-i)).toISOString(),images:i===0?[photo]:i===1?['https://qa.invalid/broken.jpg']:[],parts:[{id:'body',name:'Thân',qtyPerModel:1}],variants:[],cats:[]}));
   operations={products:[],qualityIssues:[],deliveries:[{id:'old',orderId:'o',items:[{itemId:'it',modelId:'m0',qty:2}]}],deliveryBatches:[{id:'ship',status:'sent',items:[{orderId:'o',itemId:'it',modelId:'m0',sentQty:1}]},{id:'cancel',status:'cancelled',items:[{orderId:'o',itemId:'it',modelId:'m0',sentQty:20}]}],openingStock:[{id:'opening',modelId:'m0',qty:8,remainingQty:3},{id:'inactive',modelId:'m0',qty:100,remainingQty:100,active:false}]};normalizeOperations();
@@ -28,6 +28,7 @@ try{for(const width of [320,390,640,1024,1440])for(const theme of ['light','dark
  const card=page.locator('#model-grid [data-model-id="m0"]'),info=card.locator('.model-signal-button'),panel=page.locator('#model-signal-panel');
  if(width<600)await info.click();else await card.hover();
  await panel.waitFor({state:'visible'});assert.match(await panel.innerText(),/Đã bán.*30 ngày/s);assert.match(await panel.innerText(),/2\/30 ngày/);
+ if(width>=600){await page.evaluate(()=>{document.getElementById('pg-content').scrollTop+=3;});await page.waitForTimeout(220);assert.equal(await panel.isVisible(),true,'Tiny layout/scroll adjustments keep the hovered or focused peek open');}
  assert.equal(await page.locator('.cam-fab').isVisible(),false,'Floating camera does not cover mobile peek');
  assert.equal(await page.locator('#dlg-mv').isVisible(),false,'Peek does not open detail');
  const rect=await panel.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1&&rect.y>=0&&rect.y+rect.height<=900,'Portal bounded by viewport');

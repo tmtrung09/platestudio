@@ -8208,6 +8208,10 @@ const PAGE_META = {
   inventory:{eyebrow:'Xưởng',title:'Sản xuất',subtitle:'Nhu cầu in và đối chiếu.'},
   devices:{eyebrow:'Bảo mật vận hành',title:'Thiết bị',subtitle:'Thiết bị báo cáo.'},
   access:{eyebrow:'Hệ thống',title:'Phân quyền',subtitle:'Quyền truy cập.'},
+  'order-form':{eyebrow:'Vận hành',title:'Tạo / sửa đơn',subtitle:'Sản phẩm và số lượng.'},
+  'delivery-builder':{eyebrow:'Giao hàng',title:'Tạo phiếu giao',subtitle:'Chuẩn bị chuyến hàng.'},
+  'delivery-receive':{eyebrow:'Cửa hàng',title:'Nhận hàng',subtitle:'Kiểm đếm hàng nhận.'},
+  'kiotviet-map':{eyebrow:'Bán hàng',title:'Ghép SKU',subtitle:'SKU và thành phần.'},
   data:{eyebrow:'Hệ thống',title:'Dữ liệu',subtitle:'Sao lưu và nhập xuất.'}
 };
 /* Mỗi trang chức năng có một địa chỉ nhỏ trong lịch sử trình duyệt. Nhờ vậy
@@ -8245,6 +8249,7 @@ function updatePageHeading(pageKey) {
   let heading = page.querySelector(':scope > .page-heading');
   if(pageKey==='dashboard'){heading?.remove();return;}
   if(!heading) { heading=document.createElement('header'); heading.className='page-heading'; page.prepend(heading); }
+  if(window.PlatePageInfoCards?.heading(heading,pageKey,meta))return;
   heading.innerHTML=`<div class="page-heading-main"><div><div class="page-heading-eyebrow">${meta.eyebrow}</div><h1>${meta.title}</h1><p>${meta.subtitle}</p></div><div class="gap-row"><button class="btn btn-ghost btn-sm page-guide-btn" data-page-guide="${esc(pageKey)}" type="button" onclick="openPageGuide('${pageKey}')" title="Mở lại hướng dẫn sử dụng trang này">? Hướng dẫn <span class="guide-replay-cue" aria-hidden="true">↻</span></button><button class="btn btn-ghost btn-sm page-layout-btn" type="button" onclick="openPageLayoutManager('${pageKey}')" title="Sắp xếp các khối hiển thị trên trang này">☷ Bố cục</button></div></div>`;
 }
 
@@ -8655,6 +8660,7 @@ function renderPage(p) {
   else if (p === 'devices')   renderDevicesPage();
   else if (p === 'access')    renderAccessPage();
   else if (p === 'progress')  renderPrintProgressPage();
+  window.PlatePageInfoCards?.sync(p);
 }
 
 function toggleSbPin() {
@@ -10583,7 +10589,8 @@ function positionModelSignal(){const panel=document.getElementById('model-signal
 }
 function showModelSignal(card,pinned=false){if(!card||modelSelectionMode||modelSignalHoverPaused&&!pinned||card===modelSignalDismissed||modelSignalPinned&&!pinned)return;clearTimeout(modelSignalCloseTimer);modelSignalActive?.querySelector('.model-signal-button')?.setAttribute('aria-expanded','false');modelSignalActive=card;modelSignalPinned=pinned;const record=modelSignalIndex.get(card.dataset.modelId);if(!record)return;const panel=ensureModelSignalPanel();panel.innerHTML=modelSignalPanelHTML(record);panel.hidden=false;document.body.classList.add('model-signal-open');panel.dataset.modelId=record.model.id;card.querySelector('.model-signal-button')?.setAttribute('aria-expanded','true');positionModelSignal();}
 function toggleModelSignal(card){modelSignalDismissed=null;modelSignalHoverPaused=false;if(modelSignalActive===card&&modelSignalPinned)closeModelSignal(true);else{showModelSignal(card,true);document.querySelector('#model-signal-panel header button')?.focus({preventScroll:true});}}
-function scheduleCloseModelSignal(){clearTimeout(modelSignalCloseTimer);if(!modelSignalPinned)modelSignalCloseTimer=setTimeout(()=>closeModelSignal(),180);}
+function modelSignalHasInteraction(){return !!(modelSignalActive?.matches(':hover,:focus-within')||document.getElementById('model-signal-panel')?.matches(':hover,:focus-within'));}
+function scheduleCloseModelSignal(){clearTimeout(modelSignalCloseTimer);if(!modelSignalPinned)modelSignalCloseTimer=setTimeout(()=>{if(!modelSignalPinned&&!modelSignalHasInteraction())closeModelSignal();},180);}
 function closeModelSignal(returnFocus=false){clearTimeout(modelSignalCloseTimer);const card=modelSignalActive,panel=document.getElementById('model-signal-panel');if(panel)panel.hidden=true;document.body.classList.remove('model-signal-open');card?.querySelector('.model-signal-button')?.setAttribute('aria-expanded','false');modelSignalActive=null;modelSignalPinned=false;if(returnFocus){modelSignalDismissed=card;modelSignalHoverPaused=true;card?.querySelector('.model-signal-button')?.focus();}}
 function patchModelSignals(){
   buildModelSignalIndex();document.querySelectorAll('#model-grid [data-model-id]').forEach(card=>{const record=modelSignalIndex.get(card.dataset.modelId);card.classList.toggle('has-low-stock',!!record?.low);card.classList.toggle('has-hot-sales',!!record?.hot);const marks=card.querySelector('.model-signal-marks');if(marks)marks.innerHTML=modelSignalBadges(record);});
@@ -10601,7 +10608,7 @@ async function refreshModelSignals(force=false){
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&modelSignalActive){event.preventDefault();closeModelSignal(true);}});
 document.addEventListener('pointerdown',event=>{if(modelSignalActive&&!event.target.closest('#model-signal-panel,.model-signal-button'))closeModelSignal();});
 document.addEventListener('pointermove',event=>{if(modelSignalHoverPaused&&(event.movementX||event.movementY)){modelSignalHoverPaused=false;modelSignalDismissed=null;const card=event.target.closest('#model-grid [data-model-id]');if(card&&matchMedia('(hover:hover)').matches)showModelSignal(card);}},{passive:true});
-document.addEventListener('scroll',event=>{if(!modelSignalActive||event.target.closest?.('#model-signal-panel'))return;if(modelSignalPinned){const rect=modelSignalActive.getBoundingClientRect();if(rect.bottom<0||rect.top>innerHeight)closeModelSignal();else positionModelSignal();}else closeModelSignal();},{capture:true,passive:true});
+document.addEventListener('scroll',event=>{if(!modelSignalActive||event.target.closest?.('#model-signal-panel'))return;const rect=modelSignalActive.getBoundingClientRect();if(rect.bottom<0||rect.top>innerHeight)closeModelSignal();else if(modelSignalPinned||modelSignalHasInteraction())positionModelSignal();else closeModelSignal();},{capture:true,passive:true});
 window.addEventListener('resize',()=>{if(modelSignalActive)positionModelSignal();});
 function renderModels() {
   const el = document.getElementById('model-grid'); if(!el) return;
@@ -22461,5 +22468,8 @@ installOperationsUIStyles();initGlobalScrollTop();setTimeout(()=>{ensureSystemNo
 <script src="plate-plan-files.js"></script>
 <script src="filament-picker.js"></script>
 <script src="kiot-pending-store.js"></script>
+<link rel="stylesheet" href="assets/page-info-cards.css?v=__DEPLOY_REVISION__" data-page-info-style media="print" onload="this.media='all'">
+<script src="assets/page-info-art.js?v=__DEPLOY_REVISION__" async></script>
+<script src="assets/page-info-cards.js?v=__DEPLOY_REVISION__" async></script>
 </body>
 </html>

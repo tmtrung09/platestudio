@@ -1,7 +1,8 @@
 {
   "scripts": {
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs",
-    "qa:desktop": "node tools/desktop-qa.mjs && node tools/density-qa.mjs && node tools/icon-actions-qa.mjs",
+    "qa:desktop": "node tools/desktop-qa.mjs && node tools/density-qa.mjs && npm run qa:page-info-cards && node tools/icon-actions-qa.mjs",
+    "qa:page-info-cards": "node tools/page-info-cards-demo-qa.mjs && node tools/page-info-cards-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs && node tools/order-filters-qa.mjs && node tools/product-library-qa.mjs && node tools/model-signals-qa.mjs && node tools/model-sales-qa.mjs && node tools/production-qa.mjs && node tools/progress-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/kiot-ui-qa.mjs && node tools/sales-audit.mjs && node tools/sales-range-qa.mjs && node tools/kiot-recovery-qa.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs && node tools/sales-range-ui-qa.mjs && node tools/sales-calendar-qa.mjs",
     "qa:cloud": "node tools/service-worker-qa.mjs && node tools/cloud-sync-qa.mjs && node tools/batch-upload-qa.mjs",

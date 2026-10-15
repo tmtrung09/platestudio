@@ -260,7 +260,12 @@ for (const route of routes) {
       const hero = document.querySelector('.delivery-wizard-hero');
       const stage = document.querySelector('.delivery-wizard-stage');
       const toolbar = document.querySelector('.delivery-product-toolbar');
-      return { heroText: hero?.innerText?.trim() || '', stageTop: Math.round(stage?.getBoundingClientRect().top || 0), toolbar: Boolean(toolbar) };
+      const info=document.querySelector('#page-delivery-builder > .page-heading.page-info-card');
+      // The approved illustrated card is a separate section. Keep the original
+      // 250px allowance for delivery controls and bound the new card separately.
+      const infoHeight=info?.getBoundingClientRect().height||0;
+      const infoSpace=info?infoHeight+parseFloat(getComputedStyle(info).marginBottom||0):0;
+      return { heroText: hero?.innerText?.trim() || '', stageTop: Math.round((stage?.getBoundingClientRect().top || 0)-infoSpace), infoHeight:Math.round(infoHeight), toolbar: Boolean(toolbar) };
     })() : null;
     const salesDateFilter = expectedRoute === 'sales' ? (() => {
       const chips = [...document.querySelectorAll('#sales-page .sales-date-preset')];
@@ -369,7 +374,7 @@ for (const route of routes) {
     ...(checks.horizontalOverflow > 2 ? [`Tràn ngang ${checks.horizontalOverflow}px`] : []),
     ...(route === routes[0] ? (report.themeAudit?.failures || []) : []),
     ...(route === routes[0] ? (report.moreSheetThemeAudit?.failures || []) : []),
-    ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px)`] : []),
+    ...(route === 'delivery-builder' && (!checks.wizard?.toolbar || /ĐỢT GIAO CỬA HÀNG/i.test(checks.wizard?.heroText || '') || checks.wizard.stageTop > 250 || checks.wizard.infoHeight > 300) ? [`Đầu trang tạo đợt giao còn chiếm quá nhiều chỗ (${checks.wizard?.stageTop || 0}px điều khiển · ${checks.wizard?.infoHeight || 0}px thẻ thông tin)`] : []),
     ...(route === 'sales' && (!checks.salesDateFilter?.hasPresets || checks.salesDateFilter?.controlHeight < 44 || !checks.salesDateFilter?.hasCalendar || !checks.salesDateFilter?.stripWithinPage || !checks.salesDateFilter?.stripCanScroll) ? [`Bộ lọc khoảng ngày thiếu hoặc lệch layout (${JSON.stringify(checks.salesDateFilter)})`] : []),
     ...(route === 'models' && (!checks.modelPrintInfo?.present || !checks.modelPrintInfo?.fits || !checks.modelPrintInfo?.profileFits || !checks.modelPrintInfo?.actionFits) ? [`Thông số in MakerWorld bị dồn hoặc tràn trên mobile (${JSON.stringify(checks.modelPrintInfo)})`] : []),
     ...(route === 'fulfillment' && (!checks.fulfillmentProcessTabs?.tabCount || checks.fulfillmentProcessTabs.activeCount !== 1 || !checks.fulfillmentProcessTabs.sideRail || !checks.fulfillmentProcessTabs.compactTabs || !checks.fulfillmentProcessTabs.noDesktopFolderTail || !checks.fulfillmentProcessTabs.panelFits || !checks.fulfillmentProcessTabs.selectionWorks) ? [`Rail công đoạn mobile chưa gọn hoặc còn tràn (${JSON.stringify(checks.fulfillmentProcessTabs)})`] : []),
