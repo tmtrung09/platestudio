@@ -152,6 +152,10 @@
 - Lời mời tạo lối tắt platedio có demo để duyệt trước khi tích hợp vào ứng dụng
   chính; hướng dẫn phù hợp thiết bị/trình duyệt và phân biệt thao tác mô phỏng
   với việc tạo lối tắt thật.
+- Khi hỗ trợ cài đặt trực tiếp, nút thêm platedio mở hộp xác nhận của trình duyệt
+  sau thao tác người dùng; thiết bị khác có hướng dẫn phù hợp. Không tự thêm
+  hoặc báo đã cài trước xác nhận thực. Lời mời nhường loading, form và camera;
+  có cách bỏ qua và không nhắc khi đang mở từ lối tắt.
 
 - Khi mở trang mà giao diện chưa sẵn sàng, hiển thị màn hình loading có đồ họa
   động; đặt tên `platedio` bên dưới với chữ đậm, nét mạnh và in nghiêng. Thiết kế

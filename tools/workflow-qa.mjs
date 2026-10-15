@@ -38,6 +38,8 @@ const context = await browser.newContext({
   viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
   userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',
 });
+// Installation invitations have separate production QA; use an already-dismissed device for business UI fixtures.
+await context.addInitScript(()=>localStorage.setItem('ps_install_invite_v1',JSON.stringify({until:Date.now()+86400000})));
 const page = await context.newPage();
 const consoleErrors = [];
 page.on('pageerror', error => consoleErrors.push(`pageerror: ${error.message}`));

@@ -1,17 +1,45 @@
 {
-  "name": "Plate Studio",
-  "short_name": "Plate Studio",
+  "name": "platedio",
+  "short_name": "platedio",
   "start_url": "./plate-studio.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F5F3EE",
   "theme_color": "#5A4BB5",
-  "icons": [{"src":"plate-studio-mark.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}],
-  "shortcuts": [{
-    "name": "Chụp mẻ",
-    "short_name": "Chụp mẻ",
-    "description": "Mở thẳng camera báo cáo mẻ in",
-    "url": "./plate-studio.html?capture=1",
-    "icons": [{"src":"plate-studio-mark.svg","sizes":"any","type":"image/svg+xml"}]
-  }]
+  "icons": [
+    {
+      "src": "assets/app/platedio-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app/platedio-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app/platedio-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chụp mẻ",
+      "short_name": "Chụp mẻ",
+      "description": "Mở thẳng camera báo cáo mẻ in",
+      "url": "./plate-studio.html?capture=1",
+      "icons": [
+        {
+          "src": "assets/app/platedio-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "description": "Không gian quản lý xưởng Plate Studio"
 }

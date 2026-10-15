@@ -43,6 +43,8 @@ const context = await browser.newContext({
   hasTouch: true,
   userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',
 });
+// Installation invitations have separate production QA; use an already-dismissed device for business UI fixtures.
+await context.addInitScript(()=>localStorage.setItem('ps_install_invite_v1',JSON.stringify({until:Date.now()+86400000})));
 
 const report = { createdAt: now.toISOString(), mode: 'isolated visual audit (không đăng nhập, không ghi dữ liệu)', viewport: 'iPhone 390×844', executablePath, routes: [], summary: { passed: 0, warnings: 0, failed: 0 } };
 /* A regression guard for a frequent class of defects: a control styled for the

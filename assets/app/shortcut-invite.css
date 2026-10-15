@@ -1,0 +1,46 @@
+#platedio-install{--pi-bg:#19191f;--pi-raised:#25242e;--pi-text:#f5f3fc;--pi-muted:#b8b2c8;--pi-purple:#bca7ff;--pi-accent:#8160ed;--pi-art:#29213e;position:fixed;z-index:1050;right:max(18px,env(safe-area-inset-right));top:calc(72px + env(safe-area-inset-top));width:360px;max-width:calc(100vw - 28px);max-height:calc(100dvh - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;min-height:0;background:var(--pi-bg);color:var(--pi-text);border:0;border-radius:24px;box-shadow:0 20px 64px #0004;font:13px/1.6 var(--font,Arial,sans-serif);isolation:isolate;animation:pi-enter .4s cubic-bezier(.2,.75,.2,1) both}
+html[data-theme=light] #platedio-install{--pi-bg:#fff;--pi-raised:#f0eef7;--pi-text:#292535;--pi-muted:#696276;--pi-purple:#6945cb;--pi-accent:#6a48d5;--pi-art:#e9e0ff;box-shadow:0 20px 60px #30205c24}
+#platedio-install[hidden],#platedio-install [hidden]{display:none!important}
+#platedio-install *{box-sizing:border-box}#platedio-install p,#platedio-install h2{margin:0}
+#platedio-install .pi-head{display:flex;align-items:center;justify-content:space-between;flex:none;padding:8px 12px 0 22px;min-height:52px}
+#platedio-install .pi-kicker{font:700 9px/1.5 var(--font,Arial,sans-serif);letter-spacing:1.5px;color:var(--pi-purple)}
+#platedio-install .pi-close{min-width:44px;min-height:44px;width:44px;height:44px;color:var(--pi-muted);display:grid;place-items:center;background:none!important;box-shadow:none!important;border:0!important;padding:0;border-radius:0;transform:none!important;flex:none;cursor:pointer}
+#platedio-install .pi-close svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round}
+#platedio-install .pi-scroll{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding:0 22px 8px;scrollbar-width:thin;scrollbar-color:var(--pi-purple) transparent}
+#platedio-install .pi-art{height:146px;position:relative;overflow:hidden;margin-bottom:8px}
+#platedio-install .pi-halo{position:absolute;inset:0;background:radial-gradient(ellipse at center,#9765ff30,transparent 65%)}
+#platedio-install .pi-board{position:absolute;left:calc(50% - 61px);top:10px;width:122px;height:140px;background:var(--pi-art);border:1px solid #a38bdb38;border-radius:17px;transform:rotate(-11deg);box-shadow:0 12px 30px #0001}
+#platedio-install .pi-board:before{content:'';display:block;height:4px;width:25px;background:var(--pi-purple);opacity:.25;border-radius:9px;margin:10px auto}
+#platedio-install .pi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 14px}
+#platedio-install .pi-grid i{width:22px;height:22px;border-radius:7px;background:var(--pi-purple);opacity:.12}
+#platedio-install .pi-icon{position:absolute;width:70px;height:70px;left:calc(50% - 15px);top:39px;animation:pi-float 4s ease-in-out infinite}
+#platedio-install .pi-icon img{display:block;width:70px;height:70px;border-radius:18px;box-shadow:0 10px 30px #6842c554}
+#platedio-install .pi-icon:after{content:'+';position:absolute;bottom:-8px;right:-8px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pi-text);color:var(--pi-bg);font:400 21px/1 Arial,sans-serif;box-shadow:0 3px 10px #0003}
+#platedio-install .pi-dot{position:absolute;border-radius:50%;background:var(--pi-purple);width:6px;height:6px;left:23%;top:46px;animation:pi-float 4s -2s ease-in-out infinite}
+#platedio-install .pi-dot:last-child{width:4px;height:4px;left:auto;right:23%;top:116px}
+#platedio-install .pi-wordmark{display:block;font:italic 900 26px/1.1 'Arial Black',Arial,sans-serif;letter-spacing:-1.4px;color:var(--pi-text);margin-top:4px}#platedio-install .pi-wordmark span{color:var(--pi-purple)}
+#platedio-install h2{font:750 24px/1.25 var(--font,Arial,sans-serif);letter-spacing:-.7px;margin-top:16px}
+#platedio-install .pi-description{font-size:13px;line-height:1.65;color:var(--pi-muted);margin-top:12px}
+#platedio-install .pi-guide{background:var(--pi-raised);border-radius:15px;padding:14px;margin-top:16px;font-size:12px}
+#platedio-install .pi-guide p{font-weight:700}#platedio-install .pi-guide ol{padding:0;margin:12px 0;list-style:none;counter-reset:pi-steps;display:grid;gap:12px}
+#platedio-install .pi-guide li{counter-increment:pi-steps;display:flex;align-items:flex-start;gap:10px;line-height:1.5}
+#platedio-install .pi-guide li:before{content:counter(pi-steps);width:21px;height:21px;flex:none;display:grid;place-items:center;background:var(--pi-bg);color:var(--pi-purple);border-radius:7px;font-size:10px;font-weight:700}
+#platedio-install .pi-guide small{display:block;font-size:10px;line-height:1.5;color:var(--pi-muted)}
+#platedio-install .pi-feedback{font-size:12px;color:var(--pi-muted);margin-top:12px}
+#platedio-install .pi-actions{display:flex;flex-direction:column;gap:4px;flex:none;padding:12px 22px 12px}
+#platedio-install .pi-primary,#platedio-install .pi-later{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;width:100%;padding:10px 14px;border:0;border-radius:13px;font:700 13px/1.4 var(--font,Arial,sans-serif);cursor:pointer;text-align:center}
+#platedio-install .pi-primary{background:var(--pi-accent);color:#fff;box-shadow:0 8px 20px #7651dc25}
+#platedio-install .pi-later{background:transparent;color:var(--pi-muted);font-size:12px}
+#platedio-install .pi-primary:disabled{cursor:wait;opacity:.65}
+#platedio-install .pi-primary svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#platedio-install button:focus-visible{outline:2px solid var(--pi-purple);outline-offset:3px}
+#platedio-install .pi-primary:hover:not(:disabled){filter:brightness(1.08)}#platedio-install .pi-primary:active:not(:disabled){filter:brightness(.95)}
+@media(hover:hover) and (pointer:fine){#platedio-install .pi-close{opacity:0}#platedio-install:hover .pi-close,#platedio-install:focus-within .pi-close{opacity:1}}
+@media(max-width:480px){#platedio-install{right:max(12px,env(safe-area-inset-right));max-width:calc(100vw - 24px)}#platedio-install .pi-scroll{padding-inline:20px}#platedio-install .pi-actions{padding-inline:20px}}
+@media(max-width:860px){#platedio-install{max-height:calc(100dvh - 228px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+@media(max-height:600px){#platedio-install{top:calc(12px + env(safe-area-inset-top));max-height:calc(100dvh - 110px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}#platedio-install .pi-art{height:84px}#platedio-install .pi-board{top:-28px}#platedio-install .pi-icon{top:6px;width:58px;height:58px}#platedio-install .pi-icon img{width:58px;height:58px}#platedio-install h2{font-size:20px;margin-top:10px}#platedio-install .pi-actions{padding-block:8px}}
+@media(max-width:860px) and (max-height:600px){#platedio-install{max-height:calc(100dvh - 168px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+@media(max-height:450px){#platedio-install .pi-art{display:none}#platedio-install .pi-wordmark{font-size:20px}#platedio-install .pi-actions{flex-direction:row;gap:8px}#platedio-install .pi-primary{flex:1;min-width:0}#platedio-install .pi-later{width:auto;flex:none}}
+@keyframes pi-enter{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pi-float{0%,100%{transform:translateY(0) rotate(4deg)}50%{transform:translateY(-7px) rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){#platedio-install,#platedio-install *{animation:none!important;transition:none!important}}

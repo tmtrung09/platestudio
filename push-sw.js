@@ -1,6 +1,6 @@
 /* Plate Studio — app shell local-first + thông báo đẩy. */
-const APP_SHELL_CACHE='plate-studio-shell-v10';
-const APP_SHELL=['./','./index.html','./plate-studio.html','./printer-monitor.js','./plate-plan-files.js','./filament-picker.js','./kiot-pending-store.js','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3','./assets/page-info-art.js','./assets/page-info-cards.js','./assets/page-info-cards.css'];
+const APP_SHELL_CACHE='plate-studio-shell-v11';
+const APP_SHELL=['./','./index.html','./plate-studio.html','./printer-monitor.js','./plate-plan-files.js','./filament-picker.js','./kiot-pending-store.js','./manifest.webmanifest','./plate-studio-mark.svg','./assets/camera-boom.mp3','./assets/page-info-art.js','./assets/page-info-cards.js','./assets/page-info-cards.css','./assets/app/shortcut-invite.js','./assets/app/shortcut-invite.css','./assets/app/platedio-icon.svg','./assets/app/platedio-192.png','./assets/app/platedio-512.png','./assets/app/platedio-180.png'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(APP_SHELL_CACHE).then(cache=>Promise.allSettled(APP_SHELL.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));
 });

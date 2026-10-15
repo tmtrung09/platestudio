@@ -6,6 +6,11 @@
 <title>Plate Studio</title>
 <link rel="icon" type="image/svg+xml" href="plate-studio-mark.svg">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/app/platedio-180.png">
+<meta name="apple-mobile-web-app-title" content="platedio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="assets/app/shortcut-invite.css?v=__DEPLOY_REVISION__" data-platedio-install-style media="print" onload="this.media='all'">
+<script src="assets/app/shortcut-invite.js?v=__DEPLOY_REVISION__" defer></script>
 <meta name="theme-color" content="#5A4BB5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4986,6 +4991,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
       <section class="more-group" data-more-group="system">
         <div class="more-group-title">Hệ thống</div>
         <div class="more-group-grid">
+          <button class="more-item" data-more-tone="violet" data-platedio-install-action onclick="closeMoreSheet();window.PlatedioInstall?.open()"><span data-platedio-install-icon aria-hidden="true"></span>Cài platedio</button>
           <button class="more-item" data-more-tone="sky" onclick="closeMoreSheet();openCameraSoundLibrary()"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="17" cy="16" rx="3" ry="3"/></svg>Âm thanh chụp</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-page="access" data-owner-only="true" onclick="closeMoreSheet();openAccessManagement()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21v-2a7 7 0 0 1 14 0v2M19 8h3M20.5 6.5v3"/></svg>Phân quyền</button>
           <button class="more-item" data-more-tone="sky" data-sidebar-page="devices" onclick="closeMoreSheet();goPage('devices')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>Thiết bị</button>
@@ -9523,6 +9529,7 @@ function renderSb() {
     ${sidebarNavGroup('system','Hệ thống',
       `<button class="sb-nav-item" type="button" data-sidebar-permission="trash.manage" onclick="openTrash()">${sidebarIcon('trash')}<span class="sb-nav-label">Thùng rác</span>${trashItems.length?`<span class="sb-nav-count">${trashItems.length}</span>`:''}</button>`+
       `<button class="sb-nav-item" type="button" data-sidebar-permission="activity.view" onclick="openActivityLog()">${sidebarIcon('progress')}<span class="sb-nav-label">Nhật ký hoạt động</span></button>`+
+      `<button class="sb-nav-item" type="button" data-platedio-install-action onclick="window.PlatedioInstall?.open()">${sidebarIcon('data')}<span class="sb-nav-label">Cài platedio</span></button>`+
       item('devices','Thiết bị','device')+
       `<button class="sb-nav-item" type="button" data-sidebar-page="access" data-owner-only onclick="openAccessManagement()">${sidebarIcon('device')}<span class="sb-nav-label">Phân quyền</span></button>`+
       item('data','Dữ liệu','data')
@@ -13222,6 +13229,7 @@ async function revokeStaffAccessLink(id){
 function openBatchReportHub(){
   if(!canCaptureBatchReports()){toast('Bạn chỉ có quyền xem hoặc chỉnh sửa báo cáo; chưa được cấp quyền chụp ảnh mẻ mới.');return;}
   window.PlatedioStartup?.release();
+  window.PlatedioInstall?.pauseForCapture();
   brView = 'hub'; brCurrentId = null; brMatchQty = {}; brUnifiedSearch=''; brUnifiedScope='all'; brReportDate=localBatchDate();
   return openBatchMultiCamera();
 }
@@ -13438,6 +13446,7 @@ async function openBatchMultiCamera(){
   prepareBatchShutterSound();
   if(!canCaptureBatchReports()){toast('Bạn chưa được cấp quyền chụp ảnh báo cáo mẻ.');return;}
   window.PlatedioStartup?.release();
+  window.PlatedioInstall?.pauseForCapture();
   if(document.getElementById('br-multi-cam'))return;
   brCameraReturnFocus=document.activeElement;
   const modal=document.createElement('div');
