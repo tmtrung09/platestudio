@@ -2,7 +2,7 @@
   "scripts": {
     "qa:loading-demo": "node tools/loading-screen-demo-qa.mjs",
     "qa:startup": "node tools/startup-qa.mjs",
-    "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs && node tools/camera-startup-qa.mjs",
+    "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs && node tools/camera-startup-qa.mjs && node tools/batch-gallery-qa.mjs",
     "qa:desktop": "npm run qa:startup && npm run qa:install && node tools/desktop-qa.mjs && node tools/density-qa.mjs && npm run qa:page-info-cards && node tools/icon-actions-qa.mjs",
     "qa:page-info-cards": "node tools/page-info-cards-demo-qa.mjs && node tools/page-info-cards-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs && node tools/order-filters-qa.mjs && node tools/product-library-qa.mjs && node tools/model-signals-qa.mjs && node tools/model-sales-qa.mjs && node tools/production-qa.mjs && node tools/progress-qa.mjs",

@@ -124,6 +124,9 @@
   44×44px và bấm được; click vỏ/icon focus input, không để input rộng 0 làm mất tương tác.
 - Lưới ảnh dùng tỷ lệ khung thống nhất, canh giữa bằng object-fit phù hợp, không
   viền/nền sáng gây đứt đoạn ở dark mode; áp dụng ảnh dọc/ngang/thiếu/lỗi.
+- Ảnh trong thư viện báo cáo mẻ phủ sát mép thẻ, không nhận khoảng đệm của thẻ
+  thông tin chung; điện thoại xếp hai ảnh mỗi hàng. Giữ trạng thái, chọn nhiều,
+  thao tác 44px, ảnh thiếu/lỗi và thứ tự dữ liệu. Guard: `tools/batch-gallery-qa.mjs`.
 - Hàng công việc theo model, kể cả nhóm plate/màu, có thumbnail thật khi có dữ
   liệu; ảnh lỗi giữ khung fallback, tên và bố cục.
 - Công việc theo khoảng ngày ưu tiên lịch trực quan chọn khoảng, phân biệt ngày
