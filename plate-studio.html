@@ -954,6 +954,20 @@ code { font-family:'DM Mono',monospace; font-size:11px; background:var(--s2); pa
 .br-camera-shutter:has(button:disabled)::before,.br-camera-shutter:has(button:disabled)::after,.br-multi-cam.is-paused .br-camera-shutter::before,.br-multi-cam.is-paused .br-camera-shutter::after{animation-play-state:paused}
 .br-camera-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .br-multi-cam .br-camera-footer button{width:44px;height:44px;color:var(--camera-ink)}
+.br-multi-cam .br-camera-footer .br-camera-start-toggle{width:auto;max-width:180px;min-width:44px;flex:1 1 auto;gap:7px;padding:6px 8px;border-radius:14px;font-size:11px;line-height:1.2}
+.br-camera-start-toggle>span:last-child{min-width:0;max-width:90px;text-align:center}
+.br-camera-start-track{position:relative;display:block;width:28px;height:18px;flex:0 0 28px;border-radius:20px;background:#535966;transition:background .16s}
+.br-camera-start-track::before{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .16s}
+.br-camera-start-toggle[aria-checked="true"] .br-camera-start-track{background:#9686ee}
+.br-camera-start-toggle[aria-checked="true"] .br-camera-start-track::before{transform:translateX(10px)}
+.br-camera-start-intro{position:absolute;z-index:3;top:calc(68px + env(safe-area-inset-top));left:12px;right:12px;display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:start;gap:8px;max-width:360px;margin:0 auto;padding:10px 12px;background:rgba(23,27,38,.94);border:1px solid rgba(215,222,255,.2);border-radius:16px;color:#f4f6fc;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.br-camera-start-intro b{display:block;font-size:12px;line-height:1.35;color:#d8d0ff}
+.br-camera-start-intro p{margin:5px 0 0;font-size:11px;line-height:1.45;color:#e3e6ef}
+.br-multi-cam .br-camera-start-intro button{width:44px;height:44px;padding:10px;margin:-4px -4px 0 0}
+.br-multi-cam .br-camera-start-toggle[hidden],.br-camera-start-intro[hidden]{display:none!important}
+@media(max-height:540px) and (min-width:600px){.br-camera-start-intro{left:12px;right:270px}}
+@media(prefers-reduced-motion:reduce){.br-camera-start-track,.br-camera-start-track::before{transition:none}}
+
 @keyframes brShutterLight{to{transform:rotate(360deg)}}
 @media(hover:hover){.br-multi-cam button:hover:not(:disabled){background-color:rgba(255,255,255,.1)}.br-multi-cam .br-camera-shutter button:hover:not(:disabled){background:#fff}}
 @media(max-height:540px) and (min-width:600px){
@@ -7692,7 +7706,7 @@ async function loadCloudSession(session) {
     restoreBatchLibraryView();
     setFastCaptureAvailable(canCaptureBatchReports());
     void restoreBatchCameraQueue().catch(error=>console.warn('Chưa khôi phục được hàng chờ camera',error));
-    if(!fastCaptureRouteOpened&&new URLSearchParams(location.search).get('capture')==='1'&&canCaptureBatchReports()){
+    if(!fastCaptureRouteOpened&&shouldAutoOpenBatchCamera()&&canCaptureBatchReports()){
       fastCaptureRouteOpened=true;setTimeout(()=>openBatchReportHub(),0);
     }
     await Promise.all([registerWorkspaceProfile(),loadCloudData()]);
@@ -13454,6 +13468,53 @@ async function handleBatchDrop(event){
 }
 
 // One session for live capture, native capture and library imports.
+// Startup choice is local to this device and the authenticated workspace/user.
+const brCameraStartupMemory=new Map(),brCameraStartupIntroDismissed=new Set();
+function batchCameraStartupScope(){return !STAFF_REPORT_MODE&&currentUser?.id&&cloudWorkspaceId()?cloudWorkspaceId()+':'+currentUser.id:'';}
+function batchCameraStartupPreference(scope=batchCameraStartupScope()){
+  const empty={enabled:false,introSeen:false};if(!scope)return empty;
+  try{const raw=JSON.parse(localStorage.getItem('ps_camera_start_v1:'+scope)||'null'),value=raw?.version===1?{enabled:raw.enabled===true,introSeen:raw.introSeen===true}:empty;brCameraStartupMemory.set(scope,value);return value;}
+  catch(_){return brCameraStartupMemory.get(scope)||empty;}
+}
+function saveBatchCameraStartupPreference(scope,value){
+  if(!scope||scope!==batchCameraStartupScope()||!canCaptureBatchReports())throw new Error('Phiên camera đã đổi. Mở lại camera để chỉnh tùy chọn.');
+  const saved={enabled:value.enabled===true,introSeen:value.introSeen===true};
+  localStorage.setItem('ps_camera_start_v1:'+scope,JSON.stringify({version:1,...saved}));
+  brCameraStartupMemory.set(scope,saved);return saved;
+}
+function shouldAutoOpenBatchCamera(){return new URLSearchParams(location.search).get('capture')==='1'||batchCameraStartupPreference().enabled;}
+function batchCameraStartupButtonHTML(){return '<button type="button" id="br-camera-start-toggle" class="br-camera-start-toggle" role="switch" aria-checked="false" aria-label="Mở camera khi mở trang web" title="Mở camera khi mở trang web trên thiết bị này" onclick="toggleBatchCameraStartup()"><span class="br-camera-start-track" aria-hidden="true"></span><span>Mở cùng web</span></button>';}
+function syncBatchCameraStartupControl(modal=document.getElementById('br-multi-cam')){
+  const button=modal?.querySelector('#br-camera-start-toggle');if(!button)return;
+  const scope=modal._startupScope,valid=scope&&scope===batchCameraStartupScope()&&canCaptureBatchReports();
+  button.hidden=!scope;button.disabled=!valid;button.setAttribute('aria-checked',String(batchCameraStartupPreference(scope).enabled));
+}
+function dismissBatchCameraStartupIntro(modal=document.getElementById('br-multi-cam'),restoreFocus=false){
+  const intro=modal?.querySelector('.br-camera-start-intro');if(!intro||intro.hidden)return;
+  intro.hidden=true;const scope=modal._startupScope;if(scope){brCameraStartupIntroDismissed.add(scope);try{saveBatchCameraStartupPreference(scope,{...batchCameraStartupPreference(scope),introSeen:true});}catch(_){/* An optional introduction never blocks capturing or closing. */}}
+  if(restoreFocus)modal.querySelector('#br-camera-start-toggle')?.focus({preventScroll:true});
+}
+function toggleBatchCameraStartup(){
+  const modal=document.getElementById('br-multi-cam');if(!modal)return;
+  try{
+    const scope=modal._startupScope,value=batchCameraStartupPreference(scope);saveBatchCameraStartupPreference(scope,{enabled:!value.enabled,introSeen:true});
+    dismissBatchCameraStartupIntro(modal);syncBatchCameraStartupControl(modal);
+  }catch(error){
+    syncBatchCameraStartupControl(modal);const intro=modal.querySelector('.br-camera-start-intro');intro.hidden=false;
+    intro.querySelector('b').textContent='Chưa lưu được tùy chọn';intro.querySelector('p').textContent=modal._startupScope!==batchCameraStartupScope()?error.message:'Kho trên thiết bị đang đầy hoặc không sẵn sàng. Lựa chọn cũ vẫn được giữ; hãy thử lại.';
+  }
+}
+function initBatchCameraStartupUI(modal){
+  modal._startupScope=batchCameraStartupScope();syncBatchCameraStartupControl(modal);
+  const intro=document.createElement('aside');intro.className='br-camera-start-intro';intro.setAttribute('role','status');
+  intro.innerHTML='<div><b>Mới · Mở thẳng camera</b><p>Bật “Mở cùng web” bên dưới để vào camera ngay khi mở platedio trên thiết bị này.</p></div><button type="button" class="btn-icon-only" aria-label="Đóng giới thiệu camera">'+appIcon('close')+'</button>';
+  const scope=modal._startupScope;intro.hidden=!scope||batchCameraStartupPreference(scope).introSeen||brCameraStartupIntroDismissed.has(scope);
+  intro.querySelector('button').onclick=()=>dismissBatchCameraStartupIntro(modal,true);modal.append(intro);
+  modal.addEventListener('click',event=>{if(event.target.closest('.capture'))dismissBatchCameraStartupIntro(modal);});
+  modal.addEventListener('keydown',event=>{if(event.key==='Escape'&&intro.contains(document.activeElement)){event.preventDefault();event.stopImmediatePropagation();dismissBatchCameraStartupIntro(modal,true);}},true);
+}
+addEventListener('storage',event=>{const modal=document.getElementById('br-multi-cam');if(modal&&(!event.key||event.key==='ps_camera_start_v1:'+modal._startupScope))syncBatchCameraStartupControl(modal);});
+
 async function openBatchMultiCamera(){
   prepareBatchShutterSound();
   if(!canCaptureBatchReports()){toast('Bạn chưa được cấp quyền chụp ảnh báo cáo mẻ.');return;}
@@ -13498,9 +13559,10 @@ async function openBatchMultiCamera(){
         <div class="br-camera-shutter"><button class="capture" type="button" aria-label="Chụp ảnh" onclick="captureBatchMultiPhoto()"></button></div>
         <div class="br-camera-side"><button type="button" id="br-camera-flip" aria-label="Đổi camera" title="Đổi camera" onclick="switchBatchCamera()">${icon('<path d="M19.5 8a8 8 0 0 0-13-2L3.5 9M3.5 5v4h4m-3 7a8 8 0 0 0 13 2l3-3m0 4v-4h-4"/>')}</button></div>
       </div>
-      <footer class="br-camera-footer"><button type="button" aria-label="Xem báo cáo" title="Xem báo cáo" onclick="showBatchCameraReports()">${icon('<rect x="5" y="3" width="14" height="18" rx="4"/><path d="M9 8h6m-6 4h6m-6 4h3"/>')}</button><button class="send" type="button" aria-label="Xong" title="Xong" onclick="closeBatchMultiCamera()">${icon('<path d="m6 12 4 4 8-8"/>')}</button></footer>
+      <footer class="br-camera-footer"><button type="button" aria-label="Xem báo cáo" title="Xem báo cáo" onclick="showBatchCameraReports()">${icon('<rect x="5" y="3" width="14" height="18" rx="4"/><path d="M9 8h6m-6 4h6m-6 4h3"/>')}</button>${batchCameraStartupButtonHTML()}<button class="send" type="button" aria-label="Xong" title="Xong" onclick="closeBatchMultiCamera()">${icon('<path d="m6 12 4 4 8-8"/>')}</button></footer>
     </section>`;
   document.body.appendChild(modal);
+  initBatchCameraStartupUI(modal);
   const edge=modal.querySelector('.br-camera-upload-edge'),edgeRects=edge.querySelectorAll('rect');
   edge.pauseAnimations();
   modal._edgeMotionQuery=matchMedia('(prefers-reduced-motion: reduce)');
@@ -13514,6 +13576,7 @@ async function openBatchMultiCamera(){
   brCameraInertSiblings.forEach(el=>el.inert=true);
   modal.querySelector('button').focus({preventScroll:true});
   modal.addEventListener('keydown',event=>{
+    event.stopPropagation(); // Keep camera keys away from forms underneath the dialog.
     if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeBatchMultiCamera();}
     if(event.key==='Tab'){
       const buttons=[...modal.querySelectorAll('button:not(:disabled)')].filter(el=>el.getClientRects().length);
@@ -13981,6 +14044,7 @@ function closeBatchMultiCamera(){
     if(!['uploaded','cancelled'].includes(shot.state))return true;
     URL.revokeObjectURL(shot.url);return false;
   });
+  dismissBatchCameraStartupIntro(modal);
   clearTimeout(modal._uploadFadeTimer);clearTimeout(modal._captureFeedbackTimer);modal._capturePulse?.cancel();modal._edgeObserver?.disconnect();
   modal._edgeMotionQuery?.removeEventListener('change',modal._edgeMotionChange);
   modal.remove();brCameraInertSiblings.forEach(el=>el.inert=false);brCameraInertSiblings=[];

@@ -172,6 +172,11 @@
 - Camera là fast path độc lập, mở trực tiếp không đợi thư viện/lịch sử/ảnh. Chụp
   liên tiếp, lưu blob/metadata tối thiểu vào local ngay; nén/thumbnail/upload/liên
   kết chạy nền bằng queue bền vững. Không mất ảnh khi reload/mất mạng/đóng app.
+- Camera có công tắc tùy chọn mở ngay khi vào web, mặc định tắt, lưu theo thiết
+  bị + xưởng + tài khoản. Chỉ tự mở khi có quyền, trước tải dữ liệu cloud phụ;
+  tắt được trong camera, không mở lại sau khi người dùng đóng trong cùng phiên.
+  Có giới thiệu lần đầu gọn, không lấy focus hoặc che nút chụp/đóng; lỗi lưu tùy
+  chọn giữ trạng thái cũ và phản hồi rõ. Guard: `tools/camera-startup-qa.mjs`.
 - Tách “đã lưu trên máy”, “đang tải”, “đã lên Storage”, “đã gắn bản ghi”. Không đợi
   upload mới cho chụp tiếp; retry/resume chống trùng, chỉ dọn local sau xác nhận
   đầy đủ. Worker tối ưu theo chính sách đã thống nhất, không tự giảm chất lượng gốc.

@@ -53,7 +53,7 @@ try{
        if([...edge.querySelectorAll('rect')].some(rect=>getComputedStyle(rect).strokeDasharray!=='none'))errors.push('Upload rim must be continuous on every side');
        if(edge.querySelectorAll('.br-camera-edge-glow').length!==2||edge.querySelector('feGaussianBlur').getAttribute('stdDeviation')!=='6')errors.push('Missing bounded soft glow');
        if(edge.querySelectorAll('rect').length!==2||[...edge.querySelectorAll('rect')].some(rect=>!getComputedStyle(rect).filter.includes('brCameraEdgeGlow')))errors.push('Screen upload light must contain only blurred glow, never a sharp border');
-       const iconButtons=[...el.querySelectorAll('.br-camera-side button,.br-camera-footer button')];
+       const iconButtons=[...el.querySelectorAll('.br-camera-side button,.br-camera-footer button:not([role=switch])')];
        if(iconButtons.length!==4||el.querySelector('.br-camera-side span'))errors.push('Camera actions must not repeat their labels');
        for(const button of iconButtons){
          if(button.textContent.trim()||!button.getAttribute('aria-label')||!button.getAttribute('title')||!button.querySelector('svg[aria-hidden="true"]'))errors.push('Icon-only action must retain its accessible name');
