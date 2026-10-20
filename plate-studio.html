@@ -22692,6 +22692,7 @@ function renderSystemNotificationRows(){
   });
   if(!shown.length)list.innerHTML='<p class="notification-empty">Chưa có thông báo.</p>';
   panel.querySelector('.notification-more').hidden=shown.length>=events.length;
+  window.PlatePrinterMonitor?.voiceSettings(panel);
   const sound=panel.querySelector('.notification-sound');sound.setAttribute('aria-pressed',String(notificationAudioEnabled));sound.innerHTML=`${appIcon(notificationAudioEnabled?'volume':'muted')}Âm báo ${notificationAudioEnabled?'bật':'tắt'}`;
 }
 function toggleSystemNotifications(event){const panel=ensureSystemNotificationPanel();if(panel.hidden)openSystemNotifications({focus:event?.detail===0});else closeSystemNotifications();}
@@ -22842,6 +22843,8 @@ window.PlatedioStartup?.ready();
 <link rel="stylesheet" href="assets/printer-alert-scenes.css?v=__DEPLOY_REVISION__">
 <link rel="stylesheet" href="assets/printer-alert-art.css?v=__DEPLOY_REVISION__">
 <script src="assets/printer-alert-art.js?v=__DEPLOY_REVISION__"></script>
+<link rel="stylesheet" href="assets/printer-voice.css?v=__DEPLOY_REVISION__">
+<script src="assets/printer-voice.js?v=__DEPLOY_REVISION__"></script>
 <script src="printer-monitor.js?v=__DEPLOY_REVISION__"></script>
 <script src="plate-plan-files.js"></script>
 <script src="filament-picker.js"></script>

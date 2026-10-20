@@ -216,6 +216,7 @@
     queueMicrotask(pumpRequiredAlerts);return true;
   }
   function closeRequiredAlert({restoreFocus=true}={}) {
+    window.PlatePrinterVoice?.stop();
     alertOverlay?.remove();alertOverlay=null;
     alertInert.forEach((value,node)=>{node.inert=value;});alertInert.clear();
     if(restoreFocus&&alertFocus?.isConnected)alertFocus.focus({preventScroll:true});
@@ -283,10 +284,13 @@
     document.body.append(overlay);alertOverlay=overlay;
     for(const node of document.body.children)if(node!==overlay){alertInert.set(node,node.inert);node.inert=true;}
     if(row.durable===false)setText(overlay.querySelector('.pm-alert-status'),'Chưa lưu được thông báo trên thiết bị. Đừng tải lại trang trước khi xác nhận.');
-    overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});playNotificationSound();
+    overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});
+    const spoken=window.PlatePrinterVoice?.present({scope,event,issues:row.issues,name:aliases[device?.id]||device?.name,key:row.confirmationKey||event.id,card:overlay.querySelector('.pm-alert-card'),isCurrent:()=>{const ctx=context();return alertOverlay===overlay&&ctx.allowed&&scope===ctx.workspace+':'+ctx.user&&alertAssessment(row.event).status==='active';}});
+    if(!spoken)playNotificationSound();
   }
   function pumpRequiredAlerts() {
     const ctx=context(),valid=ctx.allowed&&scope===ctx.workspace+':'+ctx.user;
+    window.PlatePrinterVoice?.configure(valid?scope:'',valid);
     if(!valid||document.hidden){closeRequiredAlert();return;}
     syncRequiredAlerts();reconcileRequiredAlerts();
     if(alertOverlay&&(!requiredAlerts.has(alertOverlay.dataset.eventId)||alertAssessment(requiredAlerts.get(alertOverlay.dataset.eventId).event).status!=='active'))closeRequiredAlert();
@@ -296,6 +300,7 @@
       const count=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').length;
       const device=snapshot.devices[row.event.printerId||row.event.deviceId];
       window.PlatePrinterAlertArt?.update(alertOverlay.querySelector('.pm-alert-card'),{event:row.event,device,issues:row.issues,name:aliases[device?.id]||device?.name});
+      window.PlatePrinterVoice?.update({event:row.event,issues:row.issues,name:aliases[device?.id]||device?.name});
       setText(alertOverlay.querySelector('.pm-alert-queue'),count>1?`${count} thông báo · hiển thị lần lượt`:'');return;
     }
     if(alertBusy||alertLockPending||!requiredAlerts.size||alertBlocked())return;
@@ -1175,6 +1180,7 @@
   window.PlatePrinterMonitor = {
     render:()=>{render();pumpRequiredAlerts();},
     requiredAlert: enqueueRequiredAlert,
+    voiceSettings: panel=>{const ctx=context();window.PlatePrinterVoice?.mount(panel,{scope:ctx.workspace+':'+ctx.user,allowed:ctx.allowed&&!!ctx.workspace});},
     openEvent: openEventMachine,
     allowClose: (id) => {
       const ov = document.getElementById(id);

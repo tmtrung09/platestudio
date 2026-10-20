@@ -319,6 +319,15 @@
 
 ## Thông báo
 
+- Giọng đọc máy dùng tiếng Việt, có bật/tắt và nghe thử theo thiết bị + xưởng +
+  người dùng; thiếu giọng hoặc bị trình duyệt chặn phải phản hồi rõ, không báo
+  đã đọc khi chưa phát. Chỉ tự đọc pop-up còn hợp lệ của in xong hoặc máy dừng
+  vì lỗi; đọc tên máy và trạng thái/nguyên nhân đã xác định, không suy nguyên
+  nhân từ mã chưa hiểu. Theo hàng chờ và khóa trình bày chung, không đọc chồng
+  hoặc tự lặp cùng lần chuyển trạng thái qua reload/nhiều tab. Đóng thông báo,
+  máy in tiếp/đổi mẻ, mất quyền/đổi xưởng hoặc ẩn trang thì dừng giọng; giữ nguyên
+  xác nhận, lịch sử, dữ liệu và âm chụp. Guard: tools/printer-voice-qa.mjs.
+
 - Thông báo máy có đồ họa riêng theo loại trạng thái và dòng máy thực tế (A1,
   P1S, P2S, H2S), mô tả được trạng thái bằng hình dáng/chi tiết, không chỉ đổi
   màu hoặc icon chung. Sự cố đã xác định có hoạt ảnh mô tả đúng tình huống cụ

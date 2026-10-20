@@ -1,0 +1,14 @@
+.printer-voice-settings{padding:6px 12px;border-top:1px solid var(--b);flex-shrink:0}
+.printer-voice-settings[hidden]{display:none}
+.printer-voice-settings>div,.printer-voice-alert{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.printer-voice-settings>div{justify-content:space-between}
+.printer-voice-settings small,.printer-voice-alert small{display:block;font-size:12px;color:var(--t2);line-height:1.5;overflow-wrap:anywhere}
+.printer-voice-settings small{padding:0 8px 6px}
+.printer-voice-settings .notification-control,.printer-voice-alert .notification-control{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.printer-voice-alert{margin:8px 0 4px}
+.printer-voice-alert .notification-control{flex-shrink:0}
+.printer-voice-alert small{flex:1;min-width:120px}
+.printer-voice-alert button span{width:auto;white-space:nowrap}
+.printer-voice-alert svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+#system-notification-panel:has(.printer-voice-settings:not([hidden])){overflow-y:auto;scrollbar-width:thin}
+#system-notification-panel:has(.printer-voice-settings:not([hidden])) .notification-panel-list{min-height:64px}
