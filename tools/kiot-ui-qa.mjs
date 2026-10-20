@@ -41,6 +41,8 @@ try{
   assert.doesNotMatch(await page.locator('#kiot-inventory-control').textContent(),/Đã khớp/);
   const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,controls:[...document.querySelectorAll('.kv-sync-workspace button,.kv-sync-workspace summary')].filter(e=>e.getClientRects().length).map(e=>({text:e.textContent,height:e.getBoundingClientRect().height,width:e.getBoundingClientRect().width})).filter(e=>e.height<43.99||e.width<43.99)}));
   assert.equal(geometry.overflow,false,`${width}/${theme}: horizontal overflow`);assert.deepEqual(geometry.controls,[],`${width}/${theme}: touch targets`);
+  // Measure the painted page after its entry fade, without relaxing contrast rules.
+  await page.waitForFunction(()=>{for(let node=document.querySelector('.page.active');node;node=node.parentElement)if(Number(getComputedStyle(node).opacity)<.999)return false;return true;});
   const contrast=await new AxeBuilder({page}).include('.kv-sync-workspace').withRules(['color-contrast']).analyze();
   assert.deepEqual(contrast.violations,[],`${width}/${theme}: text contrast`);
   await page.screenshot({path:resolve(out,`${width}-${theme}-top.png`)});

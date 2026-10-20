@@ -319,6 +319,28 @@
 
 ## Thông báo
 
+- Thông báo máy có đồ họa riêng theo loại trạng thái và dòng máy thực tế (A1,
+  P1S, P2S, H2S), mô tả được trạng thái bằng hình dáng/chi tiết, không chỉ đổi
+  màu hoặc icon chung. Sự cố đã xác định có hoạt ảnh mô tả đúng tình huống cụ
+  thể như không kéo/rút được nhựa, hết nhựa hoặc rối cuộn; không chỉ rung icon
+  lỗi chung. Chỉ chọn cảnh theo mã/nội dung lỗi đã đối chiếu; chưa rõ nguyên
+  nhân thì giữ cảnh chưa xác định, không tự suy thành hết nhựa/kẹt/tắc.
+  Lỗi ở bộ phận nào thì phóng to và tập trung vào bộ phận đó; tắc đầu phun
+  chỉ mô tả đầu phun/đường nhựa bên trong, hết hoặc rối nhựa tập trung vào cuộn,
+  kéo/rút thất bại tập trung vào bộ kéo. Không mặc định bày cả cuộn, bộ kéo và
+  đầu phun; chỉ giữ ngữ cảnh tối thiểu cần để hiểu đúng sự cố.
+  Đồ họa lấy ảnh linh kiện thực tế làm tham chiếu hình dáng, tỷ lệ và vật liệu
+  đúng dòng máy; lớp cắt bên trong và diễn biến lỗi phải ghi rõ là minh họa,
+  không trình bày như ảnh chụp trực tiếp hoặc bản vẽ kỹ thuật đã xác minh.
+  Chữ thông báo, đồ họa và chuyển động được thiết kế thành một bố cục thống
+  nhất; tiêu đề/cụm từ chính tham gia vào nhịp diễn tả sự cố, không chia thành
+  một khối minh họa và một khối chữ rời. Giữ phân cấp rõ, chữ luôn đọc được,
+  chuyển động có điểm nhấn và khoảng nghỉ, không rung/nhấp nháy chữ liên tục.
+  Hoạt ảnh chạy khi thông báo đang hiển thị, chuyển động
+  phù hợp trạng thái; không mô tả đầu in đang chạy khi máy đã dừng hoặc mất
+  tín hiệu. Hỗ trợ reduced-motion. Có demo để người dùng duyệt trước khi tích
+  hợp; giữ điều kiện hiện pop-up, nội dung, xác nhận và dữ liệu thông báo hiện có.
+
 - Pop-up thường/toast ở góc trên bên phải, bảng thông báo thả gọn, đơn giản, không
   border, dùng SVG; không chồng nhau/bảng thả. Hover/focus tạm dừng tự đóng; không
   sửa/xóa dữ liệu camera/nghiệp vụ để đổi giao diện.
@@ -350,7 +372,8 @@
   Thanh ghim đo mốc vị trí thực, không giả định chiều cao header.
 - Hành động phụ pop-up đặt dưới nội dung, không chia ba cột ép tên/mô tả thành
   từng chữ. Đóng 44px góc trên, chữ đọc được, không tràn ngang.
-- Guard: `tools/notifications-qa.mjs`, `tools/printer-alerts-probe.mjs` từ printer
+- Guard: `tools/notifications-qa.mjs`, `tools/printer-alert-art-qa.mjs`,
+  `tools/printer-alerts-probe.mjs` từ printer
   UI QA; bao phủ quyền/workspace/queue/reload/form/các cách đóng/bàn phím/chạm/
   mobile/desktop/hai theme.
 

@@ -9482,6 +9482,8 @@ function appIcon(kind) {
     plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     check:'<polyline points="5 12 10 17 20 7"/>',
     pause:'<path d="M8 5v14M16 5v14"/>',
+    play:'<path d="m8 5 11 7-11 7z"/>',
+    'arrow-right':'<path d="M5 12h14m-6-6 6 6-6 6"/>',
     'arrow-up':'<path d="M12 19V5m-6 6 6-6 6 6"/>',
     'arrow-down':'<path d="M12 5v14m-6-6 6 6 6-6"/>',
     'chevron-left':'<path d="m15 5-7 7 7 7"/>',
@@ -22837,6 +22839,9 @@ window.PlatedioStartup?.ready();
 
 </script>
 <div id="app-context-menu" class="app-context-menu" role="menu" aria-label="Thao tác theo ngữ cảnh"></div>
+<link rel="stylesheet" href="assets/printer-alert-scenes.css?v=__DEPLOY_REVISION__">
+<link rel="stylesheet" href="assets/printer-alert-art.css?v=__DEPLOY_REVISION__">
+<script src="assets/printer-alert-art.js?v=__DEPLOY_REVISION__"></script>
 <script src="printer-monitor.js?v=__DEPLOY_REVISION__"></script>
 <script src="plate-plan-files.js"></script>
 <script src="filament-picker.js"></script>

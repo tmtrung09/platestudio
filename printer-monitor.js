@@ -276,6 +276,8 @@
     const overlay=document.createElement('div');overlay.id='printer-required-alert';overlay.dataset.eventId=event.id;
     overlay.innerHTML=`<section class="pm-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="pm-alert-title" aria-describedby="pm-alert-detail pm-alert-time"><header><span class="pm-alert-icon" aria-hidden="true">${icon(event.type==='printer_finished'?'check':event.type==='printer_failed'?'warning':'pause')}</span><div><small class="pm-alert-kind">${event.type==='printer_finished'?'Hoàn thành':event.type==='printer_failed'?'Lỗi':'Máy đã ngừng in'}</small><h2 id="pm-alert-title">${e(event.title)}</h2></div></header><p id="pm-alert-detail">${e(event.detail||'Trạng thái do máy in báo.')}</p><small id="pm-alert-time">${e(date(event.createdAt))}</small><div class="pm-alert-issues">${(row.issues||[]).slice(0,4).map(issue=>`<p><span class="pm-notice-severity pm-notice-${e(issue.severity)}">${issue.severity==='error'?'Lỗi':issue.severity==='warning'?'Cảnh báo':'Thông tin'}</span> ${e(issue.text||issue.original||'Máy đang báo mã')} <small>${e(issue.code||'')}</small></p>`).join('')}${(row.issues||[]).length>4?'<small>Xem máy để đọc tất cả mã.</small>':''}</div><small class="pm-alert-queue"></small><p class="pm-alert-status" role="status"></p><footer><button type="button" class="btn btn-ghost" data-alert-ack>Đã biết</button><button type="button" class="btn btn-ac" data-alert-view>Xem máy</button></footer></section>`;
     overlay.dataset.severity=event.type==='printer_finished'?'success':'error';
+    const device=snapshot.devices[event.printerId||event.deviceId];
+    window.PlatePrinterAlertArt?.update(overlay.querySelector('.pm-alert-card'),{event,device,issues:row.issues,name:aliases[device?.id]||device?.name});
     overlay.querySelector('[data-alert-ack]').onclick=()=>void acknowledgeRequiredAlert();
     overlay.querySelector('[data-alert-view]').onclick=()=>void acknowledgeRequiredAlert(true);
     document.body.append(overlay);alertOverlay=overlay;
@@ -292,6 +294,8 @@
       const row=requiredAlerts.get(alertOverlay.dataset.eventId),issues=JSON.stringify(row.issues||[]);
       if(alertOverlay.dataset.issues!==issues){alertOverlay.dataset.issues=issues;alertOverlay.querySelector('.pm-alert-issues').innerHTML=(row.issues||[]).slice(0,4).map(issue=>`<p><span class="pm-notice-severity pm-notice-error">Lỗi</span> ${e(issue.text||issue.original||'Máy đang báo mã')} <small>${e(issue.code||'')}</small></p>`).join('')+((row.issues||[]).length>4?'<small>Xem máy để đọc tất cả mã.</small>':'');}
       const count=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').length;
+      const device=snapshot.devices[row.event.printerId||row.event.deviceId];
+      window.PlatePrinterAlertArt?.update(alertOverlay.querySelector('.pm-alert-card'),{event:row.event,device,issues:row.issues,name:aliases[device?.id]||device?.name});
       setText(alertOverlay.querySelector('.pm-alert-queue'),count>1?`${count} thông báo · hiển thị lần lượt`:'');return;
     }
     if(alertBusy||alertLockPending||!requiredAlerts.size||alertBlocked())return;
