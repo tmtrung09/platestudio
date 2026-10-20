@@ -9,8 +9,8 @@
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/kiot-mapping-sql-qa.mjs && node tools/kiot-mapping-qa.mjs && node tools/kiot-ui-qa.mjs && node tools/sales-audit.mjs && node tools/sales-range-qa.mjs && node tools/kiot-recovery-qa.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs && node tools/sales-range-ui-qa.mjs && node tools/sales-calendar-qa.mjs",
     "qa:cloud": "node tools/service-worker-qa.mjs && node tools/cloud-sync-qa.mjs && node tools/batch-upload-qa.mjs",
     "qa:plate-editor": "node tools/plate-editor-qa.mjs && node tools/plan-report-qa.mjs && node tools/plate-manual-qa.mjs && node tools/plate-files-sql-qa.mjs && node tools/filament-picker-qa.mjs",
-    "qa:printers": "node tools/printer-voice-qa.mjs && node tools/printer-alert-policy-qa.mjs && node tools/printer-alert-art-qa.mjs && node tools/printer-core-qa.mjs && node tools/printer-sql-qa.mjs && node tools/printer-ui-qa.mjs",
-    "qa:printer-api": "npx --yes deno test --node-modules-dir=none --allow-env tools/printer-api-qa.ts",
+    "qa:printers": "node tools/printer-voice-sql-qa.mjs && node tools/printer-voice-qa.mjs && node tools/printer-alert-policy-qa.mjs && node tools/printer-alert-art-qa.mjs && node tools/printer-core-qa.mjs && node tools/printer-sql-qa.mjs && node tools/printer-ui-qa.mjs",
+    "qa:printer-api": "npx --yes deno test --node-modules-dir=none --allow-env tools/printer-api-qa.ts tools/printer-voice-api-qa.ts",
     "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor && npm run qa:printers",
     "qa:install": "node tools/shortcut-install-qa.mjs",
     "qa:camera-startup": "node tools/camera-startup-qa.mjs"

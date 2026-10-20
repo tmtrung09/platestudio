@@ -7,21 +7,38 @@ import {waitForAppReady} from './app-ready-qa.mjs';
 const existing=readFileSync('tools/printer-ui-qa.mjs','utf8');
 const start=existing.indexOf('async function seed('),end=existing.indexOf('try{for(const profile',start);
 assert.ok(start>=0&&end>start,'Reuse the printer UI isolated fixture');
-const seed=Function('return '+existing.slice(start,end).trim())();
+const baseSeed=Function('return '+existing.slice(start,end).trim())();
+async function seed(page,...args){await baseSeed(page,...args);await page.evaluate(()=>{
+ const upstream=fetch;window.voiceRequests=0;
+ window.fetch=async(url,options)=>{
+  if(!String(url).includes('/printer-voice'))return upstream(url,options);
+  voiceRequests++;
+  if(tts.fetchFail)return new Response(JSON.stringify({error:'Dịch vụ Enya tạm thời chưa sẵn sàng.'}),{status:503,headers:{'Content-Type':'application/json'}});
+  if(tts.hold)await new Promise((resolve,reject)=>{tts.release=resolve;options.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});});
+  const body=JSON.parse(options.body),event=body.mode==='preview'?{type:'preview'}:PlatePrinterMonitor.events().find(event=>event.id===body.eventId),device=pmFixture.state.devices[event?.printerId];
+  const text=PlatePrinterVoicePolicy.textFor({event,issues:device?.issues||[],name:body.name});
+  return new Response(text,{headers:{'Content-Type':'audio/wav'}});
+ };
+});}
 const out=resolve('qa-results/printer-voice');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
-async function mock(page,{noVoice=false,unsupported=false}={}){
- await page.addInitScript(({noVoice,unsupported})=>{
-  window.tts={calls:[],cancels:0,voices:noVoice?[]:[{name:'Tiếng Việt kiểm thử',lang:'vi-VN'}]};
-  const listeners={};
-  const synth={speaking:false,pending:false,getVoices:()=>tts.voices,addEventListener:(name,fn)=>listeners[name]=fn,
-   speak:item=>{tts.calls.push(item.text);tts.item=item;if(tts.block){queueMicrotask(()=>item.onerror?.({error:'not-allowed'}));return;}synth.speaking=true;queueMicrotask(()=>item.onstart?.());},
-   cancel:()=>{tts.cancels++;synth.speaking=false;tts.item=null;}};
-  tts.finish=()=>{const item=tts.item;synth.speaking=false;tts.item=null;item?.onend?.();};
-  tts.load=()=>{tts.voices=[{name:'Vietnamese test',lang:'vi-VN'}];listeners.voiceschanged?.();};
-  Object.defineProperty(window,'speechSynthesis',{configurable:true,value:unsupported?undefined:synth});
-  window.SpeechSynthesisUtterance=function(text){this.text=text;};
- },{noVoice,unsupported});
+async function mock(page,{unsupported=false}={}){
+ await page.addInitScript(({unsupported})=>{
+  window.tts={calls:[],cancels:0,speaking:false,blobs:new Map()};
+  Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{get speaking(){return tts.speaking;},speak(){throw Error('Rejected system voice must never be used');}}});
+  URL.createObjectURL=blob=>{const key='blob:qa-'+tts.blobs.size;tts.blobs.set(key,blob);return key;};URL.revokeObjectURL=()=>{};
+  window.Audio=unsupported?undefined:class {
+   constructor(src){this.src=src;this.stopped=false;}
+   async play(){
+    if(tts.block)throw new DOMException('Autoplay blocked','NotAllowedError');
+    const text=tts.blobs.has(this.src)?await tts.blobs.get(this.src).text():'Thông báo minh họa: Enya';
+    if(this.stopped)return;tts.item=this;tts.speaking=true;tts.calls.push(text);this.onplaying?.();
+   }
+   pause(){this.stopped=true;tts.cancels++;tts.speaking=false;}
+   removeAttribute(){this.src='';}load(){}
+  };
+  tts.finish=()=>{tts.speaking=false;tts.item?.onended?.();};
+ },{unsupported});
 }
 let serial=2000;
 async function send(page,type,{id='machine-0',phase,issues,runId}={}){
@@ -45,9 +62,9 @@ try{
   await page.goto(pathToFileURL(resolve('plate-studio.html')).href);await waitForAppReady(page);await seed(page,theme);
   const settings=await open(page);
   assert.equal(await settings.isVisible(),true);assert.equal(await settings.locator('[data-voice-toggle]').getAttribute('aria-pressed'),'false');
-  await settings.locator('[data-voice-toggle]').click();assert.match((await calls(page)).at(-1),/Đã bật giọng đọc/);
+  await settings.locator('[data-voice-toggle]').click();assert.match((await calls(page)).at(-1),/Enya/);
   await page.evaluate(()=>tts.finish());
-  await settings.locator('[data-voice-test]').click();assert.match((await calls(page)).at(-1),/^Thông báo minh họa:/);
+  await settings.locator('[data-voice-test]').click();await page.waitForFunction(()=>tts.calls.length===2);assert.match((await calls(page)).at(-1),/^Thông báo minh họa[.:]/);
   assert.ok(await settings.evaluate(el=>el.scrollWidth<=el.clientWidth+1&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=44)),'Settings fit and have touch targets');
   await page.screenshot({path:resolve(out,`${width}-${theme}-settings.png`)});
   await page.locator('.notification-sound').scrollIntoViewIfNeeded();assert.equal(await page.locator('.notification-sound').isVisible(),true,'Existing sound controls remain reachable in a short viewport');
@@ -69,7 +86,7 @@ try{
    await alert(page).getByRole('button',{name:'Đọc lại',exact:true}).click();assert.doesNotMatch((await calls(page)).at(-1),/Đầu phun bị tắc/,'Uncertain cause cannot be spoken as fact');
    await page.keyboard.press('Escape');await alert(page).waitFor({state:'detached'});assert.equal(await page.evaluate(()=>speechSynthesis.speaking),false);
    // A blocked utterance must be retryable and must not count as heard.
-   await page.evaluate(()=>tts.block=true);await send(page,'printer_finished',{id:'machine-2'});await alert(page).waitFor();await page.waitForFunction(()=>document.querySelector('.printer-voice-alert small')?.textContent.includes('Chưa phát'));
+   await page.evaluate(()=>tts.block=true);await send(page,'printer_finished',{id:'machine-2'});await alert(page).waitFor();await page.waitForFunction(()=>document.querySelector('.printer-voice-alert small')?.textContent.includes('Trình duyệt'));
    await page.evaluate(()=>tts.block=false);await alert(page).getByRole('button',{name:'Đọc thông báo',exact:true}).click();assert.equal(await page.evaluate(()=>speechSynthesis.speaking),true);await page.evaluate(()=>tts.finish());
    const before=(await calls(page)).length;
    // Re-present the same current event after reload, without acknowledging it.
@@ -84,27 +101,37 @@ try{
   }else{await page.keyboard.press('Escape');await alert(page).waitFor({state:'detached'});assert.doesNotMatch(await (await open(page)).textContent(),/Đang đọc thông báo/,'Closing clears the speech status');}
   assert.deepEqual(errors,[]);await context.close();
  }
- for(const kind of ['delayed','unsupported','gesture','scope']){
-  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();await context.route(/^https?:/,route=>route.abort());await mock(page,{noVoice:kind==='delayed',unsupported:kind==='unsupported'});
+ for(const kind of ['loading','network','unsupported','gesture','scope']){
+  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();await context.route(/^https?:/,route=>route.abort());await mock(page,{unsupported:kind==='unsupported'});
   await page.goto(pathToFileURL(resolve('plate-studio.html')).href);await waitForAppReady(page);await seed(page,'light');const settings=await open(page);
   if(kind==='unsupported')assert.equal(await settings.locator('[data-voice-toggle]').isDisabled(),true);
   else if(kind==='gesture'||kind==='scope'){
    await page.evaluate(()=>{const key='ps_printer_voice_v1_'+encodeURIComponent('11111111-1111-4111-8111-111111111111:qa-user');localStorage.setItem(key,'1');window.dispatchEvent(new StorageEvent('storage',{key}));closeSystemNotifications(false);});
    await send(page,'printer_finished');await alert(page).waitFor();assert.equal((await calls(page)).length,0,'A stored preference cannot bypass browser activation');
-   await alert(page).getByRole('button',{name:'Đọc thông báo',exact:true}).click();assert.equal((await calls(page)).length,1,'A manual tap reads exactly once');assert.equal(await page.evaluate(()=>speechSynthesis.speaking),true);
+   await alert(page).getByRole('button',{name:'Đọc thông báo',exact:true}).click();await page.waitForFunction(()=>tts.calls.length===1&&tts.speaking);assert.equal((await calls(page)).length,1,'A manual tap reads exactly once');assert.equal(await page.evaluate(()=>speechSynthesis.speaking),true);
    if(kind==='scope'){
     await page.evaluate(()=>{activeWorkspace.workspace_id='22222222-2222-4222-8222-222222222222';PlatePrinterMonitor.render();});await alert(page).waitFor({state:'detached'});assert.equal(await page.evaluate(()=>speechSynthesis.speaking),false,'Changing workspace cancels old speech');
    }else{
     await page.evaluate(()=>{const key='ps_printer_voice_v1_'+encodeURIComponent('11111111-1111-4111-8111-111111111111:qa-user');localStorage.setItem(key,'0');window.dispatchEvent(new StorageEvent('storage',{key}));});assert.equal(await page.evaluate(()=>speechSynthesis.speaking),false,'Turning voice off in another tab cancels current speech');
     assert.equal(await alert(page).isVisible(),true,'Muting voice does not acknowledge the notice');
    }
+  }else if(kind==='network'){
+   await settings.locator('[data-voice-toggle]').click();await page.evaluate(()=>{tts.finish();tts.fetchFail=true;});
+   await settings.locator('[data-voice-test]').click();await page.waitForFunction(()=>tts.calls.length===2);
+   assert.match(await settings.locator('[data-voice-status]').innerText(),/bản mẫu Enya đã lưu/,'Preview fallback is the approved recording and identifies the service error');
+   await page.evaluate(()=>{tts.finish();closeSystemNotifications(false);});await send(page,'printer_paused',{issues:[fault]});await alert(page).waitFor();
+   await alert(page).getByText('Dịch vụ Enya tạm thời chưa sẵn sàng.',{exact:true}).waitFor();assert.equal((await calls(page)).length,2,'Provider failure cannot substitute system speech or acknowledge the alert');
+   await page.evaluate(()=>tts.fetchFail=false);await alert(page).getByRole('button',{name:'Đọc thông báo',exact:true}).click();await page.waitForFunction(()=>tts.speaking&&tts.calls.length===3);
   }else{
-   await settings.locator('[data-voice-toggle]').click();assert.match(await settings.textContent(),/chưa có giọng tiếng Việt/i);await page.evaluate(()=>closeSystemNotifications(false));
-   await send(page,'printer_paused',{issues:[fault]});await alert(page).waitFor();assert.equal((await calls(page)).length,0);
-   await page.evaluate(()=>tts.load());await page.waitForFunction(()=>tts.calls.length===1);assert.match((await calls(page))[0],/Đầu phun bị tắc/);
+   await settings.locator('[data-voice-toggle]').click();await page.evaluate(()=>{tts.finish();tts.hold=true;closeSystemNotifications(false);});
+   await send(page,'printer_paused',{issues:[fault]});await alert(page).waitFor();await page.waitForFunction(()=>!!tts.release);
+   const count=(await calls(page)).length;await send(page,'printer_resumed');await alert(page).waitFor({state:'detached'});await page.evaluate(()=>tts.release());await page.waitForTimeout(100);assert.equal((await calls(page)).length,count,'A late audio response cannot speak an obsolete notice');
+   await page.evaluate(()=>{tts.hold=false;});await send(page,'printer_finished');await alert(page).waitFor();await page.waitForFunction(()=>speechSynthesis.speaking);
    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.evaluate(()=>speechSynthesis.speaking),false,'Hidden page cancels speech');
+   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+   await alert(page).getByRole('button',{name:'Đọc lại',exact:true}).click();await page.waitForFunction(()=>tts.speaking);assert.equal(await page.evaluate(()=>speechSynthesis.speaking),true,'Returning to the page retains manual replay of a valid notice');
   }
   await context.close();
  }
- console.log('PASS printer voice: 6 responsive/theme layouts, queue, cancellation, confirmed causes, blocked retry, reload dedupe, delayed/missing voices and permissions. Browser speech mocked; real OS voice requires Nghe thử.');
+ console.log('PASS printer voice: 6 responsive/theme layouts, queue, cancellation, confirmed causes, blocked retry, reload dedupe, slow audio, rejected autoplay, cached Enya and permissions. Audio playback mocked; approved WAV is browser-decode verified.');
 }finally{await browser.close();}

@@ -319,6 +319,10 @@
 
 ## Thông báo
 
+- Giọng đọc thông báo máy dùng giọng AI Enya đã duyệt; dùng âm thanh tạo sẵn/lưu
+  lại, không tự chuyển sang giọng hệ thống khi tải lỗi. Khóa dịch vụ ở server,
+  xác thực đăng nhập và quyền xưởng trước đọc/tạo, chỉ tạo từ trạng thái máy đã
+  đối chiếu, giới hạn chi phí và chống tạo trùng. Mẫu nghe thử ghi rõ minh họa.
 - Giọng đọc máy dùng tiếng Việt, có bật/tắt và nghe thử theo thiết bị + xưởng +
   người dùng; thiếu giọng hoặc bị trình duyệt chặn phải phản hồi rõ, không báo
   đã đọc khi chưa phát. Chỉ tự đọc pop-up còn hợp lệ của in xong hoặc máy dừng

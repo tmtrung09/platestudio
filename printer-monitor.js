@@ -270,6 +270,12 @@
       if(gen===generation)alertOverlay?.querySelectorAll('button').forEach(button=>button.disabled=false);
     }
   }
+  async function requestVoiceAudio(data,signal) {
+    const ctx=context();if(!ctx.allowed||scope!==ctx.workspace+':'+ctx.user||!data.isPreview&&!data.isCurrent())throw new Error('Thông báo không còn hiệu lực.');
+    const session=await sb.auth.getSession();if(!session.data?.session?.access_token)throw new Error('Cần đăng nhập để dùng giọng Enya.');
+    const latest=context();if(!latest.allowed||ctx.workspace!==latest.workspace||ctx.user!==latest.user||signal.aborted)throw new Error('Phiên thông báo đã thay đổi.');
+    return fetch(SUPABASE_URL+'/functions/v1/printer-voice',{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+session.data.session.access_token},body:JSON.stringify({workspaceId:ctx.workspace,...(data.isPreview?{mode:'preview'}:{eventId:data.event.id,name:data.name}),expectedHash:data.expectedHash}),signal});
+  }
   function showRequiredAlert(row) {
     const event=row.event;
     closeSystemNotifications(false);
@@ -285,7 +291,7 @@
     for(const node of document.body.children)if(node!==overlay){alertInert.set(node,node.inert);node.inert=true;}
     if(row.durable===false)setText(overlay.querySelector('.pm-alert-status'),'Chưa lưu được thông báo trên thiết bị. Đừng tải lại trang trước khi xác nhận.');
     overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});
-    const spoken=window.PlatePrinterVoice?.present({scope,event,issues:row.issues,name:aliases[device?.id]||device?.name,key:row.confirmationKey||event.id,card:overlay.querySelector('.pm-alert-card'),isCurrent:()=>{const ctx=context();return alertOverlay===overlay&&ctx.allowed&&scope===ctx.workspace+':'+ctx.user&&alertAssessment(row.event).status==='active';}});
+    const spoken=window.PlatePrinterVoice?.present({requestAudio:requestVoiceAudio,scope,event,issues:row.issues,name:aliases[device?.id]||device?.name,key:row.confirmationKey||event.id,card:overlay.querySelector('.pm-alert-card'),isCurrent:()=>{const ctx=context();return alertOverlay===overlay&&ctx.allowed&&scope===ctx.workspace+':'+ctx.user&&alertAssessment(row.event).status==='active';}});
     if(!spoken)playNotificationSound();
   }
   function pumpRequiredAlerts() {
@@ -1180,7 +1186,7 @@
   window.PlatePrinterMonitor = {
     render:()=>{render();pumpRequiredAlerts();},
     requiredAlert: enqueueRequiredAlert,
-    voiceSettings: panel=>{const ctx=context();window.PlatePrinterVoice?.mount(panel,{scope:ctx.workspace+':'+ctx.user,allowed:ctx.allowed&&!!ctx.workspace});},
+    voiceSettings: panel=>{const ctx=context();window.PlatePrinterVoice?.mount(panel,{scope:ctx.workspace+':'+ctx.user,allowed:ctx.allowed&&!!ctx.workspace,requestPreview:(data,signal)=>requestVoiceAudio({...data,isPreview:true},signal)});},
     openEvent: openEventMachine,
     allowClose: (id) => {
       const ov = document.getElementById(id);
