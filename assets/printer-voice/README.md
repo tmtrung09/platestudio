@@ -1,5 +1,13 @@
 # Approved Enya preview
 
+`boarding-chime.wav` is an original, softly struck four-note cue (C5, E5, G5, C6),
+1.42 seconds, PCM16 mono at 24 kHz. Reproduce it with
+`node tools/generate-printer-chime.mjs`. No external recording is used.
+Every read and preview plays this cue, waits 180 ms, then starts Enya on the same
+audio element. The sentence is prepared first; cancellation stops the entire
+sequence. Only Enya actually starting counts as heard. If the cue file cannot
+load, the prepared voice can still play.
+
 `enya-preview.wav` is the actual Vietnamese sample approved by the user (sample 2),
 generated in Google AI Studio with `gemini-3.8-flash-tts`, voice `Enya`.
 It is a demonstration recording, not a report from a real printer.

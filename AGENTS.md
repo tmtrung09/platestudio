@@ -319,6 +319,12 @@
 
 ## Thông báo
 
+- Trước mỗi lần đọc thông báo máy bằng Enya, phát tiếng hiệu ngắn kiểu thông báo
+  sân bay rồi ngắt nhẹ trước giọng nói; không phát chồng hai phần hoặc phát trước
+  khi câu đọc đã sẵn sàng. Nghe thử gồm cùng trình tự. Tiếng hiệu không đánh dấu
+  đã đọc; đóng/hủy/đổi trạng thái/mất quyền/ẩn trang phải dừng cả tiếng hiệu,
+  khoảng chờ và giọng đọc, không để câu cũ phát muộn.
+
 - Giọng đọc thông báo máy dùng giọng AI Enya đã duyệt; dùng âm thanh tạo sẵn/lưu
   lại, không tự chuyển sang giọng hệ thống khi tải lỗi. Khóa dịch vụ ở server,
   xác thực đăng nhập và quyền xưởng trước đọc/tạo, chỉ tạo từ trạng thái máy đã

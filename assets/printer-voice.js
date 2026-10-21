@@ -1,16 +1,16 @@
 /* Enya audio playback; alert policy and acknowledgment remain in the monitor. */
 (() => {
   'use strict';
-  const policy=window.PlatePrinterVoicePolicy,preview=new URL('printer-voice/enya-preview.wav',document.currentScript.src).href;
+  const policy=window.PlatePrinterVoicePolicy,preview=new URL('printer-voice/enya-preview.wav',document.currentScript.src).href,chime=new URL('printer-voice/boarding-chime.wav',document.currentScript.src).href;
   const supported=typeof Audio==='function',heard=new Set(),memory=new Map();
-  let scope='',allowed=false,enabled=false,activated=false,active=null,playback=null,notice='',requestPreview=null;
+  let scope='',allowed=false,enabled=false,activated=false,active=null,playback=null,notice='',requestPreview=null,savedPreview=null;
   const setText=(node,text)=>{if(node.textContent!==text)node.textContent=text;};
   const preference=()=>`ps_printer_voice_v1_${encodeURIComponent(scope)}`;
   const history=()=>preference()+':spoken';
   const textFor=data=>policy.textFor(data);
   function cancel(){
     const item=playback;playback=null;if(!item)return;
-    item.abort.abort();clearTimeout(item.timer);
+    item.abort.abort();clearTimeout(item.timer);clearTimeout(item.gapTimer);
     if(item.audio){item.audio.onplaying=item.audio.onended=item.audio.onerror=null;item.audio.pause();item.audio.removeAttribute('src');item.audio.load();}
     if(item.url)URL.revokeObjectURL(item.url);
   }
@@ -43,9 +43,10 @@
   async function speak({isPreview=false,manual=false,livePreview=false}={}){
     if(!supported||!allowed||document.hidden||!isPreview&&!valid())return false;
     if(!activated&&!manual){notice='Chạm Đọc thông báo để phát giọng Enya.';paint();return false;}
-    cancel();const target=isPreview?null:active,owner=scope,item={abort:new AbortController(),audio:null,url:null,timer:0};playback=item;
+    cancel();const target=isPreview?null:active,owner=scope,item={abort:new AbortController(),audio:null,url:null,timer:0,gapTimer:0,stage:'intro'};playback=item;
     notice=isPreview?'Đang mở bản nghe thử Enya…':'Đang chuẩn bị giọng Enya…';paint();
     const current=()=>playback===item&&owner===scope&&allowed&&!document.hidden&&(!target||active===target&&valid());
+    const retire=()=>{if(playback===item){cancel();notice='';paint();}};
     item.timer=setTimeout(()=>{if(!current())return;cancel();notice='Giọng Enya đang tải chậm. Chọn Đọc thông báo để thử lại.';paint();},85000);
     try{
       let source=preview,previewNote='Đang nghe thử giọng Enya…';
@@ -54,12 +55,18 @@
         catch(error){if(!current())return false;previewNote=(error?.message||'Chưa kết nối được dịch vụ.')+' Đang nghe bản mẫu Enya đã lưu.';}
       }
       if(!isPreview){const blob=await audioBlob(target,item.abort.signal);if(!current())return false;source=item.url=URL.createObjectURL(blob);}
+      if(source===preview){
+        if(!savedPreview){const response=await fetch(preview,{signal:item.abort.signal});if(!response.ok)throw new Error('Chưa tải được bản mẫu Enya. Hãy thử lại.');const blob=await response.blob();if(!blob.type.startsWith('audio/')||blob.size<44)throw new Error('Bản mẫu Enya chưa hợp lệ.');savedPreview=blob;}
+        if(!current())return false;source=item.url=URL.createObjectURL(savedPreview);
+      }
       if(!current())return false;
-      const audio=new Audio(source);item.audio=audio;audio.preload='auto';
-      audio.onplaying=()=>{if(!current()){cancel();return;}clearTimeout(item.timer);if(target)remember(target.key);notice=isPreview?previewNote:'Đang đọc thông báo…';paint();};
-      audio.onended=()=>{if(playback!==item)return;cancel();notice='';paint();};
-      audio.onerror=()=>{if(playback!==item)return;cancel();notice='Chưa phát được giọng Enya. Chạm Nghe thử hoặc Đọc thông báo để thử lại.';paint();};
-      await audio.play();return true;
+      const audio=new Audio(chime);item.audio=audio;audio.preload='auto';
+      const failed=error=>{if(playback!==item)return;cancel();notice=error?.name==='NotAllowedError'?'Trình duyệt chưa cho phát âm thanh. Chạm Nghe thử hoặc Đọc thông báo để phát.':'Chưa phát được giọng Enya. Chạm Nghe thử hoặc Đọc thông báo để thử lại.';paint();};
+      const read=()=>{if(!current()){retire();return;}item.stage='voice';audio.src=source;void audio.play().catch(failed);};
+      audio.onplaying=()=>{if(!current()){if(playback===item)cancel();return;}if(item.stage==='intro'){notice='Tín hiệu mở đầu…';paint();return;}if(item.stage!=='voice')return;clearTimeout(item.timer);if(target)remember(target.key);notice=isPreview?previewNote:'Đang đọc thông báo…';paint();};
+      audio.onended=()=>{if(!current()){retire();return;}if(item.stage==='intro'){item.stage='gap';notice='Chuẩn bị đọc…';paint();item.gapTimer=setTimeout(read,180);return;}if(item.stage==='voice'){cancel();notice='';paint();}};
+      audio.onerror=()=>{if(!current()){retire();return;}if(item.stage==='intro'){read();return;}failed();};
+      await audio.play().catch(error=>{if(!current())return;if(error?.name==='NotAllowedError')failed(error);else if(item.stage==='intro')read();});return true;
     }catch(error){if(playback!==item)return false;cancel();notice=error?.name==='NotAllowedError'?'Trình duyệt chưa cho phát âm thanh. Chạm Nghe thử hoặc Đọc thông báo để phát.':error?.message||'Chưa phát được giọng Enya. Hãy thử lại.';paint();return false;}
   }
   function attempt(){
