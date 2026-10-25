@@ -69,7 +69,9 @@ async function fillCustomer(page){
 }
 try{
  for(const width of [320,390,768,1440])for(const theme of ['light','dark']){
-  const {page,context}=await setup(width,theme);await noOverflow(page,`${width}/${theme}/catalog`);await beginOrder(page);
+  const {page,context}=await setup(width,theme);
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),theme==='dark'?'rgb(24, 62, 44)':'rgb(238, 244, 233)','Counter shares the platedio forest palette');
+  await noOverflow(page,`${width}/${theme}/catalog`);await beginOrder(page);
   assert.equal(await page.locator('[data-part=tray]').inputValue(),'','No automatic part color');
   await page.locator('#next-step').click();assert.match(await page.locator('#toast').innerText(),/từng part/);
   await page.locator('[data-note]').evaluate(el=>{window.__note=el;});await chooseParts(page);

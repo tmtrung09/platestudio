@@ -4,8 +4,8 @@
   "start_url": "./plate-studio.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F5F3EE",
-  "theme_color": "#5A4BB5",
+  "background_color": "#183e2c",
+  "theme_color": "#183e2c",
   "icons": [
     {
       "src": "assets/app/platedio-192.png",

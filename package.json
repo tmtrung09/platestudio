@@ -3,7 +3,7 @@
     "qa:loading-demo": "node tools/loading-screen-demo-qa.mjs",
     "qa:startup": "node tools/startup-qa.mjs",
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs && node tools/camera-startup-qa.mjs && node tools/batch-gallery-qa.mjs",
-    "qa:desktop": "npm run qa:startup && npm run qa:install && node tools/desktop-qa.mjs && node tools/density-qa.mjs && npm run qa:page-info-cards && node tools/icon-actions-qa.mjs",
+    "qa:desktop": "npm run qa:startup && npm run qa:install && node tools/desktop-qa.mjs && node tools/density-qa.mjs && npm run qa:page-info-cards && node tools/icon-actions-qa.mjs && npm run qa:forest",
     "qa:page-info-cards": "node tools/page-info-cards-demo-qa.mjs && node tools/page-info-cards-qa.mjs",
     "qa:workflow": "node tools/workflow-qa.mjs && node tools/order-filters-qa.mjs && node tools/product-library-qa.mjs && node tools/model-signals-qa.mjs && node tools/model-sales-qa.mjs && node tools/production-qa.mjs && node tools/progress-qa.mjs",
     "qa:kiot-sync": "node tools/kiot-sync-qa.mjs && node tools/kiot-mapping-sql-qa.mjs && node tools/kiot-mapping-qa.mjs && node tools/kiot-ui-qa.mjs && node tools/sales-audit.mjs && node tools/sales-range-qa.mjs && node tools/kiot-recovery-qa.mjs && node tools/sales-sql-qa.mjs && node tools/sales-ui-qa.mjs && node tools/sales-range-ui-qa.mjs && node tools/sales-calendar-qa.mjs",
@@ -14,7 +14,8 @@
     "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor && npm run qa:printers && npm run qa:custom-orders",
     "qa:install": "node tools/shortcut-install-qa.mjs",
     "qa:camera-startup": "node tools/camera-startup-qa.mjs",
-    "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-orders-ui-qa.mjs && node tools/login-layout-qa.mjs"
+    "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-orders-ui-qa.mjs && node tools/login-layout-qa.mjs",
+    "qa:forest": "node tools/forest-theme-qa.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

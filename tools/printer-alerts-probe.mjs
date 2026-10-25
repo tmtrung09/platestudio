@@ -1,3 +1,4 @@
+import {waitForAppReady} from './app-ready-qa.mjs';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
 import {assertButtonContentCentered} from './button-content-probe.mjs';
@@ -52,11 +53,11 @@ export async function assertPrinterAlerts(page, profile, theme, seed) {
   await send('printer_resumed',13);await send('printer_paused',14);await alert.waitFor({state:'visible'});
   await update({run:{id:'run-replacement',result:'running'},phase:'RUNNING'});await alert.waitFor({state:'detached'});await noAlert('New run retires previous notice');
   if(profile.width===1280&&theme==='light'){
-    await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.PlatePrinterMonitor);await seed(page,theme,{'machine-0':{phase:'RUNNING',run:{id:'run-replacement',result:'running'}}});await noAlert('Reload cannot replay retired stops while the printer is running');
+    await page.reload({waitUntil:'domcontentloaded'});await waitForAppReady(page);await page.waitForFunction(()=>!!window.PlatePrinterMonitor);await seed(page,theme,{'machine-0':{phase:'RUNNING',run:{id:'run-replacement',result:'running'}}});await noAlert('Reload cannot replay retired stops while the printer is running');
   }
   await send('printer_finished',15);await alert.waitFor({state:'visible'});
   if(profile.width===1280&&theme==='light'){await page.waitForTimeout(7500);assert.equal(await alert.isVisible(),true,'Relevant completion has no timeout');}
-  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.PlatePrinterMonitor);
+  await page.reload({waitUntil:'domcontentloaded'});await waitForAppReady(page);await page.waitForFunction(()=>!!window.PlatePrinterMonitor);
   await seed(page,theme,{'machine-0':{phase:'FINISH',run:{id:'run-replacement',result:'finished'}}});await alert.waitFor({state:'visible'});
   assert.match(await alert.locator('h2').textContent(),/In xong/,'Only current completion survives reload');
   await page.evaluate(()=>markSystemNotificationsRead());assert.equal(await alert.isVisible(),true,'Bulk read is not acknowledgment');
@@ -70,7 +71,7 @@ export async function assertPrinterAlerts(page, profile, theme, seed) {
     await page.evaluate(()=>{window.pmOriginalWorkspace=activeWorkspace;activeWorkspace={...activeWorkspace,workspace_id:'33333333-3333-4333-8333-333333333333'};});await alert.waitFor({state:'detached'});
     await page.evaluate(()=>{activeWorkspace=pmOriginalWorkspace;});await alert.waitFor({state:'visible'});await page.keyboard.press('Escape');await alert.waitFor({state:'detached'});
     await send('printer_finished',19,{runId:'run-tabs'});await alert.waitFor({state:'visible'});
-    const other=await page.context().newPage();await other.goto(page.url(),{waitUntil:'domcontentloaded'});await other.waitForFunction(()=>!!window.PlatePrinterMonitor);await seed(other,theme,{'machine-0':{phase:'FINISH',run:{id:'run-tabs',result:'finished'}}});await other.waitForTimeout(1200);
+    const other=await page.context().newPage();await other.goto(page.url(),{waitUntil:'domcontentloaded'});await waitForAppReady(other);await other.waitForFunction(()=>!!window.PlatePrinterMonitor);await seed(other,theme,{'machine-0':{phase:'FINISH',run:{id:'run-tabs',result:'finished'}}});await other.waitForTimeout(1200);
     const otherAlert=other.getByRole('alertdialog');assert.equal(await alert.count()+await otherAlert.count(),1,'One presenter across tabs');
     const presenter=await alert.count()?page:other;await presenter.keyboard.press('Escape');await page.waitForTimeout(1100);assert.equal(await alert.count()+await otherAlert.count(),0,'Esc propagates across tabs');await other.close();
     await send('printer_paused',20,{runId:'run-quota'});await alert.waitFor({state:'visible'});

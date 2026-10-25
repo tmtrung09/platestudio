@@ -31,19 +31,13 @@ try{
     if(width>860)return s.display==='none'?[]:['Desktop navigation is not hidden'];
     const r=nav.getBoundingClientRect();
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
-    const blur=Number(s.backdropFilter.match(/blur\((\d+)px\)/)?.[1]||0);
-    if(blur!==18||s.backdropFilter.includes('url('))errors.push('Glass must use a bounded CSS blur, not a displacement filter');
-    const dockFilter=document.documentElement.dataset.theme==='light'?'blur(18px) saturate(0.85) contrast(0.2) brightness(1.7)':'blur(18px) saturate(0.85) contrast(0.4) brightness(0.48)';
-    if(s.backdropFilter!==dockFilter||(CSS.supports('-webkit-backdrop-filter','blur(1px)')&&s.getPropertyValue('-webkit-backdrop-filter')!==dockFilter))errors.push('Missing theme-aware backdrop contrast guard: '+s.backdropFilter);
-    const edgeAlpha=Number(s.borderTopColor.match(/[\d.]+/g)?.at(-1));
-    if(edgeAlpha>.5)errors.push('Navigation glass edge is too bright');
+    // Forest navigation owns an opaque surface so content cannot reduce contrast.
+    if(s.backdropFilter!=='none'||(CSS.supports('-webkit-backdrop-filter','blur(1px)')&&s.getPropertyValue('-webkit-backdrop-filter')!=='none'))errors.push('Unexpected blur/compositing in forest dock');
     const alpha=color=>color.startsWith('rgba')?Number(color.match(/[\d.]+/g).at(-1)):1;
-    for(const selector of ['#mobile-nav','.more-sheet-ov','.more-sheet','.more-sheet-head','.more-sheet-footer','.more-search','.more-group .more-item','.more-sheet-close','.more-categories button[aria-pressed="false"]']){
+    for(const selector of ['#mobile-nav','.more-sheet']){
      const style=getComputedStyle(document.querySelector(selector));
-     if(alpha(style.backgroundColor)!==0||style.backgroundImage.split(',').some(layer=>layer.trim()!=='none'))errors.push('Tint/gradient masks the blur: '+selector);
+     if(alpha(style.backgroundColor)!==1||style.backgroundImage!=='none')errors.push('Forest surface is not opaque and flat: '+selector);
     }
-    const lens=getComputedStyle(nav,'::before');
-    if(alpha(lens.backgroundColor)!==0||lens.backgroundImage!=='none')errors.push('Lens still paints an opaque fill');
     if([...nav.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'))errors.push('Nested backdrop filters in dock');
     if(getComputedStyle(nav,'::before').pointerEvents!=='none')errors.push('Glass lens intercepts taps');
     const buttons=[...nav.querySelectorAll('button')];
@@ -127,16 +121,16 @@ try{
    const sheet=document.querySelector('.more-sheet'),nav=document.getElementById('mobile-nav');
    return {blur:getComputedStyle(sheet).backdropFilter,nested:[...sheet.querySelectorAll('*')].some(el=>getComputedStyle(el).backdropFilter!=='none'),scrim:getComputedStyle(document.getElementById('more-sheet-ov')).backdropFilter,lens:Number(nav.style.getPropertyValue('--mobile-active-index'))=== [...nav.querySelectorAll('button')].findIndex(b=>b.id==='mnav-more')};
   });
-  assert.deepEqual(glass,{blur:'blur(18px) saturate(0.95) brightness(0.94)',nested:false,scrim:'none',lens:true});
+  assert.deepEqual(glass,{blur:'none',nested:false,scrim:'none',lens:true});
   assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el).backdropFilter),'none','Do not composite a second glass layer behind an open menu');
   assert.equal(await page.locator('#more-search').evaluate(el=>getComputedStyle(el).fontSize),'16px','Search must not trigger iOS focus zoom');
   const metal=await page.locator('.more-search').evaluate(el=>{
    const input=el.querySelector('input'),text=getComputedStyle(input),hint=getComputedStyle(input,'::placeholder'),rim=getComputedStyle(el,'::before');
    return {color:text.color,hint:hint.color,opacity:hint.opacity,weight:hint.fontWeight,shadow:hint.textShadow,rim:rim.backgroundImage,mask:rim.maskComposite,pointer:rim.pointerEvents,animation:rim.animationName,icon:getComputedStyle(el.querySelector('svg')).stroke};
   });
-  assert.equal(metal.color,theme==='light'?'rgb(48, 65, 88)':'rgb(237, 242, 250)');
-  assert.equal(metal.hint,metal.color);assert.equal(metal.icon,metal.color);assert.equal(metal.opacity,'1');assert.equal(metal.weight,'600');
-  assert.notEqual(metal.shadow,'none');assert.ok(metal.rim.includes('linear-gradient'));assert.ok(metal.mask.split(',').every(value=>value.trim()==='exclude'));assert.equal(metal.pointer,'none');assert.equal(metal.animation,'none');
+  const searchBackground=await page.locator('.more-search').evaluate(el=>getComputedStyle(el).backgroundColor.match(/[\d.]+/g).slice(0,3).map(Number));
+  for(const color of [metal.color,metal.hint,metal.icon])assert.ok(ratio(color.match(/[\d.]+/g).slice(0,3).map(Number),searchBackground)>=4.5,'Menu search remains legible');
+  assert.equal(metal.opacity,'1');assert.equal(metal.pointer,'none');assert.equal(metal.animation,'none');
   await page.keyboard.press('Shift+Tab');
   assert.equal(await page.evaluate(()=>document.activeElement.id),'more-auth-btn');
   await page.keyboard.press('Tab');
@@ -230,5 +224,5 @@ try{
  await page.evaluate(()=>toggleMoreSheet());
  assert.equal(await page.locator('.more-sheet').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
  assert.equal(await page.locator('#mobile-nav').evaluate(el=>getComputedStyle(el,'::before').transitionDuration),'0s');
- console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, 7 composited contrast backgrounds, scroll without rerender, primary icon states, search/categories, gestures, focus, actions, bounded glass, reduced transparency/contrast/motion.');
+ console.log('Navigation QA: PASS — 6 widths, 2 themes, 5 roles, 7 composited contrast backgrounds, scroll without rerender, primary icon states, search/categories, gestures, focus, actions, opaque forest surfaces, reduced transparency/contrast/motion.');
 }finally{await browser.close();}

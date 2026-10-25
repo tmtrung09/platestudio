@@ -8,6 +8,14 @@ mkdirSync('qa-results/plate-manual',{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
 try{for(const width of [320,390,1440])for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[];
+ await context.addInitScript(()=>{
+  const schedule=window.setTimeout.bind(window);
+  window.setTimeout=(callback,delay,...args)=>{
+   if(delay===2000&&typeof callback==='function'&&callback.toString().replace(/\s/g,'')==='()=>resume()')
+    return schedule(async()=>{try{await callback(...args);}finally{window.qaPrintFileStartupSettled=true;}},delay);
+   return schedule(callback,delay,...args);
+  };
+ });
  await context.route(/^https?:/,r=>r.abort());page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await waitForAppReady(page);
@@ -87,10 +95,13 @@ try{for(const width of [320,390,1440])for(const theme of ['light','dark']){
   try{saveNightPlanEditor();return {unchanged:before===JSON.stringify(getNightPrintPlan().machines['my-nu'].plate),open:document.getElementById('dlg-mv').style.display==='flex',message:document.getElementById('pp-editor-feedback').textContent};}finally{Storage.prototype.setItem=original;}
  });assert.equal(quota.unchanged,true);assert.equal(quota.open,true);assert.match(quota.message,/Chưa lưu được plate/);
  const switched=await page.evaluate(async()=>{const before=JSON.stringify(operations),initial=PlatePlanFiles.scope();currentUser={id:'different-user'};activeWorkspace={workspace_id:'different-workspace',owner_user_id:'different-user'};saveNightPlanEditor();let writes=0;const add=PlatePlanFiles.add;PlatePlanFiles.add=async()=>{writes++;return [];};try{await attachManualPlanFiles({files:[new File(['wrong-scope'],'wrong.stl')],value:'selected'});}finally{PlatePlanFiles.add=add;currentUser=null;activeWorkspace=null;}return {unchanged:JSON.stringify(operations)===before,writes,initial};});assert.equal(switched.unchanged,true,'Scope rejection never creates an empty plan in another workspace');assert.equal(switched.writes,0,'Old forms cannot upload into a newly selected workspace');
+ // Install the upload transport after the real startup scan completes, so an
+ // in-flight background scan cannot race this single manual retry fixture.
+ await page.waitForFunction(()=>window.qaPrintFileStartupSettled===true);
  const upload=await page.evaluate(async()=>{
   _closeDialogBase('dlg-mv');currentUser={id:'user-a'};activeWorkspace={workspace_id:'workspace-a',owner_user_id:'user-a'};canAccess=()=>true;
   let attempts=0;sb={storage:{from:()=>({upload:async()=>{attempts++;return {error:{message:'Mất mạng'}};},download:async()=>({data:new Blob(['secret']),error:null})})}};
-  const settled=async(id,status)=>{const until=performance.now()+5000;do{const row=await PlatePlanFiles.get(id);if(row?.status===status)return row;await new Promise(requestAnimationFrame);}while(performance.now()<until);throw Error('File did not reach persisted '+status);};
+  const settled=async(id,status)=>{const until=performance.now()+5000;do{const row=await PlatePlanFiles.get(id);if(row?.status===status){await new Promise(requestAnimationFrame);return row;}await new Promise(requestAnimationFrame);}while(performance.now()<until);throw Error('File did not reach persisted '+status);};
   const file=(await PlatePlanFiles.add([new File(['cloud-original'],'cloud.3mf')]))[0];
   const failed=await settled(file.id,'error');sb.storage.from=()=>({upload:async()=>{attempts++;return {error:null};}});await PlatePlanFiles.resume(file.id);
   const saved=await PlatePlanFiles.get(file.id);

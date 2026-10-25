@@ -78,6 +78,12 @@
 
 ### Mật độ thông tin, control và icon
 
+- Toàn hệ thống dùng tông xanh lá của màn đăng nhập: nền, thẻ, điều hướng và
+  control theo token chung, liền mạch ở cả theme sáng/tối. Giữ màu dữ liệu như
+  màu nhựa, ảnh thật và màu trạng thái nghiệp vụ. Mobile không cắt toolbar,
+  không chồng đồ họa lên chữ/control; hỗ trợ safe area, phóng to và ô nhập 16px.
+  Guard: `tools/forest-theme-qa.mjs`.
+
 - Giao diện toàn hệ thống gọn: tiêu đề, khoảng cách trang, thẻ, thống kê và điều
   hướng nhất quán trên desktop/mobile, light/dark. Không zoom/transform:scale toàn
   trang; giữ tỷ lệ ảnh, vùng cuộn, dữ liệu và hành vi lưu/sync. Ô nhập mobile giữ
