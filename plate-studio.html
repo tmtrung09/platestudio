@@ -5224,9 +5224,8 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <div id="draft-tray"></div>
 <div id="batch-ai-float" aria-live="polite"></div>
 <div id="auth-ov" class="auth-ov" style="display:none">
-<div class="la-layout"><section class="la-story"><div class="la-brand-mark platedio-auth-brand" aria-label="platedio"><span class="platedio-brand-reveal"><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></div><h2>Mọi ý tưởng,<br>đều có thể<br><em>thành hình.</em></h2><p>Từ mong muốn tại quầy đến bàn tay người làm.<br>Cùng nhau tạo nên những điều rất riêng.</p><svg class="la-story-art" viewBox="0 0 450 300" aria-hidden="true"><circle cx="225" cy="160" r="125" fill="none" stroke="#cae3a2" stroke-opacity=".13"/><ellipse cx="225" cy="255" rx="130" ry="25" fill="#102e1c"/><path d="m105 220 120-46 124 48-123 50Z" fill="#345d3f"/><path d="M134 211V60h182v151" fill="none" stroke="#8eac70" stroke-width="5"/><path d="M134 83h182" stroke="#a8bf87" stroke-width="2"/><path d="m174 181 51-21 58 22v41l-56 24-53-24Z" fill="#75985d"/><path d="m174 181 53 22 56-21-58-22Z" fill="#deebbc"/><path d="m176 190 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20" stroke="#b6d18e" fill="none"/><g class="la-login-head"><path d="M201 78h48v36h-48Z" fill="#b5cc91"/><path d="m209 114 16 18 16-18Z" fill="#779c5b"/><path d="M225 132v27" stroke="#d1e9a4"/></g><path d="m345 85 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#cfdfa4"/></svg><span class="la-story-footer">KHÔNG GIAN LÀM VIỆC PLATEDIO</span></section><section class="la-form-side"><main class="la-card" id="la-card"><p class="la-auth-eyebrow">CHÀO MỪNG TRỞ LẠI</p>
-  <h1 id="la-title">Đăng nhập</h1>
-  <p class="la-subtitle" id="la-subtitle">Đăng nhập để đồng bộ dữ liệu.</p>
+<div class="la-layout"><section class="la-story"><div class="la-brand-mark platedio-auth-brand" aria-label="platedio"><span class="platedio-brand-reveal"><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></div><h1 id="la-title" class="la-login-title"><span>Chào trở lại,</span><span>cùng bắt đầu</span><em>ngày mới.</em></h1><svg class="la-story-art" viewBox="0 0 450 300" aria-hidden="true"><circle cx="225" cy="160" r="125" fill="none" stroke="#cae3a2" stroke-opacity=".13"/><ellipse cx="225" cy="255" rx="130" ry="25" fill="#102e1c"/><path d="m105 220 120-46 124 48-123 50Z" fill="#345d3f"/><path d="M134 211V60h182v151" fill="none" stroke="#8eac70" stroke-width="5"/><path d="M134 83h182" stroke="#a8bf87" stroke-width="2"/><path d="m174 181 51-21 58 22v41l-56 24-53-24Z" fill="#75985d"/><path d="m174 181 53 22 56-21-58-22Z" fill="#deebbc"/><path d="m176 190 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20" stroke="#b6d18e" fill="none"/><g class="la-login-head"><path d="M201 78h48v36h-48Z" fill="#b5cc91"/><path d="m209 114 16 18 16-18Z" fill="#779c5b"/><path d="M225 132v27" stroke="#d1e9a4"/></g><path d="m345 85 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#cfdfa4"/></svg><span class="la-story-footer">KHÔNG GIAN LÀM VIỆC PLATEDIO</span></section><section class="la-form-side"><main class="la-card" id="la-card">
+  <p class="la-subtitle la-state-copy" id="la-subtitle">Đăng nhập để đồng bộ dữ liệu.</p>
 
   <div class="la-segmented" id="la-segmented" data-mode="signin">
     <button class="la-seg-btn la-active" data-mode="signin" type="button">Đăng nhập</button>
@@ -22252,17 +22251,19 @@ const laDividerText = document.getElementById('la-divider-text');
 const laForgotLink  = document.getElementById('la-forgot-link');
 
 const laCopy = {
-  signin:{ title:'Bắt đầu một ngày mới.', sub:'Đăng nhập để tiếp nối công việc của bạn.', cta:'Đăng nhập', switchTxt:'Chưa có tài khoản? ', switchBtn:'Tạo tài khoản', divider:'Đăng nhập bằng email' },
-  signup:{ title:'Tạo tài khoản', sub:'Tạo tài khoản để đồng bộ dữ liệu.', cta:'Tạo tài khoản', switchTxt:'Đã có tài khoản? ', switchBtn:'Đăng nhập', divider:'Tạo tài khoản bằng email' }
+  signin:{ title:'Chào trở lại, cùng bắt đầu ngày mới.', lines:['Chào trở lại,','cùng bắt đầu','ngày mới.'], sub:'Đăng nhập để tiếp nối công việc của bạn.', cta:'Đăng nhập', switchTxt:'Chưa có tài khoản? ', switchBtn:'Tạo tài khoản', divider:'Đăng nhập bằng email' },
+  signup:{ title:'Tạo tài khoản', lines:['Tạo tài khoản,','cùng bắt đầu','ngày mới.'], sub:'Tạo tài khoản để đồng bộ dữ liệu.', cta:'Tạo tài khoản', switchTxt:'Đã có tài khoản? ', switchBtn:'Đăng nhập', divider:'Tạo tài khoản bằng email' }
 };
 
+let laModeSwapTimer;
 function setAuthMode(mode){
   laSegmented.dataset.mode = mode;
   laSegBtns.forEach(b=>b.classList.toggle('la-active', b.dataset.mode===mode));
   const c = laCopy[mode];
+  clearTimeout(laModeSwapTimer);
   [laTitle,laSubtitle].forEach(el=>el.classList.add('la-swap'));
-  setTimeout(()=>{
-    laTitle.textContent=c.title; laSubtitle.textContent=c.sub;
+  laModeSwapTimer=setTimeout(()=>{
+    laTitle.replaceChildren(...c.lines.map((text,index)=>{const line=document.createElement(index===c.lines.length-1?'em':'span');line.textContent=text;return line;})); laSubtitle.textContent=c.sub;
     laDividerText.textContent=c.divider; laCtaLabel.textContent=c.cta;
     laSwitchLine.innerHTML = c.switchTxt + '<button id="la-switch-btn" type="button">'+c.switchBtn+'</button>';
     document.getElementById('la-switch-btn').addEventListener('click', ()=> setAuthMode(mode==='signin'?'signup':'signin'));

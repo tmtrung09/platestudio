@@ -152,6 +152,12 @@
 
 ## Khởi động, đồng bộ và camera
 
+- Màn đăng nhập dùng nền xanh lá liền mạch giữa phần nhận diện và form; lời chào
+  dùng kiểu chữ nhẹ, có đoạn nhấn nghiêng và diễn đạt đúng việc đăng nhập/tạo tài
+  khoản. Điện thoại bỏ mô tả khẩu hiệu và dòng tên không gian làm việc; đồ họa máy
+  in ở góc trên bên phải, không che logo, lời chào hoặc form. Giữ một tiêu đề chính,
+  các thao tác tài khoản và vùng chạm/căn giữa. Guard: `tools/login-layout-qa.mjs`.
+
 - Lời mời tạo lối tắt platedio có demo để duyệt trước khi tích hợp vào ứng dụng
   chính; hướng dẫn phù hợp thiết bị/trình duyệt và phân biệt thao tác mô phỏng
   với việc tạo lối tắt thật.

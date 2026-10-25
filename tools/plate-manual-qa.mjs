@@ -90,10 +90,11 @@ try{for(const width of [320,390,1440])for(const theme of ['light','dark']){
  const upload=await page.evaluate(async()=>{
   _closeDialogBase('dlg-mv');currentUser={id:'user-a'};activeWorkspace={workspace_id:'workspace-a',owner_user_id:'user-a'};canAccess=()=>true;
   let attempts=0;sb={storage:{from:()=>({upload:async()=>{attempts++;return {error:{message:'Mất mạng'}};},download:async()=>({data:new Blob(['secret']),error:null})})}};
-  const file=(await PlatePlanFiles.add([new File(['cloud-original'],'cloud.3mf')]))[0];await new Promise(r=>setTimeout(r,100));
-  const failed=await PlatePlanFiles.get(file.id);sb.storage.from=()=>({upload:async()=>{attempts++;return {error:null};}});await PlatePlanFiles.resume(file.id);
+  const settled=async(id,status)=>{const until=performance.now()+5000;do{const row=await PlatePlanFiles.get(id);if(row?.status===status)return row;await new Promise(requestAnimationFrame);}while(performance.now()<until);throw Error('File did not reach persisted '+status);};
+  const file=(await PlatePlanFiles.add([new File(['cloud-original'],'cloud.3mf')]))[0];
+  const failed=await settled(file.id,'error');sb.storage.from=()=>({upload:async()=>{attempts++;return {error:null};}});await PlatePlanFiles.resume(file.id);
   const saved=await PlatePlanFiles.get(file.id);
-  sb.storage.from=()=>({upload:async()=>{attempts++;return {error:{message:'Mất mạng'}};}});await PlatePlanFiles.add([new File(['other-pending'],'pending.stl')]);await new Promise(r=>setTimeout(r,100));
+  sb.storage.from=()=>({upload:async()=>{attempts++;return {error:{message:'Mất mạng'}};}});const pending=(await PlatePlanFiles.add([new File(['other-pending'],'pending.stl')]))[0];await settled(pending.id,'error');
   currentUser={id:'user-b'};await PlatePlanFiles.resume();
   return {failed:failed.status,blob:await saved.blob.text(),status:saved.status,attempts};
  });assert.deepEqual(upload,{failed:'error',blob:'cloud-original',status:'uploaded',attempts:3});
