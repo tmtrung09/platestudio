@@ -8,3 +8,6 @@
 @media(prefers-reduced-motion:reduce){.la-login-head{animation:none!important}}
 .la-story .platedio-auth-brand b{font-size:32px!important}
 .custom-order-tag{display:inline-flex;align-items:center;gap:5px;margin-left:5px;padding:3px 6px;border-radius:5px;background:var(--gr-bg);color:var(--gr);font-size:10px;font-weight:700;vertical-align:middle}.custom-order-entry{margin-top:8px}
+#auth-ov .la-segmented{height:52px;min-height:52px}
+#auth-ov .la-seg-btn{display:flex;align-items:center;justify-content:center;min-width:0;margin:0;padding:0 8px;line-height:1.25;text-align:center}
+#auth-ov .la-seg-thumb{height:auto;bottom:3px}

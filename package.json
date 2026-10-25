@@ -14,7 +14,7 @@
     "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor && npm run qa:printers && npm run qa:custom-orders",
     "qa:install": "node tools/shortcut-install-qa.mjs",
     "qa:camera-startup": "node tools/camera-startup-qa.mjs",
-    "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-orders-ui-qa.mjs"
+    "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-orders-ui-qa.mjs && node tools/login-layout-qa.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
