@@ -396,6 +396,32 @@
   UI QA; bao phủ quyền/workspace/queue/reload/form/các cách đóng/bàn phím/chạm/
   mobile/desktop/hai theme.
 
+## Đơn custom tại cửa hàng
+
+- Nhân viên cửa hàng đăng nhập Plate Studio với nhóm quyền riêng để tạo đơn custom
+  và xem tất cả đơn custom của cửa hàng; sau khi tạo chỉ xem tiến độ. Hỗ trợ điện
+  thoại và máy tính tại quầy. Luồng và trang đăng nhập mới phải có demo để duyệt
+  trước khi tích hợp; demo dùng dữ liệu minh họa, không ghi dữ liệu xưởng.
+- Chọn sản phẩm từ model đã nhập, tìm theo tên hoặc mã KiotViet và giữ định danh
+  model/biến thể. Ghi số lượng, yêu cầu custom tự do và ảnh tham khảo theo từng
+  dòng; không áp quy luật màu/ký tự/kích thước từ một ví dụ sản phẩm cụ thể.
+- Model có part phải yêu cầu nhân viên chọn màu khách muốn cho từng part được
+  dùng trong biến thể đã chọn, bằng bộ chọn màu nhựa chung; không tự chọn màu.
+  Giữ lựa chọn theo ID part khi nhập/quay lại/tải lại. Lưu snapshot tên/màu và
+  colorChoices vào đơn, kiểm tra lại model/biến thể/part/màu ở server trước ACK;
+  công việc sản xuất phải dùng đúng màu đã chốt. Guard: custom-orders SQL/UI QA.
+- Nhân viên nhập giá, tiền cọc và ngày hẹn theo thỏa thuận. Lưu tên, số điện thoại/
+  Zalo, hình thức nhận và địa chỉ khi giao hàng; có bước đối chiếu với khách trước
+  khi xác nhận. Đơn đi vào luồng đơn/sản xuất chung, có nhận diện custom và được
+  ưu tiên hơn đơn thường.
+- Tạo đơn thành công hiện QR chứa link theo dõi riêng dành cho khách, mở lại từ
+  chi tiết đơn được. Trang khách có tổng tiền/đã cọc/còn lại, ngày hẹn, yêu cầu đã
+  chốt và các mốc Đã nhận đơn / Đang thực hiện / Kiểm tra hoàn thiện / Sẵn sàng
+  nhận hoặc giao / Hoàn tất, lấy từ tiến độ thực tế. Đồ họa thiết kế riêng theo
+  giai đoạn, hỗ trợ mobile/light/dark/reduced-motion và được duyệt trong demo.
+  Link chỉ mở dữ liệu dành cho khách của đúng đơn, không cấp quyền xưởng; liên
+  hệ cửa hàng qua https://www.facebook.com/banhmi.176huynhcuong.
+
 ## KiotViet, bán hàng và tồn kho
 
 - Trang Bán hàng dùng khoảng ngày trên lịch/lọc nhanh làm kỳ thống kê duy nhất;

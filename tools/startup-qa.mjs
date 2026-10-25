@@ -54,6 +54,7 @@ try{
   await page.evaluate(()=>{renderSb();goPage('orders',{historyMode:'none'});renderSb();});
   assert.equal(await page.evaluate(()=>PlatedioStartup.state),'ready','Background renders and navigation never replay startup');
   assert.equal(await page.locator('#more-sheet-ov').evaluate(el=>el.inert),true,'Preexisting inert state remains owned by its component');
+  await node.locator('.platedio-brand-reveal').evaluate(el=>Promise.race([Promise.all(el.getAnimations().map(animation=>animation.finished.catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,1800))]));
   assert.equal(await node.locator('.platedio-brand-reveal').evaluate(el=>el.getAnimations().filter(animation=>animation.playState==='running').length),0,'Brand has no perpetual motion');
   if([390,1440].includes(width))await page.screenshot({path:resolve(out,`${width}-${theme}-ready.png`)});
   if(width>860){

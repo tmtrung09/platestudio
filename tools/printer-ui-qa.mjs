@@ -63,7 +63,7 @@ try{for(const profile of profiles)for(const theme of ['light','dark']){
  assert.ok(await panel.evaluate(el=>el.querySelector('h2').getBoundingClientRect().top>=document.querySelector('.page.active .production-navigation-slot').getBoundingClientRect().bottom),'Opening detail must not hide the machine title behind sticky navigation');
  await page.screenshot({path:resolve(out,`${profile.width}-${profile.height}-${theme}-detail.png`)});
  await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false);assert.equal(await machineOpen.evaluate(el=>el===document.activeElement),true,'Escape returns focus to selected machine');
- if(profile.width===1280&&theme==='light')await assertDetailLifecycle(page);
+ if(profile.width===1280&&theme==='light'){await assertDetailLifecycle(page);await seed(page,theme);}
  await assertPrinterMotion(page,profile,theme,out);
  const search=page.getByRole('searchbox',{name:'Tìm máy hoặc mẻ in'});await search.fill('my my');assert.equal(await page.locator('.pm-machine').count(),1,'Shared unaccented search');await search.fill('');
  await page.evaluate(()=>{window.pmKeptInput=document.querySelector('.pm-toolbar input');window.pmKeptCard=document.querySelector('.pm-machine');window.pmKeptImage=document.querySelector('.pm-machine-image');document.querySelector('.pm-toolbar input').focus();pmFixture.state.devices['machine-0'].percent=46;PlatePrinterMonitor.receive({...pmFixture,events:[]});});

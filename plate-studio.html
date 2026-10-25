@@ -4793,6 +4793,7 @@ html:is([data-platedio-startup="entering"],[data-platedio-startup="loading"],[da
 body.staff-report-mode .platedio-mobile-brand{display:none!important}
 
 </style>
+<link rel="stylesheet" href="assets/custom-orders/login.css">
 </head>
 <body>
 <div id="platedio-startup" role="status" aria-live="polite" aria-busy="true"><div class="ps-loading-composition"><div class="loading-art" aria-hidden="true">
@@ -5223,12 +5224,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <div id="draft-tray"></div>
 <div id="batch-ai-float" aria-live="polite"></div>
 <div id="auth-ov" class="auth-ov" style="display:none">
-<div class="la-mesh" aria-hidden="true">
-  <span class="la-blob la-b1"></span><span class="la-blob la-b2"></span><span class="la-blob la-b3"></span>
-</div>
-
-<main class="la-card" id="la-card">
-  <div class="la-brand-mark platedio-auth-brand" aria-label="platedio"><span class="platedio-brand-reveal"><svg class="platedio-mark" aria-hidden="true" focusable="false" viewBox="0 0 32 32"><path class="mark-top" d="m16 3 12 7-12 7L4 10z"/><path class="mark-left" d="m4 10 12 7v13L4 23z"/><path class="mark-right" d="m16 17 12-7v13l-12 7z"/><path class="mark-detail" d="m10 10 6 3 6-3"/></svg><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></div>
+<div class="la-layout"><section class="la-story"><div class="la-brand-mark platedio-auth-brand" aria-label="platedio"><span class="platedio-brand-reveal"><b>platedio<span class="platedio-brand-dot" aria-hidden="true">.</span></b><span class="platedio-brand-glint" aria-hidden="true"></span></span></div><h2>Mọi ý tưởng,<br>đều có thể<br><em>thành hình.</em></h2><p>Từ mong muốn tại quầy đến bàn tay người làm.<br>Cùng nhau tạo nên những điều rất riêng.</p><svg class="la-story-art" viewBox="0 0 450 300" aria-hidden="true"><circle cx="225" cy="160" r="125" fill="none" stroke="#cae3a2" stroke-opacity=".13"/><ellipse cx="225" cy="255" rx="130" ry="25" fill="#102e1c"/><path d="m105 220 120-46 124 48-123 50Z" fill="#345d3f"/><path d="M134 211V60h182v151" fill="none" stroke="#8eac70" stroke-width="5"/><path d="M134 83h182" stroke="#a8bf87" stroke-width="2"/><path d="m174 181 51-21 58 22v41l-56 24-53-24Z" fill="#75985d"/><path d="m174 181 53 22 56-21-58-22Z" fill="#deebbc"/><path d="m176 190 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20m-105 6 51 20 54-20" stroke="#b6d18e" fill="none"/><g class="la-login-head"><path d="M201 78h48v36h-48Z" fill="#b5cc91"/><path d="m209 114 16 18 16-18Z" fill="#779c5b"/><path d="M225 132v27" stroke="#d1e9a4"/></g><path d="m345 85 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#cfdfa4"/></svg><span class="la-story-footer">KHÔNG GIAN LÀM VIỆC PLATEDIO</span></section><section class="la-form-side"><main class="la-card" id="la-card"><p class="la-auth-eyebrow">CHÀO MỪNG TRỞ LẠI</p>
   <h1 id="la-title">Đăng nhập</h1>
   <p class="la-subtitle" id="la-subtitle">Đăng nhập để đồng bộ dữ liệu.</p>
 
@@ -5272,9 +5268,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
   </form>
 
   <p class="la-switch-line" id="la-switch-line">Chưa có tài khoản? <button id="la-switch-btn" type="button">Tạo tài khoản</button></p>
-</main>
-
-<p class="la-legal">Dữ liệu được đồng bộ an toàn.</p>
+<p class="la-legal">Mỗi người một tài khoản, đúng phần việc của mình.</p></main></section></div>
 
 </div>
 
@@ -5284,7 +5278,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <!-- SIDEBAR -->
 <aside class="sb" id="sidebar">
   <div class="sb-sect">
-    <div class="sb-sect-title">Hành động</div>
+    <div class="sb-sect-title">Hành động</div><button class="sb-btn custom-order-entry" data-custom-orders-entry style="display:none" onclick="location.href='custom-orders.html'"><svg viewBox="0 0 24 24"><path d="m12 3 2 6 7 3-7 3-2 6-2-6-7-3 7-3Z"/></svg><span class="sb-lbl">Đơn custom</span></button>
     <button class="sb-btn" onclick="openOrderForm()" title="Tạo Order">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span class="sb-lbl">Tạo Order</span>
@@ -7720,6 +7714,9 @@ async function loadCloudSession(session) {
       return;
     }
     await ensureCloudWorkspace();
+    if(activeWorkspace?.role==='store_custom'||((activeWorkspace?.permissions||[]).some(p=>p.startsWith('custom_orders.'))&&!(activeWorkspace.permissions||[]).some(p=>ACCESS_PERMISSION_LIST.some(([id])=>id===p&&!id.startsWith('custom_orders.'))))||new URLSearchParams(location.search).get('next')==='custom-orders'){
+      location.replace(new URL('custom-orders.html',APP_URL).href);return;
+    }
     recordPerformanceMetric('workspaceReadyMs',performance.now()-startupBegan);
     restoreBatchLibraryView();
     setFastCaptureAvailable(canCaptureBatchReports());
@@ -8312,7 +8309,7 @@ function getProductionNeedRows(exclude={},includeSuggestions=true){
     if(!row){row={id:`retry:${part.modelId}:${part.variantId||'base'}`,type:'qc',origins:['qc'],model,title:model.name,variantName:part.variantName||'',parts:[],orders:[]};rows.push(row);}
     row.parts.push({...part,qty:missing,planned:0,unplanned:missing,qc:true,references:[]});
   });
-  return rows.sort((a,b)=>(a.type==='reconcile'?-1:b.type==='reconcile'?1:0)||Number(b.origins.includes('qc'))-Number(a.origins.includes('qc'))||String(a.title).localeCompare(String(b.title),'vi'));
+  return rows.sort((a,b)=>(a.type==='reconcile'?-1:b.type==='reconcile'?1:0)||Number((b.orders||[]).some(id=>rawOrder(id)?.kind==='custom'))-Number((a.orders||[]).some(id=>rawOrder(id)?.kind==='custom'))||Number(b.origins.includes('qc'))-Number(a.origins.includes('qc'))||String(a.title).localeCompare(String(b.title),'vi'));
 }
 function productionRestockPolicy(row){const saved=productionNeedsState.policies[row.sku];return saved==='sales'&&row.sale?'sales':saved==='stock'&&row.alert?'stock':row.sale?'sales':'stock';}
 function productionRestockQty(row){return productionRestockPolicy(row)==='sales'?row.sale?.suggestedQty||0:row.alert?inventorySuggestedQty(row.alert):0;}
@@ -11415,6 +11412,7 @@ function renderPlates() {
     .sort((a,b)=>{
       const progress = pl => { const items=pl.items||pitems.filter(x=>x.plateId===pl.id); const total=items.reduce((s,x)=>s+x.qty,0); return total ? items.reduce((s,x)=>s+(x.qtyDone||0),0)/total : 0; };
       const mode = FILTERS.plates.sort || 'created_desc';
+      if(mode==='created_desc'&&(Number(b.priority)||0)!==(Number(a.priority)||0))return (Number(b.priority)||0)-(Number(a.priority)||0);
       if(mode==='progress_asc') return progress(a)-progress(b) || new Date(b.createdAt)-new Date(a.createdAt);
       if(mode==='progress_desc') return progress(b)-progress(a) || new Date(b.createdAt)-new Date(a.createdAt);
       if(mode==='name_asc') return (a.name||getFil(a.filamentId)?.name||'').localeCompare(b.name||getFil(b.filamentId)?.name||'', 'vi');
@@ -15826,11 +15824,11 @@ function renderProjectDetail() {
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);margin-bottom:2px">
             #${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${ordererTag(o.orderedBy)}</div>
+          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom · Ưu tiên</span>':''} ${ordererTag(o.orderedBy)}</div>
           ${rel.length ? `<div class="prog-bg" style="margin-top:6px"><div class="prog-fill" style="width:${pct}%"></div></div>` : ''}
         </div>
         <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-          ${sbadge(ORDER_ST, o.status)}
+          ${sbadge(ORDER_ST, o.status)}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
           <div class="gap-row">
             <button class="btn btn-ghost btn-xs" onclick="openEditOrder('${o.id}')">Sửa</button>
             <button class="btn btn-danger btn-xs" onclick="deleteOrder('${o.id}',true)">Xoá</button>
@@ -15844,7 +15842,7 @@ function renderProjectDetail() {
 /* ── RENDER orders page ── */
 function renderOrders() {
   const el = document.getElementById('order-list'); if(!el) return;
-  const all = [...orders].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const all = [...orders].sort((a,b)=>Number(b.kind==='custom'&&b.status==='processing')-Number(a.kind==='custom'&&a.status==='processing')||new Date(b.createdAt)-new Date(a.createdAt));
   document.getElementById('cnt-orders').textContent = all.length;
   const searchEl=document.getElementById('order-smart-search');if(searchEl&&searchEl.value!==FILTERS.orders.search)searchEl.value=FILTERS.orders.search;
 
@@ -15913,7 +15911,7 @@ function renderOrders() {
         </div>
         <div class="oc-info">
           <div class="oc-code">#${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div class="oc-title">${esc(o.note||'Order không tên')} ${ordererTag(o.orderedBy)}</div>
+          <div class="oc-title">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom · Ưu tiên</span>':''} ${ordererTag(o.orderedBy)}</div>
           <div class="oc-meta">
             ${proj ? `<span>📁 ${esc(proj.name)}</span>` : ''}
             ${o.deliveryDate ? `<span>📅 ${fmtDate(o.deliveryDate)}</span>` : ''}
@@ -15921,7 +15919,7 @@ function renderOrders() {
           </div>
         </div>
         <div class="oc-status" onclick="event.stopPropagation()">
-          ${sbadge(ORDER_ST, o.status)}
+          ${sbadge(ORDER_ST, o.status)}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
           <div class="gap-row">
             <button class="btn btn-ghost btn-xs" onclick="viewOrderModelImages('${o.id}')">Xem ảnh</button>
             <button class="btn btn-ghost btn-xs" onclick="openEditOrder('${o.id}')">Sửa</button>
@@ -17787,7 +17785,7 @@ function ppOrders() {
           }));
         return { id: oi.id, modelId: oi.modelId, modelName: m?.name || '(model đã xoá)', qty: oi.qty, variantId:oi.variantId||'', variantName:oi.variantName||m?.variants?.find(variant=>variant.id===oi.variantId)?.name||'', note:oi.note||'', parts };
       });
-      return { id:o.id, note:o.note, deliveryDate:o.deliveryDate, orderedBy:o.orderedBy, status:o.status, createdAt:o.createdAt, items };
+      return { id:o.id, kind:o.kind, priority:o.priority, note:o.note, deliveryDate:o.deliveryDate, orderedBy:o.orderedBy, status:o.status, createdAt:o.createdAt, items };
     });
 }
 function ppFindOrder(orderId){ return ppOrders().find(o=>o.id===orderId); }
@@ -22035,7 +22033,7 @@ function renderQueue(){
   try{
     persistPrintProgressView();
     const q=searchFold(document.getElementById('pp-search').value||'').trim();
-    let list=[...ppOrders()].sort((a,b)=>Number(orderProgress(a).pct>=100)-Number(orderProgress(b).pct>=100)||new Date(b.createdAt)-new Date(a.createdAt));
+    let list=[...ppOrders()].sort((a,b)=>Number(orderProgress(a).pct>=100)-Number(orderProgress(b).pct>=100)||Number(b.kind==='custom')-Number(a.kind==='custom')||new Date(b.createdAt)-new Date(a.createdAt));
     if(ppFilter!=='all')list=list.filter(order=>orderStatus(order)===ppFilter);
     if(q)list=list.filter(order=>searchFold([order.note,...order.items.flatMap(item=>[item.modelName,item.variantName,item.note,...item.parts.flatMap(part=>[part.name,part.filamentName])])].join(' ')).includes(q));
     renderProgressSummary(list);
@@ -22254,7 +22252,7 @@ const laDividerText = document.getElementById('la-divider-text');
 const laForgotLink  = document.getElementById('la-forgot-link');
 
 const laCopy = {
-  signin:{ title:'Đăng nhập', sub:'Đăng nhập để đồng bộ dữ liệu.', cta:'Đăng nhập', switchTxt:'Chưa có tài khoản? ', switchBtn:'Tạo tài khoản', divider:'Đăng nhập bằng email' },
+  signin:{ title:'Bắt đầu một ngày mới.', sub:'Đăng nhập để tiếp nối công việc của bạn.', cta:'Đăng nhập', switchTxt:'Chưa có tài khoản? ', switchBtn:'Tạo tài khoản', divider:'Đăng nhập bằng email' },
   signup:{ title:'Tạo tài khoản', sub:'Tạo tài khoản để đồng bộ dữ liệu.', cta:'Tạo tài khoản', switchTxt:'Đã có tài khoản? ', switchBtn:'Đăng nhập', divider:'Tạo tài khoản bằng email' }
 };
 
@@ -22314,6 +22312,8 @@ const ACCESS_PERMISSION_LIST=[
   ['models.manage','Model & part','Tạo và chỉnh model, part, biến thể'],
   ['plates.plan','Plate & kế hoạch in','Xếp plate, khay nhựa và kế hoạch in'],
   ['progress.view','Tiến độ in','Xem tình trạng part, xưởng và các đơn đang in'],
+  ['custom_orders.create','Nhận đơn custom','Nhận yêu cầu, báo giá, cọc và hẹn nhận tại cửa hàng'],
+  ['custom_orders.view','Xem đơn custom','Xem toàn bộ đơn custom của cửa hàng và QR dành cho khách'],
   ['orders.manage','Đơn hàng','Tạo, chỉnh và theo dõi đơn hàng'],
   ['projects.manage','Dự án','Tạo, chỉnh và theo dõi dự án'],
   ['batches.report','Chụp ảnh báo cáo mẻ','Chỉ chụp hoặc tải ảnh mẻ mới; không được sửa thông tin ảnh đã gửi'],
@@ -22335,6 +22335,7 @@ const ACCESS_ROLE_TEMPLATES={
   manager:{label:'Quản lý vận hành',permissions:['models.manage','plates.plan','progress.view','orders.manage','projects.manage','batches.report','batches.describe','batches.manage','assembly.qc','delivery.create','delivery.receive','kiot.import','activity.view']},
   workshop:{label:'Gia công & điều phối giao hàng',permissions:['progress.view','batches.report','batches.describe','assembly.qc','delivery.create','delivery.receive']},
   packaging:{label:'Bao bì & nhãn giá',permissions:['packaging.manage']},
+  store_custom:{label:'Cửa hàng · Nhận đơn custom',permissions:['custom_orders.create','custom_orders.view']},
   store:{label:'Cửa hàng · QC · vận chuyển',permissions:['assembly.qc','delivery.receive','kiot.import']}
 };
 const WORKSPACE_SUPER_ADMIN_EMAIL='truongtrung090999@gmail.com';
@@ -22499,6 +22500,7 @@ function renderRoleMobileNavigation(){
   syncMobileNavigationState();
 }
 function applyWorkspaceNavigationPermissions(){
+  document.querySelectorAll('[data-custom-orders-entry]').forEach(button=>button.style.display=currentUser&&(isWorkspaceOwner()||canAccess('orders.manage')||canAccess('custom_orders.create')||canAccess('custom_orders.view'))?'':'none');
   renderRoleMobileNavigation();
   if(!currentUser){document.body.classList.remove('delivery-receive-only');return;}
   const receiveOnly=isDeliveryReceiveOnlyAccount();
