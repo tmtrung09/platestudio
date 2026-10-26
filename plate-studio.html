@@ -2601,12 +2601,15 @@ html[data-theme="light"] .card,html[data-theme="light"] .order-card,html[data-th
 #ov-order-form .of-p-thumb{border-radius:14px!important;background:#161821!important}
 #ov-order-form .of-p-add-hint{border:0!important;background:rgba(129,116,245,.14)!important;color:#c0baff!important;border-radius:11px!important}
 /* Restore lost controls: legacy rules had split selectors, which made native browser buttons leak through. */
-#ov-order-form .of-p-stepper{height:34px!important;border:0!important;border-radius:11px!important;background:#151720!important;box-shadow:inset 0 1px rgba(255,255,255,.065)!important}
-#ov-order-form .of-p-stepper button,#ov-order-form .of-cr-stepper button{width:34px!important;height:34px!important;border:0!important;display:grid!important;place-items:center!important;padding:0!important;line-height:1!important;font-size:19px!important;font-weight:600!important;background:var(--ac)!important;color:var(--primary-ink,#fff)!important;cursor:pointer!important}
+#ov-order-form .of-p-stepper{height:44px!important;border:0!important;border-radius:11px!important;background:#151720!important;box-shadow:inset 0 1px rgba(255,255,255,.065)!important}
+#ov-order-form .of-p-stepper button,#ov-order-form .of-cr-stepper button{width:44px!important;height:44px!important;border:0!important;display:grid!important;place-items:center!important;padding:0!important;line-height:1!important;font-size:19px!important;font-weight:600!important;background:var(--ac)!important;color:var(--primary-ink,#fff)!important;cursor:pointer!important}
 #ov-order-form .of-p-stepper button.of-minus,#ov-order-form .of-cr-stepper button:first-child{background:rgba(255,255,255,.10)!important;color:var(--t)!important}
 #ov-order-form .of-p-stepper .of-qv{color:#d8d4ff!important;font-size:14px!important}
+#ov-order-form :is(.of-p-stepper,.of-cr-stepper) button:active{transform:none!important}
+#ov-order-form :is(.of-p-stepper,.of-cr-stepper) button{flex:0 0 44px!important}
+@media(max-width:480px){html #page-order-form #ov-order-form .of-p-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 #ov-order-form .of-cr-stepper{border:0!important;border-radius:10px!important;background:#151720!important;box-shadow:inset 0 1px rgba(255,255,255,.06)!important}
-#ov-order-form .of-cr-stepper button{width:28px!important;height:28px!important;font-size:16px!important}
+#ov-order-form .of-cr-stepper button{width:44px!important;height:44px!important;font-size:16px!important}
 /* Quantity controls must follow the active colour scheme.  The dark glass version
    above is intentional for dark mode, but was being carried into the light sheet. */
 html[data-theme="light"] #ov-order-form :is(.of-p-stepper,.of-cr-stepper),
@@ -2629,7 +2632,7 @@ html[data-theme="light"] #ov-order-form .of-p-stepper .of-qv,
 html.theme-light #ov-order-form .of-p-stepper .of-qv,
 html[data-theme="light"] #ov-order-form .of-cr-stepper .of-cr-qv,
 html.theme-light #ov-order-form .of-cr-stepper .of-cr-qv{
-  background:var(--s)!important;
+  background:transparent!important;
   color:var(--t)!important;
 }
 #ov-order-form .of-adv-toggle{width:100%!important;display:flex!important;align-items:center!important;gap:7px!important;padding:10px 12px!important;border:0!important;border-radius:12px!important;background:rgba(255,255,255,.07)!important;color:var(--t2)!important;font:600 13px 'Be Vietnam Pro',sans-serif!important;text-align:left!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.055)!important}
@@ -2954,7 +2957,7 @@ html[data-theme="light"] .cam-fab{background:#302c55!important;color:#fff!import
   #page-order-form #ov-order-form .of-cat-pane,#page-order-form #ov-order-form .of-cat-scroll{display:block!important;overflow:visible!important}
   #page-order-form #ov-order-form .of-cat-toolbar{padding:0 12px .85rem!important}
   #page-order-form #ov-order-form .of-cat-scroll{padding:0 12px calc(112px + env(safe-area-inset-bottom))!important}
-  /* Catalog điện thoại: ba thẻ mỗi hàng, vẫn giữ lề chạm an toàn. */
+  /* Catalog gọn; màn hẹp dùng hai cột để giữ vùng chạm số lượng 44px. */
   #page-order-form #ov-order-form .of-p-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
   #page-order-form #ov-order-form .of-p-card{min-width:0!important;padding:7px!important;border-radius:16px!important;gap:5px!important}
   #page-order-form #ov-order-form .of-p-name{font-size:12px!important;line-height:1.28!important}
@@ -4258,6 +4261,7 @@ html body .btn.btn-icon-only.btn-ghost:hover:not(:disabled){color:var(--t)!impor
 .pm-alert-card p{line-height:1.55;font-size:14px;margin:16px 0 8px}.pm-alert-card .pm-alert-queue{margin-top:8px;color:var(--ac)}.pm-alert-card .pm-alert-status{color:var(--re);font-size:12px}.pm-alert-status:empty{display:none}
 .pm-alert-card footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;flex-wrap:wrap}.pm-alert-card footer .btn{min-height:44px;min-width:90px;border:0;border-radius:14px;margin:0}
 @media(max-width:400px){.pm-alert-card{padding:18px}.pm-alert-card h2{font-size:18px}}
+.pg-content:has(#page-printer-monitor.active){overflow-anchor:none}
 .pm-content{display:grid;gap:0;align-items:start;min-width:0;transition:column-gap 330ms cubic-bezier(.22,1,.36,1),row-gap 330ms cubic-bezier(.22,1,.36,1),grid-template-columns 330ms cubic-bezier(.22,1,.36,1)}
 .pm-content.pm-detail-open{gap:14px}
 .pm-detail-slot{min-width:0;min-height:0;overflow:clip;display:grid;grid-template-rows:0fr;transition:grid-template-rows 330ms cubic-bezier(.22,1,.36,1)}
@@ -4795,6 +4799,10 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 </style>
 <link rel="stylesheet" href="assets/custom-orders/login.css">
 <link rel="stylesheet" href="assets/app/forest-theme.css?v=__DEPLOY_REVISION__">
+<link rel="stylesheet" href="assets/app/workshop-swipe.css?v=__DEPLOY_REVISION__">
+<script src="assets/app/workshop-swipe-core.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/app/workshop-swipe-store.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/app/workshop-swipe.js?v=__DEPLOY_REVISION__" defer></script>
 </head>
 <body>
 <div id="platedio-startup" role="status" aria-live="polite" aria-busy="true"><div class="ps-loading-composition"><div class="loading-art" aria-hidden="true">
@@ -18633,11 +18641,12 @@ function openActivityLog(){
   const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg wide audit-dialog" onclick="event.stopPropagation()"><div class="dlg-title">Hoạt động gần đây</div><div class="audit-list">${rows}</div><div class="dlg-actions"><button class="btn btn-ac" onclick="closeDialog('dlg-mv')">Đóng</button></div></div>`;ov.style.display='flex';
 }
 function workshopWaitKey(row){return row?.source==='external'?`external:${row.externalKey}`:`order:${row?.o?.id||''}:${row?.it?.id||''}`;}
-function workshopWaitStatus(row){normalizeOperations();return operations.assemblyWaitStatuses[workshopWaitKey(row)]||null;}
+function workshopWaitStatus(row){normalizeOperations();if(row?.handover?.swipeManaged){const parts=Object.values(row.o?.assembly?.partWork||{}).filter(p=>p.itemId===row.it.id);return parts.some(p=>p.wait_ready+p.wait_assembling>0)&&parts.every(p=>p.qc+p.ready+p.assembling===0)?{label:'Chờ vật tư / bao bì',swipeWait:true}:null;}return operations.assemblyWaitStatuses[workshopWaitKey(row)]||null;}
 /* QC part và hoàn tất gia công là hai mốc khác nhau. Dữ liệu cũ chỉ có
    qcStatus=accepted nên được suy ra là đã hoàn tất nếu đã có đủ thành phẩm. */
 function workshopAssemblyStage(row){
   const handover=row?.handover;if(!handover)return 'not_handed';
+  if(handover.swipeManaged){if(workshopWaitStatus(row)?.swipeWait)return 'in_progress';return handover.assemblyStatus==='completed'?'completed':handover.assemblyStatus==='in_progress'?'in_progress':handover.assemblyStatus==='ready'?'ready':'part_qc';}
   /* Bản dữ liệu cũ từng ghi qcStatus=rejected cho cả model, dù model đó đã
      hoàn tất gia công. Nhận diện đúng trường hợp này để không giấu phần đạt. */
   const legacyReadyWithIssue=handover.qcStatus==='rejected'&&Math.max(0,Number(handover.assemblyQty)||0)>0&&Math.max(0,Number(handover.qcRejectedQty)||0)>0;
@@ -18707,6 +18716,7 @@ function applyWorkshopQuickStatus(encodedRowKey,next,{confirmed=false,note='',wa
   if(!confirmed){toast('Hãy xác nhận đã kiểm tra điều kiện thực tế trước khi cập nhật nhanh.');return;}
   const rowKey=decodeURIComponent(encodedRowKey),row=fulfillmentWorkshopRows().find(item=>workshopWaitKey(item)===rowKey);note=String(note||'').trim();waitLabel=String(waitLabel||'').trim()||'Chờ vật tư / bao bì';
   if(!row||!WORKSHOP_QUICK_STATUS_LABELS[next])return;
+  if(row.source==='order'&&row.handover?.swipeManaged){toast('Dòng này theo dõi từng part. Hãy dùng Quẹt part để cập nhật.');return;}
   const total=Math.max(0,Number(row.it?.qty)||0),available=Math.min(total,workshopCompleteSetQty(row));
   if(next==='completed'&&!available){toast('Chưa có bộ part hoàn chỉnh để hoàn tất gia công.');return;}
   if(['ready','in_progress'].includes(next)&&!available){toast('Chưa có bộ part hoàn chỉnh để chuyển sang gia công.');return;}
@@ -18798,6 +18808,11 @@ function orderItemPartPerSet(order,item,part){
 /* Số sản phẩm thật sự có thể đưa sang QC/gia công ngay. Một part đã in 12/13
    vẫn mở đúng 12 sản phẩm, không bị hiểu nhầm là phải chờ đủ toàn bộ đơn. */
 function orderItemCompleteSetQty(order,item){
+  if(order?.assembly?.handovers?.[item?.id]?.swipeManaged){
+    const source=orderItemParts(order,item).filter(part=>part.orderId===order.id),swipePrintedGroups=new Map();
+    for(const part of source){const key=part.partId||part.id,group=swipePrintedGroups.get(key)||{required:0,done:0};group.required+=Math.max(0,Number(part.qty)||0);group.done+=Math.max(0,Number(part.qtyDone)||0);swipePrintedGroups.set(key,group);}
+    const total=Math.max(0,Number(item.qty)||0);return total&&swipePrintedGroups.size?Math.min(total,...[...swipePrintedGroups.values()].map(group=>Math.floor(group.done/Math.max(1,Math.ceil(group.required/total))))):0;
+  }
   const total=Math.max(0,Number(item?.qty)||0),rows=orderItemParts(order,item);
   if(!total||!rows.length)return 0;
   return Math.min(total,...rows.map(part=>Math.floor(Math.max(0,Number(part.qtyDone)||0)/orderItemPartPerSet(order,item,part))));
@@ -19044,6 +19059,7 @@ function fulfillmentWorkshopRows(){
   return [...orderRows,...outsideRows];
 }
 function workshopReadyDeliveryQty(row){
+  if(row?.source==='order'&&row.handover?.swipeManaged)return Math.max(0,Number(row.handover.readyQty||0)-sentQty(row.o.id,row.it.id));
   if(!row||!workshopAssemblyCompleted(row))return 0;
   /* readyQty tách "thành phẩm còn giao được" khỏi tổng SL của model. Khi một
      chiếc đã hoàn tất nhưng bị loại, chỉ chiếc đó rời khỏi kệ sẵn giao. */
@@ -19443,6 +19459,7 @@ function fulfillmentOrderMatches(order){return fulfillmentSearchMatches([order?.
 function fulfillmentWorkshopMatches(row){return fulfillmentSearchMatches([row?.o?.note,row?.it?.modelName,row?.it?.partName,row?.it?.variantName,row?.m?.name,...(row?.parts||[]).flatMap(part=>[part.partName,part.name])].filter(Boolean).join(' '));}
 function fulfillmentReceiptMatches(batch){return fulfillmentSearchMatches([batch?.code,batch?.deliveredBy,batch?.receivedBy,batch?.destination,...(batch?.items||[]).flatMap(item=>[item.modelName,item.variantName,item.partName,models.find(model=>model.id===item.modelId)?.name])].filter(Boolean).join(' '));}
 function renderFulfillmentPage(){
+  if(window.WorkshopSwipe?.isOpen()){window.WorkshopSwipe.refresh();return;}
   normalizeOperations();const host=document.getElementById('fulfillment-page');if(!host)return;
   const workspace=cloudWorkspaceId();
   if(currentUser&&sb&&workspace&&fulfillmentServerReportsAvailable&&(
@@ -19494,6 +19511,7 @@ function renderFulfillmentPage(){
   });
   document.getElementById('cnt-fulfillment')?.replaceChildren(document.createTextNode(String(pending.length)));
   if(typeof renderDeliveryReceiptOverview==='function')renderDeliveryReceiptOverview();
+  window.WorkshopSwipe?.decorate(host);
 }
 function assemblyEligibleItems(order,itemIds=[]){
   const wanted=new Set(itemIds.filter(Boolean));
@@ -22517,6 +22535,7 @@ function renderRoleMobileNavigation(){
   syncMobileNavigationState();
 }
 function applyWorkspaceNavigationPermissions(){
+  window.WorkshopSwipe?.onContext();
   document.querySelectorAll('[data-custom-orders-entry]').forEach(button=>button.style.display=currentUser&&(isWorkspaceOwner()||canAccess('orders.manage')||canAccess('custom_orders.create')||canAccess('custom_orders.view'))?'':'none');
   renderRoleMobileNavigation();
   if(!currentUser){document.body.classList.remove('delivery-receive-only');return;}

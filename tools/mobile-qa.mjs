@@ -73,8 +73,15 @@ async function auditQuantityControlThemes(page) {
       return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
     };
     const read = selector => {
-      const style = getComputedStyle(probe.querySelector(selector));
-      return { background: style.backgroundColor, color: style.color, luminance: luminance(style.backgroundColor) };
+      const element = probe.querySelector(selector), style = getComputedStyle(element);
+      // Transparent number labels inherit the visible stepper surface. Test that
+      // surface instead of treating transparent black as a dark painted box.
+      let background = style.backgroundColor, ancestor = element.parentElement;
+      while (/^rgba\([^)]*,\s*0\s*\)$/.test(background) && ancestor) {
+        background = getComputedStyle(ancestor).backgroundColor;
+        ancestor = ancestor.parentElement;
+      }
+      return { background, ownBackground: style.backgroundColor, color: style.color, luminance: luminance(background) };
     };
     root.setAttribute('data-theme', 'light');
     const light = {

@@ -102,6 +102,10 @@
   không chèn khoảng trắng để căn chữ. Chỉ căn trái khi nút là dòng danh sách/menu
   có chủ đích, bằng override rõ ràng. Kiểm thử vị trí nội dung thực ở trạng thái
   thường, hover, active, focus và disabled trên mobile/desktop, light/dark.
+- Bộ đếm số lượng − / số / + trong form Tạo đơn, gồm thẻ chọn model và giỏ
+  hàng, có nền liền mạch; nhãn số không có ô nền sáng riêng. Giữ căn giữa,
+  tương phản, vùng chạm và hành vi tăng/giảm ở cả hai theme. Guard:
+  `tools/order-stepper-qa.mjs`.
 - Không dùng emoji hệ thống cho icon thao tác/trạng thái mới. Khi sửa họ giao diện,
   thay emoji còn thấy của chính họ bằng SVG từ primitive icon chung để nét/kích
   thước/màu đồng nhất.
@@ -252,6 +256,19 @@
   URL giữ góc xem/truy vấn/trạng thái/scope.
 - Guard mọi góc xem, mobile/tablet/desktop/landscape, hai theme; không tràn ngang,
   khoảng trắng viewport, cuộn lồng hoặc đổi hình học trang kế cận.
+
+### Gia công bằng thẻ quẹt
+
+- Mỗi thẻ là một part trong một đơn, hiển thị model, màu và số lượng. Trạng
+  thái ghi riêng từng part; model chỉ hoàn tất khi tất cả part cần thiết đạt
+  đủ số lượng hoàn tất. Không đổi trạng thái cả model từ một part đơn lẻ.
+- Hướng quẹt hiện nhãn và chỉ cho phép chuyển trạng thái hợp lệ theo bước hiện
+  tại: QC có đạt/báo lỗi; đang gia công có hoàn tất/chờ vật tư. Có nút bấm tương
+  đương để thao tác không phụ thuộc cử chỉ.
+- Toàn bộ thẻ nhận cử chỉ quẹt, gồm ảnh, tiêu đề, trạng thái, màu và ghi chú;
+  loại trừ ô nhập/nút số lượng để chỉnh số không đổi trạng thái hoặc chuyển thẻ.
+- Mặc định xử lý toàn bộ số lượng còn lại, cho chỉnh trước khi quẹt. Khi xử lý
+  một phần, phần chưa xử lý giữ trạng thái cũ và xuống cuối chồng thẻ.
 
 ### Sắp plate và file in
 

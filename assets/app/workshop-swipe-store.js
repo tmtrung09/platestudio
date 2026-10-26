@@ -1,0 +1,12 @@
+/* Each outbox item has its own key. Two tabs cannot overwrite each other's queue. */
+(() => {
+ let connection;
+ const open=()=>connection||=new Promise((resolve,reject)=>{const r=indexedDB.open('platedio-workshop-swipe-v1',1);r.onupgradeneeded=()=>{r.result.createObjectStore('requests',{keyPath:'id'});r.result.createObjectStore('cache');};r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();connection=null;};resolve(r.result);};r.onerror=()=>{connection=null;reject(r.error);};r.onblocked=()=>{connection=null;reject(Error('Kho lưu đang được phiên khác cập nhật.'));};});
+ async function run(names,mode,fn){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction(names,mode);let value;tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(tx.error||Error('Không lưu được lượt quẹt.'));tx.onerror=()=>{};try{fn(tx,v=>value=v);}catch(e){tx.abort();reject(e);}});}
+ const all=scope=>run(['requests','cache'],'readonly',(tx,done)=>{let requests=[],cache={},view=null;const finish=()=>done({requests,cache,view});const r=tx.objectStore('requests').getAll();r.onsuccess=()=>{requests=r.result.filter(x=>x.scope===scope).sort((a,b)=>a.createdAt-b.createdAt||a.id.localeCompare(b.id));finish();};const c=tx.objectStore('cache').get(scope);c.onsuccess=()=>{cache=c.result||{};finish();};const v=tx.objectStore('cache').get(scope+':view');v.onsuccess=()=>{view=v.result;finish();};});
+ const put=request=>run(['requests'],'readwrite',(tx)=>tx.objectStore('requests').put(request));
+ const remove=id=>run(['requests'],'readwrite',tx=>tx.objectStore('requests').delete(id));
+ const acknowledge=(scope,request,response)=>{if(!response?.order?.id)throw Error('Thiếu xác nhận bản ghi đơn.');return run(['requests','cache'],'readwrite',tx=>{tx.objectStore('requests').delete(request.id);const store=tx.objectStore('cache'),get=store.get(scope);get.onsuccess=()=>{const cache=get.result||{},old=cache[response.order.id],next=structuredClone(response);if(old){const work={...(old.order.assembly?.partWork||{})};for(const [k,r]of Object.entries(next.order.assembly?.partWork||{}))if(!work[k]||r.revision>=work[k].revision)work[k]=r;next.order.assembly={...next.order.assembly,partWork:work};}cache[response.order.id]=next;if(!cache._last||request.createdAt>=cache._last.createdAt)cache._last=request;store.put(cache,scope);};});};
+ const saveView=(scope,view)=>run(['cache'],'readwrite',tx=>tx.objectStore('cache').put(view,scope+':view'));
+ window.WorkshopSwipeStore={all,put,remove,acknowledge,saveView};
+})();
