@@ -19,6 +19,11 @@ tên/màu part theo từng dòng đi cùng đơn; model nguồn không bị đ�
 có nhãn riêng và được ưu tiên trong danh sách đơn, nhu cầu sản xuất, góc tiến độ
 và thứ tự mặc định của plate. Chọn sắp xếp plate khác vẫn theo lựa chọn của người dùng.
 
+Chọn model xong, thư viện tự thu gọn và đưa dòng yêu cầu vừa thêm vào vùng nhìn.
+Mở **Thêm sản phẩm** để tìm thêm model; giữ nguyên các dòng đang nhập. Danh sách
+model có vùng cuộn giới hạn, thanh **Thông tin khách** nằm trong tầm thao tác.
+Tải lại hoặc quay lại bước Sản phẩm mở phần yêu cầu đã lưu.
+
 Nháp, ảnh và yêu cầu chờ gửi nằm trong IndexedDB riêng theo workspace + user.
 Reload/offline không đổi request ID. Ảnh tải lên đường dẫn bất biến trong bucket
 riêng tư; mất ACK thì retry cùng request, server trả receipt cũ. Chỉ có QR sau ACK

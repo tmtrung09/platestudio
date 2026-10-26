@@ -435,6 +435,11 @@
   điện thoại, tìm được trong Menu. Giữ sau khi dựng lại điều hướng; hiển thị
   theo quyền chủ xưởng/quản lý đơn/tạo hoặc xem custom và ẩn ngay khi mất quyền
   hay đăng xuất. Guard: `tools/custom-orders-navigation-qa.mjs`.
+- Bước chọn sản phẩm của đơn custom phải thu gọn thư viện sau khi thêm model và
+  đưa ngay phần yêu cầu của dòng vừa thêm vào vùng nhìn. Mở lại Thêm sản phẩm
+  không dựng lại dòng đã nhập hoặc làm mất màu/ảnh/số lượng/nháp; danh sách model
+  có vùng cuộn giới hạn, nút sang bước khách luôn tiếp cận được. Áp dụng mobile/
+  desktop và giữ phần yêu cầu khi tải lại/quay lại. Guard: custom-orders UI QA.
 - Chọn sản phẩm từ model đã nhập, tìm theo tên hoặc mã KiotViet và giữ định danh
   model/biến thể. Ghi số lượng, yêu cầu custom tự do và ảnh tham khảo theo từng
   dòng; không áp quy luật màu/ký tự/kích thước từ một ví dụ sản phẩm cụ thể.

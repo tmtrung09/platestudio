@@ -5,11 +5,12 @@ import {resolve,extname,sep} from 'node:path';
 const root=resolve('.'),out=resolve('qa-results/custom-orders-live'),base='https://custom-orders.test/';mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
 const issues=[];let checks=0;
-async function setup(width=390,theme='light'){
+async function setup(width=390,theme='light',largeCatalog=false){
  const context=await browser.newContext({viewport:{width,height:950},serviceWorkers:'block',reducedMotion:'reduce',hasTouch:width<600,isMobile:width<600});
- await context.addInitScript(()=>{
+ await context.addInitScript(largeCatalog=>{
   const ws='11111111-1111-4111-8111-111111111111',user='22222222-2222-4222-8222-222222222222',token='a'.repeat(64),revision='2026-10-25T00:00:00.000Z';
   const models=[{id:'m1',name:'Bàn phím tên',sku:'SP001',images:['http://custom-orders.test/fixture.svg'],revision,parts:[{id:'tray',name:'Khay',qtyPerModel:1},{id:'key',name:'Nút',qtyPerModel:5},{id:'unused',name:'Ẩn theo biến thể'}],variants:[{id:'v1',name:'Nhỏ',partIds:['tray','key']}]},{id:'m2',name:'Khay để bàn',sku:'SP002',images:[],revision,parts:[],variants:[]}];
+  if(largeCatalog)models.push(...Array.from({length:198},(_,index)=>({id:'library-'+index,name:'Model thư viện với tên dài '+index,sku:'LIB'+index,images:index%3?[]:['http://custom-orders.test/fixture.svg'],revision,parts:[],variants:[]})));
   const fils=[{id:'green',name:'Xanh rêu',brand:'Generic',mat:'PLA',hex:'#315d34'},{id:'cream',name:'Kem',brand:'Generic',mat:'PLA',hex:'#eadfc5'}];
   const sample={id:'sample',customer:'Bảo',phone:'0900000000',address:'Địa chỉ chỉ dành cho cửa hàng',delivery:'pickup',total:280000,deposit:100000,due:'2026-10-29',stage:1,creator:'Thu Hà',created:'2026-10-25',lines:[{id:'sample-line',modelId:'m1',model:{id:'m1',name:models[0].name,images:models[0].images,variants:[{id:'v1',name:'Nhỏ'}]},variantId:'v1',qty:1,note:'Màu kem',images:[],partColors:[]}]};
   const normalize=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase();
@@ -21,7 +22,7 @@ async function setup(width=390,theme='light'){
     window.__calls.push({name,args});
     if(name==='ensure_workspace_membership'){if(localStorage.getItem('qa-offline'))return {error:{message:'Offline QA transport'}};return {data:[{workspace_id:ws,owner_user_id:'owner',permissions:['custom_orders.create','custom_orders.view'],role:window.__role}]};}
     if(name==='custom_order_filaments')return {data:fils};
-    if(name==='custom_order_catalog'){const values=models.filter(model=>normalize(model.name+' '+model.sku).includes(normalize(args.q||'')));return {data:{models:values,total:values.length}};}
+    if(name==='custom_order_catalog'){const values=models.filter(model=>normalize(model.name+' '+model.sku).includes(normalize(args.q||'')));return {data:{models:largeCatalog?values.slice(args.off||0,(args.off||0)+60):values,total:values.length}};}
     if(name==='custom_order_list')return {data:{orders:records().map(row=>row.order).concat([sample]),total:records().length+1}};
     if(name==='custom_order_tracking')return {data:token};
     if(name==='commit_custom_order'){
@@ -37,7 +38,7 @@ async function setup(width=390,theme='light'){
   };
   window.supabase={createClient:(...args)=>{window.__clientOptions=args[2];return client;}};
   const originalInterval=window.setInterval;window.setInterval=(fn,delay,...args)=>delay===30000?(window.__poll=fn,999):originalInterval(fn,delay,...args);
- });
+ },largeCatalog);
  const page=await context.newPage();page.on('pageerror',error=>issues.push(error.message));
  await page.route(/^https?:/,route=>{
   const url=new URL(route.request().url());if(url.origin!==new URL(base).origin)return route.abort();
@@ -67,7 +68,55 @@ async function beginOrder(page){
 async function fillCustomer(page){
  await page.locator('#next-step').click();await page.locator('#customer-name').fill('Linh');await page.locator('#customer-phone').fill('0901234567');await page.locator('#order-total').fill('280000');await page.locator('#order-deposit').fill('100000');await page.locator('#order-due').fill('2026-10-29');
 }
+
+async function checkProductFlow(width,theme){
+ const {page,context}=await setup(width,theme,true);
+ if(width===844)await page.setViewportSize({width,height:390});
+ await page.waitForFunction(()=>document.querySelectorAll('.model-card').length===60);
+ for(const count of [120,180,200]){await page.locator('#more-models').click();await page.waitForFunction(count=>document.querySelectorAll('.model-card').length===count,count);}
+ await page.locator('[data-model=m1]').click();await page.locator('[data-variant=v1]').click();await page.locator('#add-variant').click();
+ const position=await page.locator('.selected-line').first().evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:innerHeight};});
+ assert.ok(position.top>=0&&position.top<position.height/2,'Selected requirement must be in view immediately, without scrolling past 200 models: '+JSON.stringify(position));
+ assert.equal(await page.locator('#model-search').isVisible(),false,'Catalog folds after selection');
+ assert.equal(await page.locator('#next-step').isVisible(),true);
+ const nextBounds=await page.locator('#next-step').boundingBox();assert.ok(nextBounds.y>=0&&nextBounds.y+nextBounds.height<=page.viewportSize().height,'Next action remains in the viewport');
+ if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-selected-viewport.png')});
+ await page.locator('[data-note]').fill('Yêu cầu màu và tên đã chốt cùng khách');
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ const notePosition=await page.locator('[data-note]').evaluate(el=>{const note=el.getBoundingClientRect(),actions=document.querySelector('.product-actions').getBoundingClientRect();return {top:note.top,bottom:note.bottom,actions:actions.top};});
+ assert.ok(notePosition.top>=0&&notePosition.bottom<=notePosition.actions,'The action bar must not cover the focused request: '+JSON.stringify(notePosition));
+ await chooseParts(page);
+ await page.locator('[data-qty][data-delta="1"]').click();
+ await page.locator('[data-files]').setInputFiles({name:'flow-reference.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j/WQAAAAASUVORK5CYII=','base64')});await page.locator('.attachment img').waitFor();
+ await page.evaluate(()=>{window.__flowNote=document.querySelector('[data-note]');window.__flowImage=document.querySelector('.attachment img');window.__flowNote.setSelectionRange(3,9);window.__flowSearch=document.querySelector('#model-search');});
+ await page.locator('#model-picker summary').click();
+ const grid=await page.locator('#catalog').evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,viewport:innerHeight}));assert.ok(grid.height<=Math.min(grid.viewport*.45,360)+1&&grid.scroll>grid.height,'Large library scrolls within a bounded picker');
+ await page.locator('#model-search').fill('zz-no-model');await page.locator('#catalog .empty').waitFor();
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#model-search').isVisible(),false);
+ await page.locator('#model-picker summary').press('Enter');assert.equal(await page.locator('#model-search').inputValue(),'zz-no-model','Toggling preserves query');
+ await page.locator('#model-search').fill('SP002');await page.locator('[data-model=m2]').waitFor();await page.locator('[data-model=m2]').click();
+ assert.equal(await page.locator('#model-search').isVisible(),false,'No-variant selection also folds the picker');
+ assert.equal(await page.locator('.selected-line').count(),2);
+ assert.equal(await page.evaluate(()=>document.querySelector('[data-note]')===window.__flowNote&&document.querySelector('.attachment img')===window.__flowImage&&document.querySelector('#model-search')===window.__flowSearch&&window.__flowNote.selectionStart===3&&window.__flowNote.selectionEnd===9),true,'Add/search/collapse preserves existing inputs, images, caret and picker DOM');
+ await page.locator('[data-note]').nth(1).fill('Món thứ hai của khách');
+ await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
+ await page.reload();await page.locator('.selected-line').nth(1).waitFor();
+ assert.equal(await page.locator('#model-search').isVisible(),false,'Reload opens the saved requirements, not the catalog');
+ assert.equal(await page.locator('[data-note]').first().inputValue(),'Yêu cầu màu và tên đã chốt cùng khách');assert.equal(await page.locator('[data-quantity]').first().inputValue(),'2');
+ assert.equal(await page.locator('[data-part=tray]').inputValue(),'green');assert.equal(await page.locator('.attachment img').count(),1);
+ await noOverflow(page,width+'/'+theme+'/compact-product-flow');
+ if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-product-flow.png'),fullPage:true});
+ await page.locator('#next-step').click();await page.locator('#customer-name').waitFor();
+ await page.locator('[data-action=back]').click();assert.equal(await page.locator('#model-search').isVisible(),false);assert.equal(await page.locator('.selected-line').count(),2);
+ // Removing the last line reopens the picker, so the empty draft has a clear next action.
+ for(let left=2;left>0;left--){await page.locator('[data-remove-line]').last().click();await page.locator('[data-confirm-remove]').click();assert.equal(await page.locator('.selected-line').count(),left-1);}
+ assert.equal(await page.locator('#model-search').isVisible(),true);assert.equal(await page.locator('#model-search').evaluate(el=>el===document.activeElement),true);
+ await context.close();checks+=18;console.log('PASS product flow '+width+'/'+theme+': 200 models, bounded picker, immediate requirements, reachable next, preserved query/DOM/caret/image/colors/quantity, reload/back/remove');
+}
+
 try{
+ for(const width of [320,390,844,1440])for(const theme of ['light','dark'])await checkProductFlow(width,theme);
+ if(process.env.QA_CUSTOM_FLOW_ONLY==='1'){assert.deepEqual(issues,[]);console.log('PASS focused custom product flow');process.exitCode=0;}else{
  for(const width of [320,390,768,1440])for(const theme of ['light','dark']){
   const {page,context}=await setup(width,theme);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),theme==='dark'?'rgb(21, 27, 29)':'rgb(243, 242, 237)','Counter shares the approved balanced palette');
@@ -127,4 +176,5 @@ try{
  await offline.context.close();assert.deepEqual(issues,[],'No browser JavaScript errors');checks+=35;
  writeFileSync(resolve(out,'summary.json'),JSON.stringify({status:'PASS',checks,scope:'Mocked transport, isolated IndexedDB; SQL tested separately; no live customer/order data'},null,2));
  console.log(`PASS custom-order live UI: ${checks} layout/behavior checks; durable image/outbox reload and idempotent retry.`);
+}
 }finally{await browser.close();}

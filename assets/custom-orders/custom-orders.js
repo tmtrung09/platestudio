@@ -113,7 +113,7 @@
     if(state.step===0) {renderCatalog('');renderLines();}
   }
   function productStep() {
-    return `<section class="panel"><div class="section-top"><div><h2>Tìm sản phẩm</h2><p>Chọn từ thư viện model của hệ thống.</p></div>${icon('box')}</div><label class="search-box">${icon('search')}<span class="sr-only">Tìm model theo tên hoặc mã Kiot</span><input type="search" id="model-search" placeholder="Tên model hoặc mã Kiot…" autocomplete="off"></label><div class="result-label"><span id="result-count" role="status"></span><span>Thư viện model</span></div><div class="catalog-grid" id="catalog"></div><button class="btn text full" data-action="more-models" id="more-models" hidden>Xem thêm model</button></section><section class="panel"><div class="section-top"><h2>Yêu cầu custom</h2><span class="section-number" id="line-count"></span></div><div id="selected-lines"></div></section><div class="form-actions"><button class="btn text" data-action="orders">Xem đơn cửa hàng</button><button class="btn primary" data-action="next" id="next-step" ${state.draft.lines.length?'':'disabled'}>Thông tin khách${icon('arrow')}</button></div><p class="draft-hint">${icon('shield')}${storageAvailable?'Nháp được giữ trên thiết bị này theo tài khoản và xưởng.':'Chỉ giữ nháp trong phiên này; bộ nhớ trình duyệt chưa sẵn sàng.'}</p>`;
+    return `<details class="panel model-picker" id="model-picker" ${state.draft.lines.length?'':'open'}><summary><div><h2>Thêm sản phẩm</h2><p>Tìm model theo tên hoặc mã Kiot.</p></div>${icon('chevron')}</summary><div class="model-picker-content"><label class="search-box">${icon('search')}<span class="sr-only">Tìm model theo tên hoặc mã Kiot</span><input type="search" id="model-search" placeholder="Tên model hoặc mã Kiot…" autocomplete="off"></label><div class="result-label"><span id="result-count" role="status"></span><span>Thư viện model</span></div><div class="catalog-grid" id="catalog"></div><button class="btn text full" data-action="more-models" id="more-models" hidden>Xem thêm model</button></div></details><section class="panel"><div class="section-top"><h2>Yêu cầu custom</h2><span class="section-number" id="line-count" role="status"></span></div><div id="selected-lines"></div></section><div class="form-actions product-actions"><button class="btn text" data-action="orders">Xem đơn cửa hàng</button><button class="btn primary" data-action="next" id="next-step" ${state.draft.lines.length?'':'disabled'}>Thông tin khách${icon('arrow')}</button></div><p class="draft-hint">${icon('shield')}${storageAvailable?'Nháp được giữ trên thiết bị này theo tài khoản và xưởng.':'Chỉ giữ nháp trong phiên này; bộ nhớ trình duyệt chưa sẵn sàng.'}</p>`;
   }
   function renderCatalog(query) {
     clearTimeout(searchTimer);searchTimer=setTimeout(()=>{void loadCatalog(query).catch(showError);},180);
@@ -126,13 +126,13 @@
   }
   function renderLines() {
     $('#line-count').textContent=`${state.draft.lines.length} dòng`;
-    $('#selected-lines').innerHTML=state.draft.lines.length?state.draft.lines.map(lineHTML).join(''):'<div class="empty">Chọn model ở trên để ghi yêu cầu custom.<br>Mỗi sản phẩm có mô tả và ảnh tham khảo riêng.</div>';
+    $('#selected-lines').innerHTML=state.draft.lines.length?state.draft.lines.map(lineHTML).join(''):'<div class="empty">Mở Thêm sản phẩm để chọn model và ghi yêu cầu custom.<br>Mỗi sản phẩm có mô tả và ảnh tham khảo riêng.</div>';
     window.FilamentPickers?.init($('#selected-lines'));
     $('#next-step').disabled=!state.draft.lines.length;
   }
   function lineHTML(line) {
     const model=getModel(line);if(!model)return '';
-    return `<article class="selected-line" data-line="${line.id}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <span class="required">*</span></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
+    return `<article class="selected-line" data-line="${line.id}" tabindex="-1" aria-label="Yêu cầu custom cho ${esc(model.name)}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <span class="required">*</span></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
   }
   const imageHTML = line => line.images.map((image,index)=>`<div class="attachment"><img src="${esc(image.src)}" alt="Ảnh tham khảo ${index+1}"><span>${esc(image.name)}</span><button class="btn-icon-only" data-remove-image="${line.id}" data-index="${index}" aria-label="Bỏ ảnh ${esc(image.name)}">${icon('close')}</button></div>`).join('');
   function selectModel(id) {
@@ -151,8 +151,10 @@
     window.FilamentPickers?.init(holder);
     $('#line-count').textContent=`${state.draft.lines.length} dòng`;
     $('#next-step').disabled=false;renderSummary();
-    $(`[data-note="${line.id}"]`).focus({preventScroll:true});
-    toast(`Đã thêm ${getModel(line).name}. Ghi yêu cầu custom cho sản phẩm này.`);
+    $('#model-picker').open=false;
+    const selected=$('[data-line="'+line.id+'"]');
+    selected.focus({preventScroll:true});selected.scrollIntoView({block:'start',behavior:'instant'});
+
   }
   function customerStep() {
     const d=state.draft;
@@ -462,8 +464,27 @@
     state.draft.lines=state.draft.lines.filter(line=>line.id!==id);state.draft.checked=false;persist();
     $(`[data-line="${id}"]`)?.remove();
     if(!state.draft.lines.length)renderLines();
-    $('#line-count').textContent=`${state.draft.lines.length} dòng`;renderSummary();$('#model-search').focus({preventScroll:true});
+    $('#line-count').textContent=`${state.draft.lines.length} dòng`;renderSummary();
+    if(!state.draft.lines.length){$('#model-picker').open=true;$('#model-search').focus({preventScroll:true});$('#model-search').scrollIntoView({block:'center',behavior:'instant'});}
+    else {const selected=$('#selected-lines .selected-line:last-child');selected?.focus({preventScroll:true});}
   }
+  function keepProductFieldVisible(){
+    const active=document.activeElement,actions=$('.product-actions');
+    if(!actions||!$('#selected-lines')?.contains(active)||!active.matches('textarea,select,button,input:not([type="file"])'))return;
+    const field=active.getBoundingClientRect(),viewport=window.visualViewport;
+    const top=(viewport?.offsetTop||0)+12,bottom=Math.min(actions.getBoundingClientRect().top-12,(viewport?viewport.offsetTop+viewport.height:innerHeight)-12);
+    const delta=field.bottom>bottom?field.bottom-bottom:field.top<top?field.top-top:0;
+    if(delta)window.scrollBy({top:delta,behavior:'instant'});
+  }
+  document.addEventListener('focusin',()=>requestAnimationFrame(keepProductFieldVisible));
+  window.addEventListener('resize',()=>requestAnimationFrame(keepProductFieldVisible));
+  window.visualViewport?.addEventListener('resize',()=>requestAnimationFrame(keepProductFieldVisible));
+  document.addEventListener('keydown',event=>{
+    const picker=$('#model-picker');
+    if(event.key==='Escape'&&!event.defaultPrevented&&picker?.open&&state.draft.lines.length&&picker.contains(document.activeElement)&&!document.querySelector('dialog[open]')){
+      picker.open=false;picker.querySelector('summary').focus({preventScroll:true});event.preventDefault();
+    }
+  });
   document.addEventListener('input', event => {
     const input=event.target;
     if(input.id==='model-search'){renderCatalog(input.value);return;}
