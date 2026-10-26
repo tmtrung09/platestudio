@@ -12,3 +12,10 @@
 .selected-line{scroll-margin-block:16px}.selected-line:focus-visible{outline:2px solid var(--green);outline-offset:5px;border-radius:8px}
 .product-actions{position:sticky;bottom:max(10px,env(safe-area-inset-bottom));z-index:6;padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
 @media(max-width:680px){.model-picker>summary h2{font-size:18px}.product-actions{gap:8px;padding:10px}.product-actions>.btn{min-width:0;flex:1}.product-actions>.btn.text{font-size:11px;padding-inline:6px}}
+
+/* Product selection and requirements share a row on a sufficiently wide counter display. */
+.work-grid.product-workspace{grid-template-columns:minmax(0,1fr)}
+.product-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;min-width:0;align-items:start}
+.product-model-column{display:contents}.product-model-column>#model-picker{order:1}.product-requirement-column{order:2;min-width:0}.product-model-column>#product-summary-slot{order:3;min-width:0}
+#product-summary-slot .summary{position:static}.product-layout .model-picker{margin:0}.product-layout .product-actions{margin-top:20px}
+@media(min-width:1100px){.product-layout{grid-template-columns:minmax(290px,.85fr) minmax(0,1.35fr);gap:24px}.product-model-column{display:block;min-width:0;order:1}.product-requirement-column{order:2}.product-model-column #product-summary-slot{margin-top:20px}.product-model-column .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-requirement-column .part-color-field{grid-template-columns:1fr;gap:6px}}

@@ -3,6 +3,7 @@
   'use strict';
   const FACEBOOK = 'https://www.facebook.com/banhmi.176huynhcuong';
   const PUBLIC = document.body.dataset.page === 'customer';
+  const productWide=window.matchMedia('(min-width:1100px)');
   if(!window.supabase?.createClient){document.getElementById('app').innerHTML='<main class="broken-link"><h1>Chưa mở được kết nối.</h1><p>Kiểm tra mạng hoặc tải lại trang để thử lại.</p><button class="btn primary" id="connection-retry">Thử lại</button></main>';document.getElementById('connection-retry').onclick=()=>location.reload();return;}
   const client = supabase.createClient('https://mapmfngikmumvghapqcu.supabase.co','sb_publishable_V2iHcQ5i7l-kR8rEADgCKg_8bz9BiBJ',{auth:{persistSession:!PUBLIC,autoRefreshToken:!PUBLIC,detectSessionInUrl:false}});
   let workspace=null,session=null,scope='',booted=false,writeChain=Promise.resolve(),catalogSequence=0,catalogTotal=0,orderTotal=0,refreshTimer,searchTimer;
@@ -110,10 +111,15 @@
   function renderStep() {
     const host=$('#step-body'); if(!host)return;
     host.innerHTML=state.step===0?productStep():state.step===1?customerStep():reviewStep();
-    if(state.step===0) {renderCatalog('');renderLines();}
+    host.parentElement.classList.toggle('product-workspace',state.step===0);
+    if(state.step===0) {
+      $('#product-summary-slot').append($('#order-summary'));
+      $('#model-picker').open=productWide.matches||!state.draft.lines.length;
+      renderCatalog('');renderLines();
+    }
   }
   function productStep() {
-    return `<details class="panel model-picker" id="model-picker" ${state.draft.lines.length?'':'open'}><summary><div><h2>Thêm sản phẩm</h2><p>Tìm model theo tên hoặc mã Kiot.</p></div>${icon('chevron')}</summary><div class="model-picker-content"><label class="search-box">${icon('search')}<span class="sr-only">Tìm model theo tên hoặc mã Kiot</span><input type="search" id="model-search" placeholder="Tên model hoặc mã Kiot…" autocomplete="off"></label><div class="result-label"><span id="result-count" role="status"></span><span>Thư viện model</span></div><div class="catalog-grid" id="catalog"></div><button class="btn text full" data-action="more-models" id="more-models" hidden>Xem thêm model</button></div></details><section class="panel"><div class="section-top"><h2>Yêu cầu custom</h2><span class="section-number" id="line-count" role="status"></span></div><div id="selected-lines"></div></section><div class="form-actions product-actions"><button class="btn text" data-action="orders">Xem đơn cửa hàng</button><button class="btn primary" data-action="next" id="next-step" ${state.draft.lines.length?'':'disabled'}>Thông tin khách${icon('arrow')}</button></div><p class="draft-hint">${icon('shield')}${storageAvailable?'Nháp được giữ trên thiết bị này theo tài khoản và xưởng.':'Chỉ giữ nháp trong phiên này; bộ nhớ trình duyệt chưa sẵn sàng.'}</p>`;
+    return `<div class="product-layout"><div class="product-model-column"><details class="panel model-picker" id="model-picker" ${state.draft.lines.length?'':'open'}><summary><div><h2>Thêm sản phẩm</h2><p>Tìm model theo tên hoặc mã Kiot.</p></div>${icon('chevron')}</summary><div class="model-picker-content"><label class="search-box">${icon('search')}<span class="sr-only">Tìm model theo tên hoặc mã Kiot</span><input type="search" id="model-search" placeholder="Tên model hoặc mã Kiot…" autocomplete="off"></label><div class="result-label"><span id="result-count" role="status"></span><span>Thư viện model</span></div><div class="catalog-grid" id="catalog"></div><button class="btn text full" data-action="more-models" id="more-models" hidden>Xem thêm model</button></div></details><div id="product-summary-slot"></div></div><div class="product-requirement-column"><section class="panel" id="custom-requirements-panel"><div class="section-top"><h2>Yêu cầu custom</h2><span class="section-number" id="line-count" role="status"></span></div><div id="selected-lines"></div></section><div class="form-actions product-actions"><button class="btn text" data-action="orders">Xem đơn cửa hàng</button><button class="btn primary" data-action="next" id="next-step" ${state.draft.lines.length?'':'disabled'}>Thông tin khách${icon('arrow')}</button></div><p class="draft-hint">${icon('shield')}${storageAvailable?'Nháp được giữ trên thiết bị này theo tài khoản và xưởng.':'Chỉ giữ nháp trong phiên này; bộ nhớ trình duyệt chưa sẵn sàng.'}</p></div></div>`;
   }
   function renderCatalog(query) {
     clearTimeout(searchTimer);searchTimer=setTimeout(()=>{void loadCatalog(query).catch(showError);},180);
@@ -151,9 +157,11 @@
     window.FilamentPickers?.init(holder);
     $('#line-count').textContent=`${state.draft.lines.length} dòng`;
     $('#next-step').disabled=false;renderSummary();
-    $('#model-picker').open=false;
+    $('#model-picker').open=productWide.matches;
     const selected=$('[data-line="'+line.id+'"]');
-    selected.focus({preventScroll:true});selected.scrollIntoView({block:'start',behavior:'instant'});
+    selected.focus({preventScroll:true});
+    const position=selected.getBoundingClientRect();
+    if(!productWide.matches||position.top<16||position.top>innerHeight-100)selected.scrollIntoView({block:'start',behavior:'instant'});
 
   }
   function customerStep() {
@@ -476,6 +484,12 @@
     const delta=field.bottom>bottom?field.bottom-bottom:field.top<top?field.top-top:0;
     if(delta)window.scrollBy({top:delta,behavior:'instant'});
   }
+  productWide.addEventListener('change',()=>{
+    const picker=$('#model-picker');if(!picker)return;
+    const focused=picker.contains(document.activeElement);
+    picker.open=productWide.matches||!state.draft.lines.length;
+    if(!picker.open&&focused)picker.querySelector('summary').focus({preventScroll:true});
+  });
   document.addEventListener('focusin',()=>requestAnimationFrame(keepProductFieldVisible));
   window.addEventListener('resize',()=>requestAnimationFrame(keepProductFieldVisible));
   window.visualViewport?.addEventListener('resize',()=>requestAnimationFrame(keepProductFieldVisible));

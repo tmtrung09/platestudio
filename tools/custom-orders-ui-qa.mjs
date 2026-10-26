@@ -71,13 +71,18 @@ async function fillCustomer(page){
 
 async function checkProductFlow(width,theme){
  const {page,context}=await setup(width,theme,true);
+ const wide=width>=1100;
  if(width===844)await page.setViewportSize({width,height:390});
  await page.waitForFunction(()=>document.querySelectorAll('.model-card').length===60);
  for(const count of [120,180,200]){await page.locator('#more-models').click();await page.waitForFunction(count=>document.querySelectorAll('.model-card').length===count,count);}
+ if(wide){
+  const columns=await page.evaluate(()=>{const catalog=document.querySelector('#model-picker').getBoundingClientRect(),requirements=document.querySelector('#selected-lines').parentElement.getBoundingClientRect();return {catalogRight:catalog.right,requirementsLeft:requirements.left,topDifference:Math.abs(catalog.top-requirements.top)};});
+  assert.ok(columns.catalogRight<=columns.requirementsLeft&&columns.topDifference<=2,'Desktop requirements must sit beside the catalog, aligned at the top: '+JSON.stringify(columns));
+ }
  await page.locator('[data-model=m1]').click();await page.locator('[data-variant=v1]').click();await page.locator('#add-variant').click();
  const position=await page.locator('.selected-line').first().evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:innerHeight};});
  assert.ok(position.top>=0&&position.top<position.height/2,'Selected requirement must be in view immediately, without scrolling past 200 models: '+JSON.stringify(position));
- assert.equal(await page.locator('#model-search').isVisible(),false,'Catalog folds after selection');
+ assert.equal(await page.locator('#model-search').isVisible(),wide,'Desktop keeps catalog visible; narrow layouts fold it after selection');
  assert.equal(await page.locator('#next-step').isVisible(),true);
  const nextBounds=await page.locator('#next-step').boundingBox();assert.ok(nextBounds.y>=0&&nextBounds.y+nextBounds.height<=page.viewportSize().height,'Next action remains in the viewport');
  if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-selected-viewport.png')});
@@ -89,33 +94,43 @@ async function checkProductFlow(width,theme){
  await page.locator('[data-qty][data-delta="1"]').click();
  await page.locator('[data-files]').setInputFiles({name:'flow-reference.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j/WQAAAAASUVORK5CYII=','base64')});await page.locator('.attachment img').waitFor();
  await page.evaluate(()=>{window.__flowNote=document.querySelector('[data-note]');window.__flowImage=document.querySelector('.attachment img');window.__flowNote.setSelectionRange(3,9);window.__flowSearch=document.querySelector('#model-search');});
- await page.locator('#model-picker summary').click();
+ if(!await page.locator('#model-search').isVisible())await page.locator('#model-picker summary').click();
  const grid=await page.locator('#catalog').evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,viewport:innerHeight}));assert.ok(grid.height<=Math.min(grid.viewport*.45,360)+1&&grid.scroll>grid.height,'Large library scrolls within a bounded picker');
  await page.locator('#model-search').fill('zz-no-model');await page.locator('#catalog .empty').waitFor();
  await page.keyboard.press('Escape');assert.equal(await page.locator('#model-search').isVisible(),false);
  await page.locator('#model-picker summary').press('Enter');assert.equal(await page.locator('#model-search').inputValue(),'zz-no-model','Toggling preserves query');
  await page.locator('#model-search').fill('SP002');await page.locator('[data-model=m2]').waitFor();await page.locator('[data-model=m2]').click();
- assert.equal(await page.locator('#model-search').isVisible(),false,'No-variant selection also folds the picker');
+ assert.equal(await page.locator('#model-search').isVisible(),wide,'No-variant selection follows the responsive layout');
  assert.equal(await page.locator('.selected-line').count(),2);
  assert.equal(await page.evaluate(()=>document.querySelector('[data-note]')===window.__flowNote&&document.querySelector('.attachment img')===window.__flowImage&&document.querySelector('#model-search')===window.__flowSearch&&window.__flowNote.selectionStart===3&&window.__flowNote.selectionEnd===9),true,'Add/search/collapse preserves existing inputs, images, caret and picker DOM');
+ if(width===1440){
+  await page.setViewportSize({width:390,height:950});await page.waitForFunction(()=>!document.querySelector('#model-picker').open);
+  assert.equal(await page.locator('#model-search').inputValue(),'SP002','Resize keeps the catalog query');
+  assert.equal(await page.evaluate(()=>document.querySelector('[data-note]')===window.__flowNote&&document.querySelector('.attachment img')===window.__flowImage),true,'Narrow layout preserves the active draft DOM');
+  await noOverflow(page,'desktop-to-phone/'+theme);
+  await page.setViewportSize({width:1440,height:950});await page.waitForFunction(()=>document.querySelector('#model-picker').open);
+  const restored=await page.evaluate(()=>{const a=document.querySelector('#model-picker').getBoundingClientRect(),b=document.querySelector('#custom-requirements-panel').getBoundingClientRect();return a.right<=b.left&&Math.abs(a.top-b.top)<=2;});
+  assert.equal(restored,true,'Returning to desktop restores the adjacent columns');
+  assert.equal(await page.locator('[data-part=tray]').inputValue(),'green');assert.equal(await page.locator('[data-quantity]').first().inputValue(),'2');
+ }
  await page.locator('[data-note]').nth(1).fill('Món thứ hai của khách');
  await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
  await page.reload();await page.locator('.selected-line').nth(1).waitFor();
- assert.equal(await page.locator('#model-search').isVisible(),false,'Reload opens the saved requirements, not the catalog');
+ assert.equal(await page.locator('#model-search').isVisible(),wide,'Reload keeps both desktop columns, or the saved requirements on narrow screens');
  assert.equal(await page.locator('[data-note]').first().inputValue(),'Yêu cầu màu và tên đã chốt cùng khách');assert.equal(await page.locator('[data-quantity]').first().inputValue(),'2');
  assert.equal(await page.locator('[data-part=tray]').inputValue(),'green');assert.equal(await page.locator('.attachment img').count(),1);
  await noOverflow(page,width+'/'+theme+'/compact-product-flow');
  if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-product-flow.png'),fullPage:true});
  await page.locator('#next-step').click();await page.locator('#customer-name').waitFor();
- await page.locator('[data-action=back]').click();assert.equal(await page.locator('#model-search').isVisible(),false);assert.equal(await page.locator('.selected-line').count(),2);
+ await page.locator('[data-action=back]').click();assert.equal(await page.locator('#model-search').isVisible(),wide);assert.equal(await page.locator('.selected-line').count(),2);
  // Removing the last line reopens the picker, so the empty draft has a clear next action.
  for(let left=2;left>0;left--){await page.locator('[data-remove-line]').last().click();await page.locator('[data-confirm-remove]').click();assert.equal(await page.locator('.selected-line').count(),left-1);}
  assert.equal(await page.locator('#model-search').isVisible(),true);assert.equal(await page.locator('#model-search').evaluate(el=>el===document.activeElement),true);
- await context.close();checks+=18;console.log('PASS product flow '+width+'/'+theme+': 200 models, bounded picker, immediate requirements, reachable next, preserved query/DOM/caret/image/colors/quantity, reload/back/remove');
+ await context.close();checks+=18;console.log('PASS product flow '+width+'/'+theme+': 200 models, adjacent desktop columns, responsive picker, reachable next, preserved query/DOM/caret/image/colors/quantity, resize/reload/back/remove');
 }
 
 try{
- for(const width of [320,390,844,1440])for(const theme of ['light','dark'])await checkProductFlow(width,theme);
+ for(const width of [320,390,844,1024,1100,1280,1440,1920].filter(width=>!process.env.QA_CUSTOM_FLOW_WIDTH||width===Number(process.env.QA_CUSTOM_FLOW_WIDTH)))for(const theme of ['light','dark'])await checkProductFlow(width,theme);
  if(process.env.QA_CUSTOM_FLOW_ONLY==='1'){assert.deepEqual(issues,[]);console.log('PASS focused custom product flow');process.exitCode=0;}else{
  for(const width of [320,390,768,1440])for(const theme of ['light','dark']){
   const {page,context}=await setup(width,theme);
