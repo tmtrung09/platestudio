@@ -4,7 +4,9 @@ Chủ xưởng vào Phân quyền, chọn vai trò **Cửa hàng · Nhận đơn
 khoản nhân viên. Vai trò có quyền tạo và xem mọi đơn custom trong workspace cửa
 hàng, không chỉnh đơn đã tạo, xác nhận tiến độ, sửa model hay dữ liệu xưởng.
 Sau đăng nhập Plate Studio, tài khoản này được chuyển vào `custom-orders.html`.
-Chủ xưởng/quản lý đơn có thể mở **Đơn custom** trong sidebar của ứng dụng chính.
+Chủ xưởng/quản lý đơn hoặc người có quyền tạo/xem custom mở **Vận hành → Đơn custom**
+trong sidebar máy tính, hoặc **Menu → Đơn custom** trên điện thoại. Mục này tìm
+được bằng ô tìm kiếm trong Menu và ẩn khi tài khoản không có quyền.
 
 Nhân viên tìm model theo tên hoặc mã KiotViet, chọn biến thể nếu có, chọn màu cho
 từng part được dùng trong biến thể, nhập số lượng, mô tả và ảnh tham khảo. Không

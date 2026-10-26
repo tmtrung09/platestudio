@@ -431,6 +431,10 @@
   và xem tất cả đơn custom của cửa hàng; sau khi tạo chỉ xem tiến độ. Hỗ trợ điện
   thoại và máy tính tại quầy. Luồng và trang đăng nhập mới phải có demo để duyệt
   trước khi tích hợp; demo dùng dữ liệu minh họa, không ghi dữ liệu xưởng.
+- Đường vào Đơn custom phải có trong sidebar desktop (nhóm Vận hành) và Menu
+  điện thoại, tìm được trong Menu. Giữ sau khi dựng lại điều hướng; hiển thị
+  theo quyền chủ xưởng/quản lý đơn/tạo hoặc xem custom và ẩn ngay khi mất quyền
+  hay đăng xuất. Guard: `tools/custom-orders-navigation-qa.mjs`.
 - Chọn sản phẩm từ model đã nhập, tìm theo tên hoặc mã KiotViet và giữ định danh
   model/biến thể. Ghi số lượng, yêu cầu custom tự do và ảnh tham khảo theo từng
   dòng; không áp quy luật màu/ký tự/kích thước từ một ví dụ sản phẩm cụ thể.

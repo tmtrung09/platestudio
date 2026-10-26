@@ -376,6 +376,7 @@ mark { background:rgba(200,80,26,.15); color:var(--ac); border-radius:2px; paddi
 .sb-nav-item:hover { background:var(--s2); color:var(--t); transform:translateX(1px) }
 .sb-nav-item.active { color:var(--ac); background:var(--acb); font-weight:700 }
 .sb-nav-item.active::before { content:''; position:absolute; left:0; width:3px; height:18px; border-radius:99px; background:var(--ac) }
+.sb-nav-item[data-custom-orders-entry]{min-height:44px}
 .sb-nav-item svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0 }
 .sb-nav-label { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .sb-nav-count { margin-left:auto; min-width:19px; padding:1px 5px; border-radius:99px; text-align:center; font:10px 'DM Mono',monospace; color:var(--t3); background:var(--s2) }
@@ -5011,6 +5012,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
       <section class="more-group" data-more-group="production">
         <div class="more-group-title">Vận hành & sản xuất</div>
         <div class="more-group-grid">
+          <button class="more-item" type="button" data-more-tone="green" data-custom-orders-entry style="display:none" onclick="openCustomOrders()"><svg viewBox="0 0 24 24"><path d="M6 3h12l3 4v13H3V7zM3 7h18M9 12h6M9 16h4"/></svg>Đơn custom</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-permission="orders.manage" onclick="closeMoreSheet();openOrderForm()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo đơn hàng</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-permission="models.manage" onclick="closeMoreSheet();openAddModel()"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Thêm Model</button>
           <button class="more-item" data-more-tone="violet" data-sidebar-page="orders" onclick="closeMoreSheet();goPage('orders')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>Đơn hàng</button>
@@ -5286,7 +5288,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <!-- SIDEBAR -->
 <aside class="sb" id="sidebar">
   <div class="sb-sect">
-    <div class="sb-sect-title">Hành động</div><button class="sb-btn custom-order-entry" data-custom-orders-entry style="display:none" onclick="location.href='custom-orders.html'"><svg viewBox="0 0 24 24"><path d="m12 3 2 6 7 3-7 3-2 6-2-6-7-3 7-3Z"/></svg><span class="sb-lbl">Đơn custom</span></button>
+    <div class="sb-sect-title">Hành động</div>
     <button class="sb-btn" onclick="openOrderForm()" title="Tạo Order">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span class="sb-lbl">Tạo Order</span>
@@ -8919,7 +8921,16 @@ function closeFab() {
 }
 let moreNavigationCategory='all',moreNavigationReturnFocus=null,moreNavigationActionTimer=0;
 function moreNavigationText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').trim();}
+function canOpenCustomOrders(){
+  return !!currentUser&&(isWorkspaceOwner()||canAccess('orders.manage')||canAccess('custom_orders.create')||canAccess('custom_orders.view'));
+}
+function openCustomOrders(){
+  if(!canOpenCustomOrders())return;
+  closeMoreSheet({restoreFocus:false});
+  location.assign('custom-orders.html');
+}
 function moreNavigationAllowed(button){
+  if(button.hasAttribute('data-custom-orders-entry'))return canOpenCustomOrders();
   if(button.style.display==='none')return false;
   if(!currentUser)return true;
   if(button.hasAttribute('data-owner-only')&&!isWorkspaceOwner())return false;
@@ -9561,6 +9572,7 @@ function renderSb() {
     ${sidebarNavGroup('work','Vận hành',
       item('dashboard','Tổng quan','dashboard')+
       item('orders','Đơn hàng','order',orders.length)+
+      `<button class="sb-nav-item" type="button" data-custom-orders-entry style="display:none" onclick="openCustomOrders()" title="Đơn custom">${sidebarIcon('order')}<span class="sb-nav-label">Đơn custom</span></button>`+
       item('production','Sản xuất','plate')
     ,{forceOpen:['dashboard','orders',...PRODUCTION_ROUTES].includes(curPage)})}
     ${sidebarNavGroup('print','Sản xuất & đối chiếu',
@@ -22536,7 +22548,7 @@ function renderRoleMobileNavigation(){
 }
 function applyWorkspaceNavigationPermissions(){
   window.WorkshopSwipe?.onContext();
-  document.querySelectorAll('[data-custom-orders-entry]').forEach(button=>button.style.display=currentUser&&(isWorkspaceOwner()||canAccess('orders.manage')||canAccess('custom_orders.create')||canAccess('custom_orders.view'))?'':'none');
+  document.querySelectorAll('[data-custom-orders-entry]').forEach(button=>button.style.display=canOpenCustomOrders()?'':'none');
   renderRoleMobileNavigation();
   if(!currentUser){document.body.classList.remove('delivery-receive-only');return;}
   const receiveOnly=isDeliveryReceiveOnlyAccount();
