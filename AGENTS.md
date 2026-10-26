@@ -436,7 +436,8 @@
   theo quyền chủ xưởng/quản lý đơn/tạo hoặc xem custom và ẩn ngay khi mất quyền
   hay đăng xuất. Guard: `tools/custom-orders-navigation-qa.mjs`.
 - Bước sản phẩm của đơn custom trên màn hình rộng đặt thư viện model bên trái,
-  màu và yêu cầu bên phải, cùng hàng; giữ thư viện mở khi thêm model. Màn hẹp
+  màu và yêu cầu bên phải, cùng hàng; hai cột cân đối, cột yêu cầu chỉ nhỉnh hơn
+  thư viện. Giữ thư viện mở khi thêm model. Màn hẹp
   thu gọn thư viện sau khi thêm và đưa dòng yêu cầu vừa thêm vào vùng nhìn.
   Tìm/thêm/đổi kích thước màn hình không dựng lại dòng đang nhập hoặc mất màu/
   ảnh/số lượng/nháp. Danh sách có vùng cuộn giới hạn, nút sang bước khách luôn

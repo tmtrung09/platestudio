@@ -76,8 +76,9 @@ async function checkProductFlow(width,theme){
  await page.waitForFunction(()=>document.querySelectorAll('.model-card').length===60);
  for(const count of [120,180,200]){await page.locator('#more-models').click();await page.waitForFunction(count=>document.querySelectorAll('.model-card').length===count,count);}
  if(wide){
-  const columns=await page.evaluate(()=>{const catalog=document.querySelector('#model-picker').getBoundingClientRect(),requirements=document.querySelector('#selected-lines').parentElement.getBoundingClientRect();return {catalogRight:catalog.right,requirementsLeft:requirements.left,topDifference:Math.abs(catalog.top-requirements.top)};});
+  const columns=await page.evaluate(()=>{const catalog=document.querySelector('#model-picker').getBoundingClientRect(),requirements=document.querySelector('#selected-lines').parentElement.getBoundingClientRect();return {catalogRight:catalog.right,requirementsLeft:requirements.left,rightShare:requirements.width/(catalog.width+requirements.width),topDifference:Math.abs(catalog.top-requirements.top)};});
   assert.ok(columns.catalogRight<=columns.requirementsLeft&&columns.topDifference<=2,'Desktop requirements must sit beside the catalog, aligned at the top: '+JSON.stringify(columns));
+  assert.ok(columns.rightShare>=.53&&columns.rightShare<=.56,'Right column should take about 55% of usable column width: '+JSON.stringify(columns));
  }
  await page.locator('[data-model=m1]').click();await page.locator('[data-variant=v1]').click();await page.locator('#add-variant').click();
  const position=await page.locator('.selected-line').first().evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:innerHeight};});
