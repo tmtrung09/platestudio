@@ -64,7 +64,9 @@ try{
    });
    results.push({width,height,theme,route,...metrics});
    if(!baseline){
-    assert.equal(metrics.canvas,theme==='dark'?'rgb(24, 62, 44)':'rgb(238, 244, 233)',`${route}: forest canvas`);
+    const palette=await page.evaluate(()=>{const s=getComputedStyle(document.documentElement);return ['--bg','--s','--ac','--pu','--am','--re','--bl'].map(t=>s.getPropertyValue(t).trim());});
+    assert.equal(new Set(palette).size,palette.length,`${route}: surfaces and contextual accents stay distinct`);
+    assert.equal(metrics.canvas,theme==='dark'?'rgb(21, 27, 29)':'rgb(243, 242, 237)',`${route}: approved neutral canvas`);
     assert.equal(metrics.canvas,metrics.page,`${route}: one continuous canvas`);
     assert.equal(metrics.overflow,false,`${width}/${theme}/${route}: horizontal overflow`);
     assert.deepEqual(metrics.clipped,[],`${width}/${theme}/${route}: toolbar actions reachable`);
