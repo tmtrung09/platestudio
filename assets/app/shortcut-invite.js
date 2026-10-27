@@ -18,7 +18,7 @@
  function blocked(){
   if(document.hidden||!window.PlatedioStartup||!['ready','revealing'].includes(PlatedioStartup.state))return true;
   const style=document.querySelector('[data-platedio-install-style]');if(!style?.sheet||style.media==='print')return true;
-  if(document.body.matches('.staff-report-mode,.staff-receiving-mode,.delivery-receive-only,.notifications-open,.more-sheet-open'))return true;
+  if(document.body.matches('.staff-report-mode,.staff-receiving-mode,.delivery-receive-only,.notifications-open,.more-sheet-open,.workshop-swipe-mode'))return true;
   if(visible(document.getElementById('auth-ov'))||visible(document.getElementById('ov-order-form')))return true;
   if([...document.querySelectorAll('[role="dialog"],[role="menu"],[aria-modal="true"],[id^="ov-"],#confirm-ov,#page-options-tools[open],.ov,.dlg-ov,.guide-tour-ov,.spotlight-ov,video,.system-notification-popup,#system-notification-panel,#toast .notification-card')].some(el=>!card?.contains(el)&&visible(el)))return true;
   return !!editing()&&!card?.contains(document.activeElement);

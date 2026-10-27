@@ -2,7 +2,12 @@
 
 Trong Gia công & giao hàng, nút **Quẹt part** nằm cạnh tiêu đề Gia công. Chỉ tài
 khoản đã đăng nhập có quyền `assembly.qc` được thao tác. Quay lại danh sách bằng
-nút Danh sách. Tìm kiếm dùng chung ô tìm của trang, không tạo thư viện riêng.
+nút Danh sách hoặc Escape. Chế độ quẹt chiếm vùng làm việc riêng, ẩn logo,
+sidebar, menu dưới, camera và công cụ trang chung. Thẻ và ba hướng thao tác ở
+giữa màn hình; trạng thái lưu và hoàn tác nằm trên thanh gọn. Bộ lọc, tìm kiếm,
+hàng tiếp theo và hướng dẫn nằm trong nút bộ lọc; Escape đóng phần đang mở
+trước khi thoát. Tìm kiếm dùng cùng truy vấn của danh sách. Thoát giữ hàng chờ,
+trả focus về nút vào chế độ quẹt và khôi phục vị trí cuộn danh sách.
 
 Mỗi thẻ giữ ID đơn/dòng/part/màu thực từ phân bổ in đã bàn giao xưởng. Các phân
 bổ cùng part và màu trong một dòng đơn được cộng đúng số lượng, không gộp giữa

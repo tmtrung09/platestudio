@@ -8773,6 +8773,7 @@ function openPageLayoutManager(page=curPage){
 }
 
 function goPage(p,{historyMode='push',restoreScroll=null}={}) {
+  if(p!=='fulfillment'&&window.WorkshopSwipe?.isOpen())window.WorkshopSwipe.close({restore:false});
   if(document.getElementById('model-signal-panel'))closeModelSignal();
   if(p==='production')p=productionDefaultRoute();
   if(p==='inventory'){productionNeedsState.source='stock';productionNeedsState.status='all';}

@@ -259,6 +259,12 @@
 
 ### Gia công bằng thẻ quẹt
 
+- Chế độ quẹt là không gian tập trung riêng, ẩn logo/header, sidebar, menu dưới,
+  camera, công cụ trang chung và lời mời cài ứng dụng. Thẻ part và thao tác quẹt
+  là nội dung chính;
+  bộ lọc, tìm kiếm, hàng tiếp theo và hướng dẫn chỉ mở khi cần. Giữ trạng thái
+  lưu, hoàn tác và lối về danh sách; thoát khôi phục điều hướng/focus/cuộn, không
+  mất hàng chờ. Kiểm tra mobile/desktop, hai theme, màn thấp và bàn phím.
 - Mỗi thẻ là một part trong một đơn, hiển thị model, màu và số lượng. Trạng
   thái ghi riêng từng part; model chỉ hoàn tất khi tất cả part cần thiết đạt
   đủ số lượng hoàn tất. Không đổi trạng thái cả model từ một part đơn lẻ.
