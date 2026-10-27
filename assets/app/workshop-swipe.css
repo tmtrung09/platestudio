@@ -41,6 +41,9 @@ html body.workshop-swipe-mode #page-fulfillment.active{width:100%!important;min-
 .ws-actions{margin-top:16px}
 .ws-feedback{min-height:20px;margin-top:10px;font-size:11px}
 .ws-feedback:empty{display:none}
+.ws-card.is-read-only .ws-stepper{border-color:transparent;background:transparent}
+.ws-card.is-read-only .ws-stepper button{display:none}
+.ws-card.is-read-only .ws-stepper input{opacity:1;width:64px}
 .ws-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;padding:32px 22px}
 .ws-empty h2{margin:0 0 12px;font-size:24px;line-height:1.25}
 .ws-empty p{margin:0 0 16px}

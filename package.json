@@ -16,7 +16,7 @@
     "qa:camera-startup": "node tools/camera-startup-qa.mjs",
     "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-orders-ui-qa.mjs && node tools/login-layout-qa.mjs && node tools/custom-orders-navigation-qa.mjs",
     "qa:forest": "node tools/forest-theme-qa.mjs",
-    "qa:workshop-swipe": "node tools/workshop-swipe-sql-qa.mjs && node tools/workshop-swipe-ui-qa.mjs",
+    "qa:workshop-swipe": "node tools/workshop-swipe-catalog-qa.mjs && node tools/workshop-swipe-sql-qa.mjs && node tools/workshop-swipe-ui-qa.mjs",
     "qa:order-stepper": "node tools/order-stepper-qa.mjs"
   },
   "devDependencies": {

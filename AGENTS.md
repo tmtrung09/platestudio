@@ -265,9 +265,15 @@
   bộ lọc, tìm kiếm, hàng tiếp theo và hướng dẫn chỉ mở khi cần. Giữ trạng thái
   lưu, hoàn tác và lối về danh sách; thoát khôi phục điều hướng/focus/cuộn, không
   mất hàng chờ. Kiểm tra mobile/desktop, hai theme, màn thấp và bàn phím.
-- Mỗi thẻ là một part trong một đơn, hiển thị model, màu và số lượng. Trạng
+- Thẻ có thao tác đổi trạng thái là một part trong một đơn, hiển thị model,
+  màu và số lượng. Trạng
   thái ghi riêng từng part; model chỉ hoàn tất khi tất cả part cần thiết đạt
   đủ số lượng hoàn tất. Không đổi trạng thái cả model từ một part đơn lẻ.
+- Mặc định hiển thị tất cả nguồn và trạng thái có trong danh sách Gia công,
+  gồm chưa giao xưởng, chờ in, ngoài đơn, hoàn tất/lỗi và dữ liệu cũ cần đối chiếu.
+  Thẻ chưa đủ điều kiện nêu rõ lý do và mở đúng bước trong danh sách; không tự
+  bàn giao, gán ID hoặc chuyển trạng thái cả model từ một part. Không có lượt
+  quẹt chờ gửi không đồng nghĩa dữ liệu nguồn đã tải đủ hoặc đã được cloud xác nhận.
 - Hướng quẹt hiện nhãn và chỉ cho phép chuyển trạng thái hợp lệ theo bước hiện
   tại: QC có đạt/báo lỗi; đang gia công có hoàn tất/chờ vật tư. Có nút bấm tương
   đương để thao tác không phụ thuộc cử chỉ.

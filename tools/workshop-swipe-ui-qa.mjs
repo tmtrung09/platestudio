@@ -31,9 +31,28 @@ async function setup(width=390,height=844,theme='dark',touch=false,oid=null,exis
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.exposeFunction('qaWorkshopRPC',async(name,args)=>{try{const q=name==='commit_workshop_swipe'?'select commit_workshop_swipe($1,$2,$3) value':'select workshop_swipe_read($1,$2) value',params=name==='commit_workshop_swipe'?[args.w,args.request,JSON.stringify(args.p)]:[args.w,args.oid];return {data:(await db.query(q,params)).rows[0].value};}catch(e){return {error:{code:e.code,message:e.message}};}});oid=oid||await fixture();await mount(page,oid,theme);return {context,page,oid};}
 async function open(page){await page.locator('[data-workshop-swipe-entry]').click();await page.waitForSelector('#ws-card');}
 const queue=page=>page.evaluate(scope=>WorkshopSwipeStore.all(scope).then(x=>x.requests),scope);
-async function settled(page){for(let i=0;i<200;i++){const status=await page.evaluate(async scope=>({n:(await WorkshopSwipeStore.all(scope)).requests.length,text:document.getElementById('ws-sync')?.textContent,busy:document.getElementById('ws-right')?.disabled}),scope);if(status.n===0&&status.text==='Đã đồng bộ'&&!status.busy)return;await page.waitForTimeout(50);}throw Error('Outbox did not receive a server ACK');}
+async function settled(page){for(let i=0;i<200;i++){const status=await page.evaluate(async scope=>({n:(await WorkshopSwipeStore.all(scope)).requests.length,text:document.getElementById('ws-sync')?.textContent,busy:document.getElementById('ws-right')?.disabled}),scope);if(status.n===0&&status.text==='Không có lượt chờ'&&!status.busy)return;await page.waitForTimeout(50);}throw Error('Outbox did not receive a server ACK');}
 async function click(page,id){await page.locator('#ws-'+id).click();await page.waitForTimeout(80);}
 try{
+ for(const width of [390,1440])for(const theme of ['light','dark']){
+  const mixed=await setup(width,width===390?844:1000,theme),p=mixed.page;
+  await p.evaluate(()=>{
+   orders[0].assembly={};pitems[0].qtyDone=0;
+   const legacy=structuredClone(orders[0]);legacy.id='legacy-source';legacy.note='Phân bổ cũ';legacy.items=[{...legacy.items[0],id:'old-line'}];legacy.assembly={handovers:{'old-line':{handedAt:'2026-10-27',qcStatus:'pending'}},items:{}};orders.push(legacy);
+   pitems.push({...pitems[1],id:'legacy-print',orderId:legacy.id,orderItemId:'',variantId:'v',qty:10,qtyDone:10});
+   batchReports=[{id:'outside-source',status:'done',external:true,createdAt:'2026-10-27',manualItems:[{modelId:'m',variantId:'v',partId:'body',partName:'Khay bàn phím',qty:5},{modelId:'m',variantId:'v',partId:'keys',partName:'Bộ ký tự',qty:10}]}];renderFulfillmentPage();
+  });
+  await open(p);assert.equal(await p.locator('#ws-count').textContent(),'5 thẻ');assert.equal(await p.locator('#ws-filter-label').textContent(),'Tất cả');assert.equal(await p.locator('#ws-sync').textContent(),'Không có lượt chờ');
+  for(const [filter,label]of [['handover','Chưa giao xưởng'],['printing','Chờ in'],['external','Ngoài đơn'],['review','Cần đối chiếu']]){
+   await p.locator('#ws-options-toggle').click();await p.locator(`[data-ws-filter="${filter}"]`).click();assert.equal(await p.locator('#ws-empty').isVisible(),false);assert.equal(await p.locator('#ws-state').textContent(),label);assert.equal(await p.locator('#ws-variant').textContent(),'Bản đôi');
+   assert.equal(await p.locator('#ws-qty').isDisabled(),true);assert.equal(await p.locator('#ws-qty-label').textContent(),'Số lượng nguồn');assert.equal(await p.locator('#ws-right').textContent(),'Mở danh sách');assert.equal(await p.locator('#ws-image img').count(),1);await p.locator('#ws-image img').evaluate(img=>img.decode());await p.locator('#ws-card').press('ArrowRight');assert.equal((await queue(p)).length,0,'Inspection cards cannot submit business transitions');
+   if(width===390)await p.screenshot({path:resolve(out,`source-${filter}-${theme}.png`),fullPage:true});
+  }
+  await p.evaluate(()=>{window.qaSourceParts=models[0].parts;models[0].parts=[];WorkshopSwipe.refresh();});await p.locator('#ws-options-toggle').click();await p.locator('[data-ws-filter="external"]').click();assert.equal(await p.locator('.ws-quantity').isVisible(),false);assert.match(await p.locator('#ws-progress').textContent(),/Chưa xác định/);assert.match(await p.locator('#ws-card').getAttribute('aria-label'),/số lượng chưa xác định/);await p.evaluate(()=>{models[0].parts=window.qaSourceParts;WorkshopSwipe.refresh();});
+  await p.locator('#ws-options-toggle').click();await p.locator('#ws-search').fill('khong-co-viec-khop');await p.keyboard.press('Escape');assert.equal(await p.locator('#ws-empty-title').textContent(),'Không khớp bộ lọc.');await p.locator('#ws-empty-filter').click();assert.equal(await p.locator('#ws-count').textContent(),'5 thẻ');assert.equal(await p.locator('#ws-search').inputValue(),'');
+  await p.locator('#ws-right').click();assert.equal(await p.evaluate(()=>WorkshopSwipe.isOpen()),false);assert.deepEqual(await p.evaluate(()=>window.__swipeCalls.filter(x=>x.name==='commit_workshop_swipe')),[]);
+  await mixed.context.close();checks++;
+ }
  const focus=await setup();await open(focus.page);
  await focus.page.evaluate(()=>PlatedioInstall.open());await focus.page.waitForTimeout(700);assert.equal(await focus.page.locator('#platedio-install').isVisible(),false,'Install invitation cannot interrupt swipe mode');await focus.page.evaluate(()=>PlatedioInstall.dismiss());
  for(const selector of ['#mobile-nav','#sidebar','.platedio-mobile-brand','#cam-fab','#system-notification-button','#page-options-tools','.fulfillment-command-bar','#page-fulfillment > .page-heading'])assert.equal(await focus.page.locator(selector).isVisible(),false,'Focus mode hides '+selector);

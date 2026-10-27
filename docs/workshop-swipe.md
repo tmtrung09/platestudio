@@ -14,6 +14,12 @@ bổ cùng part và màu trong một dòng đơn được cộng đúng số lư
 đơn hoặc biến thể. Dữ liệu cũ thiếu định danh vẫn giữ trong danh sách để kiểm tra.
 Ảnh part thật ưu tiên trước ảnh model; thiếu/lỗi có fallback. Không dùng hình demo.
 
+Mặc định **Tất cả** hiển thị cả hoàn tất/lỗi, chưa bàn giao, chờ in, ngoài đơn và
+phân bổ cũ cần đối chiếu. Chỉ part có định danh chuẩn thuộc đơn đã bàn giao được
+ghi qua RPC quẹt. Các nguồn khác có thẻ giải thích và nút **Mở danh sách** tới
+đúng bước hiện có; không tự bàn giao hoặc suy trạng thái cả model từ một part.
+Nhãn **Không có lượt chờ** chỉ nói về outbox quẹt, không xác nhận đã tải đủ nguồn.
+
 Toàn bộ thẻ nhận quẹt, trừ ô và nút chỉnh số lượng. Phải đi bước tiếp theo, trái
 là báo lỗi hoặc chờ vật tư theo trạng thái, lên để sau. Có nút và phím tương ứng.
 Số lượng mặc định là phần còn lại; xử lý một phần đưa phần chưa xử lý xuống cuối.
