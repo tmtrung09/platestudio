@@ -15,12 +15,16 @@ create function storage.foldername(name text) returns text[] language sql immuta
 create function is_workspace_owner(w uuid) returns boolean language sql stable security definer as $$select exists(select 1 from workspaces where id=w and owner_user_id=auth.uid())$$;
 insert into auth.users(id,email) values('${u}','qa@example.test');insert into workspaces values('${w}','${u}');`);
 for(const table of ['models','filaments','projects','orders','plates','plate_items','settings','batch_reports'])await db.exec(`create table ${table}(id text,user_id uuid,workspace_id uuid,data jsonb,updated_at timestamptz default now(),primary key(workspace_id,id));alter table ${table} enable row level security;`);
-for(const file of ['202610250001_custom_store_orders.sql','202610300001_custom_order_original_colors.sql','202610300002_custom_keyboard_preview.sql'])await db.exec(readFileSync(resolve('supabase/migrations',file),'utf8'));
+for(const file of ['202610250001_custom_store_orders.sql','202610300001_custom_order_original_colors.sql','202610300002_custom_keyboard_preview.sql','202610310001_filament_reference_palette.sql'])await db.exec(readFileSync(resolve('supabase/migrations',file),'utf8'));
 const model={id:'keyboard-real-id',name:'Bàn phím tên',images:[],parts:[{id:'tray-real-id',name:'Khay bàn phím',qtyPerModel:1,filamentIds:['f-pink']},{id:'keys-real-id',name:'Nút + ký tự',qtyPerModel:4,filamentIds:['f-orange']}],variants:[]};
 const fils=[{id:'f-pink',name:'Hồng anh đào',brand:'CAILAB',mat:'PLA Matte',hex:'#FBA8D0'},{id:'f-orange',name:'Cam',brand:'TINMORRY',mat:'PLA Matte',hex:'#FF9201'},{id:'f-blue',name:'Xanh băng',brand:'R3D',mat:'PLA Matte',hex:'#BCEFFA'},{id:'f-desert',name:'Cát sa mạc',brand:'CAILAB',mat:'PLA Matte',hex:'#DAC79D'}];
 fils.push({id:'f-black',name:'Đen',brand:'R3D',mat:'PLA Matte',hex:'#191919'},{id:'f-cream',name:'Trắng kem',brand:'CAILAB',mat:'PLA Matte',hex:'#F0E9D5'},{id:'f-mint',name:'Xanh bạc hà',brand:'TINMORRY',mat:'PLA Matte',hex:'#9DDACB'});
 const insert=(table,id,data)=>db.query(`insert into ${table}(id,user_id,workspace_id,data,updated_at) values($1,$2,$3,$4,$5)`,[id,u,w,JSON.stringify(data),revision]);
 await insert('models',model.id,model);await insert('models','other-model',{id:'other-model',name:'Model khác',parts:[],variants:[],images:[]});for(const f of fils)await insert('filaments',f.id,f);
+await insert('filaments','old-purple',{id:'old-purple',name:'Pupple',brand:'Timory',hex:'#ca38ff',mat:'PLA',matte:true});
+const palette=JSON.parse(readFileSync('assets/filaments/reference-palette.json','utf8'));
+const imported=(await db.query('select import_filament_reference_palette($1,$2,true) result',[w,JSON.stringify(palette)])).rows[0].result;
+const iceId=imported.plan.find(r=>r.key==='cailab:pla-matte:mt635').id;
 
 // Native rebuilding must retain the authoritative snapshot and one combined part.
 const html=readFileSync('plate-studio.html','utf8'),sandbox={structuredClone,Date,models:[structuredClone(model)],plates:[],pitems:[],uid:()=>crypto.randomUUID(),partsForVariant:m=>m.parts,resolvedPartColorIds:(m,v,p)=>p.filamentIds};
@@ -58,6 +62,9 @@ try{
   const {page,context}=await setup(width,theme);await page.locator('[data-model="keyboard-real-id"]').click();await page.locator('.keyboard-custom').waitFor();assert.equal(await page.locator('[data-keyboard-role]').count(),3);assert.equal(await page.locator('[data-part]').count(),0,'No separate fake character part');assert.match(page.url(),/custom-orders\.html/);assert.equal(await page.locator('iframe').count(),0,'Preview lives inside the selected product');
   await page.locator('[data-keyboard-text]').fill('An ơi!');await painted(page,'An ơi!');assert.match(await page.locator('.keyboard-render-message').textContent(),/font minh họa/,'Unsupported letters retain exact typed case and accents with an explicit fallback note');
   await page.locator('[data-keyboard-text]').fill('TIEN');await painted(page,'TIEN');await page.locator('[data-note]').fill('Giữ màu theo khách đã chốt');
+  await choose(page,'characters','MT635',iceId);await page.waitForFunction(()=>document.querySelector('canvas')?.getAttribute('aria-label')?.includes('Ký tự: Xanh băng'));
+  await choose(page,'characters','TINMORRY tim','old-purple');assert.equal(await page.evaluate(()=>getFil('old-purple').hex),'#ca38ff','Enriched colors use the existing HEX in the live preview');
+  await choose(page,'characters','xanh bang','f-blue');
   await page.locator('[data-files]').setInputFiles({name:'qa-reference.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j/WQAAAAASUVORK5CYII=','base64')});await page.locator('.attachment img').waitFor();
   await page.locator('[data-keyboard-text]').evaluate(el=>{window.keptKeyboardInput=el;window.keptKeyboardCanvas=document.querySelector('canvas');window.keptKeyboardImage=document.querySelector('.attachment img');window.alphaBefore=[...window.keptKeyboardCanvas.getContext('2d').getImageData(0,0,window.keptKeyboardCanvas.width,window.keptKeyboardCanvas.height).data].filter((_,i)=>i%4===3).join(',');});
   await choose(page,'characters','xanh bang','f-blue');await page.waitForFunction(()=>document.querySelector('canvas')?.getAttribute('aria-label')?.includes('Ký tự: Xanh băng'));

@@ -9274,6 +9274,7 @@ function openAddFil(id) {
         <input id="fl-note" type="text" placeholder="Tuỳ chọn" value="${esc(f?.note||'')}"/>
       </div>
     </div>
+    ${f?.paletteRefs?.length?`<div class="field"><label>Nguồn tham khảo màu</label>${window.FilamentPickers?.sourceHTML(f)||''}<p style="font-size:12px;color:var(--t2)">Màu trên màn hình là tham khảo. HEX đang dùng ở trên được giữ riêng với HEX từ nguồn.</p></div>`:''}
     <div class="dlg-actions">
       <button class="btn btn-ghost" onclick="closeDialog('dlg-fil')">Huỷ</button>
       <button class="btn btn-ac"    onclick="saveFil()">Lưu</button>
@@ -9303,6 +9304,7 @@ function saveFil() {
   if (brand && !brands.includes(brand)) { brands.push(brand); sv(K.brands, brands); }
 
   const fil = {
+    ...fils.find(f=>f.id===editingFilId),
     id:    editingFilId || uid(),
     brand, name, hex,
     mat:   document.getElementById('fl-mat').value,
@@ -9364,7 +9366,8 @@ function renderFilaments() {
   const filtered = fils
     .filter(f => FILTERS.filaments.brand==='all' || f.brand===FILTERS.filaments.brand)
     .filter(f => FILTERS.filaments.mat==='all' || (f.mat||'PLA')===FILTERS.filaments.mat)
-    .filter(f => !kvNorm(FILTERS.filaments.search||'') || kvNorm(`${f.brand||''} ${f.name||''} ${f.mat||''} ${f.hex||''}`).includes(kvNorm(FILTERS.filaments.search||'')));
+    .filter(f => !kvNorm(FILTERS.filaments.search||'') || fuzzyTextMatch(window.FilamentPickers?.searchText({textContent:''},f)||`${f.brand||''} ${f.name||''} ${f.mat||''} ${f.hex||''}`,FILTERS.filaments.search));
+  document.getElementById('cnt-fils').textContent=filtered.length===fils.length?fils.length:`${filtered.length}/${fils.length}`;
 
   if (!filtered.length) {
     el.innerHTML = `<div class="empty" style="grid-column:1/-1">Không có màu nhựa nào khớp bộ lọc</div>`;
@@ -9395,6 +9398,7 @@ function renderFilaments() {
           <div style="width:20px;height:20px;border-radius:50%;background:${f.hex};border:1.5px solid rgba(0,0,0,.12);flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:500">${esc(f.name)}</div>
+            ${f.nameVi||f.code?`<div style="font-size:11px;color:var(--t2);overflow-wrap:anywhere">${esc([f.nameVi!==f.name?f.nameVi:'',f.originalName!==f.name?f.originalName:'',f.code].filter(Boolean).join(' · '))}</div>`:''}
             <div style="font-size:11px;color:var(--t3)">${f.hex} · ${f.mat||'PLA'}${f.matte?' · Matte':''}${f.silk?' · Silk':''}</div>
           </div>
           <div class="gap-row" onclick="event.stopPropagation()">

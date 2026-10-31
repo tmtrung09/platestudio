@@ -6,20 +6,26 @@
   const colorAliases={white:'trắng',black:'đen',grey:'xám ghi',gray:'xám ghi',red:'đỏ',green:'xanh xanh lá xanh lá cây',blue:'xanh xanh dương xanh da trời xanh nước biển',yellow:'vàng',orange:'cam',purple:'tím',violet:'tím',pink:'hồng',brown:'nâu',beige:'be kem',ivory:'trắng ngà',cream:'kem',cyan:'xanh lơ',turquoise:'xanh ngọc',teal:'xanh cổ vịt',mint:'xanh bạc hà',olive:'xanh ô liu',navy:'xanh navy xanh đậm',gold:'vàng kim',silver:'bạc',transparent:'trong suốt',clear:'trong suốt',light:'nhạt',dark:'đậm',matte:'mờ lì',silk:'lụa',marble:'vân đá'};
   const searchText=(option,f)=>{
     const name=String(f?.name||'').toLowerCase().replace(/[^a-z]+/g,' ').trim().split(/\s+/);
-    return `${option.textContent} ${f?.brand||''} ${f?.name||''} ${f?.mat||''} ${f?.hex||''} ${name.map(word=>colorAliases[word]||'').join(' ')}`;
+    const supplierAliases=/^(timory|tinmory|tinmorry)$/i.test(f?.canonicalBrand||f?.brand||'')?'TINMORRY TINMORY TIMORY':'';
+    return `${option.textContent} ${f?.brand||''} ${f?.canonicalBrand||''} ${supplierAliases} ${f?.name||''} ${f?.nameVi||''} ${f?.originalName||''} ${f?.mat||''} ${f?.hex||''} ${f?.code||''} ${f?.line||''} ${(f?.paletteRefs||[]).map(r=>[r.vi,r.name,r.code,r.brand,r.line].join(' ')).join(' ')} ${name.map(word=>colorAliases[word]||'').join(' ')}`;
+  };
+  const details=f=>[f?.nameVi!==f?.name?f?.nameVi:'',f?.originalName!==f?.name?f?.originalName:'',f?.code,f?.line||f?.mat,f?.hex].filter(Boolean).join(' · ');
+  const sourceHTML=f=>{
+    const methods={'web-swatch':'Swatch trên web hãng','distributor-swatch':'Bảng màu nhà phân phối','photo-sample':'Lấy mẫu từ ảnh sản phẩm'};
+    return (f?.paletteRefs||[]).filter(r=>methods[r.method]&&/^https:\/\/(r3dprint\.com|tinmorry\.net|www\.tonyswift3d\.com|www\.cailab3d\.com)\//.test(r.source||'')).map(r=>`<a href="${esc(r.source)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;min-height:44px">${esc([r.brand,r.code,methods[r.method]].filter(Boolean).join(' · '))}</a><div style="font-size:12px;color:var(--t2)">${esc(r.vi)} · HEX tham khảo ${esc(r.hex)} · ${esc(r.checkedDate||'')}</div>`).join('');
   };
   const swatch=f=>/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(f?.hex||'')?f.hex:'repeating-conic-gradient(#999 0 25%,#ddd 0 50%)';
   function refresh(state){
     const option=state.select.selectedOptions[0],filament=getFil(state.select.value||option?.dataset.filamentId);
     state.toggle.disabled=state.select.disabled;
     state.toggle.querySelector('.br-color-picker-dot').style.background=swatch(filament);
-    state.toggle.querySelector('.filament-picker-label').textContent=option?.textContent||'Chưa chỉ định';
+    state.toggle.querySelector('.filament-picker-label').textContent=(option?.textContent||'Chưa chỉ định')+(filament?.nameVi&&filament.nameVi!==filament.name?' · '+filament.nameVi:'');
   }
   function results(state,query='',limit=80){
     state.query=query;state.limit=limit;
     const rows=[...state.select.options].map(option=>({option,filament:getFil(option.value||option.dataset.filamentId)})).filter(({option,filament:f})=>!query.trim()||fuzzyTextMatch(searchText(option,f),query));
     state.count.textContent=`${rows.length} lựa chọn${rows.length>limit?' · đang hiện '+limit:''}`;
-    state.list.innerHTML=rows.slice(0,limit).map(({option,filament:f})=>`<button type="button" class="br-color-picker-option${option.value===state.select.value?' selected':''}" role="option" tabindex="-1" aria-selected="${option.value===state.select.value}" data-value="${esc(option.value)}" ${option.disabled?'disabled':''}><span class="br-color-picker-dot" style="background:${swatch(f)}"></span><span class="br-color-picker-option-copy"><b>${esc(option.textContent)}</b>${f?`<small>${esc([f.mat,f.hex].filter(Boolean).join(' · '))}</small>`:''}</span>${option.value===state.select.value?appIcon('check'):''}</button>`).join('')||'<p class="br-color-picker-empty">Không tìm thấy màu phù hợp</p>';
+    state.list.innerHTML=rows.slice(0,limit).map(({option,filament:f})=>`<button type="button" class="br-color-picker-option${option.value===state.select.value?' selected':''}" role="option" tabindex="-1" aria-selected="${option.value===state.select.value}" data-value="${esc(option.value)}" ${option.disabled?'disabled':''}><span class="br-color-picker-dot" style="background:${swatch(f)}"></span><span class="br-color-picker-option-copy"><b>${esc(option.textContent)}</b>${f?`<small>${esc(details(f))}</small>`:''}</span>${option.value===state.select.value?appIcon('check'):''}</button>`).join('')||'<p class="br-color-picker-empty">Không tìm thấy màu phù hợp</p>';
     state.more.hidden=rows.length<=limit;
     state.list.querySelectorAll('[data-value]').forEach(button=>button.onclick=event=>{
       event.preventDefault();event.stopPropagation();
@@ -93,5 +99,5 @@
   document.addEventListener('focusin',event=>{if(active&&!active.menu.contains(event.target)&&!active.wrapper.contains(event.target))close(false);});
   window.addEventListener('resize',place);window.visualViewport?.addEventListener('resize',place);
   document.addEventListener('scroll',event=>{if(active&&!active.menu.contains(event.target))place();},true);
-  window.FilamentPickers={init,close};init();
+  window.FilamentPickers={init,close,searchText,details,sourceHTML};init();
 })();

@@ -1,0 +1,52 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {randomUUID} from 'node:crypto';
+import assert from 'node:assert/strict';
+const catalog=JSON.parse(readFileSync('assets/filaments/reference-palette.json','utf8'));
+assert.equal(catalog.colors.length,62);assert.equal(new Set(catalog.colors.map(c=>c.catalogKey)).size,62);
+assert.deepEqual(Object.fromEntries(['R3D','TINMORRY','CAILAB'].map(b=>[b,catalog.colors.filter(c=>c.brand===b).length])),{R3D:21,TINMORRY:18,CAILAB:23});
+for(const c of catalog.colors){assert.match(c.hex,/^#[a-f0-9]{6}$/i);assert.ok(c.vi&&c.name&&c.source&&c.method);assert.ok(!('quantity' in c));}
+const db=new PGlite(),ws=randomUUID(),other=randomUUID(),owner=randomUUID();
+const migration=readFileSync('supabase/migrations/202610310001_filament_reference_palette.sql','utf8');
+try{
+ await db.exec(`create role anon;create role authenticated;create table workspaces(id uuid primary key,owner_user_id uuid);
+ create table filaments(id text,user_id uuid,workspace_id uuid,data jsonb,updated_at timestamptz default now(),primary key(workspace_id,id));
+ create function custom_order_search_text(v text) returns text language sql immutable as $$select lower(v)$$;
+ create function can_custom_orders(w uuid) returns boolean language sql stable as $$select current_setting('qa.workspace',true)=w::text$$;
+ insert into workspaces values('${ws}','${owner}'),('${other}','${owner}');`);
+ await db.exec(migration);
+ const insert=async(id,data,w=ws)=>db.query('insert into filaments(id,workspace_id,user_id,data) values($1,$2,$3,$4)',[id,w,owner,JSON.stringify({id,...data})]);
+ const run=async(apply=false,c=catalog,w=ws)=>(await db.query('select import_filament_reference_palette($1,$2,$3) result',[w,JSON.stringify(c),apply])).rows[0].result;
+ const old={brand:'Timory',name:'Pupple',hex:'#ca38ff',mat:'PLA',matte:true,silk:false,note:'Giữ ghi chú',spools:[{id:'spool-existing',grams:123}]};
+ await insert('purple-existing',old);await insert('generic',{brand:'Generic',name:'White',hex:'#ffffff',mat:'PLA',matte:true});
+ await insert('ambiguous-name',{brand:'Timory',name:'Matcha',hex:'#496e4e',mat:'PLA',matte:true});
+ await insert('silk',{brand:'Timory',name:'Matte White',hex:'#ffffff',mat:'PLA',matte:false,silk:true});
+ await insert('other-private',{brand:'Timory',name:'Pupple',hex:'#000001',mat:'PLA',matte:true},other);
+ const before=(await db.query('select * from filaments order by id')).rows;
+ const dry=await run();assert.equal(dry.added,61);assert.equal(dry.enriched,1);assert.equal(dry.applied,false);assert.deepEqual((await db.query('select * from filaments order by id')).rows,before,'Dry run changes nothing');
+ const result=await run(true);assert.deepEqual(result.plan,dry.plan);assert.equal(result.added,61);
+ let purple=(await db.query("select data from filaments where id='purple-existing'")).rows[0].data;
+ for(const [key,value] of Object.entries(old))assert.deepEqual(purple[key],value,'Keep original '+key);
+ assert.equal(purple.nameVi,'Tím');assert.equal(purple.canonicalBrand,'TINMORRY');assert.equal(purple.paletteRefs[0].hex,'#9E99D3');
+ const repeat=await run(true);assert.equal(repeat.added,0);assert.equal(repeat.enriched,0);assert.equal(repeat.unchanged,62);
+ const rows=(await db.query('select data from filaments where workspace_id=$1',[ws])).rows.map(r=>r.data);
+ for(const f of rows.filter(r=>r.id.startsWith('palette-')))assert.ok(!('spools' in f)&&!('quantity' in f)&&!('stock' in f),'Import catalogue without stock');
+ assert.equal(rows.filter(f=>f.code==='MT7492').length,1);assert.equal(rows.filter(f=>f.code==='MT6178').length,1,'Distinct supplier codes remain separate even with identical HEX');
+ assert.deepEqual((await db.query("select * from filaments where id='other-private'")).rows[0],before.find(f=>f.id==='other-private'),'Other workspace untouched');
+ await db.query("update filaments set data=$1 where id='purple-existing'",[JSON.stringify({id:'purple-existing',...old,note:'Edited by old client'})]);
+ purple=(await db.query("select data from filaments where id='purple-existing'")).rows[0].data;assert.equal(purple.nameVi,'Tím');assert.equal(purple.paletteRefs.length,1);assert.equal(purple.note,'Edited by old client','Old clients retain metadata without blocking edits');
+ await db.query("select set_config('qa.workspace',$1,false)",[ws]);const projection=(await db.query('select custom_order_filaments($1) result',[ws])).rows[0].result;
+ assert.equal(projection.find(f=>f.id==='purple-existing').nameVi,'Tím');assert.equal(projection.find(f=>f.id==='purple-existing').hex,old.hex);
+ await assert.rejects(db.query('select custom_order_filaments($1)',[other]),/quyền/);
+ await db.exec('set role authenticated');await assert.rejects(run(true),/permission denied/);await db.exec('reset role;set role anon');await assert.rejects(run(true),/permission denied/);await db.exec('reset role');
+ await insert('duplicate-purple',{...old});const count=(await db.query('select count(*) n from filaments')).rows[0].n;
+ await assert.rejects(run(true),/nhiều bản ghi/);assert.equal((await db.query('select count(*) n from filaments')).rows[0].n,count,'Ambiguous import rolls back');
+ await db.exec("delete from filaments where id='duplicate-purple';update filaments set data=data||'{\"deletedAt\":\"2026-10-31\"}' where id='purple-existing'");
+ await assert.rejects(run(true),/đã xóa/,'Do not revive a deleted match');
+ // A later invalid row must roll back earlier inserts in the same request.
+ const invalid={...catalog,colors:[catalog.colors[0],{...catalog.colors[1],hex:'bad'}]};
+ await assert.rejects(run(true,invalid,other),/không hợp lệ/);assert.equal((await db.query('select count(*) n from filaments where workspace_id=$1',[other])).rows[0].n,1);
+ const dup={...catalog,colors:[catalog.colors[0],catalog.colors[0]]};await assert.rejects(run(true,dup,other),/Trùng khóa/);
+ mkdirSync('qa-results/filament-palette',{recursive:true});writeFileSync('qa-results/filament-palette/fixture.json',JSON.stringify(rows));
+ console.log('PASS palette SQL: 62 references, dry run, repeat import, immutable existing HEX/IDs/notes/stock, typo alias, distinct codes, ambiguous/tombstone rollback, workspace isolation, permissions and custom-order metadata');
+}finally{await db.close();}

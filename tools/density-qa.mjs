@@ -15,7 +15,7 @@ try {
   for (const width of [390, 1440]) for (const theme of ['light', 'dark']) {
     const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: width < 600, isMobile: width < 600, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.route('**/*.supabase.co/**', route => route.abort());
+    await page.route(/^https?:/, route => route.abort()); // Optional CDN resources are not part of this isolated layout fixture.
     await page.goto(pathToFileURL(resolve('plate-studio.html')).href, { waitUntil: 'domcontentloaded' });
  await waitForAppReady(page);
     await page.waitForFunction(() => typeof goPage === 'function');

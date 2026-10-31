@@ -61,6 +61,21 @@ nếu chưa có ảnh cần dùng khi mất mạng, nháp vẫn được giữ v
 Công cụ chỉ đọc hình học, không thực thi G-code, và lưu SHA-256 nguồn trong asset
 để đối chiếu. Minh họa không tự sửa thư viện màu hay model.
 
+Thư viện dùng chung có bảng tham khảo PLA Matte R3D/TINMORRY/CAILAB trong
+`assets/filaments/reference-palette.json`. Tên Việt, tên gốc, mã, dòng và hãng
+được tìm trong thư viện lẫn bộ chọn màu. Nguồn mở từ hộp sửa màu, ghi rõ swatch
+web hãng, bảng nhà phân phối hay lấy mẫu ảnh; HEX tham khảo không phải số đo nhựa.
+Màu trùng đã đối chiếu giữ ID, HEX, tên/ghi chú và các liên kết cũ, chỉ bổ sung
+metadata. TINMORRY nhận diện tên hãng cũ Timory/Tinmory; tên gần giống không tự ghép.
+Nhập catalogue không tạo cuộn hoặc số lượng tồn. Chạy lại không thêm bản trùng;
+trường hợp nhiều bản khớp/đã xóa dừng cả transaction để đối chiếu.
+
+Migration chỉ tạo hàm nhập dành cho admin, không tự nhập vào mọi xưởng. Chuẩn bị
+SQL bằng `node tools/prepare-filament-palette-import.mjs --workspace=<uuid>`;
+đối chiếu kết quả dry-run trước khi chuẩn bị lại với `--apply`. Chạy SQL đã tạo
+qua Supabase admin CLI cho đúng project/xưởng, rồi đọc lại cloud và dry-run lần
+nữa. Quyền trình duyệt không được gọi hàm nhập này.
+
 Nháp, ảnh và yêu cầu chờ gửi nằm trong IndexedDB riêng theo workspace + user.
 Reload/offline không đổi request ID. Ảnh tải lên đường dẫn bất biến trong bucket
 riêng tư; mất ACK thì retry cùng request, server trả receipt cũ. Chỉ có QR sau ACK

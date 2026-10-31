@@ -476,8 +476,11 @@
   có độ nổi, cạnh bo, vân nhựa và bóng tiếp xúc theo ảnh thật; không dùng các
   mảng màu phẳng làm bản minh họa hoàn thiện. Đổi màu giữ ánh sáng/độ bóng.
   Ký tự thiếu trong bộ mẫu phải nêu rõ cách minh họa thay thế. Giữ bộ chọn màu chung,
-  không ghi màu tham khảo thành màu trong kho hoặc tự gán vai trò cho dãy màu
-  gốc chưa có ánh xạ. R3D, TINMORRY, CAILAB giữ hãng/dòng/mã/nguồn; phân biệt
+  không tự gán vai trò cho dãy màu gốc chưa có ánh xạ. Nhập bảng màu R3D,
+  TINMORRY, CAILAB vào thư viện theo hãng/dòng/mã hoặc tên đã đối chiếu, không
+  tự tạo số lượng tồn hay cuộn nhựa. Màu đã có giữ ID, HEX và liên kết; chỉ bổ
+  sung tên Việt và nguồn, không ghép theo HEX hoặc đoán tên gần giống. Nhập lại
+  không tạo trùng; sửa/lưu/tải lại giữ thông tin nguồn. Giữ hãng/dòng/mã/nguồn; phân biệt
   swatch web, bảng nhà phân phối và màu lấy mẫu từ ảnh, không gọi là màu đo thực tế.
 - Nhân viên nhập giá, tiền cọc và ngày hẹn theo thỏa thuận. Lưu tên, số điện thoại/
   Zalo, hình thức nhận và địa chỉ khi giao hàng; có bước đối chiếu với khách trước

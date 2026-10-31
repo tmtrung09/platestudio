@@ -292,7 +292,8 @@ try{
  await page.waitForSelector('#br-multi-cam');
  await page.evaluate(()=>{uploadBatchMultiPhotoInBackground=async shot=>{shot.state='uploaded';};});
  await page.getByRole('button',{name:'Thử lưu lại ảnh 1',exact:true}).click();
- await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded'));
+ // The worker finishes before its durable queue record and UI badge settle.
+ await page.waitForFunction(()=>brMultiCameraShots.every(s=>s.state==='uploaded')&&document.getElementById('br-multi-cam')?.dataset.upload==='saved');
  assert.equal(await page.locator('#br-multi-cam').getAttribute('data-upload'),'saved');
  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.br-camera-edge-result .br-camera-edge-glow')).stroke==='rgb(34, 201, 117)');
  assert.equal(await edge.getAttribute('data-tone'),'saved');
