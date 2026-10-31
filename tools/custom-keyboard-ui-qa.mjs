@@ -60,8 +60,15 @@ try{
  for(const width of [320,390,844,1440])for(const theme of ['light','dark']){
   const requested=process.argv.find(arg=>arg.startsWith('--profile='))?.slice(10);if(requested&&requested!==`${width}-${theme}`)continue;
   const {page,context}=await setup(width,theme);await page.locator('[data-model="keyboard-real-id"]').click();await page.locator('.keyboard-custom').waitFor();assert.equal(await page.locator('[data-keyboard-role]').count(),3);assert.equal(await page.locator('[data-part]').count(),0,'No separate fake character part');assert.match(page.url(),/custom-orders\.html/);assert.equal(await page.locator('iframe').count(),0,'Preview lives inside the selected product');
-  await page.locator('[data-keyboard-text]').fill('An ơi!');await painted(page,'An ơi!');assert.match(await page.locator('.keyboard-render-message').textContent(),/font minh họa/,'Unsupported letters retain exact typed case and accents with an explicit fallback note');
-  await page.locator('[data-keyboard-text]').fill('TIEN');await painted(page,'TIEN');await page.locator('[data-note]').fill('Giữ màu theo khách đã chốt');
+  await page.locator('[data-keyboard-text]').fill('An ơi!');await painted(page,'AN ƠI!');assert.equal(await page.locator('[data-keyboard-text]').inputValue(),'AN ƠI!');assert.match(await page.locator('.keyboard-render-message').textContent(),/font minh họa/,'Uppercase Vietnamese accents retain an explicit unsupported glyph note');
+  const editing=await page.locator('[data-keyboard-text]').evaluate(el=>{
+   el.focus();window.uppercaseInput=el;el.value='tien';el.setSelectionRange(2,2);el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste'}));
+   const pasted={value:el.value,start:el.selectionStart,end:el.selectionEnd,focused:document.activeElement===el};
+   el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));el.value='a\u0301nh';el.setSelectionRange(2,2);el.dispatchEvent(new InputEvent('input',{bubbles:true,isComposing:true}));const composing=el.value;
+   el.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:el.value}));
+   return {pasted,composing,completed:el.value,start:el.selectionStart,stable:window.uppercaseInput===document.querySelector('[data-keyboard-text]')};
+  });assert.deepEqual(editing,{pasted:{value:'TIEN',start:2,end:2,focused:true},composing:'a\u0301nh',completed:'ÁNH',start:1,stable:true},'Paste keeps caret/DOM; Vietnamese composition finishes before NFC uppercase conversion');
+  await page.locator('[data-keyboard-text]').fill('tien');await painted(page,'TIEN');await page.locator('[data-note]').fill('Giữ màu theo khách đã chốt');
   await choose(page,'characters','MT635',iceId);await page.waitForFunction(()=>document.querySelector('canvas')?.getAttribute('aria-label')?.includes('Ký tự: Xanh băng'));
   await choose(page,'characters','TINMORRY tim','old-purple');assert.equal(await page.evaluate(()=>getFil('old-purple').hex),'#ca38ff','Enriched colors use the existing HEX in the live preview');
   await choose(page,'characters','xanh bang','f-blue');
@@ -72,7 +79,7 @@ try{
   assert.equal(await page.evaluate(()=>window.alphaBefore===[...document.querySelector('canvas').getContext('2d').getImageData(0,0,document.querySelector('canvas').width,document.querySelector('canvas').height).data].filter((_,i)=>i%4===3).join(',')),true,'Color changes never deform geometry');
   await choose(page,'tray','hong anh dao','f-pink');await choose(page,'buttons','cam','f-orange');
   assert.equal(await page.evaluate(()=>window.keptKeyboardInput===document.querySelector('[data-keyboard-text]')&&window.keptKeyboardCanvas===document.querySelector('canvas')&&window.keptKeyboardImage===document.querySelector('.attachment img')),true,'Input/canvas/reference DOM preserved');
-  await page.locator('[data-keyboard-text]').fill('DIANE');await painted(page,'DIANE');await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));await page.reload();await page.locator('[data-keyboard-text]').waitFor();assert.equal(await page.locator('[data-keyboard-text]').inputValue(),'DIANE');assert.equal(await page.locator('[data-keyboard-role="characters"]').inputValue(),'f-blue');await painted(page,'DIANE');
+  await page.locator('[data-keyboard-text]').fill('diane');await painted(page,'DIANE');await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));await page.reload();await page.locator('[data-keyboard-text]').waitFor();assert.equal(await page.locator('[data-keyboard-text]').inputValue(),'DIANE');assert.equal(await page.locator('[data-keyboard-role="characters"]').inputValue(),'f-blue');await painted(page,'DIANE');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);const dims=await page.locator('canvas').evaluate(el=>{const r=el.getBoundingClientRect();return {ratio:r.width/r.height,native:el.width/el.height};});assert.ok(Math.abs(dims.ratio-dims.native)<.001,'Uniform scale preserves render proportions');
   await page.locator('.keyboard-custom').screenshot({path:resolve(out,`${width}-${theme}-inline.png`)});
   if([390,1440].includes(width))await page.screenshot({path:resolve(out,`${width}-${theme}-custom-order-page.png`),fullPage:true});

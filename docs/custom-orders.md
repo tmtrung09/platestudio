@@ -32,7 +32,10 @@ model có vùng cuộn giới hạn, thanh **Thông tin khách** nằm trong t�
 Tải lại hoặc quay lại bước Sản phẩm mở phần yêu cầu đã lưu.
 
 Chọn model **bàn phím tên**, có hai part **khay** (hoặc **Khay bàn phím**) và **nút+ký tự**, sẽ mở phần
-minh họa ngay trong dòng sản phẩm. Nhân viên nhập ký tự và chọn ba màu **Khay bàn
+minh họa ngay trong dòng sản phẩm. Tên mới nhập/gõ/dán mặc định chuyển thành chữ
+in hoa, giữ dấu tiếng Việt; hình, nháp, xác nhận và snapshot sản xuất dùng cùng
+ký tự. Chỉ chuyển hoa sau khi bộ gõ kết thúc composition, giữ focus/caret.
+Nhân viên nhập ký tự và chọn ba màu **Khay bàn
 phím / Nút bàn phím / Ký tự** bằng bộ chọn màu nhựa hiện có. Hình dùng các khay,
 nút và chữ từ 3MF, chiếu ở một góc cố định; không có điều khiển xoay 3D. Đổi màu
 chỉ tô lại bản đồ vật liệu, giữ nguyên hình học. Ký tự ngoài bộ chữ trong 3MF
@@ -75,6 +78,16 @@ SQL bằng `node tools/prepare-filament-palette-import.mjs --workspace=<uuid>`;
 đối chiếu kết quả dry-run trước khi chuẩn bị lại với `--apply`. Chạy SQL đã tạo
 qua Supabase admin CLI cho đúng project/xưởng, rồi đọc lại cloud và dry-run lần
 nữa. Quyền trình duyệt không được gọi hàm nhập này.
+
+Part được khôi phục có thể đăng ký `partRestoreGuard` trên riêng model đó, gồm
+revision và các ID cần giữ. Snapshot chưa nhận revision này được ghép với part
+hiện tại trên server, giữ các sửa đổi độc lập; không đoán ID từ tên. Client đã
+nhận revision vẫn sửa/xóa part được. Xóa có mốc mới để snapshot cũ không hồi sinh
+part; thêm lại sau khi nhận mốc mới vẫn được phép. Model không có guard giữ luồng
+hiện tại, không tự gắn guard cho toàn thư viện. Sửa chữa bằng SQL quản trị cần
+transaction có `SET LOCAL plate_studio.part_restore='yes'`, revision mới và kiểm
+tra `updated_at`; thiết lập này không cấp quyền vượt RLS cho tài khoản web.
+Kiểm tra độc lập: `node tools/model-part-restore-sql-qa.mjs` (cũng thuộc `qa:cloud`).
 
 Nháp, ảnh và yêu cầu chờ gửi nằm trong IndexedDB riêng theo workspace + user.
 Reload/offline không đổi request ID. Ảnh tải lên đường dẫn bất biến trong bucket

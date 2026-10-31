@@ -551,9 +551,20 @@
       picker.open=false;picker.querySelector('summary').focus({preventScroll:true});event.preventDefault();
     }
   });
+  function updateKeyboardText(input,composing=false){
+    const line=state.draft.lines.find(line=>line.id===input.dataset.keyboardText),p=keyboardProfile(line);if(!line||!p)return;
+    const value=input.value,start=input.selectionStart,end=input.selectionEnd,direction=input.selectionDirection;
+    const upper=text=>text.normalize('NFC').toLocaleUpperCase('vi');
+    if(!composing&&value!==upper(value)){
+      input.value=upper(value);
+      if(start!==null&&end!==null)input.setSelectionRange(upper(value.slice(0,start)).length,upper(value.slice(0,end)).length,direction);
+    }
+    window.CustomKeyboardPreview.init(line,p).text=input.value;state.draft.checked=false;persist();if(!composing)paintKeyboards(line);
+  }
+  document.addEventListener('compositionend',event=>{if(event.target.dataset.keyboardText)updateKeyboardText(event.target);});
   document.addEventListener('input', event => {
     const input=event.target;
-    if(input.dataset.keyboardText){const line=state.draft.lines.find(line=>line.id===input.dataset.keyboardText),p=keyboardProfile(line);if(!line||!p)return;window.CustomKeyboardPreview.init(line,p).text=input.value;state.draft.checked=false;persist();paintKeyboards(line);return;}
+    if(input.dataset.keyboardText){updateKeyboardText(input,event.isComposing);return;}
     if(input.id==='model-search'){renderCatalog(input.value);return;}
     if(input.id==='order-search'){state.query=input.value;clearTimeout(searchTimer);searchTimer=setTimeout(()=>void loadOrders().catch(showError),180);return;}
     if(input.dataset.note){const line=state.draft.lines.find(line=>line.id===input.dataset.note);line.note=input.value;state.draft.checked=false;persist();return;}

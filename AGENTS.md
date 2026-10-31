@@ -470,6 +470,9 @@
   trong dòng sản phẩm, không mở trang riêng. Có ba vùng màu: khay bàn phím,
   nút bàn phím, ký tự. Model giữ hai part nguồn “khay”/“Khay bàn phím” và “nút+ký tự”; hai màu
   nút/chữ thuộc cùng part in chung, không tạo part giả hoặc cộng đôi số lượng.
+  Tên nhập mặc định chuyển thành chữ in hoa, giữ dấu tiếng Việt; ô nhập, hình
+  minh họa, bước xác nhận và yêu cầu sản xuất dùng cùng ký tự. Giữ caret/focus
+  khi gõ/dán, chỉ chuyển hoa sau khi bộ gõ hoàn tất composition.
   Gắn bằng ID model/part đã đối chiếu ở server; lưu ký tự và snapshot ba vùng
   màu qua nháp/quay lại/reload/ACK, đưa đủ thông tin vào yêu cầu sản xuất.
   Dùng hình học 3MF và ảnh thật để dựng góc nhìn cố định, giữ tỷ lệ khay/nút/chữ;
