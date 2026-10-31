@@ -12388,14 +12388,14 @@ function rebuildOrderProduction(order) {
   pitems = pitems.filter(pi=>pi.orderId!==order.id);
   (order.items||[]).forEach(oi => {
     const {m, rows} = lineAllocations(oi); if(!m) return;
-    rows.forEach(({part, qty, filamentId}) => {
-      if(!qty || !filamentId) return;
-      let plate = plates.find(pl => pl.filamentId===filamentId && pl.status==='waiting' && (pl.projectId===order.projectId || !pl.projectId || !order.projectId));
+    rows.forEach(({part, qty, filamentId,...custom}) => {
+      if(!qty || (!filamentId&&!custom.keyboardText)) return;
+      let plate = plates.find(pl => pl.filamentId===filamentId && (pl.customColorKey||'')===(custom.customColorKey||'') && pl.status==='waiting' && (pl.projectId===order.projectId || !pl.projectId || !order.projectId));
       if(!plate) {
-        plate={id:uid(),name:'',filamentId,projectId:order.projectId||null,status:'waiting',priority:0,note:'',confirmImg:null,completedAt:null,createdAt:new Date().toISOString()};
+        plate={id:uid(),name:'',filamentId,projectId:order.projectId||null,status:'waiting',priority:custom.keyboardText?100:0,note:custom.note||'',confirmImg:null,completedAt:null,createdAt:new Date().toISOString(),...(custom.keyboardText?{filamentIds:custom.filamentIds,customColorKey:custom.customColorKey}:{})};
         plates.push(plate);
       }
-      pitems.push({id:uid(),plateId:plate.id,partId:part.id,orderId:order.id,orderItemId:oi.id,modelId:oi.modelId,modelName:m.name,partName:part.name,variantId:oi.variantId||null,variantName:oi.variantName||'',filamentId,qty,qtyDone:0,note:oi.note||''});
+      pitems.push({id:uid(),plateId:plate.id,partId:part.id,orderId:order.id,orderItemId:oi.id,modelId:oi.modelId,modelName:m.name,partName:part.name,variantId:oi.variantId||null,variantName:oi.variantName||'',filamentId,qty,qtyDone:0,note:oi.note||'',...custom});
     });
   });
 }
@@ -17183,6 +17183,15 @@ function expandCartLine(line){
     productId:product.id,productName:product.name,productLineId:line.id,productQty:Math.max(1,Number(line.qty)||1),componentId:component.id||null
   })).filter(component=>models.some(model=>model.id===component.modelId));
 }
+function keyboardPartAllocation(line,part){
+  const k=line.keyboard;if(k?.version!==1)return null;
+  const role=part.id===k.partIds?.tray?'tray':part.id===k.partIds?.keys?'keys':null;if(!role)return null;
+  const filamentIds=(role==='tray'?k.trayFilamentIds:k.keyFilamentIds)||[],componentColors=role==='tray'?{tray:k.components?.tray}:{buttons:k.components?.buttons,characters:k.components?.characters};
+  const filamentId=(role==='tray'?k.colors?.tray:k.colors?.buttons||k.colors?.characters)||filamentIds[0]||null;
+  const labels={tray:'Khay bàn phím',buttons:'Nút bàn phím',characters:'Ký tự'};
+  const note=[line.note,'Ký tự: '+(k.text||''),...Object.entries(componentColors).map(([r,c])=>labels[r]+': '+(c?.name||'Theo màu gốc/chưa chỉ định'))].filter(Boolean).join('\n');
+  return {filamentId,filamentIds:[...filamentIds],componentColors:structuredClone(componentColors),keyboardText:k.text,customColorKey:k.colorKeys?.[role]||'keyboard:'+JSON.stringify(componentColors),note,priority:100};
+}
 /* Trả về danh sách {part, qty} cần in cho 1 dòng giỏ hàng:
    - dòng "cả model" → mọi part, số lượng = qtyPerModel × số lượng dòng
    - dòng "1 part riêng" → chỉ part đó, số lượng = đúng số lượng dòng (không nhân hệ số) */
@@ -17194,7 +17203,8 @@ function lineAllocations(line){
   const parts = line.partId ? eligibleParts.filter(p=>p.id===line.partId) : eligibleParts;
   const rows = [];
   parts.forEach(part => {
-    const qty = line.partId ? line.qty : part.qtyPerModel * line.qty;
+    const qty = line.partId ? line.qty : (line.keyboard?Math.max(1,Number(part.qtyPerModel)||1):part.qtyPerModel) * line.qty;
+    const keyboard=keyboardPartAllocation(line,part);if(keyboard){rows.push({part,qty,...keyboard});return;}
     // Màu được đổi riêng cho Order này luôn được ưu tiên. Cấu hình model/biến thể vẫn giữ nguyên.
     const overrideId = line.colorChoices?.[part.id] || null;
     const colorIds = overrideId ? [overrideId] : resolvedPartColorIds(m, hasVariants ? variant : null, part);

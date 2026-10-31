@@ -79,7 +79,11 @@
     if(stage === 3 || stage === 4) scene = `<g class="floating-object"><path d="m156 171 68-26 70 28v65l-68 31-70-32Z" fill="#b8cc96"/><path d="m156 171 70 28 68-26v65l-68 31v-70" fill="#a2ba7d"/><path d="m226 199 24-9v69l-24 10Z" fill="#e9e5bc"/><path d="m226 199-22-9v69l22 10Z" fill="#d4d7a6"/><g class="${stage===3?'package-lid':'sealed-lid'}"><path d="m148 164 76-29 78 31-76 33Z" fill="#dce3b9"/><path d="m148 164 78 31 76-29v16l-76 33-78-33Z" fill="#c3d39b"/><path d="m204 187 22 8 24-10-26-10Z" fill="#f1edce"/></g><g class="seal"><circle cx="226" cy="157" r="19" fill="#284f34"/><path d="m216 157 7 7 13-15" stroke="#d4edac" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>${stage===4?'<path d="m130 138-9-15m201 12 10-13m-33-35 5-18m-105 14-4-15" stroke="#d4edac" stroke-width="2" stroke-linecap="round"/>':''}`;
     return `<div class="journey-art" role="img" aria-label="Đồ họa minh họa: ${esc(stages[stage].label)}"><svg viewBox="0 0 450 340" aria-hidden="true">${defs}${ring}${base}${scene}<path class="star-a" d="m340 88 3 9 9 3-9 3-3 9-3-9-9-3 9-3Z" fill="#d9ecb1"/><path class="star-b" d="m100 163 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#b2cf8d"/></svg><span class="scene-label">${['THE FIRST IDEA','MADE JUST FOR YOU','THE LITTLE DETAILS','READY FOR YOUR EVERYDAY','YOURS, AT LAST'][stage]} · MINH HỌA</span></div>`;
   }
-  const getModel = line => line?.model || modelIndex.get(line?.modelId);
+  const getModel = line => {
+    const cached=modelIndex.get(line?.modelId);
+    // Enrich older cached drafts with recipe fields only when the source revision matches.
+    return cached&&(!line?.model||cached.revision===line.model.revision)?cached:line?.model;
+  };
   const variantName = line => getModel(line)?.variants.find(variant => variant.id === line.variantId)?.name || '';
   const selectedOrder = () => state.orders.find(order => order.token === state.selectedToken);
   const priority = () => `<span class="pill priority">${icon('spark')}Custom · Ưu tiên</span>`;
@@ -134,6 +138,7 @@
     $('#line-count').textContent=`${state.draft.lines.length} dòng`;
     $('#selected-lines').innerHTML=state.draft.lines.length?state.draft.lines.map(lineHTML).join(''):'<div class="empty">Mở Thêm sản phẩm để chọn model và ghi yêu cầu custom.<br>Mỗi sản phẩm có mô tả và ảnh tham khảo riêng.</div>';
     window.FilamentPickers?.init($('#selected-lines'));
+    paintKeyboards();
     $('#next-step').disabled=!state.draft.lines.length;
   }
   function lineHTML(line) {
@@ -155,6 +160,7 @@
     const holder=$('#selected-lines');if(state.draft.lines.length===1)holder.innerHTML='';
     holder.insertAdjacentHTML('beforeend',lineHTML(line));
     window.FilamentPickers?.init(holder);
+    paintKeyboards();
     $('#line-count').textContent=`${state.draft.lines.length} dòng`;
     $('#next-step').disabled=false;renderSummary();
     $('#model-picker').open=productWide.matches;
@@ -182,8 +188,9 @@
     const d=state.draft;
     if(state.step===0) {
       if(!d.lines.length){toast('Chọn ít nhất một model.');return false;}
-      const partMissing=d.lines.find(line=>eligibleParts(line).some(part=>!window.fils.some(fil=>fil.id===line.colorChoices?.[part.id])));
-      if(partMissing){toast('Chọn màu khách yêu cầu cho từng part.');$(`[data-line="${partMissing.id}"] .part-colors`).scrollIntoView({block:'center'});return false;}
+      for(const line of d.lines){const error=keyboardError(line);if(error){toast(error);$(`[data-keyboard-text="${line.id}"]`)?.focus();return false;}}
+      const partMissing=d.lines.find(line=>eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id))));
+      if(partMissing){toast('Màu của part không còn trong thư viện. Kiểm tra lại màu gốc hoặc chọn màu thay thế.');$(`[data-line="${partMissing.id}"] .part-colors`).scrollIntoView({block:'center'});return false;}
       const missing=d.lines.find(line=>!line.note.trim());
       if(missing){toast('Ghi yêu cầu custom cho từng sản phẩm trước khi tiếp tục.');$(`[data-note="${missing.id}"]`).focus();return false;}
       if(d.lines.some(line=>!Number.isInteger(line.qty)||line.qty<1||line.qty>9999)){toast('Số lượng phải là số nguyên từ 1 đến 9.999.');return false;}
@@ -272,13 +279,40 @@
   function canManage(){return workspace?.owner_user_id===session?.user?.id||workspace?.role!=='store_custom'&&(workspace?.permissions||[]).includes('orders.manage');}
   function actorInitials(){return actorName().split(/\s+/).slice(-2).map(value=>value[0]||'').join('').toUpperCase();}
   function eligibleParts(line){const model=getModel(line),variant=model?.variants?.find(item=>item?.id===line.variantId);return (model?.parts||[]).filter(part=>!Array.isArray(variant?.partIds)||variant.partIds.includes(part.id));}
+  function originalColorIds(line,part){
+    const variant=getModel(line)?.variants?.find(item=>item.id===line.variantId),ids=variant?.partColors?.[part.id];
+    return Array.isArray(ids)&&ids.length?ids.filter(Boolean):Array.isArray(part.filamentIds)?part.filamentIds.filter(Boolean):part.filamentId?[part.filamentId]:[];
+  }
+  const keyboardProfile=line=>window.CustomKeyboardPreview?.profile(line,getModel(line));
+  function keyboardError(line){
+    if(getModel(line)?.keyboardProfile&&!window.CustomKeyboardPreview)return 'Chưa tải được công cụ bàn phím. Nháp vẫn được giữ; tải lại trang để thử lại.';
+    return window.CustomKeyboardPreview?.validation(line,keyboardProfile(line),window.getFil)||'';
+  }
+  function paintKeyboards(changed){
+    for(const line of changed?[changed]:state.draft.lines){const p=keyboardProfile(line),holder=$(`[data-keyboard-line="${line.id}"]`);if(p&&holder)void window.CustomKeyboardPreview.paint(holder,line,p,window.getFil);}
+  }
+  function resolvedColorIds(line,part){
+    const p=keyboardProfile(line);
+    if(p&&line.keyboard){const ids=window.CustomKeyboardPreview.ids(line,p);if(part.id===p.partIds.tray&&ids.tray)return [ids.tray];if(part.id===p.partIds.keys&&(ids.buttons||ids.characters))return [...new Set([ids.buttons,ids.characters].filter(Boolean))];}
+    const override=line.colorChoices?.[part.id];return override?[override]:originalColorIds(line,part);
+  }
+  function originalColorLabel(line,part){return originalColorIds(line,part).map(id=>window.getFil(id)?.name||'Màu không còn trong thư viện').join(' + ')||'Chưa chỉ định';}
   function partFields(line){
-    const parts=eligibleParts(line);if(!parts.length)return '';
-    return `<fieldset class="part-colors"><legend>Màu khách yêu cầu cho từng part <span class="required">*</span></legend>${parts.map(part=>`<label class="part-color-field"><span>${esc(part.name)}</span><select class="br-color-native" data-part="${esc(part.id)}" data-part-line="${line.id}" aria-label="Màu part ${esc(part.name)}"><option value="">Chọn màu khách yêu cầu</option>${window.fils.map(fil=>`<option value="${esc(fil.id)}" ${line.colorChoices?.[part.id]===fil.id?'selected':''}>${esc([fil.brand,fil.name,fil.mat].filter(Boolean).join(' · '))}</option>`).join('')}</select></label>`).join('')}</fieldset>`;
+    const p=keyboardProfile(line),keyboard=p?window.CustomKeyboardPreview.fields(line,p,window.fils):'';
+    const parts=eligibleParts(line).filter(part=>!p||![p.partIds.tray,p.partIds.keys].includes(part.id));if(!parts.length)return keyboard;
+    return keyboard+`<fieldset class="part-colors"><legend>Màu part · chỉ chọn khi cần đổi</legend>${parts.map(part=>{
+      const ids=originalColorIds(line,part),label=originalColorLabel(line,part);
+      return `<label class="part-color-field"><span>${esc(part.name)}</span><select class="br-color-native" data-part="${esc(part.id)}" data-part-line="${line.id}" aria-label="Màu part ${esc(part.name)}"><option value="" data-filament-id="${esc(ids.length===1?ids[0]:'')}">Giữ màu gốc: ${esc(label)}</option>${window.fils.map(fil=>`<option value="${esc(fil.id)}" ${line.colorChoices?.[part.id]===fil.id?'selected':''}>${esc([fil.brand,fil.name,fil.mat].filter(Boolean).join(' · '))}</option>`).join('')}</select></label>`;
+    }).join('')}</fieldset>`;
   }
   function partSummary(line){
-    const rows=line.partColors||eligibleParts(line).map(part=>({partName:part.name,...window.getFil(line.colorChoices?.[part.id])}));
-    return rows.length?`<div class="part-summary">${rows.map(row=>`<span><i style="background:${/^#[a-f0-9]{3,8}$/i.test(row.hex||'')?row.hex:'#9eaa9a'}"></i><b>${esc(row.partName)}</b> · ${esc(row.name||'Chưa chọn màu')}</span>`).join('')}</div>`:'';
+    const p=keyboardProfile(line),roles=p&&line.keyboard?window.CustomKeyboardPreview.ids(line,p):null;
+    const rows=line.partColors||eligibleParts(line).flatMap(part=>{
+      if(roles&&[p.partIds.tray,p.partIds.keys].includes(part.id))return (part.id===p.partIds.tray?['tray']:['buttons','characters']).map(role=>{const fil=window.getFil(roles[role]),sourceIds=p.sourceColorIds?.[role==='tray'?'tray':'keys']||[];return {partName:window.CustomKeyboardPreview.labels[role],...fil,...(!fil&&sourceIds.length>1?{name:'Màu gốc: '+sourceIds.map(id=>window.getFil(id)?.name||'Màu không còn trong thư viện').join(' + ')}:{})};});
+      const ids=resolvedColorIds(line,part);return ids.length?ids.map(id=>({partName:part.name,...window.getFil(id)})):[{partName:part.name}];
+    });
+    const text=line.keyboard?.text?`<p class="keyboard-confirmed-text"><b>Ký tự:</b> ${esc(line.keyboard.text)}</p>`:'';
+    return text+(rows.length?`<div class="part-summary">${rows.map(row=>`<span><i style="background:${/^#[a-f0-9]{3,8}$/i.test(row.hex||'')?row.hex:'#9eaa9a'}"></i><b>${esc(row.partName)}</b> · ${esc(row.name||'Chưa chỉ định')}</span>`).join('')}</div>`:'');
   }
   let saveTimer,dirtyVersion=0,savedVersion=0;
   function snapshot(){return structuredClone({draft:state.draft,step:state.step,pending:state.pending||null,theme:state.theme,models:[...modelIndex.values()].slice(-600),fils:window.fils});}
@@ -303,6 +337,21 @@
     const data=await rpc('custom_order_catalog',{w:workspace.workspace_id,q:query,off:more?models.length:0});
     if(owner!==scope||generation!==catalogSequence)return;
     models=more?models.concat(data.models):data.models;models.forEach(model=>modelIndex.set(model.id,model));catalogTotal=data.total;
+    // Cache-first drafts may predate recipe fields. Update only labels, preserving form DOM.
+    for(const line of state.draft.lines)for(const part of eligibleParts(line)){
+      const select=$('select[data-part-line="'+line.id+'"][data-part="'+CSS.escape(part.id)+'"]');
+      if(!select)continue;const ids=originalColorIds(line,part),option=select.options[0];
+      option.textContent='Giữ màu gốc: '+originalColorLabel(line,part);option.dataset.filamentId=ids.length===1?ids[0]:'';
+    }
+    window.FilamentPickers?.init($('#selected-lines'));
+    for(const line of state.draft.lines){
+      const p=keyboardProfile(line),article=$(`[data-line="${line.id}"]`);
+      if(p&&article&&!article.querySelector('.keyboard-custom')){
+        const old=article.querySelector('.part-colors');if(old)old.outerHTML=partFields(line);else article.querySelector('.line-header')?.insertAdjacentHTML('afterend',partFields(line));
+        window.FilamentPickers?.init(article);
+      }
+    }
+    paintKeyboards();
     if($('#catalog')){paintCatalog(query);$('#result-count').textContent=`${catalogTotal} kết quả${catalogTotal>models.length?' · đang hiện '+models.length:''}`;$('#more-models').hidden=models.length>=catalogTotal;}
   }
   async function signImages(order){
@@ -336,7 +385,7 @@
   async function queueOrder(){
     if(saving||state.pending||!state.draft.checked)return;
     const draft=structuredClone(state.draft);
-    for(const line of draft.lines){if(eligibleParts(line).some(part=>!line.colorChoices?.[part.id])){toast('Chọn màu cho từng part trước khi tạo đơn.');return;}}
+    for(const line of draft.lines){const error=keyboardError(line);if(error){toast(error);return;}if(eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id)))){toast('Kiểm tra lại màu gốc hoặc chọn màu thay thế trước khi tạo đơn.');return;}}
     state.pending={requestId:uid(),draft,uploads:{},scope};dirtyVersion++;
     const submit=$('#submit-order');if(submit){submit.disabled=true;submit.textContent='Đang giữ yêu cầu…';}
     if(!await flushSave()){state.pending=null;render();return;}
@@ -362,7 +411,7 @@
           }
           images.push({path:entry.uploads[key],name:image.name});
         }
-        payload.lines.push({modelId:line.modelId,modelRevision:line.model.revision,variantId:line.variantId,qty:line.qty,note:line.note,colorChoices:line.colorChoices||{},images});
+        payload.lines.push({modelId:line.modelId,modelRevision:line.model.revision,variantId:line.variantId,qty:line.qty,note:line.note,colorChoices:line.colorChoices||{},images,...(line.keyboard?{keyboard:line.keyboard}:{})});
       }
       if(scope!==owner)return;
       const result=await rpc('commit_custom_order',{w:workspace.workspace_id,request:entry.requestId,p:payload});
@@ -393,7 +442,10 @@
     }catch(error){if(generation!==publicSequence)return;if(!state.orders.length)app.innerHTML=unavailableHTML();else if($('#public-updated'))$('#public-updated').textContent='Chưa cập nhật được dữ liệu mới. Đang giữ tiến độ đã nhận trước đó.';}
   }
   async function installAdapter(){
-    window.fils=[];window.getFil=id=>window.fils.find(fil=>fil.id===id);window.esc=esc;window.appIcon=icon;window.fuzzyTextMatch=(value,query)=>normalized(value).includes(normalized(query));
+    window.fils=[];window.getFil=id=>window.fils.find(fil=>fil.id===id);window.esc=esc;window.appIcon=icon;window.fuzzyTextMatch=(value,query)=>{
+      const hay=normalized(value),terms=normalized(query).trim().split(/\s+/),words=hay.split(/\s+/);
+      return hay.includes(terms.join(' '))||terms.every(term=>term.length<=2?words.includes(term):words.some(word=>word.includes(term)));
+    };
     $('#theme-toggle').innerHTML=icon('moon');
     document.addEventListener('error',event=>{if(event.target?.tagName==='IMG'){event.target.hidden=true;event.target.parentElement.classList.add('image-failed');}},true);
     if(PUBLIC){state.view='customer';booted=true;await loadPublic();refreshTimer=setInterval(()=>{if(!document.hidden)void loadPublic();},30000);return;}
@@ -422,7 +474,7 @@
       const initialOrder=new URLSearchParams(location.search).get('order');
       if(initialOrder){let order=state.orders.find(row=>row.id===initialOrder);if(!order){order=await rpc('custom_order_get',{w:workspace.workspace_id,oid:initialOrder});if(order){order=await signImages(order);order.token=order.id;state.orders.push(order);}}if(order)openOrder(order.token);}
       client.auth.onAuthStateChange((event,next)=>{if(event==='SIGNED_OUT'||next&&next.user.id!==session.user.id){scope='';session=null;clearInterval(refreshTimer);location.replace('plate-studio.html?next=custom-orders');}else if(next)session=next;});
-      const resume=()=>{if(state.offline)void reconnect().catch(error=>{if(error.code==='42501'){app.innerHTML='<main class="broken-link"><h1>Quyền truy cập đã thay đổi.</h1><p>Liên hệ chủ xưởng để được cấp lại quyền.</p></main>';}else showError(error);});else{void drainPending();void loadOrders().catch(()=>{});}};
+      const resume=()=>{paintKeyboards();if(state.offline)void reconnect().catch(error=>{if(error.code==='42501'){app.innerHTML='<main class="broken-link"><h1>Quyền truy cập đã thay đổi.</h1><p>Liên hệ chủ xưởng để được cấp lại quyền.</p></main>';}else showError(error);});else{void drainPending();void loadOrders().catch(()=>{});}};
       refreshTimer=setInterval(()=>{if(!document.hidden)resume();},30000);
       window.addEventListener('online',resume);window.addEventListener('focus',resume);
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)void drainPending();else void flushSave();});
@@ -501,6 +553,7 @@
   });
   document.addEventListener('input', event => {
     const input=event.target;
+    if(input.dataset.keyboardText){const line=state.draft.lines.find(line=>line.id===input.dataset.keyboardText),p=keyboardProfile(line);if(!line||!p)return;window.CustomKeyboardPreview.init(line,p).text=input.value;state.draft.checked=false;persist();paintKeyboards(line);return;}
     if(input.id==='model-search'){renderCatalog(input.value);return;}
     if(input.id==='order-search'){state.query=input.value;clearTimeout(searchTimer);searchTimer=setTimeout(()=>void loadOrders().catch(showError),180);return;}
     if(input.dataset.note){const line=state.draft.lines.find(line=>line.id===input.dataset.note);line.note=input.value;state.draft.checked=false;persist();return;}
@@ -509,7 +562,8 @@
   });
   document.addEventListener('change',event=>{
     const input=event.target;
-    if(input.dataset.part){const line=state.draft.lines.find(line=>line.id===input.dataset.partLine);line.colorChoices ||= {};if(input.value)line.colorChoices[input.dataset.part]=input.value;else delete line.colorChoices[input.dataset.part];state.draft.checked=false;persist();return;}
+    if(input.dataset.keyboardRole){const line=state.draft.lines.find(line=>line.id===input.dataset.keyboardLine),p=keyboardProfile(line);if(!line||!p)return;const k=window.CustomKeyboardPreview.init(line,p);if(input.value)k.colors[input.dataset.keyboardRole]=input.value;else delete k.colors[input.dataset.keyboardRole];delete line.colorChoices?.[input.dataset.keyboardRole==='tray'?p.partIds.tray:p.partIds.keys];state.draft.checked=false;persist();paintKeyboards(line);return;}
+    if(input.dataset.part){const line=state.draft.lines.find(line=>line.id===input.dataset.partLine);line.colorChoices ||= {};if(input.value)line.colorChoices[input.dataset.part]=input.value;else delete line.colorChoices[input.dataset.part];state.draft.checked=false;persist();paintKeyboards(line);return;}
     if(input.name==='delivery'){state.draft.delivery=input.value;state.draft.checked=false;persist();$('#address-field').hidden=input.value!=='delivery';}
     if(input.id==='review-confirm'){state.draft.checked=input.checked;persist();$('#submit-order').disabled=!input.checked;}
     if(input.dataset.files)addImages(input);

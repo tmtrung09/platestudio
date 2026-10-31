@@ -2,16 +2,22 @@
 (() => {
   const selector='#pp-manual-color,.ms-slot select,.br-plan-color select,.of-cr-color-row select,select[onchange="setAiDraftFilament(this.value)"],select.br-color-native';
   let active=null,serial=0,observer;
+  // Match known English color names with Vietnamese queries; never infer color from hex.
+  const colorAliases={white:'trắng',black:'đen',grey:'xám ghi',gray:'xám ghi',red:'đỏ',green:'xanh xanh lá xanh lá cây',blue:'xanh xanh dương xanh da trời xanh nước biển',yellow:'vàng',orange:'cam',purple:'tím',violet:'tím',pink:'hồng',brown:'nâu',beige:'be kem',ivory:'trắng ngà',cream:'kem',cyan:'xanh lơ',turquoise:'xanh ngọc',teal:'xanh cổ vịt',mint:'xanh bạc hà',olive:'xanh ô liu',navy:'xanh navy xanh đậm',gold:'vàng kim',silver:'bạc',transparent:'trong suốt',clear:'trong suốt',light:'nhạt',dark:'đậm',matte:'mờ lì',silk:'lụa',marble:'vân đá'};
+  const searchText=(option,f)=>{
+    const name=String(f?.name||'').toLowerCase().replace(/[^a-z]+/g,' ').trim().split(/\s+/);
+    return `${option.textContent} ${f?.brand||''} ${f?.name||''} ${f?.mat||''} ${f?.hex||''} ${name.map(word=>colorAliases[word]||'').join(' ')}`;
+  };
   const swatch=f=>/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(f?.hex||'')?f.hex:'repeating-conic-gradient(#999 0 25%,#ddd 0 50%)';
   function refresh(state){
-    const option=state.select.selectedOptions[0],filament=getFil(state.select.value);
+    const option=state.select.selectedOptions[0],filament=getFil(state.select.value||option?.dataset.filamentId);
     state.toggle.disabled=state.select.disabled;
     state.toggle.querySelector('.br-color-picker-dot').style.background=swatch(filament);
     state.toggle.querySelector('.filament-picker-label').textContent=option?.textContent||'Chưa chỉ định';
   }
   function results(state,query='',limit=80){
     state.query=query;state.limit=limit;
-    const rows=[...state.select.options].map(option=>({option,filament:getFil(option.value)})).filter(({option,filament:f})=>!query.trim()||fuzzyTextMatch(`${option.textContent} ${f?.brand||''} ${f?.name||''} ${f?.mat||''} ${f?.hex||''}`,query));
+    const rows=[...state.select.options].map(option=>({option,filament:getFil(option.value||option.dataset.filamentId)})).filter(({option,filament:f})=>!query.trim()||fuzzyTextMatch(searchText(option,f),query));
     state.count.textContent=`${rows.length} lựa chọn${rows.length>limit?' · đang hiện '+limit:''}`;
     state.list.innerHTML=rows.slice(0,limit).map(({option,filament:f})=>`<button type="button" class="br-color-picker-option${option.value===state.select.value?' selected':''}" role="option" tabindex="-1" aria-selected="${option.value===state.select.value}" data-value="${esc(option.value)}" ${option.disabled?'disabled':''}><span class="br-color-picker-dot" style="background:${swatch(f)}"></span><span class="br-color-picker-option-copy"><b>${esc(option.textContent)}</b>${f?`<small>${esc([f.mat,f.hex].filter(Boolean).join(' · '))}</small>`:''}</span>${option.value===state.select.value?appIcon('check'):''}</button>`).join('')||'<p class="br-color-picker-empty">Không tìm thấy màu phù hợp</p>';
     state.more.hidden=rows.length<=limit;

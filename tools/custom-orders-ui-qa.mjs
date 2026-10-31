@@ -9,9 +9,9 @@ async function setup(width=390,theme='light',largeCatalog=false){
  const context=await browser.newContext({viewport:{width,height:950},serviceWorkers:'block',reducedMotion:'reduce',hasTouch:width<600,isMobile:width<600});
  await context.addInitScript(largeCatalog=>{
   const ws='11111111-1111-4111-8111-111111111111',user='22222222-2222-4222-8222-222222222222',token='a'.repeat(64),revision='2026-10-25T00:00:00.000Z';
-  const models=[{id:'m1',name:'Bàn phím tên',sku:'SP001',images:['http://custom-orders.test/fixture.svg'],revision,parts:[{id:'tray',name:'Khay',qtyPerModel:1},{id:'key',name:'Nút',qtyPerModel:5},{id:'unused',name:'Ẩn theo biến thể'}],variants:[{id:'v1',name:'Nhỏ',partIds:['tray','key']}]},{id:'m2',name:'Khay để bàn',sku:'SP002',images:[],revision,parts:[],variants:[]}];
+  const models=[{id:'m1',name:'Bàn phím tên',sku:'SP001',images:['http://custom-orders.test/fixture.svg'],revision,parts:[{id:'tray',name:'Khay',qtyPerModel:1,filamentIds:['green']},{id:'key',name:'Nút',qtyPerModel:5,filamentIds:['cream']},{id:'unused',name:'Ẩn theo biến thể'}],variants:[{id:'v1',name:'Nhỏ',partIds:['tray','key'],partColors:{tray:['cream']}}]},{id:'m2',name:'Khay để bàn',sku:'SP002',images:[],revision,parts:[],variants:[]}];
   if(largeCatalog)models.push(...Array.from({length:198},(_,index)=>({id:'library-'+index,name:'Model thư viện với tên dài '+index,sku:'LIB'+index,images:index%3?[]:['http://custom-orders.test/fixture.svg'],revision,parts:[],variants:[]})));
-  const fils=[{id:'green',name:'Xanh rêu',brand:'Generic',mat:'PLA',hex:'#315d34'},{id:'cream',name:'Kem',brand:'Generic',mat:'PLA',hex:'#eadfc5'}];
+  const fils=[{id:'green',name:'Xanh rêu',brand:'Generic',mat:'PLA',hex:'#315d34'},{id:'cream',name:'Kem',brand:'Generic',mat:'PLA',hex:'#eadfc5'},{id:'white',name:'Ivory White',brand:'Generic',mat:'PLA',hex:'#ffffee'},{id:'black',name:'Matte Black',brand:'Generic',mat:'PLA',hex:'#222222'},{id:'blue',name:'Light Blue',brand:'Generic',mat:'PETG',hex:'#99bbff'}];
   const sample={id:'sample',customer:'Bảo',phone:'0900000000',address:'Địa chỉ chỉ dành cho cửa hàng',delivery:'pickup',total:280000,deposit:100000,due:'2026-10-29',stage:1,creator:'Thu Hà',created:'2026-10-25',lines:[{id:'sample-line',modelId:'m1',model:{id:'m1',name:models[0].name,images:models[0].images,variants:[{id:'v1',name:'Nhỏ'}]},variantId:'v1',qty:1,note:'Màu kem',images:[],partColors:[]}]};
   const normalize=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase();
   window.__calls=[];window.__failCommit=false;window.__role='store_custom';window.__uploads=[];
@@ -28,7 +28,7 @@ async function setup(width=390,theme='light',largeCatalog=false){
     if(name==='commit_custom_order'){
      if(window.__failCommit)return {data:null,error:{message:'Mất mạng giả lập sau khi giữ yêu cầu.'}};
      const previous=records().find(row=>row.request===args.request);if(previous)return {data:previous.result};
-     const order={id:'custom-'+args.request,...args.p,stage:0,created:'2026-10-25',creator:'Minh An',lines:args.p.lines.map((line,index)=>({...line,id:'line-'+index,model:models.find(model=>model.id===line.modelId),partColors:Object.entries(line.colorChoices).map(([partId,fid])=>({partId,partName:models[0].parts.find(part=>part.id===partId)?.name,...fils.find(fil=>fil.id===fid)}))}))};
+     const order={id:'custom-'+args.request,...args.p,stage:0,created:'2026-10-25',creator:'Minh An',lines:args.p.lines.map((line,index)=>{const model=models.find(model=>model.id===line.modelId),variant=model.variants.find(v=>v.id===line.variantId);return {...line,id:'line-'+index,model,partColors:model.parts.filter(part=>!Array.isArray(variant?.partIds)||variant.partIds.includes(part.id)).flatMap(part=>{const ids=line.colorChoices[part.id]?[line.colorChoices[part.id]]:variant?.partColors?.[part.id]?.length?variant.partColors[part.id]:part.filamentIds||[null];return ids.map(fid=>({partId:part.id,partName:part.name,filamentId:fid,...fils.find(fil=>fil.id===fid)}));})};})};
      const result={order,token};localStorage.setItem('qa-custom-server',JSON.stringify(records().concat([{request:args.request,order,result}])));return {data:result};
     }
     return {data:null,error:{message:'Unsupported QA RPC '+name}};
@@ -55,7 +55,7 @@ async function noOverflow(page,label){assert.equal(await page.evaluate(()=>docum
 async function chooseParts(page){
  for(const [index,query,id] of [[0,'xanh reu','green'],[1,'kem','cream']]){
   await page.locator('.part-colors .br-color-picker-toggle').nth(index).click();const menu=page.locator('body>.filament-menu');
-  await menu.locator('input').fill(query);assert.equal(await menu.locator('[role="option"]').count(),1);
+  await menu.locator('input').fill(query);assert.equal(await menu.locator('[role="option"][data-value]:not([data-value=""])').count(),1);
   await menu.locator(`[data-value="${id}"]`).click();
  }
 }
@@ -137,8 +137,16 @@ try{
   const {page,context}=await setup(width,theme);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),theme==='dark'?'rgb(21, 27, 29)':'rgb(243, 242, 237)','Counter shares the approved balanced palette');
   await noOverflow(page,`${width}/${theme}/catalog`);await beginOrder(page);
-  assert.equal(await page.locator('[data-part=tray]').inputValue(),'','No automatic part color');
-  await page.locator('#next-step').click();assert.match(await page.locator('#toast').innerText(),/từng part/);
+  assert.equal(await page.locator('[data-part=tray]').inputValue(),'','No manual override until staff changes a part');
+  assert.match(await page.locator('.part-colors .filament-picker-label').first().innerText(),/Giữ màu gốc: Kem/,'Variant source color is visible');
+  assert.match(await page.locator('.part-colors .filament-picker-label').nth(1).innerText(),/Giữ màu gốc: Kem/,'Other part inherits its own source color');
+  await page.locator('#next-step').click();await page.locator('#customer-name').waitFor();await page.locator('[data-action=back]').click();
+  await page.locator('.part-colors .br-color-picker-toggle').first().click();
+  for(const [query,id] of [['trắng','white'],['trang','white'],['ĐEN','black'],['den','black'],['xanh dương nhạt','blue'],['xanh duong nhat','blue']]){
+   await page.locator('body>.filament-menu input').fill(query);assert.equal(await page.locator(`body>.filament-menu [data-value="${id}"]`).count(),1,'Vietnamese query finds English color: '+query);
+  }
+  await page.locator('body>.filament-menu input').fill('khong-ton-tai');assert.match(await page.locator('body>.filament-menu').innerText(),/Không tìm thấy màu/);
+  await page.keyboard.press('Escape');
   await page.locator('[data-note]').evaluate(el=>{window.__note=el;});await chooseParts(page);
   assert.equal(await page.locator('[data-note]').evaluate(el=>el===window.__note),true,'Color selection preserves note DOM');
   await noOverflow(page,`${width}/${theme}/part-colors`);
@@ -170,6 +178,31 @@ try{
   await page.evaluate(()=>{window.__cancelled=true;window.__poll();});await page.waitForFunction(()=>document.querySelector('#customer-title').textContent.includes('Đơn đã hủy'));
   assert.equal(await page.locator('.printer-head').count(),0,'Cancelled order has no printing animation');
   await context.close();console.log(`PASS custom order UI ${width}/${theme}: real adapter, shared per-part picker, variant scope, validation, create ACK, QR, public projection, unchanged polling, cancel`);
+ }
+ // Unedited parts survive back/reload and are submitted as source colors, not fabricated overrides.
+ for(const mixed of [false,true]){
+  const {page,context}=await setup();await beginOrder(page);
+  if(mixed){
+   await chooseParts(page);await page.locator('.part-colors .br-color-picker-toggle').nth(1).click();await page.locator('body>.filament-menu [data-value=""]').click();
+  }
+  await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
+  if(!mixed)await page.addInitScript(()=>{
+   // Emulate a saved draft from before catalog responses included source recipe fields.
+   Object.defineProperty(window,'CustomOrderStore',{configurable:true,set(api){
+    const load=api.load;api.load=async scope=>{const saved=await load(scope);if(saved?.draft){
+     const strip=model=>{for(const part of model?.parts||[]){delete part.filamentIds;delete part.filamentId;}for(const variant of model?.variants||[])delete variant.partColors;};
+     (saved.models||[]).forEach(strip);saved.draft.lines.forEach(line=>strip(line.model));
+    }return saved;};Object.defineProperty(window,'CustomOrderStore',{value:api,configurable:true});
+   }});
+  });
+  await page.reload();await page.locator('[data-part=tray]').waitFor({state:'attached'});
+  await page.waitForFunction(()=>document.querySelector('.part-colors .filament-picker-label')?.textContent.includes('Kem')||document.querySelector('[data-part=tray]')?.value==='green');
+  assert.equal(await page.locator('[data-part=tray]').inputValue(),mixed?'green':'');assert.equal(await page.locator('[data-part=key]').inputValue(),'');
+  await fillCustomer(page);await page.locator('[data-action=next]').click();assert.match(await page.locator('.part-summary').innerText(),mixed?/Khay.*Xanh rêu.*Nút.*Kem/s:/Khay.*Kem.*Nút.*Kem/s);
+  await page.locator('#review-confirm').check();await page.locator('#submit-order').click();await page.locator('.success-panel').waitFor();
+  const commit=await page.evaluate(()=>window.__calls.find(call=>call.name==='commit_custom_order'));
+  assert.deepEqual(commit.args.p.lines[0].colorChoices,mixed?{tray:'green'}:{});
+  await context.close();
  }
  // Durable outbox after failed commit, reload, then retry using exactly the same request ID.
  const {page,context}=await setup();await beginOrder(page);await chooseParts(page);

@@ -8,14 +8,19 @@ Chủ xưởng/quản lý đơn hoặc người có quyền tạo/xem custom m�
 trong sidebar máy tính, hoặc **Menu → Đơn custom** trên điện thoại. Mục này tìm
 được bằng ô tìm kiếm trong Menu và ẩn khi tài khoản không có quyền.
 
-Nhân viên tìm model theo tên hoặc mã KiotViet, chọn biến thể nếu có, chọn màu cho
-từng part được dùng trong biến thể, nhập số lượng, mô tả và ảnh tham khảo. Không
-tự chọn màu mặc định. Model không có part vẫn đặt được. Tiếp theo nhập tên khách,
+Nhân viên tìm model theo tên hoặc mã KiotViet, chọn biến thể nếu có, nhập số lượng,
+mô tả và ảnh tham khảo. Part chưa chỉnh giữ màu gốc của biến thể hoặc kế thừa màu
+part; nguồn nhiều màu giữ đủ màu, nguồn chưa có màu giữ chưa chỉ định. Chỉ chọn
+màu cho part cần đổi, chọn **Giữ màu gốc** để bỏ thay đổi. Tìm màu bằng tiếng Việt
+có hoặc không dấu, kể cả tên màu tiếng Anh tương ứng (như trắng → White, đen → Black).
+Model không có part vẫn đặt được. Tiếp theo nhập tên khách,
 điện thoại/Zalo, cách nhận hàng, địa chỉ nếu giao, tổng tiền/cọc/ngày hẹn, rồi
 đối chiếu thông tin trước khi tạo.
 
-Đơn/plate/part được tạo trong một transaction ở server. `colorChoices` và snapshot
-tên/màu part theo từng dòng đi cùng đơn; model nguồn không bị đổi màu. Đơn custom
+Đơn/plate/part được tạo trong một transaction ở server. `colorChoices` chỉ chứa
+part đổi màu; snapshot tên/màu đã chốt của tất cả part đi cùng đơn; model nguồn
+không bị đổi màu. Migration `202610300001_custom_order_original_colors.sql` cập nhật
+catalog màu gốc và cách server tạo kế hoạch in. Đơn custom
 có nhãn riêng và được ưu tiên trong danh sách đơn, nhu cầu sản xuất, góc tiến độ
 và thứ tự mặc định của plate. Chọn sắp xếp plate khác vẫn theo lựa chọn của người dùng.
 
@@ -25,6 +30,36 @@ thu gọn và đưa dòng yêu cầu vừa thêm vào vùng nhìn.
 Mở **Thêm sản phẩm** để tìm thêm model; giữ nguyên các dòng đang nhập. Danh sách
 model có vùng cuộn giới hạn, thanh **Thông tin khách** nằm trong tầm thao tác.
 Tải lại hoặc quay lại bước Sản phẩm mở phần yêu cầu đã lưu.
+
+Chọn model **bàn phím tên**, có hai part **khay** (hoặc **Khay bàn phím**) và **nút+ký tự**, sẽ mở phần
+minh họa ngay trong dòng sản phẩm. Nhân viên nhập ký tự và chọn ba màu **Khay bàn
+phím / Nút bàn phím / Ký tự** bằng bộ chọn màu nhựa hiện có. Hình dùng các khay,
+nút và chữ từ 3MF, chiếu ở một góc cố định; không có điều khiển xoay 3D. Đổi màu
+chỉ tô lại bản đồ vật liệu, giữ nguyên hình học. Ký tự ngoài bộ chữ trong 3MF
+có thông báo font minh họa thay thế.
+
+Migration `202610300002_custom_keyboard_preview.sql` cung cấp ánh xạ ID theo
+model/part đã xác nhận và kiểm tra lại khi tạo đơn. Nút và ký tự giữ chung một
+`plate_item`, có `filamentIds`, `componentColors`, ký tự và ghi chú màu đã chốt;
+không nhân đôi sản lượng khi dùng hai màu. Màu gốc chưa có vai trò nút/chữ được
+giữ theo nguồn, không đoán theo thứ tự mảng. Nháp và yêu cầu chờ gửi giữ tên,
+ba màu và cùng request ID; phần xem lại, chi tiết đơn và link khách đọc snapshot.
+
+Bộ hình dùng Blender Cycles dựng ánh sáng mềm, độ bóng, vân lớp nhựa và bóng
+tiếp xúc từ mesh thật; giữ riêng màu nhựa với ánh sáng để đổi màu tức thời.
+Dựng lại bằng hai bước sau; bước Python cần numpy/Pillow để lọc bóng và tối ưu PNG:
+
+```sh
+blender -b --python-exit-code 1 -P tools/render-keyboard-studio.py -- "<source.3mf>" --bake --output assets/custom-orders/keyboard-render-data.js
+python tools/render-keyboard-studio.py --split --output assets/custom-orders/keyboard-render-data.js
+```
+
+Blender chỉ dùng khi dựng asset, không là phụ thuộc của web và không thêm trình xem 3D.
+Web chỉ tải ảnh khay theo chiều dài và các chữ đang dùng, rồi cache theo service
+worker; không tải toàn bộ bảng hình để mở form. Ảnh đã tải xem lại được offline;
+nếu chưa có ảnh cần dùng khi mất mạng, nháp vẫn được giữ và hình báo chưa tải được.
+Công cụ chỉ đọc hình học, không thực thi G-code, và lưu SHA-256 nguồn trong asset
+để đối chiếu. Minh họa không tự sửa thư viện màu hay model.
 
 Nháp, ảnh và yêu cầu chờ gửi nằm trong IndexedDB riêng theo workspace + user.
 Reload/offline không đổi request ID. Ảnh tải lên đường dẫn bất biến trong bucket

@@ -457,11 +457,28 @@
 - Chọn sản phẩm từ model đã nhập, tìm theo tên hoặc mã KiotViet và giữ định danh
   model/biến thể. Ghi số lượng, yêu cầu custom tự do và ảnh tham khảo theo từng
   dòng; không áp quy luật màu/ký tự/kích thước từ một ví dụ sản phẩm cụ thể.
-- Model có part phải yêu cầu nhân viên chọn màu khách muốn cho từng part được
-  dùng trong biến thể đã chọn, bằng bộ chọn màu nhựa chung; không tự chọn màu.
-  Giữ lựa chọn theo ID part khi nhập/quay lại/tải lại. Lưu snapshot tên/màu và
-  colorChoices vào đơn, kiểm tra lại model/biến thể/part/màu ở server trước ACK;
-  công việc sản xuất phải dùng đúng màu đã chốt. Guard: custom-orders SQL/UI QA.
+- Part của đơn custom chưa chỉnh màu mặc định giữ màu gốc theo biến thể đã chọn,
+  kế thừa màu part khi biến thể không ghi đè; giữ đủ màu gốc nếu có nhiều màu và
+  giữ chưa chỉ định nếu nguồn chưa có màu. Chỉ đổi part được nhân viên chọn,
+  có lựa chọn trở về màu gốc; không đổi model nguồn. Bộ chọn màu chung tìm được
+  tên màu tiếng Việt có/không dấu, kể cả tên màu tiếng Anh tương ứng trong thư viện.
+  Giữ lựa chọn theo ID part khi nhập/quay lại/tải lại. Lưu snapshot tên/màu đã
+  chốt và colorChoices ghi đè vào đơn, kiểm tra lại model/biến thể/part/màu ở
+  server trước ACK; công việc sản xuất dùng đúng màu đã chốt. Guard: custom-orders SQL/UI QA.
+- Khi chọn model “bàn phím tên” trong Tạo đơn custom, minh họa xuất hiện ngay
+  trong dòng sản phẩm, không mở trang riêng. Có ba vùng màu: khay bàn phím,
+  nút bàn phím, ký tự. Model giữ hai part nguồn “khay”/“Khay bàn phím” và “nút+ký tự”; hai màu
+  nút/chữ thuộc cùng part in chung, không tạo part giả hoặc cộng đôi số lượng.
+  Gắn bằng ID model/part đã đối chiếu ở server; lưu ký tự và snapshot ba vùng
+  màu qua nháp/quay lại/reload/ACK, đưa đủ thông tin vào yêu cầu sản xuất.
+  Dùng hình học 3MF và ảnh thật để dựng góc nhìn cố định, giữ tỷ lệ khay/nút/chữ;
+  đổi màu không đổi hình học, không dùng kéo xiên 2D làm méo sản phẩm. Minh họa
+  có độ nổi, cạnh bo, vân nhựa và bóng tiếp xúc theo ảnh thật; không dùng các
+  mảng màu phẳng làm bản minh họa hoàn thiện. Đổi màu giữ ánh sáng/độ bóng.
+  Ký tự thiếu trong bộ mẫu phải nêu rõ cách minh họa thay thế. Giữ bộ chọn màu chung,
+  không ghi màu tham khảo thành màu trong kho hoặc tự gán vai trò cho dãy màu
+  gốc chưa có ánh xạ. R3D, TINMORRY, CAILAB giữ hãng/dòng/mã/nguồn; phân biệt
+  swatch web, bảng nhà phân phối và màu lấy mẫu từ ảnh, không gọi là màu đo thực tế.
 - Nhân viên nhập giá, tiền cọc và ngày hẹn theo thỏa thuận. Lưu tên, số điện thoại/
   Zalo, hình thức nhận và địa chỉ khi giao hàng; có bước đối chiếu với khách trước
   khi xác nhận. Đơn đi vào luồng đơn/sản xuất chung, có nhận diện custom và được
