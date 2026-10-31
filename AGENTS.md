@@ -38,9 +38,10 @@
   bộ lọc/nhãn thay vì tách tab/màn hình chỉ vì thêm thuộc tính. Việc tách phải có
   lý do về luồng công việc.
 - Chọn màu nhựa trong nhập tay, khay máy, đối chiếu/khai báo mẻ, AI và đổi màu theo
-  đơn dùng bộ chọn chung: tìm không dấu theo tên/hãng/chất liệu/mã, mẫu màu, số
+  đơn dùng bộ chọn chung dạng lưới ô màu: ô màu lớn kèm tên/hãng/mã và dấu chọn,
+  giữ màu gốc/chưa chỉ định thành lựa chọn riêng. Tìm không dấu theo tên/hãng/chất liệu/mã, số
   kết quả và trạng thái không khớp. Giữ chưa chỉ định, không tự chọn; hỗ trợ bàn
-  phím/Escape/chạm 44px. Menu không bị vùng cuộn cắt hoặc làm mất nháp/focus/ảnh.
+  phím bốn hướng/Escape/chạm 44px. Menu không bị vùng cuộn cắt hoặc làm mất nháp/focus/ảnh.
   Native select còn lại có color-scheme và nền/chữ option theo theme, không trắng
   trên trắng. Kiểm thử: `tools/filament-picker-qa.mjs`.
 - Các thư viện Đơn, Plate, Project, Màu nhựa và Model có tìm kiếm không dấu cạnh

@@ -25,7 +25,10 @@
     state.query=query;state.limit=limit;
     const rows=[...state.select.options].map(option=>({option,filament:getFil(option.value||option.dataset.filamentId)})).filter(({option,filament:f})=>!query.trim()||fuzzyTextMatch(searchText(option,f),query));
     state.count.textContent=`${rows.length} lựa chọn${rows.length>limit?' · đang hiện '+limit:''}`;
-    state.list.innerHTML=rows.slice(0,limit).map(({option,filament:f})=>`<button type="button" class="br-color-picker-option${option.value===state.select.value?' selected':''}" role="option" tabindex="-1" aria-selected="${option.value===state.select.value}" data-value="${esc(option.value)}" ${option.disabled?'disabled':''}><span class="br-color-picker-dot" style="background:${swatch(f)}"></span><span class="br-color-picker-option-copy"><b>${esc(option.textContent)}</b>${f?`<small>${esc(details(f))}</small>`:''}</span>${option.value===state.select.value?appIcon('check'):''}</button>`).join('')||'<p class="br-color-picker-empty">Không tìm thấy màu phù hợp</p>';
+    state.list.innerHTML=rows.slice(0,limit).map(({option,filament:f})=>{
+      const tile=!!option.value&&!!f,full=[option.textContent,f?details(f):''].filter(Boolean).join(' · ');
+      return `<button type="button" class="br-color-picker-option${tile?'':' is-default'}${option.value===state.select.value?' selected':''}" role="option" tabindex="-1" aria-label="${esc(full)}" title="${esc(full)}" aria-selected="${option.value===state.select.value}" data-value="${esc(option.value)}" ${option.disabled?'disabled':''}><span class="br-color-picker-dot${tile?' filament-tile-swatch':''}" style="background:${swatch(f)}"></span><span class="br-color-picker-option-copy"><b>${esc(tile?(f.nameVi||f.name):option.textContent)}</b>${tile?`<small>${esc([f.canonicalBrand||f.brand,f.code,f.mat].filter(Boolean).join(' · '))}</small>`:''}</span>${option.value===state.select.value?`<span class="filament-tile-check" aria-hidden="true">${appIcon('check')}</span>`:''}</button>`;
+    }).join('')||'<p class="br-color-picker-empty">Không tìm thấy màu phù hợp</p>';
     state.more.hidden=rows.length<=limit;
     state.list.querySelectorAll('[data-value]').forEach(button=>button.onclick=event=>{
       event.preventDefault();event.stopPropagation();
@@ -44,10 +47,11 @@
     const {toggle,menu,list}=active,rect=toggle.getBoundingClientRect();
     if(!toggle.isConnected||!toggle.getClientRects().length){close(false);return;}
     const view=window.visualViewport,leftEdge=view?.offsetLeft||0,topEdge=view?.offsetTop||0,width=view?.width||innerWidth,height=view?.height||innerHeight;
-    const widthPx=Math.min(Math.max(rect.width,280),width-24),below=topEdge+height-rect.bottom-12,above=rect.top-topEdge-12;
-    const downward=below>=Math.min(270,above),available=Math.max(100,Math.min(360,downward?below:above));
+    const widthPx=Math.min(Math.max(rect.width,480),width-24),below=topEdge+height-rect.bottom-12,above=rect.top-topEdge-12;
+    const downward=below>=above,room=Math.max(below,above),available=Math.min(560,room<250?height-24:room);
     menu.style.width=widthPx+'px';menu.style.left=Math.max(leftEdge+12,Math.min(rect.left,leftEdge+width-widthPx-12))+'px';
-    list.style.maxHeight=Math.max(44,available-112)+'px';
+    const style=getComputedStyle(menu),chrome=[...menu.children].filter(el=>el!==list&&!el.hidden).reduce((sum,el)=>sum+el.getBoundingClientRect().height,0)+['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth'].reduce((sum,key)=>sum+(parseFloat(style[key])||0),0);
+    list.style.maxHeight=Math.max(44,available-chrome)+'px';
     const menuHeight=Math.min(menu.getBoundingClientRect().height,available);
     menu.style.top=Math.max(topEdge+8,Math.min(downward?rect.bottom+6:rect.top-menuHeight-6,topEdge+height-menuHeight-8))+'px';
   }
@@ -84,11 +88,15 @@
       state.menu.querySelector('.btn-icon-only').onclick=()=>close();
       state.menu.onclick=event=>event.stopPropagation();
       state.menu.onkeydown=event=>{
-        if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+        if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
         const options=[...state.list.querySelectorAll('button:not(:disabled)')];if(!options.length)return;
-        if(['Home','End'].includes(event.key)&&event.target===state.input)return;
+        if(['Home','End','ArrowLeft','ArrowRight'].includes(event.key)&&event.target===state.input)return;
         event.preventDefault();const index=options.indexOf(document.activeElement),delta=event.key==='ArrowUp'?-1:1;
-        const next=event.key==='Home'?0:event.key==='End'?options.length-1:index<0?(delta>0?0:options.length-1):(index+delta+options.length)%options.length;
+        let next=event.key==='Home'?0:event.key==='End'?options.length-1:index<0?(delta>0?0:options.length-1):(index+(event.key==='ArrowLeft'?-1:delta)+options.length)%options.length;
+        if(index>=0&&['ArrowUp','ArrowDown'].includes(event.key)){
+          const from=options[index].getBoundingClientRect(),rows=options.map((el,i)=>({i,r:el.getBoundingClientRect()})).filter(({r})=>(r.top-from.top)*delta>1);
+          if(rows.length){const dy=Math.min(...rows.map(({r})=>Math.abs(r.top-from.top)));next=rows.filter(({r})=>Math.abs(Math.abs(r.top-from.top)-dy)<1).sort((a,b)=>Math.abs(a.r.left+a.r.width/2-from.left-from.width/2)-Math.abs(b.r.left+b.r.width/2-from.left-from.width/2))[0].i;}else next=index;
+        }
         options[next].focus({preventScroll:true});options[next].scrollIntoView({block:'nearest'});
       };
       select.addEventListener('change',()=>refresh(state));
