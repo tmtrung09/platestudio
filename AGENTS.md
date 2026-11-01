@@ -79,6 +79,12 @@
 
 ### Mật độ thông tin, control và icon
 
+- Giao diện điện thoại được thiết kế từ luồng thao tác mobile, có lớp trình bày
+  riêng với desktop; không lấy thu nhỏ hoặc xếp lại màn hình desktop làm thiết kế
+  mobile. Hai lớp dùng chung dữ liệu, định danh, quyền, nghiệp vụ, lưu/đồng bộ và
+  nhận diện; không nhân đôi hệ thống xử lý. Kiểm tra từng luồng thực trên điện
+  thoại, gồm bàn phím, vùng an toàn, cuộn, nút chính và nháp, cùng hồi quy desktop.
+
 - Xanh lá của màn đăng nhập là màu chủ đạo và điểm nhấn nhận diện, không phủ
   xanh toàn bộ nền, thẻ và control. Trang làm việc phối nền trung tính với
   phân cấp bề mặt sáng/tối; màu trạng thái và điểm nhấn phụ phải phân biệt

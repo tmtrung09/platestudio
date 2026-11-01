@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "qa:mobile-demo": "node tools/mobile-first-demo-qa.mjs",
     "qa:loading-demo": "node tools/loading-screen-demo-qa.mjs",
     "qa:startup": "node tools/startup-qa.mjs",
     "qa:mobile": "node tools/mobile-qa.mjs && node tools/navigation-qa.mjs && node tools/notifications-qa.mjs && node tools/camera-qa.mjs && node tools/camera-sounds-qa.mjs && node tools/camera-startup-qa.mjs && node tools/batch-gallery-qa.mjs",

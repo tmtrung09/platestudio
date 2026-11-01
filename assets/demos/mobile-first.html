@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>platedio · Bản mẫu mobile</title>
+  <link rel="stylesheet" href="mobile-first.css">
+  <script src="mobile-first.js" defer></script>
+</head>
+<body>
+  <div class="review-bar"><span><i></i> BẢN MẪU MOBILE <small>· Dữ liệu minh họa</small></span><button id="theme-toggle" class="icon" aria-label="Đổi giao diện sáng tối"></button></div>
+  <div class="review-layout">
+    <aside class="review-notes">
+      <a class="wordmark" href="mobile-first.html">platedio<span>.</span></a>
+      <h1>Một giao diện<br>cho cách em<br>làm việc trên tay.</h1>
+      <p>Thử mở một model, ghép SKU, tạo đơn rồi quay lại. Các màn hình và nút chính được tổ chức cho điện thoại.</p>
+      <div class="review-path"><span>01</span><button data-demo-route="models">Tìm model và ghép SKU</button><span>02</span><button data-demo-route="create">Chọn sản phẩm và tạo đơn</button><span>03</span><button data-demo-route="production">Theo dõi công việc sản xuất</button></div>
+      <p class="review-caption">Bản mẫu để chốt cách dùng.<br>Các thao tác chỉ thay đổi dữ liệu trong phiên thử.</p>
+    </aside>
+    <div id="phone" class="phone">
+      <header class="app-bar"><a class="wordmark" href="#models" data-demo-route="models">platedio<span>.</span></a><div><button class="icon" id="camera" aria-label="Mở camera minh họa"></button><button class="icon" id="notifications" aria-label="Thông báo minh họa"></button></div></header>
+      <main id="screen" tabindex="-1" aria-label="Nội dung bản mẫu"></main>
+      <nav id="nav" class="bottom-nav" aria-label="Điều hướng chính"></nav>
+      <div id="announcement" class="announcement" role="status" aria-live="polite" hidden></div>
+      <dialog id="sheet" aria-labelledby="sheet-title"></dialog>
+    </div>
+  </div>
+</body>
+</html>

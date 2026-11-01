@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import AxeBuilder from '@axe-core/playwright';
+import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+const out=resolve('qa-results/mobile-first-demo');mkdirSync(out,{recursive:true});
+const source=readFileSync('assets/demos/mobile-first.js','utf8');
+assert.ok(!/\b(fetch|XMLHttpRequest|WebSocket)\s*\(|localStorage|sessionStorage|indexedDB|getUserMedia|supabase/.test(source),'Demo must not call production APIs, persist or request camera');
+const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const base=process.env.QA_MOBILE_DEMO_BASE,results=[];
+const profiles=[[320,740],[390,844],[430,932],[844,390],[768,900],[1440,1000]].filter(([width])=>!process.env.QA_MOBILE_DEMO_WIDTH||String(width)===process.env.QA_MOBILE_DEMO_WIDTH);
+assert.ok(profiles.length,'At least one valid viewport is required');
+try{for(const [width,height] of profiles)for(const theme of ['light','dark']){
+ const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce',hasTouch:width<900}),page=await context.newPage(),errors=[],external=[];
+ page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(12000);
+ await page.route(/^https?:/,route=>{if(base&&new URL(route.request().url()).origin===new URL(base).origin)return route.continue();external.push(route.request().url());return route.abort();});
+ await page.addInitScript(()=>{Storage.prototype.setItem=()=>{throw Error('Demo storage forbidden');};indexedDB.open=()=>{throw Error('Demo database forbidden');};});
+ await page.goto(base?new URL('assets/demos/mobile-first.html',base).href:pathToFileURL(resolve('assets/demos/mobile-first.html')).href,{waitUntil:'load'});
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+ const geometry=async label=>{
+  const g=await page.evaluate(()=>{const phone=document.getElementById('phone').getBoundingClientRect(),dialog=document.querySelector('dialog[open]'),controls=[...(dialog||document.getElementById('phone')).querySelectorAll('button,input,select,textarea')].filter(el=>el.getClientRects().length);return {overflow:document.documentElement.scrollWidth>innerWidth+1,dialog:!dialog||(()=>{const r=dialog.getBoundingClientRect();return r.left>=phone.left-1&&r.right<=phone.right+1&&r.bottom<=phone.bottom+1&&r.top>=phone.top-1;})(),small:controls.filter(el=>{const r=el.getBoundingClientRect();return r.width<43.9||r.height<43.9;}).map(el=>el.textContent||el.getAttribute('aria-label'))};});
+  assert.equal(g.overflow,false,label+' horizontal overflow');assert.equal(g.dialog,true,label+' sheet stays in phone');assert.deepEqual(g.small,[],label+' touch targets');
+ };
+ await geometry('models');assert.equal(await page.locator('#model-list .model-row').count(),5);
+ if([390,1440].includes(width))await page.screenshot({path:resolve(out,`${width}-${theme}-models.png`)});
+ await page.locator('#model-query').fill('nut');assert.equal(await page.locator('#model-list .model-row').count(),1,'Accent-insensitive part search');
+ await page.locator('#model-query').fill('nothing-here');assert.match(await page.locator('#model-list').textContent(),/Không tìm thấy/);
+ await page.locator('#model-query').fill('ban phim');await page.locator('[data-detail=keyboard]').click();
+ await page.locator('#model-link-action').waitFor();await page.evaluate(()=>{window.demoPhoto=document.querySelector('.detail-photo');});await page.locator('#model-link-action').click();await page.locator('#sheet').waitFor({state:'visible'});
+ await geometry('SKU picker');assert.equal(await page.locator('#sku-save').isDisabled(),true);
+ await page.locator('#sku-query').fill('ban phim');assert.equal(await page.locator('.sku-row').count(),4);
+ await page.locator('[data-sku=BP003]').click();await page.locator('[data-variant="Hồng ngọt"]').click();
+ assert.equal(await page.locator('#sku-save').isDisabled(),false);await geometry('selected SKU');
+ if([390,1440].includes(width))await page.screenshot({path:resolve(out,`${width}-${theme}-sku.png`)});
+ const contrast=await new AxeBuilder({page}).include('#sheet').withRules(['color-contrast']).analyze();assert.deepEqual(contrast.violations,[],`${width}/${theme} SKU contrast`);
+ if(width===390){
+  await page.locator('#sku-query').focus();await page.locator('#sku-query').evaluate(el=>{window.demoSkuSearch=el;el.setSelectionRange(3,3);});
+  await page.setViewportSize({width,height:500});await page.waitForTimeout(80);await geometry('keyboard-sized viewport');
+  assert.ok(await page.locator('.sheet-footer').evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+1),'Primary action remains above simulated keyboard');
+  assert.deepEqual(await page.evaluate(()=>[demoSkuSearch===document.activeElement,demoSkuSearch.selectionStart,demoSkuSearch.value]),[true,3,'ban phim'],'Viewport/keyboard change preserves search DOM, caret and selection');
+  await page.setViewportSize({width,height});await page.waitForTimeout(80);
+ }
+ await page.locator('#sku-save').click();await page.waitForFunction(()=>!document.getElementById('sheet').open);assert.match(await page.locator('#model-link-block').textContent(),/BP003/);
+ assert.equal(await page.evaluate(()=>demoPhoto===document.querySelector('.detail-photo')),true,'Mapping retains mounted detail and photo');
+ await page.goBack();await page.locator('#model-query').waitFor();assert.match(await page.locator('[data-detail=keyboard]').textContent(),/BP003/,'Back shows current shared demo state');
+ await page.locator('[data-detail=keyboard]').click();await page.locator('[data-action=order-model]').click();await page.locator('[data-action=order-next]').waitFor();
+ await page.locator('[data-qty="1"]').click();await page.locator('[data-action=order-next]').click();
+ await page.locator('#order-name').fill('tiến');assert.equal(await page.locator('#order-name').inputValue(),'TIẾN');await page.locator('#order-note').fill('Giữ màu gốc');
+ await page.locator('[data-action=order-back]').click();assert.equal(await page.locator('#order-qty').textContent(),'2');await page.locator('[data-action=order-next]').click();assert.equal(await page.locator('#order-name').inputValue(),'TIẾN');assert.equal(await page.locator('#order-note').inputValue(),'Giữ màu gốc');
+ assert.equal(await page.locator('[data-demo-color]').count(),3,'Keyboard keeps three color regions for two physical parts');
+ await page.evaluate(()=>window.demoName=document.getElementById('order-name'));
+ await page.locator('[data-demo-color="0"]').click();await page.locator('#color-query').fill('hong');assert.ok(await page.locator('.color-tile').count()>0,'Vietnamese swatch search');await geometry('color sheet');
+ if(width===390)await page.screenshot({path:resolve(out,`${width}-${theme}-colors.png`)});
+ await page.locator('.color-tile').first().click();assert.doesNotMatch(await page.locator('[data-demo-color="0"]').textContent(),/Màu gốc/);assert.equal(await page.evaluate(()=>demoName===document.getElementById('order-name')),true,'Color choice retains form DOM and draft');
+ await geometry('create');if([390,1440].includes(width))await page.screenshot({path:resolve(out,`${width}-${theme}-create.png`)});
+ await page.locator('#order-submit').click();await page.getByRole('heading',{name:'Đã tạo đơn minh họa'}).waitFor();
+ await page.locator('#nav [data-route=production]').click();await page.locator('[data-production=machines]').click();assert.equal(await page.locator('.machine').count(),4);await geometry('machines');
+ if(width===390)await page.screenshot({path:resolve(out,`${width}-${theme}-machines.png`)});
+ await page.locator('#nav [data-route=menu]').click();await page.locator('#menu-query').fill('nhua');assert.equal(await page.locator('.menu-item').count(),1);await page.locator('.menu-item').click();await geometry('menu info');await page.keyboard.press('Escape');assert.equal(await page.locator('#sheet').isVisible(),false);
+ await page.locator('#camera').click();assert.match(await page.locator('.mock-camera').textContent(),/không mở camera thật/);await page.locator('[data-action=mock-capture]').click();assert.match(await page.locator('#announcement').textContent(),/chưa tạo ảnh/);
+ await page.locator('#nav [data-route=home]').click();await page.getByRole('heading',{name:/Bắt đầu từ/}).waitFor();await geometry('home');
+ assert.deepEqual(external,[],'No outside service');assert.deepEqual(errors,[]);
+ results.push({width,height,theme,status:'PASS'});console.log(`PASS mobile prototype ${width}x${height}/${theme}: navigation, real reference photo, Vietnamese search, in-place SKU demo, browser Back, retained order/name/quantity, bounded sheet, touch, contrast and no production writes`);await context.close();
+}}finally{await browser.close();writeFileSync(resolve(out,base?'live-summary.json':process.env.QA_MOBILE_DEMO_WIDTH?'focused-summary.json':'summary.json'),JSON.stringify({status:results.length===profiles.length*2?'PASS':'FAIL',results},null,2));}
