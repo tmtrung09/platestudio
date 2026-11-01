@@ -62,14 +62,39 @@ Các màn hình đại diện:
   cần quyết định. Các trạng thái và số lượng đều là dữ liệu minh họa.
 - Menu: tìm chức năng và mở màn minh họa; camera hiển thị rõ là mô phỏng.
 
-## Thứ tự tích hợp sau khi chốt cách dùng
+## Phạm vi tích hợp toàn hệ thống
 
-1. Tách hợp đồng trạng thái/lệnh của một luồng, bắt đầu Model và Ghép SKU;
-   desktop tiếp tục sử dụng các lệnh hiện có.
-2. Gắn lớp mobile vào điều hướng chung, kiểm tra cùng ID và cùng cơ chế lưu bền.
-3. Hoàn thiện Tạo đơn và Sản xuất theo cùng primitive mobile đã được duyệt.
-4. Chuyển các trang còn lại theo nhóm tác vụ; kiểm tra hết đường vào, quyền,
-   nháp và chế độ offline trước khi bật chính thức cho nhóm đó.
+Phạm vi là mọi trang và luồng của Plate Studio trên điện thoại. Việc kiểm tra
+có thể chia theo nhóm nội bộ, nhưng không coi một trang chuyển đổi riêng lẻ là
+hoàn tất yêu cầu mobile của hệ thống.
+
+`assets/app/mobile-routes.js` là kiểm kê các trang và bề mặt chuyên biệt;
+`mobile-workspace.js` sở hữu cây trình bày mobile và `mobile-workspace.css` sở hữu
+hình học/bề mặt của cây đó. Widget dữ liệu, ô nhập và lệnh hiện hữu chỉ có một
+instance; chúng được đặt trong vùng thao tác mobile, không sao chép biểu mẫu
+desktop thành một bộ dữ liệu/lưu mới.
+
+Các nhóm phải được bao phủ cùng nhau:
+
+| Nhóm | Trang và luồng |
+|---|---|
+| Điều hướng | Trang chủ theo quyền, menu/tìm chức năng, đường vào và Back/Forward |
+| Thư viện | Model/sản phẩm ghép, Đơn, Plate, Project, Màu nhựa và báo cáo mẻ |
+| Nhận đơn | Tạo/sửa đơn nội bộ, nhận đơn custom, yêu cầu màu/tên/ảnh, QR và trang khách |
+| Sản xuất | Cần in, lịch máy/khay nhựa, máy/lịch sử mẻ, tiến độ bốn góc xem |
+| Hoàn thiện | QC/gia công/quẹt, bao bì, tạo phiếu giao và nhận hàng |
+| Bán hàng | Thống kê/khoảng ngày, Đồng bộ Kiot, công thức ghép SKU, lịch sử/sổ đối chiếu |
+| Quản trị | Tài khoản, phân quyền, thiết bị, dữ liệu/nhập xuất/sao lưu |
+| Bề mặt chung | Chi tiết, form tạo/sửa, bộ chọn, camera/ảnh chờ, thông báo và lỗi/retry |
+
+Bố cục tùy chỉnh mobile có phạm vi trình bày riêng, không ghi đè sở thích bố
+cục desktop. Các dữ liệu nghiệp vụ, nháp, ID và hàng chờ lưu vẫn dùng chung.
+
+Các khối có vòng đời riêng như thẻ đầu trang và thanh Sản xuất giữ vị trí mà
+renderer nguồn quản lý, tránh tạo trùng khi đổi quyền. Công cụ Cuộn lên đầu
+trang nằm trong Tùy chọn trang trên mobile để không che nút trong nội dung.
+Form dùng chiều cao vùng nhìn thực; khi bàn phím làm vùng nhìn quá thấp,
+trang nhận quyền cuộn thay cho một panel cố định bị cắt.
 
 Bản mẫu không chứng minh backend hoặc ứng dụng chính đã được chuyển đổi.
 Khi tích hợp, mỗi luồng phải qua kiểm tra tạo/sửa/lưu/tải lại/ACK/xung đột,

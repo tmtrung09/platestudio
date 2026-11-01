@@ -1815,6 +1815,8 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
   display:flex; align-items:center; justify-content:center; font-size:26px; color:var(--t3);
 }
 #ov-order-form .of-p-thumb img{width:100%;height:100%;object-fit:cover}
+#ov-order-form :is(.of-p-thumb,.of-cr-thumb)>svg{width:34px;height:34px;max-width:100%;fill:none;stroke:currentColor;stroke-width:1.7}
+#ov-order-form .of-cr-thumb>svg{width:26px;height:26px}
 #ov-order-form .of-p-name{font-size:12.5px;font-weight:600;line-height:1.28;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
 #ov-order-form .of-p-meta{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--t3)}
 #ov-order-form .of-p-meta .of-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(0,0,0,.12);flex-shrink:0}
@@ -4816,6 +4818,9 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <script src="assets/app/workshop-swipe-core.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe-store.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe.js?v=__DEPLOY_REVISION__" defer></script>
+<link rel="stylesheet" href="assets/app/mobile-workspace.css?v=__DEPLOY_REVISION__">
+<script src="assets/app/mobile-routes.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/app/mobile-workspace.js?v=__DEPLOY_REVISION__" defer></script>
 </head>
 <body>
 <div id="platedio-startup" role="status" aria-live="polite" aria-busy="true"><div class="ps-loading-composition"><div class="loading-art" aria-hidden="true">
@@ -8706,13 +8711,14 @@ const PAGE_LAYOUT_LABELS={
   inventory:{'inventory-page':'Danh sách cần in lại'}
 };
 let pageLayoutDrag={page:'',slot:''};
-function pageLayoutOwnerKey(){return String(currentUser?.id||currentUser?.email||'local').toLowerCase();}
+function pageLayoutOwnerKey(){const owner=String(currentUser?.id||currentUser?.email||'local').toLowerCase();return window.PlateMobileWorkspace?.active()?owner+':mobile':owner;}
 function allPageLayoutPrefs(){try{return JSON.parse(localStorage.getItem('ps_page_layout_prefs')||'{}')||{};}catch(_){return {};}}
 function pageLayoutPrefs(page){const all=allPageLayoutPrefs(),owner=pageLayoutOwnerKey();return {...(all[owner]?.[page]||{}),order:[...(all[owner]?.[page]?.order||[])],hidden:[...(all[owner]?.[page]?.hidden||[])]};}
 function savePageLayoutPrefs(page,prefs){const all=allPageLayoutPrefs(),owner=pageLayoutOwnerKey();all[owner]={...(all[owner]||{}),[page]:{order:[...(prefs.order||[])],hidden:[...(prefs.hidden||[])]}};try{localStorage.setItem('ps_page_layout_prefs',JSON.stringify(all));}catch(_){toast('Không thể lưu bố cục trên thiết bị này.');}}
 function pageLayoutContainer(page){
   const pageEl=document.getElementById('page-'+page);if(!pageEl)return null;
   const selector=PAGE_LAYOUT_ROOTS[page];let root=(selector?document.querySelector(selector):null)||pageEl;
+  if(window.PlateMobileWorkspace?.active()&&root===pageEl)root=pageEl.querySelector(':scope > .mws-workspace')||pageEl;
   if(root.children.length===1){const only=root.firstElementChild;if(only&&/^(MAIN|SECTION)$/i.test(only.tagName)&&only.children.length>1)root=only;}
   return root;
 }
@@ -10858,7 +10864,7 @@ function modelSignalPanelHTML(record){
   return `<header><b>${esc(record.model.name)}</b><button type="button" aria-label="Đóng bán và tồn" onclick="closeModelSignal(true)">×</button></header><div class="model-signal-kpis"><div><small>Đã bán · 30 ngày</small><strong>${modelSignalStatus(record,'sold')}</strong></div><div><small>Tồn Kiot · theo SKU</small><strong>${modelSignalStatus(record,'stock')}</strong></div><div><small>Tồn xưởng · sẵn giao</small><strong>${modelSignalStatus(record,'workshop')}</strong></div></div><div class="model-signal-panel-marks">${modelSignalBadges(record)}</div><p>${fmtDate(record.range.from)} – ${fmtDate(record.range.to)} · ${esc(note)}</p><details><summary>Tiêu chí & nguồn</summary>${record.low?`<p class="model-signal-explanation">${appIcon('warning')}Còn khoảng ${kiotInventoryNumber(record.coverDays)} ngày bán; nhu cầu 7 ngày ≈ ${record.weekNeed} model theo tốc độ gần đây.</p>`:''}${record.hot?`<p class="model-signal-explanation">${appIcon('sparkle')}Nhóm 20% sức bán cao nhất; ưu tiên nhịp bán 7 ngày gần đây${record.growth!==null?' · '+kiotInventoryNumber(record.growth)+'× kỳ trước':''}.</p>`:''}${record.canKiot?`<p>${stockAt?'Snapshot Kiot '+fmtDate(stockAt):'Kiot chưa có mốc snapshot'} · quy theo hệ số thành phần SKU.</p>`:''}${record.canWorkshop?`<p>Xưởng: thành phẩm còn lại sau QC/gửi hàng + tồn đầu kỳ đã kiểm; không cộng part đang in. ${record.workshopPartial?'Chưa tải đủ dữ liệu xưởng.':''}</p>`:''}</details>${record.pending||record.workshopPartial||modelSignalError?'<button type="button" class="btn btn-ghost btn-sm" onclick="refreshModelSignals(true)">Thử tải lại số liệu</button>':''}`;
 }
 function ensureModelSignalPanel(){let panel=document.getElementById('model-signal-panel');if(panel)return panel;panel=document.createElement('aside');panel.id='model-signal-panel';panel.className='model-signal-panel';panel.hidden=true;panel.setAttribute('aria-label','Bán và tồn model');panel.onmouseenter=()=>clearTimeout(modelSignalCloseTimer);panel.onmouseleave=()=>scheduleCloseModelSignal();panel.onfocusout=()=>setTimeout(()=>{if(!panel.contains(document.activeElement))scheduleCloseModelSignal();},0);panel.addEventListener('toggle',positionModelSignal,true);document.body.append(panel);return panel;}
-function positionModelSignal(){const panel=document.getElementById('model-signal-panel'),card=modelSignalActive;if(!panel||panel.hidden||!card?.isConnected)return;const box=card.getBoundingClientRect(),mobile=matchMedia('(max-width:860px)').matches;
+function positionModelSignal(){const panel=document.getElementById('model-signal-panel'),card=modelSignalActive;if(!panel||panel.hidden||!card?.isConnected)return;const box=card.getBoundingClientRect(),mobile=window.PlateMobileWorkspace?.active()??matchMedia('(max-width:860px)').matches;
   panel.classList.toggle('is-touch',mobile);if(mobile){panel.style.left='8px';panel.style.top='';panel.style.bottom='calc(84px + env(safe-area-inset-bottom))';return;}
   panel.style.bottom='';const width=panel.offsetWidth,height=panel.offsetHeight;let left=box.right+10;if(left+width>innerWidth-8)left=box.left-width-10;left=Math.max(8,Math.min(left,innerWidth-width-8));panel.style.left=left+'px';panel.style.top=Math.max(8,Math.min(box.top,innerHeight-height-8))+'px';
 }
@@ -11003,6 +11009,7 @@ function ensureModelCategoryDrawer(){
   document.getElementById('model-category-drawer-backdrop')?.remove();
 }
 function toggleModelCategoryDrawer(force){
+  if(window.PlateMobileWorkspace?.active()&&window.PlateMobileWorkspace.toggleCategories(force))return;
   ensureModelCategoryDrawer();
   const page=document.getElementById('page-models');
   const isMobile=window.matchMedia('(max-width: 860px)').matches;
@@ -17030,8 +17037,8 @@ function modelTotalQty(modelId){ return cart.filter(c=>c.kind!=='product'&&c.mod
 function defaultProductLine(productId){return cart.find(line=>line.kind==='product'&&line.productId===productId);}
 function productTotalQty(productId){return cart.filter(line=>line.kind==='product'&&line.productId===productId).reduce((sum,line)=>sum+line.qty,0);}
 function thumbHTML(m){
-  if (m?.images?.length) return `<img src="${esc(m.images[0])}" onerror="this.parentElement.textContent='📦'"/>`;
-  return '📦';
+  if (m?.images?.length) return `<img src="${esc(m.images[0])}" alt="" loading="lazy" onerror="this.parentElement.innerHTML=appIcon('model')"/>`;
+  return appIcon('model');
 }
 
 /* ═══════════ RENDER: CATALOG ═══════════ */
@@ -17412,6 +17419,7 @@ function toggleAdv(){
 
 /* ═══════════ MOBILE SHEET (kéo grabber để đóng, giống bottom sheet trên iOS) ═══════════ */
 function openSheet(){
+  if(window.PlateMobileWorkspace?.setOrderStep('requirements'))return;
   haptic(6);
   const pane = document.getElementById('of-cart-pane');
   pane.style.transform = '';
@@ -17419,6 +17427,7 @@ function openSheet(){
   document.getElementById('of-mob-bar').classList.add('of-hide');
 }
 function closeSheet(){
+  if(window.PlateMobileWorkspace?.setOrderStep('catalog'))return;
   const pane = document.getElementById('of-cart-pane');
   pane.style.transform = '';
   pane.classList.remove('of-open','of-dragging');

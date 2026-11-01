@@ -103,7 +103,10 @@ try {
     await page.locator('#order-filter-project').click();
     const menu=await page.locator('#order-filter-menu').boundingBox();
     assert.ok(menu.x>=0&&menu.x+menu.width<=width&&menu.y>=0&&menu.y+menu.height<=height,'Menu stays in viewport');
-    await page.locator('#order-smart-search').click();
+    // A short mobile viewport can legitimately place the popover over search.
+    // Exercise outside dismissal through a point outside its measured bounds.
+    const outside=[[1,1],[width-1,1],[1,height-1],[width-1,height-1]].find(([x,y])=>x<menu.x||x>menu.x+menu.width||y<menu.y||y>menu.y+menu.height);
+    assert.ok(outside,'Popover leaves an outside dismissal target');await page.mouse.click(...outside);
     assert.equal(await page.locator('#order-filter-menu').isVisible(),false,'Outside click closes menu');
     assert.ok(await page.evaluate(()=>window.qaOrderSnapshot===JSON.stringify(orders)),'Filtering never changes source orders');
     await page.locator('#order-filter-clear').click();

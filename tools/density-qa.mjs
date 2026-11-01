@@ -35,7 +35,7 @@ try {
       const metrics = await page.evaluate(() => {
         const host = document.querySelector('.page.active');
         const heading = host.querySelector('.page-heading');
-        const h1 = heading?.querySelector('h1');
+        const h1 = heading?.querySelector('.mws-identity [role="heading"]') || heading?.querySelector('h1');
         const css = el => getComputedStyle(el);
         return {
           title: h1 ? parseFloat(css(h1).fontSize) : null,

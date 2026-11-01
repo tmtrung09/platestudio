@@ -84,6 +84,11 @@
   mobile. Hai lớp dùng chung dữ liệu, định danh, quyền, nghiệp vụ, lưu/đồng bộ và
   nhận diện; không nhân đôi hệ thống xử lý. Kiểm tra từng luồng thực trên điện
   thoại, gồm bàn phím, vùng an toàn, cuộn, nút chính và nháp, cùng hồi quy desktop.
+- Phạm vi mobile bao phủ toàn bộ hệ thống: điều hướng, mọi trang chức năng,
+  biểu mẫu tạo/sửa, chi tiết, bộ chọn, camera, thông báo, tài khoản và các trang
+  custom/khách hàng. Không coi chuyển riêng một trang hoặc vá CSS vài màn là
+  hoàn tất. Kiểm kê đường vào và quyền của từng luồng; cách trình bày có thể
+  khác theo công việc nhưng phải giữ cùng nhận diện, trạng thái và thao tác.
 
 - Xanh lá của màn đăng nhập là màu chủ đạo và điểm nhấn nhận diện, không phủ
   xanh toàn bộ nền, thẻ và control. Trang làm việc phối nền trung tính với

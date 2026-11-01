@@ -313,8 +313,9 @@ const results = await page.evaluate(async () => {
   delete PAGE_LAYOUT_ROOTS['layout-qa'];
   layoutSandbox.remove();
   check('Bỏ thanh nổi 5 bước, giữ tab công đoạn', !document.getElementById('fulfillment-flow-float') && document.querySelectorAll('.fulfillment-process-tab').length === 8);
-  const scrollTopStyle = getComputedStyle(document.getElementById('global-scroll-top'));
-  check('Nút lên đầu trang chừa khoảng với điều hướng', Number.parseFloat(scrollTopStyle.bottom) >= 100, scrollTopStyle.bottom);
+  const scrollTopButton=document.getElementById('global-scroll-top'),scrollTopStyle=getComputedStyle(scrollTopButton);
+  const mobileScrollTool=window.PlateMobileWorkspace?.active();
+  check('Nút lên đầu trang không che nội dung hoặc điều hướng',mobileScrollTool?scrollTopButton.parentElement.id==='page-options-panel'&&scrollTopStyle.position==='static':Number.parseFloat(scrollTopStyle.bottom)>=100,mobileScrollTool?'Tùy chọn trang':scrollTopStyle.bottom);
   /* Every navigation button must resolve to one precise business anchor, never
      the generic workshop wrapper. Add only missing anchors to this isolated
      fixture so the mapping is checked even when that queue happens to be empty. */

@@ -28,7 +28,8 @@ try{
    await page.evaluate(theme=>document.documentElement.setAttribute('data-theme',theme),theme);
    const errors=await page.evaluate(width=>{
     const nav=document.getElementById('mobile-nav'),s=getComputedStyle(nav),errors=[];
-    if(width>860)return s.display==='none'?[]:['Desktop navigation is not hidden'];
+    const mobile=window.PlateMobileWorkspace?.active()??width<=860;
+    if(!mobile)return s.display==='none'?[]:['Desktop navigation is not hidden'];
     const r=nav.getBoundingClientRect();
     if(r.height>82||r.left<0||r.right>innerWidth)errors.push('Dock bounds');
     // Forest navigation owns an opaque surface so content cannot reduce contrast.

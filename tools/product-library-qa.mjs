@@ -44,6 +44,7 @@ try {
     assert.equal(await page.locator('#btn-add-to-model-category').isVisible(),false);
     assert.equal(await page.locator('[data-model-category="__composite_products__"] .category-drop-actions').count(),0);
     await category('all');
+    if(!await page.locator('#btn-add-product').isVisible())await page.locator('#page-models .mws-tools>summary').click();
     await page.locator('#btn-add-product').click();
     assert.equal(await page.locator('.product-component-row').count(),0,'No arbitrary default model is added');
     assert.equal(await page.locator('#product-save').isDisabled(),true);
@@ -112,6 +113,7 @@ try {
     await page.locator('#product-name').fill('Bộ C mới');
     await page.locator('.product-editor button').filter({hasText:'Lưu sản phẩm'}).click();
     assert.match(await page.locator('#model-grid').innerText(),/Bộ C mới/);
+    if(!await page.locator('#btn-select-models').isVisible())await page.locator('#page-models .mws-tools>summary').click();
     await page.locator('#btn-select-models').click();
     assert.equal(await page.locator('.product-library-card input[type="checkbox"]').count(),0,'Product must not enter model-only bulk deletion');
     await page.locator('#btn-select-models').click();
