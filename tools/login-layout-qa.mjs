@@ -32,6 +32,9 @@ try{for(const [width,height] of [[320,740],[390,844],[600,800],[768,950],[844,39
  await page.goto(base+'plate-studio.html',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.PlatedioStartup?.state==='ready');await page.evaluate(()=>showAuth());
  await checkSurfaces(page,`login ${width}/${theme}`,'#auth-ov');
+ const invalidContrast=await page.locator('#auth-email').evaluate(async el=>{
+  el.setAttribute('aria-invalid','true');getComputedStyle(el).backgroundColor;await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));const s=getComputedStyle(el),lum=c=>c.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>n/255).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4).reduce((v,n,i)=>v+n*[.2126,.7152,.0722][i],0),a=lum(s.color),b=lum(s.backgroundColor);el.removeAttribute('aria-invalid');return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+ });assert.ok(invalidContrast>=4.5,`${width}/${theme}: invalid account fields keep readable text on the forest login surface (${invalidContrast})`);
  for(const mode of ['signin','signup']){
   const button=page.locator(`.la-seg-btn[data-mode="${mode}"]`);await button.click();
   await page.locator('.la-seg-thumb').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished.catch(()=>{}))));

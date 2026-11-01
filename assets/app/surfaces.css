@@ -13,7 +13,7 @@ html[data-studio-surface="custom"]{
 }
 html[data-studio-surface] #auth-ov{
   --surface-panel:var(--s);--surface-control:var(--s2);--surface-hover:var(--s);
-  --surface-selected:var(--s);--surface-accent:var(--ac);--surface-ink:var(--t);
+  --surface-selected:var(--s);--surface-accent:var(--ac);--surface-ink:var(--t);--surface-error:#4c3332;
 }
 html[data-studio-surface="custom"] .sidebar{--surface-accent:#d4e7a6}
 html[data-studio-surface] .ws-card{--surface-control:#dcebdc;--surface-hover:#c9dfc7;--surface-accent:#285b43}
