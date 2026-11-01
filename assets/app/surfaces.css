@@ -68,6 +68,7 @@ html[data-studio-surface] .ws-card{--surface-control:#dcebdc;--surface-hover:#c9
     .model-card.selected,.model-card.is-selected,.model-card.sel,.model-card[aria-selected="true"],
     .plate-card.selected,.order-card.selected,.batch-report-card.selected,.batch-report-card.is-selected,
     .pp-picker-card.selected,.kv-map-card.selected,.delivery-product-card.is-selected,.pm-selected,
+    .model-sku-row.selected,.model-sku-variants .selected,
     .br-color-picker-option.selected,.sb-nav-item.active,.model-category-card.active,
     .variant-options button[aria-pressed="true"],.delivery-switch label:has(input:checked)
   ){background-color:var(--surface-selected)!important}

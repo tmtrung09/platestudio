@@ -523,6 +523,12 @@
   ACK server. Ghi theo SKU có revision và tombstone, không để snapshot danh mục
   từ phiên cũ ghi đè ghép mới. Xung đột giữ bản chờ để người dùng đối chiếu.
   Guard: `tools/kiot-mapping-qa.mjs`, `tools/kiot-mapping-sql-qa.mjs`.
+- Nút Ghép SKU tại thông tin model chưa ghép mở hộp tìm SKU ngay trên trang Model,
+  giữ model, ảnh và vị trí đang xem; không chuyển sang trang Đồng bộ KiotViet.
+  Tìm không dấu theo mã/tên/nhóm, có ảnh, số kết quả và trạng thái rỗng; chọn SKU
+  và biến thể rõ ràng rồi bấm Ghép. Không ghi đè công thức SKU đã ghép; dùng chung
+  cơ chế lưu bền, quyền, revision và trạng thái đồng bộ hiện có. Đóng/Escape trả
+  focus; lỗi lưu giữ lựa chọn. Guard: `tools/model-sku-picker-qa.mjs`.
 - Rà soát gồm nhập file/Chrome/bù ngày/cache/archive/sync/lịch sử/lọc/biểu đồ/in
   lại. Phân biệt lỗi tái hiện với live chưa xác minh; dữ liệu QA cô lập, không
   sửa/xóa live để thử. QA giao diện không chứng minh dữ liệu bán an toàn.
