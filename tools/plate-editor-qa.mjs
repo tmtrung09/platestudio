@@ -33,13 +33,13 @@ try{
   await checkLayout();assert.equal(await page.getByRole('button',{name:'Lưu plate'}).isDisabled(),true);
   await page.locator('.pp-edit-dlg').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));
   const tabStyle=await page.locator('[data-plan-tab="all"]').evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect(),active=el.parentElement.querySelector('[aria-selected="true"]'),track=getComputedStyle(el.parentElement),activeStyle=getComputedStyle(active);return {border:s.borderTopWidth,image:s.backgroundImage,bg:s.backgroundColor,font:parseFloat(s.fontSize),height:r.height,track:track.backgroundColor,activeBg:activeStyle.backgroundColor,activeShadow:activeStyle.boxShadow};});
-  assert.equal(tabStyle.border,'0px');assert.equal(tabStyle.image,'none');assert.notEqual(tabStyle.track,'rgba(0, 0, 0, 0)');assert.notEqual(tabStyle.activeBg,'rgba(0, 0, 0, 0)');assert.notEqual(tabStyle.activeShadow,'none');assert.ok(tabStyle.font<=12&&tabStyle.height>=33.5&&tabStyle.height<=36,`Segmented tabs stay compact while distinct: ${JSON.stringify(tabStyle)}`);
+  assert.equal(tabStyle.border,'0px');assert.equal(tabStyle.image,'none');assert.notEqual(tabStyle.track,'rgba(0, 0, 0, 0)');assert.notEqual(tabStyle.activeBg,'rgba(0, 0, 0, 0)');assert.notEqual(tabStyle.activeBg,tabStyle.track,'The active tab uses a distinct fill');assert.equal(tabStyle.activeShadow,'none','Tabs have no persistent shadow frame');assert.ok(tabStyle.font<=12&&tabStyle.height>=33.5&&tabStyle.height<=36,`Segmented tabs stay compact while distinct: ${JSON.stringify(tabStyle)}`);
   assert.equal(await page.locator('.pp-need-tabs').evaluate(el=>{const top=el.firstElementChild.offsetTop;return [...el.children].every(child=>child.offsetTop===top);}),true,'Tabs never wrap into a second bulky row');
   await page.evaluate(()=>{window.editorNodes={shell:document.querySelector('.pp-edit-dlg'),search:document.querySelector('.pp-picker-search input'),grid:document.querySelector('.pp-picker-grid'),cards:[...document.querySelectorAll('.pp-picker-card')]};});
   await page.getByRole('searchbox',{name:'Tìm model, part hoặc biến thể'}).fill('Skeleton');
   const searchFocus=await page.locator('.pp-picker-search input').evaluate(input=>{
    const field=getComputedStyle(input),shell=getComputedStyle(input.parentElement);
-   return {outline:field.outlineStyle,shadow:field.boxShadow,outerRing:shell.boxShadow!=='none'};
+   return {outline:field.outlineStyle,shadow:field.boxShadow,outerRing:shell.outlineStyle==='solid'&&parseFloat(shell.outlineWidth)>=2};
   });
   assert.deepEqual(searchFocus,{outline:'none',shadow:'none',outerRing:true},'Composite search has exactly one shell focus ring');
   if(width===390||width===1440)await page.locator('.pp-picker-search').screenshot({path:`qa-results/plate-editor/focus-${width}-${theme}.png`});

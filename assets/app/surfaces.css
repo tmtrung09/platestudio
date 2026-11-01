@@ -1,0 +1,122 @@
+/* Shared surface hierarchy. Borders are not the resting boundary of controls or panels. */
+html[data-studio-surface="app"]{
+  --surface-page:var(--bg);--surface-panel:var(--s);--surface-control:var(--s2);
+  --surface-hover:var(--s3);--surface-selected:var(--acb);--surface-accent:var(--ac);
+  --surface-error:var(--reb);--surface-ink:var(--t);--surface-muted:var(--t2);
+}
+html[data-studio-surface="custom"]{
+  --surface-page:var(--bg);--surface-panel:var(--paper);--surface-control:var(--soft);
+  --surface-hover:color-mix(in srgb,var(--soft) 80%,var(--muted));
+  --surface-selected:var(--green-soft);--surface-accent:var(--green);
+  --surface-error:color-mix(in srgb,var(--danger) 13%,var(--paper));
+  --surface-ink:var(--ink);--surface-muted:var(--muted);
+}
+html[data-studio-surface] #auth-ov{
+  --surface-panel:var(--s);--surface-control:var(--s2);--surface-hover:var(--s);
+  --surface-selected:var(--s);--surface-accent:var(--ac);--surface-ink:var(--t);
+}
+html[data-studio-surface="custom"] .sidebar{--surface-accent:#d4e7a6}
+html[data-studio-surface] .ws-card{--surface-control:#dcebdc;--surface-hover:#c9dfc7;--surface-accent:#285b43}
+/* Layered important rules supersede legacy inline-style sheets without erasing
+   native check/range/color affordances, SVG artwork, spinners or progress tracks. */
+@layer platedio-surfaces{
+  html[data-studio-surface] :where(
+    button,.btn,[role="button"],[role="tab"],
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select,fieldset,dialog,
+    .card,.panel,.empty,.stat,.dlg,.more-sheet,.page-options-panel,.system-notification-panel,
+    section,article,header,footer,nav,aside,
+    [class$="-card"],[class*="-card "],[class$="-panel"],[class*="-panel "],
+    [class$="-row"],[class*="-row "],[class$="-toolbar"],[class*="-toolbar "],
+    [class$="-pane"],[class*="-pane "],[class$="-menu"],[class*="-menu "],
+    .ftag,.f-chip,.filter-pill,.badge,.tag-chip,.pill,.cpick,.cpick-sw,.cpick-brand,.cpick-custom,
+    .br-color-picker-toggle,.filament-menu,.br-color-picker-search,.filament-tile-swatch,
+    .page-smart-search,.sb-search input,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.pp-picker-search,.br-manual-model-input,
+    .sb,.sb-brand,.sb-utility,.hd,.sect-hd,.sticky-bar,.model-library-toolbar,.page-info-card,
+    .page-layout-row,.img-zone,.img-th,.attachment,.variant-photo,.product-art,.model-thumb,.model-img,.part-thumb,.mv-editor-box,.part-row,.eo-item,
+    .cbox,.cdrop,.cprev,.order-row,.selected-line,.part-colors,.product-actions,.qty,
+    .review-bar,.workflow-steps,.summary,.summary-visual,.qr-code,.qr-link,.customer-order,.hero-status,
+    .customer-hero,.customer-footer,.sidebar-bottom,.money-row.total,.review-block,
+    .delivery-switch label,.variant-options,.order-tabs,.status-line,.demo-controls,.upload-label,
+    .action-dialog-context,.eo-progress-note,.ws-stepper,.ws-options-panel,.ws-pending,
+    .ws-copy #ws-progress,.ws-empty,.ws-dialog,.printer-voice-settings,
+    .guide-tour-card,.guide-tour-tip,.guide-tour-count,.media-upload-guard,.notification-card,
+    .system-notification-popup,.kiot-sync-popup,.pm-detail,.pm-printer,.pm-history-row,
+    .of-p-card,.of-cr,.of-stepper,.of-cq,.order-stepper,.of-cart-qty,.pp-qty,
+    .sales-panel,.inventory-panel,.dashboard-section,.dashboard-role-kpi,.dashboard-role-lane,
+    .dashboard-focus,.dashboard-lane,.dashboard-lane-row,.dashboard-role-chip,
+    .data-sect,.drop-import,.fulfillment-command-bar,.fulfillment-flow-guide,.delivery-category-section,
+    .kv-sync-schedule,.kv-kpi,.kv-upload,.access-permission,.of-account-actor,.of-cart-empty,
+    .pm-machine,.pm-run,.pm-fact,.pm-model-link,.pm-issue,.pm-link-form,.pm-connection,
+    .cdot,.br-color-picker-dot,.filament-color-preview,.la-segmented,#mobile-nav,.mnav-lens,
+    .main,.shell,table,thead,tbody,tr,th,td,hr,.surface-data-row,.delivery-relay-photo,
+    #fulfillment-workshop-flow,.step>span,.custom-order-tag,.cpick-sw-dot,.part-dot,
+    #of-cart-pane,#of-cart-sheet-hd,#of-mob-bar,.model-detail-column>div,.md-section-title,.dlg-title,.dlg-actions
+  ){border:0!important;box-shadow:none!important;outline:0!important}
+  html[data-studio-surface] :where(input[type="checkbox"],input[type="radio"]){box-shadow:none!important}
+  html[data-studio-surface] :where(
+    .btn-ghost,.btn.secondary,.filter-pill,.filter-btn,.ftag,.f-chip,.cpick-brand,
+    .br-color-picker-toggle,.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input,
+    .part-row,.eo-item,.mv-editor-box,.action-dialog-context,.part-colors,.upload-label,
+    .variant-options button,.delivery-switch label,.ws-options>summary
+  ){background-color:var(--surface-control)!important}
+  html[data-studio-surface] :where(.part-row,.eo-item,.mv-editor-box,.part-colors) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select,.br-color-picker-toggle){background-color:var(--surface-panel)!important}
+  html[data-studio-surface] :where(.filament-menu,.page-options-panel,.system-notification-panel,.br-part-picker-menu){background-color:color-mix(in srgb,var(--surface-panel) 92%,var(--surface-ink))!important}
+  html[data-studio-surface] :where(.filament-menu .br-color-picker-option,.filament-menu .br-color-picker-search){background-color:var(--surface-panel)!important}
+  html[data-studio-surface] :where(.btn-ghost,.btn.secondary,.filter-pill,.filter-btn,.ftag,.f-chip,.br-color-picker-toggle,.filament-menu .br-color-picker-option):where(:hover:not(:disabled)){background-color:var(--surface-hover)!important}
+  html[data-studio-surface] :where(
+    .filter-pill.active,.filter-btn.active,.ftag.active,.f-chip.active,.cpick-brand.on,.cpick-sw.on,
+    .model-card.selected,.model-card.is-selected,.model-card.sel,.model-card[aria-selected="true"],
+    .plate-card.selected,.order-card.selected,.batch-report-card.selected,.batch-report-card.is-selected,
+    .pp-picker-card.selected,.kv-map-card.selected,.delivery-product-card.is-selected,.pm-selected,
+    .br-color-picker-option.selected,.sb-nav-item.active,.model-category-card.active,
+    .variant-options button[aria-pressed="true"],.delivery-switch label:has(input:checked)
+  ){background-color:var(--surface-selected)!important}
+  html[data-studio-surface] :where(.filter-pill.active,.filter-btn.active,.ftag.active,.f-chip.active,.cpick-brand.on,.cpick-sw.on){color:var(--surface-ink)!important}
+  html[data-studio-surface] .cpick-sw.on .cpick-sw-check{color:var(--primary-ink,var(--surface-ink))!important}
+  html[data-studio-surface] :where(.access-permission:has(input:checked),.model-category-card.active .model-category-info,.delivery-product-card.is-selected .delivery-product-info){background-color:var(--surface-selected)!important}
+  html[data-studio-surface] .model-card.is-selected .model-body{background-color:var(--surface-selected)!important}
+  html[data-studio-surface] .sb-nav-item.active::before{display:none!important}
+  html[data-studio-surface] .dashboard-lane::before{display:none!important}
+  html[data-studio-surface] #mobile-nav::before{border:0!important;box-shadow:none!important}
+  html[data-studio-surface] #mobile-nav::after{display:none!important}
+  html[data-studio-surface] .step[aria-current="step"]{background-color:var(--surface-selected)!important;border-radius:10px}
+  html[data-studio-surface] .step[aria-current="step"]::after{display:none!important}
+  html[data-studio-surface] .batch-report-select-box::before{border:0!important;box-shadow:none!important}
+  html[data-studio-surface] :where(.drop-import,.img-zone,.cdrop).drag{background-color:var(--surface-selected)!important}
+  html[data-studio-surface] :where(.rule,hr){background:transparent!important}
+  html[data-studio-surface] :where(input,textarea,select):is([aria-invalid="true"],:user-invalid){background-color:var(--surface-error)!important}
+  html[data-studio-surface] :where(button,.btn,a,input,textarea,select,summary,[tabindex]):focus-visible{
+    outline:2px solid var(--surface-accent)!important;outline-offset:3px!important;
+  }
+  html[data-studio-surface] :where(.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input):focus-within{
+    outline:2px solid var(--surface-accent)!important;outline-offset:3px!important;
+  }
+  html[data-studio-surface] :where(.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input) :where(input,button){
+    background:transparent!important;outline:0!important;box-shadow:none!important;
+  }
+  html[data-studio-surface] :where(.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input) :where(input,button):focus-visible{outline:0!important}
+  html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty){border:0!important;box-shadow:none!important;background-color:var(--surface-control)!important}
+  html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty):hover{background-color:var(--surface-hover)!important}
+  html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty):focus-within{outline:2px solid var(--surface-accent)!important;outline-offset:3px!important}
+  html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty) :where(input,button){background:transparent!important;box-shadow:none!important}
+  html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty) :where(input,button):focus-visible{outline:0!important}
+  html[data-studio-surface] .btn-icon-only{
+    background:transparent!important;border:0!important;box-shadow:none!important;
+  }
+  @media(forced-colors:active){
+    html[data-studio-surface] :where(button,.btn,input,textarea,select,dialog,.card,.panel,[role="option"]){outline:1px solid ButtonText!important;outline-offset:-1px!important}
+    html[data-studio-surface] :where(button,.btn,input,textarea,select):focus-visible{outline:3px solid Highlight!important;outline-offset:2px!important}
+    html[data-studio-surface] :where(.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input):focus-within{outline:3px solid Highlight!important}
+    html[data-studio-surface] :where(.page-smart-search,.more-search,.search-box,.search-wrap,.of-cat-search,.of-search,.br-color-picker-search,.pp-picker-search,.br-manual-model-input) :where(input,button):focus-visible{outline:0!important}
+    html[data-studio-surface] :where(.cdot,.br-color-picker-dot,.filament-tile-swatch,.part-dot,.cpick-sw-dot){forced-color-adjust:none}
+    html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty):focus-within{outline:3px solid Highlight!important}
+    html[data-studio-surface] :where(.pp-quantity-control,.of-p-stepper,.of-cr-stepper,.qty,.ws-stepper,.progress-quantity,.br-plan-stepper,.pp-qty,.of-stepper,.of-cq,.order-stepper,.of-cart-qty) :where(input,button):focus-visible{outline:0!important}
+  }
+}
+/* Keep existing primary/status colors and stepper-specific fills authoritative. */
+html[data-studio-surface="app"] :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),textarea,select),
+html[data-studio-surface="custom"] :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),textarea,select){
+  background-color:var(--surface-control)!important;
+}
+html[data-studio-surface="custom"] :is(.panel,.selected-line,.summary,.qr-card,dialog){background-color:var(--surface-panel)}
+html[data-studio-surface] :is(.part-colors,.mv-editor-box,.action-dialog-context){border-radius:12px}

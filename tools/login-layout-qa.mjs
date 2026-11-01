@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {existsSync,mkdirSync,readFileSync} from 'node:fs';
 import {extname,resolve,sep} from 'node:path';
+import {checkSurfaces} from './surface-contract-qa.mjs';
 const root=resolve('.'),out=resolve('qa-results/login-layout'),base='https://login-layout.test/';
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
@@ -30,6 +31,7 @@ try{for(const [width,height] of [[320,740],[390,844],[600,800],[768,950],[844,39
  });
  await page.goto(base+'plate-studio.html',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.PlatedioStartup?.state==='ready');await page.evaluate(()=>showAuth());
+ await checkSurfaces(page,`login ${width}/${theme}`,'#auth-ov');
  for(const mode of ['signin','signup']){
   const button=page.locator(`.la-seg-btn[data-mode="${mode}"]`);await button.click();
   await page.locator('.la-seg-thumb').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished.catch(()=>{}))));

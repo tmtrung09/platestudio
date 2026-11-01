@@ -6,10 +6,13 @@ import {pathToFileURL} from 'node:url';
 import {mkdirSync} from 'node:fs';
 import {assertPrinterAlerts} from './printer-alerts-probe.mjs';
 import {assertPrinterMotion} from './printer-motion-probe.mjs';
+import {checkSurfaces} from './surface-contract-qa.mjs';
 const out=resolve('qa-results/printers');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
-const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1099,height:900},{width:1100,height:900},{width:1280,height:900}];
+const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1099,height:900},{width:1100,height:900},{width:1280,height:900}].filter(p=>!process.env.QA_PRINTER_WIDTH||p.width===Number(process.env.QA_PRINTER_WIDTH));
+assert.ok(profiles.length,'Requested printer viewport exists');
 async function assertUniformCards(page){
+ await checkSurfaces(page,'native printer cards/details','#page-printer-monitor');
  assert.ok(await page.evaluate(()=>{const cards=[...document.querySelectorAll('.pm-machine')];return cards.every((card,i)=>{const r=card.getBoundingClientRect(),peer=cards[i-i%2+1]?.getBoundingClientRect();return (!peer||Math.abs(r.height-peer.height)<1)&&card.scrollWidth<=card.clientWidth+1;});}),'Paired printer cards have equal height despite different names, files and issues');
  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.pm-machine')].every(card=>{const media=card.querySelector('.pm-media'),machine=card.querySelector('.pm-machine-image').getBoundingClientRect(),job=card.querySelector('.pm-job-image').getBoundingClientRect();if(!media)return false;const style=getComputedStyle(media),gap=parseFloat(style.gap);return style.gridTemplateColumns.split(' ').length>1?Math.abs(machine.top-job.top)<1&&Math.abs(job.left-machine.right-gap)<1:Math.abs(machine.left-job.left)<1&&Math.abs(job.top-machine.bottom-gap)<1;})),'Machine and batch images remain a compact top-aligned group instead of spreading with card height');
 }
@@ -42,6 +45,7 @@ async function seed(page,theme,alertDevices={}){await page.evaluate(({theme,aler
  },{theme,alertDevices});await page.waitForFunction(()=>pmReads>0&&document.querySelectorAll('.pm-machine').length===6);}
 try{for(const profile of profiles)for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},hasTouch:!!profile.touch,isMobile:!!profile.touch,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));await context.route(/^https?:/,route=>route.abort());
+ page.setDefaultTimeout(30000);
  await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await waitForAppReady(page);await page.waitForFunction(()=>!!window.PlatePrinterMonitor);await seed(page,theme);
  assert.equal(await page.locator('.page.active .production-mode').count(),3);assert.equal(await page.locator('#sidebar [data-sidebar-page="production"].active').count(),1);

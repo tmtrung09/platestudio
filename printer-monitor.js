@@ -796,7 +796,13 @@
     renderDetailMotion();
     const panel=document.querySelector('#printer-monitor-page .pm-detail');
     panel?.querySelector('h2')?.focus({preventScroll:true});
-    if(innerWidth<1100)panel?.scrollIntoView({block:'start',behavior:'instant'});
+    if(innerWidth<1100&&panel){
+      const scroller=document.querySelector('.pg-content'),nav=document.querySelector('.page.active .production-navigation-slot');
+      if(scroller){
+        const top=Math.max(scroller.getBoundingClientRect().top,nav?.getBoundingClientRect().bottom||0)+14;
+        scroller.scrollBy({top:panel.getBoundingClientRect().top-top,behavior:'instant'});
+      }else panel.scrollIntoView({block:'start',behavior:'instant'});
+    }
   }
   function closeDetail() {
     const selected=detailSelection;

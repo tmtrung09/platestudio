@@ -85,6 +85,14 @@
   rõ theo ngữ cảnh. Giữ màu nhựa và ảnh thật; kiểm tra tương phản và mobile.
   Guard: `tools/forest-theme-qa.mjs`.
 
+- Nút, ô nhập/bộ chọn, thẻ, panel, thanh công cụ, menu và hộp thoại trên toàn
+  Plate Studio phân biệt bằng các lớp màu nền, không dùng border hoặc bóng inset
+  làm đường bao thường trực. Mục đang chọn có nền nhấn và nhãn/dấu chọn phù hợp;
+  lỗi và disabled vẫn nhận diện được. Giữ focus bàn phím rõ, một vòng cho control
+  ghép, chế độ tương phản cao, màu dữ liệu/ảnh thật và đồ họa trạng thái; icon phụ
+  vẫn không có nền. Áp dụng cả Tạo đơn custom và trang khách, hai theme và mobile.
+  Guard: `tools/surface-qa.mjs` và các QA họ thành phần liên quan.
+
 - Giao diện toàn hệ thống gọn: tiêu đề, khoảng cách trang, thẻ, thống kê và điều
   hướng nhất quán trên desktop/mobile, light/dark. Không zoom/transform:scale toàn
   trang; giữ tỷ lệ ảnh, vùng cuộn, dữ liệu và hành vi lưu/sync. Ô nhập mobile giữ

@@ -4802,6 +4802,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <link rel="stylesheet" href="assets/app/forest-theme.css?v=__DEPLOY_REVISION__">
 <link rel="stylesheet" href="assets/app/workshop-swipe.css?v=__DEPLOY_REVISION__">
 <link rel="stylesheet" href="assets/app/filament-picker.css?v=__DEPLOY_REVISION__">
+<link rel="stylesheet" href="assets/app/surfaces.css?v=__DEPLOY_REVISION__">
 <script src="assets/app/workshop-swipe-core.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe-store.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe.js?v=__DEPLOY_REVISION__" defer></script>
@@ -9393,10 +9394,10 @@ function renderFilaments() {
       ${fs.map(f => {
         const selected = selectedFilIds.has(f.id);
         return `
-        <div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--b);${selected?'background:var(--acb);border-radius:6px;padding-left:4px;padding-right:4px':''}"
+        <div class="surface-data-row" style="display:flex;align-items:center;gap:7px;padding:5px 0;${selected?'background:var(--acb);border-radius:6px;padding-left:4px;padding-right:4px':''}"
           onclick="${filSelectionMode ? `toggleFilSelected('${f.id}')` : ''}" ${filSelectionMode?'style="cursor:pointer"':''}>
           ${filSelectionMode ? `<input type="checkbox" ${selected?'checked':''} onclick="event.stopPropagation();toggleFilSelected('${f.id}')" style="accent-color:var(--ac);flex-shrink:0"/>` : ''}
-          <div style="width:20px;height:20px;border-radius:50%;background:${f.hex};border:1.5px solid rgba(0,0,0,.12);flex-shrink:0"></div>
+          <div class="filament-color-preview" style="width:20px;height:20px;border-radius:50%;background:${f.hex};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:500">${esc(f.name)}</div>
             ${f.nameVi||f.code?`<div style="font-size:11px;color:var(--t2);overflow-wrap:anywhere">${esc([f.nameVi!==f.name?f.nameVi:'',f.originalName!==f.name?f.originalName:'',f.code].filter(Boolean).join(' · '))}</div>`:''}
@@ -10966,7 +10967,7 @@ function renderModels() {
 
     const selected = selectedModelIds.has(m.id);
     const signal=modelSignalIndex.get(m.id);
-    return `<div class="model-card${signal?.low?' has-low-stock':''}${signal?.hot?' has-hot-sales':''}" data-model-id="${esc(m.id)}" tabindex="0" aria-label="${esc(m.name)}" draggable="true" onmouseenter="this.classList.add('show-details');if(matchMedia('(hover:hover)').matches)showModelSignal(this)" onmouseleave="modelSignalDismissed=null;this.classList.remove('show-details');scheduleCloseModelSignal()" onfocus="modelSignalHoverPaused=false;modelSignalDismissed=null;showModelSignal(this)" onblur="scheduleCloseModelSignal()" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();this.click()}" ondragstart="closeModelSignal();startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="closeModelSignal();${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}" style="${selected?'outline:2px solid var(--ac);outline-offset:1px':''}">
+    return `<div class="model-card${selected?' is-selected':''}${signal?.low?' has-low-stock':''}${signal?.hot?' has-hot-sales':''}" data-model-id="${esc(m.id)}" tabindex="0" aria-label="${esc(m.name)}" draggable="true" onmouseenter="this.classList.add('show-details');if(matchMedia('(hover:hover)').matches)showModelSignal(this)" onmouseleave="modelSignalDismissed=null;this.classList.remove('show-details');scheduleCloseModelSignal()" onfocus="modelSignalHoverPaused=false;modelSignalDismissed=null;showModelSignal(this)" onblur="scheduleCloseModelSignal()" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();this.click()}" ondragstart="closeModelSignal();startModelCategoryDrag(event, '${m.id}')" ondragend="endModelCategoryDrag(event)" onclick="closeModelSignal();${modelSelectionMode ? `toggleModelSelected('${m.id}')` : `viewModel('${m.id}')`}">
       ${imgHTML}
       ${modelSelectionMode?'':modelSignalButtonHTML(m)}
       <div class="model-body">
@@ -11974,7 +11975,7 @@ function renderDashboard() {
   });
   const cgs=Object.values(grp).sort((a,b)=>b.total-a.total);
   dc.innerHTML = cgs.length
-    ? cgs.map(g=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--b)">
+    ? cgs.map(g=>`<div class="surface-data-row" style="display:flex;align-items:center;gap:7px;padding:5px 0">
         <div class="cdot" style="background:${g.f.hex};width:13px;height:13px"></div>
         <span style="font-size:13px;flex:1">${esc(g.f.brand+' '+g.f.name)}</span>
         <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t3)">

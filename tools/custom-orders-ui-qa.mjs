@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve,extname,sep} from 'node:path';
+import {checkSurfaces} from './surface-contract-qa.mjs';
 const root=resolve('.'),out=resolve('qa-results/custom-orders-live'),base='https://custom-orders.test/';mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
 const issues=[];let checks=0;
@@ -51,7 +52,7 @@ async function setup(width=390,theme='light',largeCatalog=false){
  if(theme==='dark')await page.locator('#theme-toggle').click();
  return {page,context};
 }
-async function noOverflow(page,label){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,label);checks++;}
+async function noOverflow(page,label){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,label);await checkSurfaces(page,label);checks++;}
 async function chooseParts(page){
  for(const [index,query,id] of [[0,'xanh reu','green'],[1,'kem','cream']]){
   await page.locator('.part-colors .br-color-picker-toggle').nth(index).click();const menu=page.locator('body>.filament-menu');
