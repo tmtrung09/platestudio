@@ -8,6 +8,7 @@
   const client = supabase.createClient('https://mapmfngikmumvghapqcu.supabase.co','sb_publishable_V2iHcQ5i7l-kR8rEADgCKg_8bz9BiBJ',{auth:{persistSession:!PUBLIC,autoRefreshToken:!PUBLIC,detectSessionInUrl:false}});
   let workspace=null,session=null,scope='',booted=false,writeChain=Promise.resolve(),catalogSequence=0,catalogTotal=0,orderTotal=0,refreshTimer,searchTimer;
   const modelIndex=new Map();
+  const orderIndex=new Map();
   const app = document.getElementById('app');
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -85,7 +86,8 @@
     return cached&&(!line?.model||cached.revision===line.model.revision)?cached:line?.model;
   };
   const variantName = line => getModel(line)?.variants.find(variant => variant.id === line.variantId)?.name || '';
-  const selectedOrder = () => state.orders.find(order => order.token === state.selectedToken);
+  const findOrder = id => state.orders.find(order=>order.token===id)||orderIndex.get(id);
+  const selectedOrder = () => findOrder(state.selectedToken);
   const priority = () => `<span class="pill priority">${icon('spark')}Custom · Ưu tiên</span>`;
   function route(view, token) {
     if(view==='login'){location.href='plate-studio.html?next=custom-orders';return;}
@@ -102,7 +104,7 @@
     $('#theme-toggle').setAttribute('aria-label', `Chuyển giao diện ${state.theme==='light'?'tối':'sáng'}`);
     [$('#detail-dialog'),$('#share-dialog'),$('#confirm-dialog')].forEach(dialog=>{if(dialog.open)dialog.close();});
     app.innerHTML = state.view === 'customer' ? customerHTML() : staffHTML();
-    if(!PUBLIC&&state.offline&&$('.workspace-top'))$('.workspace-top').insertAdjacentHTML('afterend','<p class="offline-note" role="status">Ngoại tuyến · đang dùng nháp và model đã lưu trên thiết bị. Quyền và dữ liệu sẽ được kiểm tra lại khi có kết nối.</p>');
+    if(!PUBLIC&&state.offline&&$('.workspace-top'))$('.workspace-top').insertAdjacentHTML('afterend','<p class="offline-note" role="status">Ngoại tuyến · đang dùng nháp, model và đơn đã nhận trên thiết bị. Tiến độ và quyền sẽ được kiểm tra lại khi có kết nối.</p>');
     document.title = state.view==='customer' ? `Đơn ${selectedOrder()?.id || ''} · Bánh Mì × platedio` : 'platedio · Đơn custom';
     if(state.view==='staff' && state.area==='create') {renderStep();renderSummary();}
     if(state.view==='staff' && state.area==='orders') renderOrderList();
@@ -130,6 +132,7 @@
     return;
   }
   function paintCatalog(query) {
+    if(!$('#catalog')||!$('#result-count'))return;
     const filtered=models.filter(model=>normalized(`${model.name} ${model.sku} ${model.category} ${model.variants.map(v=>v.name).join(' ')}`).includes(normalized(query.trim())));
     $('#result-count').textContent=`${filtered.length} kết quả`;
     $('#catalog').innerHTML=filtered.length?filtered.map(model=>`<button class="model-card" data-model="${esc(model.id)}" aria-label="Chọn ${esc(model.name)}">${productArt(model)}<span class="model-info"><b>${esc(model.name)}</b><small>${esc(model.sku)}</small><span class="pick-label">${model.variants.length?`${model.variants.length} biến thể`:'Chọn model'}${icon('plus')}</span></span></button>`).join(''):'<div class="empty">Không tìm thấy model.<br>Thử tên không dấu hoặc mã Kiot khác.</div>';
@@ -229,26 +232,28 @@
     return `<section class="panel success-panel"><div class="success-symbol">${icon('check')}</div><span class="eyebrow">ĐƠN ĐÃ ĐƯỢC MÁY CHỦ XÁC NHẬN</span><h1>Đã ghi nhận mong muốn của khách.</h1><p>Đơn đã vào luồng sản xuất với nhãn Custom và mức ưu tiên. Đưa mã QR cho khách để theo dõi đơn.</p><div class="success-layout"><div>${priority()}${orderDetails(order)}<div class="form-actions"><button class="btn secondary" data-action="create">${icon('plus')}Nhận đơn tiếp</button><button class="btn text" data-action="orders">Xem đơn cửa hàng${icon('arrow')}</button></div></div>${qrHTML(order)}</div></section>`;
   }
   function ordersHTML() {
-    return `<div class="order-toolbar"><label class="search-box">${icon('search')}<span class="sr-only">Tìm đơn custom</span><input id="order-search" type="search" placeholder="Tên khách, mã đơn, model…" value="${esc(state.query)}"></label><button class="btn primary" data-action="create">${icon('plus')}Nhận đơn</button></div><nav class="order-tabs" aria-label="Lọc đơn"><button data-filter="all" aria-pressed="${state.filter==='all'}">Tất cả</button><button data-filter="active" aria-pressed="${state.filter==='active'}">Đang thực hiện</button><button data-filter="ready" aria-pressed="${state.filter==='ready'}">Sẵn sàng</button><button data-filter="done" aria-pressed="${state.filter==='done'}">Hoàn tất</button></nav><div class="result-label"><span id="order-count" role="status"></span><span>Tất cả nhân viên cửa hàng</span></div><div class="order-list" id="order-list"></div><button class="btn text full" data-action="more-orders" id="more-orders" hidden>Xem thêm đơn</button>`;
+    return `<div class="order-toolbar"><label class="search-box">${icon('search')}<span class="sr-only">Tìm đơn custom</span><input id="order-search" type="search" placeholder="Tên khách, mã đơn, model…" value="${esc(state.query)}"></label><button class="btn primary" data-action="create">${icon('plus')}Nhận đơn</button></div><nav class="order-tabs" aria-label="Lọc đơn"><button data-filter="all" aria-pressed="${state.filter==='all'}">Tất cả</button><button data-filter="active" aria-pressed="${state.filter==='active'}">Đang thực hiện</button><button data-filter="ready" aria-pressed="${state.filter==='ready'}">Sẵn sàng</button><button data-filter="done" aria-pressed="${state.filter==='done'}">Hoàn tất</button></nav><div class="result-label"><span id="order-count" role="status"></span><span id="order-sync" role="status"></span></div><div class="order-list" id="order-list"></div><button class="btn text full" data-action="more-orders" id="more-orders" hidden>Xem thêm đơn</button>`;
   }
   function renderOrderList() {
+    const sync=$('#order-sync');if(sync)sync.textContent=state.offline?'Bản đã nhận trên thiết bị · chờ cập nhật':listStatus==='loading'?'Đang cập nhật từ cửa hàng…':listStatus==='error'?'Chưa cập nhật · đang giữ dữ liệu trước đó':orderCacheError?'Đã đọc từ cửa hàng · chưa giữ được trên máy':'Đã cập nhật từ cửa hàng';
+    const more=$('#more-orders');if(more){more.hidden=state.offline||state.orders.length>=orderTotal;more.disabled=listStatus==='loading';}
     if(state.offline&&!state.orders.length){$('#order-count').textContent='Chưa đọc được danh sách từ cửa hàng';$('#order-list').innerHTML='<div class="panel empty">Đang ngoại tuyến. Đơn đã gửi sẽ xuất hiện khi có kết nối.</div>';return;}
     const orders=state.orders.filter(order=>(state.filter==='all'||!order.cancelled&&(state.filter==='active'&&order.stage<3||state.filter==='ready'&&order.stage===3||state.filter==='done'&&order.stage===4))&&normalized(`${order.id} ${order.customer} ${order.lines.map(line=>`${getModel(line)?.name} ${getModel(line)?.sku} ${variantName(line)}`).join(' ')}`).includes(normalized(state.query)));
     $('#order-count').textContent=`${orders.length} đơn custom${orderTotal>state.orders.length?' · đã tải '+state.orders.length+'/'+orderTotal:''}`;
-    const html=orders.length?orders.map(order=>`<button class="order-row" data-order="${order.token}">${productArt(getModel(order.lines[0]))}<span class="order-row-main"><b>${esc(order.customer)} · ${esc(order.id)}</b><small>${esc(getModel(order.lines[0])?.name)}${order.lines.length>1?` +${order.lines.length-1} sản phẩm`:''} · Tạo bởi ${esc(order.creator)}</small></span><span class="order-row-meta"><span class="pill priority">${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</span><span>Hẹn ${dateLabel(order.due)}</span></span>${icon('chevron')}</button>`).join(''):'<div class="panel empty">Không có đơn trong lựa chọn này.</div>';
+    const html=orders.length?orders.map(order=>`<button class="order-row" data-order="${order.token}">${productArt(getModel(order.lines[0]))}<span class="order-row-main"><b>${esc(order.customer)} · ${esc(order.id)}</b><small>${esc(getModel(order.lines[0])?.name)}${order.lines.length>1?` +${order.lines.length-1} sản phẩm`:''} · Tạo bởi ${esc(order.creator)}</small></span><span class="order-row-meta"><span class="pill priority">${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</span><span>Hẹn ${dateLabel(order.due)}</span></span>${icon('chevron')}</button>`).join(''):`<div class="panel empty">${listStatus==='loading'?'Đang đọc danh sách từ cửa hàng…':listStatus==='error'?'Chưa đọc được danh sách. Bấm “Làm mới tiến độ” để thử lại.':'Không có đơn trong lựa chọn này.'}</div>`;
     const host=$('#order-list'),previous=[...host.children],byKey=new Map(previous.map(node=>[node.dataset.order,node])),focus=document.activeElement?.dataset.order;
     const template=document.createElement('template');template.innerHTML=html;
     const nodes=[...template.content.children].map(node=>{const old=byKey.get(node.dataset.order);return old?.outerHTML===node.outerHTML?old:node;});
     if(previous.length!==nodes.length||nodes.some((node,index)=>node!==previous[index])){host.replaceChildren(...nodes);if(focus)[...host.children].find(node=>node.dataset.order===focus)?.focus({preventScroll:true});}
   }
   function openOrder(token) {
-    const order=state.orders.find(order=>order.token===token);if(!order)return;
+    const order=findOrder(token);if(!order)return;
     state.selectedToken=token;const dialog=$('#detail-dialog');
     dialog.innerHTML=`<div class="dialog-header"><div><span class="eyebrow">ĐƠN CUSTOM · CHI TIẾT</span><h2 id="dialog-title">${esc(order.id)} · ${esc(order.customer)}</h2></div><button class="btn-icon-only" data-close-dialog aria-label="Đóng chi tiết đơn">${icon('close')}</button></div><div class="status-line">${icon('clock')}${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</div>${orderDetails(order)}<div class="detail-bottom">${!order.cancelled?`<button class="btn secondary" data-share="${order.token}">${icon('qr')}QR dành cho khách</button><button class="btn primary" data-track="${order.token}">Xem trang khách${icon('arrow')}</button>`:''}${canManage()&&order.stage===3&&!order.cancelled?`<button class="btn secondary" data-complete="${order.id}">Xác nhận khách nhận hàng</button>`:''}</div>`;
     dialog.showModal();
   }
   async function showQR(token) {
-    const order=state.orders.find(order=>order.token===token);if(!order)return;
+    const order=findOrder(token);if(!order)return;
     try {await ensureTracking(order);}catch(error){showError(error);return;}
     $('#detail-dialog').close();const dialog=$('#share-dialog');
     dialog.innerHTML=`<div class="dialog-header"><h2 id="share-title">Gửi khách hành trình đơn</h2><button class="btn-icon-only" data-close-dialog aria-label="Đóng mã QR">${icon('close')}</button></div>${qrHTML(order)}`;
@@ -357,28 +362,62 @@
   async function signImages(order){
     const refs=(order.lines||[]).flatMap(line=>line.images||[]).filter(image=>image.path&&!image.src);
     if(!refs.length)return order;
-    const {data,error}=await client.storage.from('custom-order-media').createSignedUrls(refs.map(image=>image.path),300);
-    if(!error)for(const image of refs)image.src=data?.find(row=>row.path===image.path)?.signedUrl||'';
+    try{const {data,error}=await client.storage.from('custom-order-media').createSignedUrls(refs.map(image=>image.path),300);
+      if(!error)for(const image of refs)image.src=data?.find(row=>row.path===image.path)?.signedUrl||'';
+    }catch{/* Reference images are optional; they cannot undo an acknowledged order/read. */}
     return order;
   }
-  let listSequence=0;
+  function paintOrderImages(order,host){
+    const images=(order.lines||[]).flatMap(line=>line.images||[]);
+    host?.querySelectorAll('.attachment img').forEach((node,index)=>{const src=images[index]?.src;if(src&&node.getAttribute('src')!==src){node.src=src;node.hidden=false;node.parentElement.classList.remove('image-failed');}});
+  }
+  let listSequence=0,listWindow=60,listQuery='',listStatus='loading',orderCacheError=false;
+  async function rememberOrders(rows,owner=scope,observedAt=Date.now()){
+    if(owner!==scope)return;
+    for(const row of rows)orderIndex.set(row.id,row);
+    // Signed URLs expire and tracking tokens are fetched on demand. Cache only
+    // the authoritative order projection, independently of the draft/outbox.
+    const cached=structuredClone(rows);
+    for(const row of cached){delete row.trackingToken;for(const line of row.lines||[])for(const image of line.images||[])if(image.path)delete image.src;}
+    try{await CustomOrderStore.saveOrders(owner,cached,observedAt);if(owner===scope)orderCacheError=false;}
+    catch{if(owner===scope)orderCacheError=true;}
+  }
   async function loadOrders(more=false){
     if(state.offline){if($('#order-list'))renderOrderList();return;}
-    const generation=++listSequence,owner=scope;
-    const result=await rpc('custom_order_list',{w:workspace.workspace_id,off:more?state.orders.length:0,q:state.area==='orders'?state.query:''});
-    const rows=await Promise.all(result.orders.filter(Boolean).map(async order=>({...await signImages(order),token:order.id})));
-    if(owner!==scope||generation!==listSequence)return;
-    const previous=new Map(state.orders.map(order=>[order.id,order]));
-    for(const row of rows)row.trackingToken=previous.get(row.id)?.trackingToken;
-    state.orders=more?state.orders.concat(rows):rows;orderTotal=result.total;
-    if(state.area==='orders'&&$('#order-list')){renderOrderList();$('#more-orders').hidden=state.orders.length>=orderTotal;}
+    const generation=++listSequence,owner=scope,observedAt=Date.now(),query=state.area==='orders'?state.query:'';
+    if(query!==listQuery){listQuery=query;listWindow=60;}
+    if(more)listWindow=Math.max(listWindow,state.orders.length+60);
+    const target=listWindow;listStatus='loading';if($('#order-list'))renderOrderList();
+    try{
+      const fetched=[];let total=0,offset=0;
+      // Refresh the entire expanded window, rather than collapsing it to page 1.
+      do{
+        const result=await rpc('custom_order_list',{w:workspace.workspace_id,off:offset,q:query});
+        if(owner!==scope||generation!==listSequence)return;
+        if(!Array.isArray(result?.orders)||!Number.isFinite(result.total))throw Error('Phản hồi danh sách đơn chưa đầy đủ. Thử làm mới tiến độ.');
+        total=result.total;fetched.push(...result.orders.filter(Boolean));offset+=result.orders.length;
+        if(!result.orders.length)break;
+      }while(offset<target&&offset<total);
+      const rows=[...new Map(fetched.map(order=>[order.id,{...order,token:order.id,trackingToken:orderIndex.get(order.id)?.trackingToken}])).values()];
+      if(owner!==scope||generation!==listSequence)return;
+      state.orders=rows;orderTotal=total;listStatus='ready';
+      await rememberOrders(rows,owner,observedAt);
+      if(owner!==scope||generation!==listSequence)return;
+      if(state.area==='orders'&&$('#order-list'))renderOrderList();
+      // Image signing is a separate enrichment step; slow/broken Storage must
+      // never block a confirmed receipt or make the list appear empty.
+      void Promise.all(rows.map(signImages)).then(()=>{if(owner!==scope||generation!==listSequence)return;const selected=selectedOrder();if(selected){paintOrderImages(selected,$('#detail-dialog'));paintOrderImages(selected,$('.success-panel'));}});
+    }catch(error){
+      if(owner!==scope||generation!==listSequence)return;
+      listStatus='error';if($('#order-list'))renderOrderList();throw error;
+    }
   }
   async function ensureTracking(order){
     if(!order.trackingToken){const token=await rpc('custom_order_tracking',{w:workspace.workspace_id,oid:order.id});if(!token)throw Error('Đơn này không có link theo dõi đang hoạt động.');order.trackingToken=token;}
     return order.trackingToken;
   }
   async function openCustomer(id){
-    if(PUBLIC)return;const order=state.orders.find(row=>row.token===id);if(!order)return;
+    if(PUBLIC)return;const order=findOrder(id);if(!order)return;
     try{await ensureTracking(order);location.href=trackingURL(order);}catch(error){showError(error);}
   }
   function pendingHTML(){return `<section class="panel"><div class="section-top"><div><span class="eyebrow">ĐƠN CHỜ MÁY CHỦ XÁC NHẬN</span><h1>${saving?'Đang gửi yêu cầu của khách…':'Đơn đang được giữ trên thiết bị.'}</h1></div>${icon('clock')}</div><p class="muted">${saving?'Ảnh và thông tin đang được gửi. Bạn có thể giữ trang mở để nhận mã QR.':'Khi có mạng, trang sẽ tự gửi lại cùng mã yêu cầu để tránh tạo trùng. Chưa có xác nhận từ máy chủ.'}</p>${orderDetails(state.pending?.draft||state.draft)}<div class="form-actions"><button class="btn secondary" data-action="orders">Xem đơn đã tạo</button><button class="btn primary" data-action="retry" ${saving?'disabled':''}>Thử gửi lại${icon('arrow')}</button></div></section>`;}
@@ -416,11 +455,14 @@
       if(scope!==owner)return;
       const result=await rpc('commit_custom_order',{w:workspace.workspace_id,request:entry.requestId,p:payload});
       if(scope!==owner)return;
-      const order=await signImages(result.order);if(scope!==owner)return;
+      const order=result?.order;if(!order?.id||!result.token)throw Error('Chưa nhận đủ xác nhận của máy chủ. Đang giữ yêu cầu để thử lại cùng mã.');
+      ++listSequence;listStatus='ready';
       order.token=order.id;order.trackingToken=result.token;
       state.orders=[order,...state.orders.filter(row=>row.id!==order.id)];orderTotal=Math.max(orderTotal,state.orders.length);state.selectedToken=order.token;
+      await rememberOrders([order],owner);if(scope!==owner)return;
       state.pending=null;state.draft=freshDraft();state.step=0;state.area='success';await flushSave();
-      toast('Máy chủ đã xác nhận tạo đơn. Mã QR đã sẵn sàng.');
+      toast(orderCacheError?'Máy chủ đã xác nhận tạo đơn. Chưa giữ được bản xem trên thiết bị; có thể đọc lại khi có mạng.':'Máy chủ đã xác nhận tạo đơn. Mã QR đã sẵn sàng.');
+      void signImages(order).then(()=>{if(scope===owner&&state.area==='success'&&state.selectedToken===order.id)paintOrderImages(order,$('.success-panel'));});
     }catch(error){
       if(scope!==owner)return;
       if(['40001','P0001','22P02','22008'].includes(error.code)){
@@ -456,6 +498,8 @@
         scope=`${workspace.workspace_id}:${session.user.id}`;let saved;
         try{saved=await CustomOrderStore.load(scope);}catch{storageAvailable=false;}
         if(saved?.draft&&Array.isArray(saved.draft.lines)){state.draft=saved.draft;state.pending=saved.pending;state.step=Math.min(2,Math.max(0,saved.step||0));state.theme=saved.theme==='dark'?'dark':'light';window.fils=saved.fils||[];models=saved.models||[];models.forEach(model=>modelIndex.set(model.id,model));}
+        try{const cached=await CustomOrderStore.loadOrders(scope);state.orders=cached.map(order=>({...order,token:order.id})).sort((a,b)=>String(b.created).localeCompare(String(a.created))||a.id.localeCompare(b.id));state.orders.forEach(order=>orderIndex.set(order.id,order));orderTotal=state.orders.length;listStatus='cache';}
+        catch{orderCacheError=true;}
       };
       const identity=await CustomOrderStore.load('identity:'+session.user.id).catch(()=>null);
       if(identity?.workspace){workspace=identity.workspace;state.offline=true;await restore();state.view='staff';state.area=state.pending?'pending':canCreate()?'create':'orders';booted=true;render();}
@@ -472,7 +516,7 @@
       };
       try{await reconnect();}catch(error){if(error.code==='42501'||!booted)throw error;state.offline=true;render();}
       const initialOrder=new URLSearchParams(location.search).get('order');
-      if(initialOrder){let order=state.orders.find(row=>row.id===initialOrder);if(!order){order=await rpc('custom_order_get',{w:workspace.workspace_id,oid:initialOrder});if(order){order=await signImages(order);order.token=order.id;state.orders.push(order);}}if(order)openOrder(order.token);}
+      if(initialOrder){let order=state.offline?findOrder(initialOrder):state.orders.find(row=>row.id===initialOrder);if(!order&&!state.offline){order=await rpc('custom_order_get',{w:workspace.workspace_id,oid:initialOrder});if(order){order=await signImages(order);order.token=order.id;state.orders.push(order);await rememberOrders([order]);}}if(order)openOrder(order.token);}
       client.auth.onAuthStateChange((event,next)=>{if(event==='SIGNED_OUT'||next&&next.user.id!==session.user.id){scope='';session=null;clearInterval(refreshTimer);location.replace('plate-studio.html?next=custom-orders');}else if(next)session=next;});
       const resume=()=>{paintKeyboards();if(state.offline)void reconnect().catch(error=>{if(error.code==='42501'){app.innerHTML='<main class="broken-link"><h1>Quyền truy cập đã thay đổi.</h1><p>Liên hệ chủ xưởng để được cấp lại quyền.</p></main>';}else showError(error);});else{void drainPending();void loadOrders().catch(()=>{});}};
       refreshTimer=setInterval(()=>{if(!document.hidden)resume();},30000);
@@ -498,16 +542,16 @@
     if(button.dataset.filter){state.filter=button.dataset.filter;$('.order-tabs').querySelectorAll('button').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));renderOrderList();return;}
     if(button.dataset.order){openOrder(button.dataset.order);return;}
     if(button.dataset.share){showQR(button.dataset.share);return;}
-    if(button.dataset.complete){const id=button.dataset.complete;if(!confirm('Xác nhận khách đã nhận đủ sản phẩm của đơn này?'))return;try{const order=await rpc('complete_custom_order',{w:workspace.workspace_id,oid:id});const index=state.orders.findIndex(row=>row.id===id);state.orders[index]={...state.orders[index],...order};openOrder(id);toast('Đã xác nhận khách nhận hàng.');}catch(error){showError(error);}return;}
+    if(button.dataset.complete){const id=button.dataset.complete,owner=scope;if(!confirm('Xác nhận khách đã nhận đủ sản phẩm của đơn này?'))return;try{const order={...findOrder(id),...await rpc('complete_custom_order',{w:workspace.workspace_id,oid:id})};if(owner!==scope)return;++listSequence;listStatus='ready';const index=state.orders.findIndex(row=>row.id===id);if(index>=0)state.orders[index]=order;await rememberOrders([order],owner);if(owner!==scope)return;openOrder(id);toast('Đã xác nhận khách nhận hàng.');}catch(error){if(owner===scope)showError(error);}return;}
     if(button.dataset.track){route('customer',button.dataset.track);window.scrollTo({top:0,behavior:'instant'});return;}
-    if(button.dataset.copy){const order=state.orders.find(order=>order.token===button.dataset.copy);try {await navigator.clipboard.writeText(trackingURL(order));toast('Đã sao chép đường dẫn theo dõi đơn.');}catch{toast('Chưa sao chép được. Chọn đường dẫn dưới mã QR để chép thủ công.');}return;}
+    if(button.dataset.copy){const order=findOrder(button.dataset.copy);try {await navigator.clipboard.writeText(trackingURL(order));toast('Đã sao chép đường dẫn theo dõi đơn.');}catch{toast('Chưa sao chép được. Chọn đường dẫn dưới mã QR để chép thủ công.');}return;}
     switch(button.dataset.action){
       case 'add-variant': {const modelId=button.dataset.chosenModel,variantId=button.dataset.variantId;$('#detail-dialog').close();addLine(modelId,variantId);break;}
-      case 'orders':state.area='orders';state.query='';route('staff');void loadOrders();break;
+      case 'orders':state.area='orders';state.query='';route('staff');void loadOrders().catch(showError);break;
       case 'create':if(!canCreate()){toast('Tài khoản chỉ có quyền xem đơn custom.');break;}state.area=state.pending?'pending':'create';route('staff');break;
       case 'retry':void drainPending();break;
       case 'reload':location.reload();break;
-      case 'refresh':void loadOrders().then(()=>toast('Đã cập nhật tiến độ.')).catch(showError);break;
+      case 'refresh':if(state.offline){toast('Đang ngoại tuyến. Giữ bản đã nhận trên thiết bị và tự cập nhật khi kết nối lại.');break;}void loadOrders().then(()=>toast('Đã cập nhật tiến độ.')).catch(showError);break;
       case 'more-models':void loadCatalog($('#model-search')?.value||'',true).catch(showError);break;
       case 'more-orders':void loadOrders(true).catch(showError);break;
       case 'public-retry':void loadPublic();break;
@@ -566,7 +610,7 @@
     const input=event.target;
     if(input.dataset.keyboardText){updateKeyboardText(input,event.isComposing);return;}
     if(input.id==='model-search'){renderCatalog(input.value);return;}
-    if(input.id==='order-search'){state.query=input.value;clearTimeout(searchTimer);searchTimer=setTimeout(()=>void loadOrders().catch(showError),180);return;}
+    if(input.id==='order-search'){state.query=input.value;++listSequence;clearTimeout(searchTimer);searchTimer=setTimeout(()=>void loadOrders().catch(showError),180);return;}
     if(input.dataset.note){const line=state.draft.lines.find(line=>line.id===input.dataset.note);line.note=input.value;state.draft.checked=false;persist();return;}
     if(input.dataset.quantity){const line=state.draft.lines.find(line=>line.id===input.dataset.quantity);line.qty=Number(input.value);state.draft.checked=false;persist();renderSummary();return;}
     if(input.dataset.field){state.draft[input.dataset.field]=input.value;state.draft.checked=false;persist();renderSummary();if($('#form-error'))$('#form-error').hidden=true;}

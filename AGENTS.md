@@ -521,6 +521,11 @@
   giai đoạn, hỗ trợ mobile/light/dark/reduced-motion và được duyệt trong demo.
   Link chỉ mở dữ liệu dành cho khách của đúng đơn, không cấp quyền xưởng; liên
   hệ cửa hàng qua https://www.facebook.com/banhmi.176huynhcuong.
+- Danh sách đơn custom giữ các trang đã mở khi cập nhật nền; phản hồi cũ không
+  làm mất đơn vừa được server xác nhận. Cache đơn đã nhận tách khỏi nháp/hàng
+  chờ theo xưởng + tài khoản; ngoại tuyến hoặc lỗi đọc giữ bản trước và nêu rõ
+  chưa cập nhật, không báo danh sách rỗng hay lưu cloud từ cache. Lỗi ảnh tham
+  khảo không làm mất xác nhận đơn. Guard: `tools/custom-orders-persistence-qa.mjs`.
 
 ## KiotViet, bán hàng và tồn kho
 
