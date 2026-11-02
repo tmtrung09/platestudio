@@ -34,6 +34,8 @@
     modal = null,
     detailSelection = null,
     detailReturnScroll = 0;
+  let updatePending=false,updateTimer=0,pollFailures=0,pollRetryAt=0,streamReconnectTimer=0,streamFailures=0;
+  const UPDATE_READ_MS=1000;
   const detailRequests = new Set(), detailErrors = new Map();
   const requiredTypes = new Set(['printer_finished','printer_paused','printer_failed','printer_stopped','printer_error']);
   let requiredAlerts=new Map(), alertOverlay=null, alertFocus=null, alertRelease=null, alertLockPending=false, alertBusy=false, alertStoreDirty=true;
@@ -51,6 +53,7 @@
     allowed:
       !!currentUser &&
       !!sb &&
+      cloudReady && !loadingCloud &&
       (canAccess("progress.view") || canAccess("plates.plan")) &&
       !STAFF_REPORT_MODE &&
       !STAFF_RECEIVING_MODE,
@@ -373,18 +376,27 @@
     renderPin();
     pumpRequiredAlerts();
   }
-  async function poll({ initial = false, force = false } = {}) {
+  function scheduleUpdateRead(){
+    updatePending=true;
+    if(updateTimer||polling||!scope||!context().allowed)return;
+    const gen=generation;
+    updateTimer=setTimeout(()=>{updateTimer=0;if(gen===generation&&scope&&context().allowed)void poll({force:true,automatic:true});},Math.max(0,UPDATE_READ_MS-(Date.now()-lastPoll),pollRetryAt-Date.now()));
+  }
+  async function poll({ initial = false, force = false, automatic = false } = {}) {
+    if(!context().allowed)return;
     const cameraPending=typeof batchCameraHasPending==='function'&&batchCameraHasPending();
     if(!initial&&cameraPending&&Date.now()-lastPoll<15000)return;
     if (
       polling ||
       !scope ||
-      (!force && Date.now() - lastPoll < (connected ? 5000 : 60000))
+      ((!force||automatic)&&Date.now()<pollRetryAt) ||
+      (!force && Date.now() - lastPoll < (connected ? (streaming?15000:5000) : 60000))
     )
       return;
     const gen = generation;
     polling = true;
     lastPoll = Date.now();
+    clearTimeout(updateTimer);updateTimer=0;updatePending=false;
     try {
       let data = await request({
         action: "read",
@@ -399,25 +411,28 @@
         if (gen !== generation) return;
         receive(data);
       }
-      if (!streaming && connected) startStream(gen);
+      pollFailures=0;pollRetryAt=0;
+      if (!streaming && !streamReconnectTimer && connected) startStream(gen);
       if (!connected) {
         message = "Chưa kết nối Bambu Cloud";
         render();
       }
     } catch (error) {
       if (gen === generation) {
+        pollFailures++;pollRetryAt=Date.now()+Math.min(60000,5000*2**Math.min(pollFailures-1,4));
         message = error.message;
         render();
       }
     } finally {
-      if (gen === generation) polling = false;
+      if (gen === generation){polling = false;if(updatePending)scheduleUpdateRead();}
     }
   }
   async function startStream(gen) {
-    if (streaming || !connected || !navigator.onLine) return;
+    if (streaming || streamReconnectTimer || !connected || !navigator.onLine || !context().allowed) return;
     streaming = true;
     abort = new AbortController();
     const signal = abort.signal;
+    let reconnectDelay=5000;
     try {
       const response = await api({ action: "stream" }, signal);
       if (gen !== generation) return;
@@ -430,6 +445,7 @@
         message = data.busy
           ? "Đang theo dõi từ phiên web khác"
           : "Chờ trạng thái máy";
+        reconnectDelay=data.busy?30000:15000;
         return;
       }
       const reader = response.body.getReader(),
@@ -449,14 +465,15 @@
           const data = JSON.parse(line);
           if (gen !== generation) return;
           if (data.kind === "error") throw new Error(data.error);
-          if (data.kind === "connected") message = "Đã kết nối luồng máy";
+          if (data.kind === "connected"){message = "Đã kết nối luồng máy";streamFailures=0;}
           if (data.kind === "connecting") message = "Đang kết nối Bambu Cloud…";
-          if (data.kind === "update") void poll({ force: true });
+          if (data.kind === "update") scheduleUpdateRead();
           render();
         }
       }
     } catch (error) {
       if (!signal.aborted && gen === generation) {
+        streamFailures++;reconnectDelay=Math.min(60000,5000*2**Math.min(streamFailures,4));
         message = error.message;
         render();
       }
@@ -464,15 +481,16 @@
       if (gen === generation) {
         streaming = false;
         abort = null;
-        setTimeout(() => {
-          if (gen === generation && connected) startStream(gen);
-        }, 5000);
+        streamReconnectTimer=setTimeout(() => {
+          streamReconnectTimer=0;if (gen === generation && connected && context().allowed) startStream(gen);
+        }, reconnectDelay);
       }
     }
   }
   function reset(next) {
     closeRequiredAlert();requiredAlerts=new Map();acknowledgedAlertKeys=new Set();lastPrinterTransitions={};alertLockPending=false;alertBusy=false;alertStoreDirty=true;
     generation++;
+    clearTimeout(updateTimer);clearTimeout(streamReconnectTimer);updateTimer=0;streamReconnectTimer=0;updatePending=false;pollFailures=0;pollRetryAt=0;streamFailures=0;
     abort?.abort();
     abort = null;
     streaming = false;

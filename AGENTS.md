@@ -210,6 +210,11 @@
 - Local-first: reload dựng từ cache gần nhất rồi sync thay đổi ở nền, không chặn
   thao tác để tải lại toàn bộ dữ liệu đã biết. Cache có version/migration/độ mới;
   server là nguồn xác nhận cuối cùng.
+- Khởi động chỉ đánh dấu workspace sẵn sàng sau các bước bắt buộc; lỗi phải hạ
+  trạng thái để cùng tài khoản thử lại được. Danh bạ quyền, chuyển ảnh cũ và việc
+  bảo trì phụ không chặn hoặc đưa giao diện đã mở về đăng nhập. Tác vụ nền chỉ
+  chạy sau khi phiên mở xong; kết quả phiên cũ không áp dụng sang tài khoản/xưởng
+  mới. Giữ nháp/hàng chờ và quyền server. Guard: `tools/cloud-startup-qa.mjs`.
 - Realtime không ghi đè mù local. Bản ghi có ID ổn định, revision/mốc server, cập
   nhật có điều kiện, tombstone và idempotency key. Offline lưu outbox bền vững,
   retry an toàn, có trạng thái chờ/lỗi/xung đột.
@@ -339,6 +344,11 @@
 - Chỉ thu khi có web mở; đóng mọi phiên/mất mạng có thể tạo khoảng trống. Mở lại
   không giả thời điểm bắt đầu/kết thúc hoặc sự kiện bỏ lỡ. Trung gian kết nối hữu
   hạn tự nối lại, giữ state/chống trùng.
+- Gộp các thông báo telemetry đến dồn thành lượt đọc có giới hạn, giữ lượt đọc
+  tiếp cho cập nhật đến khi đang tải và đọc đủ cursor sự kiện. Lỗi đọc/kết nối
+  có backoff; phiên khác đang thu không bị tranh quyền liên tục. Không chạy
+  trước khi workspace sẵn sàng hoặc sau khi mất quyền/phiên. Giữ sự kiện và độ
+  kịp thời thông báo. Guard: `tools/printer-polling-qa.mjs`.
 - Web chỉ ghim bảng trong web, không hứa overlay đè ứng dụng Windows. Phân biệt
   bộ thu/lưu dữ liệu, thông báo trong web, push ngoài web; không coi là cùng khả
   năng hoặc tự thêm dịch vụ để đổi phạm vi theo dõi.

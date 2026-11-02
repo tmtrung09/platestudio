@@ -6323,9 +6323,11 @@ let activeWorkspace = null;
 let workspaceAccessRows = [];
 function cloudWorkspaceId(){return activeWorkspace?.workspace_id||'';}
 function cloudWorkspaceOwnerId(){return activeWorkspace?.owner_user_id||currentUser?.id||'';}
-async function ensureCloudWorkspace(){
+async function ensureCloudWorkspace(canCommit=()=>true){
   if(!sb||!currentUser)throw new Error('Chưa có phiên đăng nhập');
+  const owner=currentUser.id;
   const {data,error}=await sb.rpc('ensure_workspace_membership');
+  if(currentUser?.id!==owner||!canCommit())throw new Error('Phiên đăng nhập đã thay đổi');
   if(error)throw new Error(`Workspace chưa sẵn sàng: ${error.message}`);
   const row=Array.isArray(data)?data[0]:data;
   if(!row?.workspace_id)throw new Error('Không tìm thấy workspace của tài khoản');
@@ -6334,7 +6336,9 @@ async function ensureCloudWorkspace(){
 async function registerWorkspaceProfile(){if(!sb||!currentUser)return;const {error}=await sb.rpc('register_app_profile');if(error)console.warn('Không ghi nhận danh bạ account',error);}
 async function loadWorkspaceAccessRows(){
   if(!sb||!activeWorkspace||activeWorkspace.owner_user_id!==currentUser?.id){workspaceAccessRows=[];return [];}
-  const {data,error}=await sb.rpc('list_workspace_access',{p_workspace_id:cloudWorkspaceId()});
+  const owner=currentUser.id,workspace=cloudWorkspaceId();
+  const {data,error}=await sb.rpc('list_workspace_access',{p_workspace_id:workspace});
+  if(currentUser?.id!==owner||cloudWorkspaceId()!==workspace)return [];
   if(error){console.warn('Không tải được danh sách phân quyền',error);return workspaceAccessRows;}
   workspaceAccessRows=Array.isArray(data)?data:[];
   const control=ensureAccessControl();control.ownerUserId=activeWorkspace.owner_user_id;
@@ -6763,13 +6767,16 @@ window.addEventListener('beforeunload',event=>{if(!activeMediaUploads.size)retur
 async function uploadInlineImage(dataUrl, folder) {
   if(!isInlineImage(dataUrl)) return dataUrl;
   if(!sb || !currentUser) throw new Error('Cần đăng nhập để lưu ảnh');
+  const owner=currentUser.id,workspace=cloudWorkspaceId(),current=()=>currentUser?.id===owner&&cloudWorkspaceId()===workspace;
   const uploadId=beginMediaUpload('Đang lưu ảnh lên cloud…');
   try{
     const blob = await (await fetch(dataUrl)).blob();
+    if(!current())throw new Error('Phiên lưu ảnh đã thay đổi; giữ ảnh gốc.');
     const ext = (blob.type.split('/')[1]||'jpg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
-    const path = `${currentUser.id}/${folder}/${uid()}.${ext||'jpg'}`;
+    const path = `${owner}/${folder}/${uid()}.${ext||'jpg'}`;
     const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, blob, {contentType:blob.type||'image/jpeg', upsert:false});
     if(error) throw error;
+    if(!current())throw new Error('Phiên lưu ảnh đã thay đổi; giữ ảnh gốc.');
     const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);finishMediaUpload(uploadId);return data.publicUrl;
   }catch(error){finishMediaUpload(uploadId,{ok:false});throw error;}
 }
@@ -7117,19 +7124,28 @@ async function optimizeExistingBatchMedia(){
 async function migrateInlineMedia() {
   const hasInline = models.some(m=>(m.images||[]).some(isInlineImage)) || plates.some(p=>isInlineImage(p.confirmImg)) || batchReports.some(r=>isInlineImage(r.image));
   if(!hasInline || !currentUser) return;
+  const owner=currentUser.id,workspace=cloudWorkspaceId(),current=()=>currentUser?.id===owner&&cloudWorkspaceId()===workspace&&cloudReady&&!loadingCloud;
+  if(!current())return;
+  let changed=false;
   setSyncState('Đang chuyển ảnh lên cloud...');
   try {
-    for(const m of models) m.images = await Promise.all((m.images||[]).map(src=>uploadInlineImage(src,`models/${m.id}`)));
-    for(const p of plates) if(isInlineImage(p.confirmImg)) p.confirmImg = await uploadInlineImage(p.confirmImg,`plates/${p.id}`);
-    for(const r of batchReports) if(isInlineImage(r.image)) r.image = await uploadInlineImage(r.image,`batch-reports/${r.id}`);
-    saveLocalCollections();
-    await syncAllCloud(true);
-    toast('✓ Đã chuyển ảnh cũ sang cloud');
+    for(const m of [...models]){
+      if(!current())return;const before=m.images||[],after=await Promise.all(before.map(src=>uploadInlineImage(src,`models/${m.id}`)));
+      if(!current())return;if(models.includes(m)&&m.images===before&&after.some((src,i)=>src!==before[i])){m.images=after;changed=true;}
+    }
+    for(const p of [...plates])if(isInlineImage(p.confirmImg)){
+      if(!current())return;const before=p.confirmImg,after=await uploadInlineImage(before,`plates/${p.id}`);
+      if(!current())return;if(plates.includes(p)&&p.confirmImg===before){p.confirmImg=after;changed=true;}
+    }
+    for(const r of [...batchReports])if(isInlineImage(r.image)){
+      if(!current())return;const before=r.image,after=await uploadInlineImage(before,`batch-reports/${r.id}`);
+      if(!current())return;if(batchReports.includes(r)&&r.image===before){r.image=after;changed=true;}
+    }
+    if(changed)toast('Đã tải ảnh cũ; đang đồng bộ liên kết.');
   } catch(error) {
     console.error('Media migration failed',error);
-    setSyncState('Lỗi tải ảnh lên', 'err');
-    toast('Chưa chuyển được ảnh: '+error.message, 5000);
-  }
+    if(current()){setSyncState('Lỗi tải ảnh lên', 'err');toast('Chưa chuyển được ảnh: '+error.message, 5000);}
+  } finally {if(changed&&current()){saveLocalCollections();scheduleCloudSync();}}
 }
 function showRemoteDataRefreshNotice(){
   /* Đồng bộ không được biến thành một việc người dùng phải nhớ bấm. Nếu đang
@@ -7458,7 +7474,7 @@ function setupCloudRealtime() {
   });
   channel.subscribe((status,error)=>handleCloudRealtimeStatus(channel,status,error));
 }
-async function loadCloudData() {
+async function loadCloudData(canCommit=()=>true) {
   const localBatchBackup = [...batchReports];
   needsCloudBatchSeed=false;
   const workspace=cloudWorkspaceId(),cachedManifest=readCachedCloudManifest(workspace);
@@ -7474,13 +7490,14 @@ async function loadCloudData() {
         const before=new Map(cachedManifest.revisions),after=new Map(remoteManifest.revisions);
         const changed=Object.keys(CLOUD_TABLES).filter(key=>before.get(key)!==after.get(key));
         const batchPagePromise=changed.includes('batchReports')
-          ?loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize}).then(rows=>({rows}),error=>({error}))
+          ?loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit:()=>canCommit()&&workspace===cloudWorkspaceId()}).then(rows=>({rows}),error=>({error}))
           :Promise.resolve({rows:batchReports});
         const entries=await Promise.all(changed.filter(key=>key!=='batchReports').map(async key=>{
           const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
           if(error)throw error;return [key,(data||[]).map(row=>row.data)];
         }));
         const batchPage=await batchPagePromise;
+        if(!canCommit()||workspace!==cloudWorkspaceId())return;
         entries.forEach(([key,rows])=>refreshRemoteCloudTable(key,rows));
         if(batchPage.error){batchReports=localBatchBackup;remoteRefreshTables.add('batchReports');scheduleCloudRefresh('batchReports');}
         else if(changed.includes('batchReports')){invalidateFulfillmentCloudManualReports();refreshCloudSnapshotFingerprint('batchReports');}
@@ -7489,10 +7506,10 @@ async function loadCloudData() {
         writeCachedCloudManifest(workspace,remoteManifest.revisions);markCloudCacheScope(workspace);
         return;
       }
-    }catch(error){console.warn('Manifest nhanh không sẵn sàng, chuyển sang tải đầy đủ',error);}
+    }catch(error){if(!canCommit()||workspace!==cloudWorkspaceId())return;console.warn('Manifest nhanh không sẵn sàng, chuyển sang tải đầy đủ',error);}
   }
   // Independent reads start together; keep a handled result on failure.
-  const batchPagePromise=loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize}).then(rows=>({rows}),error=>({error}));
+  const batchPagePromise=loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit:()=>canCommit()&&workspace===cloudWorkspaceId()}).then(rows=>({rows}),error=>({error}));
   /* batch_reports được nạp riêng theo cursor phía dưới; các collection khác nhỏ hơn
      nên vẫn nạp đồng thời để các logic Order/Plate luôn nhất quán. */
   const entries = await Promise.all(Object.entries(CLOUD_TABLES).filter(([key])=>key!=='batchReports').map(async ([key, table]) => {
@@ -7502,6 +7519,7 @@ async function loadCloudData() {
   }));
   const remote = Object.fromEntries(entries);
   const batchPage=await batchPagePromise;
+  if(!canCommit()||workspace!==cloudWorkspaceId())return;
   /* batch_reports được nạp riêng để phân trang. Tuy vậy nó vẫn phải được tính
      khi quyết định workspace có dữ liệu hay chưa; nếu không workspace chỉ có
      ảnh báo cáo sẽ bị hiểu nhầm là trống và thư viện hiện rỗng. */
@@ -7727,19 +7745,38 @@ function syncAuthUI(loggedIn) {
   if(typeof renderSb === 'function') renderSb();
   updateGuideReopenButton?.();
 }
-let cloudSessionStartPromise=null,cloudSessionStartUser='',fastCaptureRouteOpened=false;
+let cloudSessionStartPromise=null,cloudSessionStartUser='',fastCaptureRouteOpened=false,cloudStartupGeneration=0;
 function startCloudSession(session){
   if(cloudSessionStartPromise&&cloudSessionStartUser===session.user.id)return cloudSessionStartPromise;
   cloudSessionStartUser=session.user.id;
   const task=loadCloudSession(session);
   cloudSessionStartPromise=task;
-  task.finally(()=>{if(cloudSessionStartPromise===task)cloudSessionStartPromise=null;});
+  const clear=()=>{if(cloudSessionStartPromise===task)cloudSessionStartPromise=null;};task.then(clear,clear);
   return task;
+}
+async function runCloudSessionMaintenance(current){
+  const run=async(label,work)=>{if(!current()||!cloudReady||loadingCloud)return;try{await work();}catch(error){if(current())console.warn(label,error);}};
+  void run('Không ghi nhận danh bạ account',registerWorkspaceProfile);
+  void run('Chưa cập nhật danh sách phân quyền',loadWorkspaceAccessRows);
+  void run('Chưa ghi nhận thiết bị',registerBatchDevice);
+  void run('Không tải được chỉ mục bán hàng',async()=>{
+    await loadKiotSalesArchiveIndex();if(!current())return;
+    await migrateLegacyKiotSalesArchive();if(!current())return;
+    await retryKiotSalesPending();if(!current())return;
+    await loadKiotSalesArchiveDetail(latestKiotSalesImport());if(!current())return;
+    if(curPage==='kiotviet')renderKiotVietPage();if(curPage==='sales')renderSalesPage();if(curPage==='inventory')renderInventoryPage();
+  });
+  await run('Chưa chuyển được ảnh cũ',migrateInlineMedia);
+  if(current()&&needsCloudBatchSeed)await run('Chưa đồng bộ được báo cáo cũ',async()=>{
+    await Promise.all(batchReports.map(report=>persistBatchReportCloud(report)));if(!current())return;
+    await syncAllCloud(true);if(current())needsCloudBatchSeed=false;
+  });
 }
 async function loadCloudSession(session) {
   const startupBegan=performance.now();
   if(cloudReady && currentUser?.id === session.user.id) return;
-  currentUser = session.user; loadingCloud = true; setCloudLoadingOverlay(true); setCardContentLoading(true); setSyncState('Đang tải dữ liệu...');
+  const generation=++cloudStartupGeneration,current=()=>generation===cloudStartupGeneration&&currentUser?.id===session.user.id;
+  currentUser = session.user; cloudReady=false; loadingCloud = true; setCloudLoadingOverlay(true); setCardContentLoading(true); setSyncState('Đang tải dữ liệu...');
   try {
     if(STAFF_RECEIVING_MODE) {
       cloudReady = true;
@@ -7764,7 +7801,7 @@ async function loadCloudSession(session) {
       setTimeout(()=>{ goPage('batches'); openBatchReportHub(); }, 0);
       return;
     }
-    await ensureCloudWorkspace();
+    await ensureCloudWorkspace(current);if(!current())return;
     if(activeWorkspace?.role==='store_custom'||((activeWorkspace?.permissions||[]).some(p=>p.startsWith('custom_orders.'))&&!(activeWorkspace.permissions||[]).some(p=>ACCESS_PERMISSION_LIST.some(([id])=>id===p&&!id.startsWith('custom_orders.'))))||new URLSearchParams(location.search).get('next')==='custom-orders'){
       location.replace(new URL('custom-orders.html',APP_URL).href);return;
     }
@@ -7775,46 +7812,32 @@ async function loadCloudSession(session) {
     if(!fastCaptureRouteOpened&&shouldAutoOpenBatchCamera()&&canCaptureBatchReports()){
       fastCaptureRouteOpened=true;setTimeout(()=>openBatchReportHub(),0);
     }
-    await Promise.all([registerWorkspaceProfile(),loadCloudData()]);
+    await loadCloudData(current);if(!current())return;
     try{await window.KiotMappingSync?.restore();}catch(error){toast('Chưa mở được kho ghép SKU trên máy: '+error.message,6000);}
+    if(!current())return;
     recordPerformanceMetric('dataReadyMs',performance.now()-startupBegan);
-    cloudReady = true;
-    void drainBatchCameraQueue();
-    void window.PlatePlanFiles?.resume();
-    announceDeliveryPhotoRequests?.();
-    if(typeof primeSystemNotificationEvents==='function')primeSystemNotificationEvents();
-    // Read authoritative membership; never replay cached roles on every login.
-    await loadWorkspaceAccessRows();
+    // ensureCloudWorkspace supplied this user's authoritative membership. The
+    // owner's account directory and media migration are optional background work.
     if(requiredWorkspacePermission(curPage)&&!canAccess(requiredWorkspacePermission(curPage)))curPage='dashboard';
-    registerBatchDevice();
     installLocalWorkspaceSyncListeners();
     installCloudRemoteReconcileListeners();
-    setupCloudRealtime();
-    loadKiotSalesArchiveIndex().then(async()=>{
-      await migrateLegacyKiotSalesArchive();
-      await retryKiotSalesPending();
-      await loadKiotSalesArchiveDetail(latestKiotSalesImport());
-      if(curPage==='kiotviet')renderKiotVietPage();
-      if(curPage==='sales')renderSalesPage();
-      if(curPage==='inventory')renderInventoryPage();
-    }).catch(error=>console.warn('Không tải được chỉ mục bán hàng',error));
     /* Mốc được ghi sau lần tải đầu tiên, nhờ đó lần đối chiếu nền chỉ nạp lại
        đúng khi cloud đã đổi — không tự dựng lại giao diện vô ích. */
-    primeCloudRemoteRevisions();
-    await migrateInlineMedia();
-    if(needsCloudBatchSeed) {
-      /* batch_reports không còn đi qua sync snapshot vì snapshot chỉ chứa
-         trang đang xem. Khi cần seed dữ liệu cũ, lưu từng bản ghi an toàn. */
-      await Promise.all(batchReports.map(report=>persistBatchReportCloud(report)));
-      await syncAllCloud(true);
-      needsCloudBatchSeed=false;
-    }
+    cloudReady=true;
     document.getElementById('auth-ov').style.display = 'none';
     syncAuthUI(true);
     /* Chỉ dựng trang đích sau khi cloud đã tải xong. Trước đây trang từ link
        thông báo (đặc biệt Xử lý đơn) bị dựng một lần khi boot và dựng lại ở
        đây; Safari iPhone có thể hết bộ nhớ và tự đóng WebKit. */
     goPage(curPage,{historyMode:'replace'});
+    // Background consumers start only after the authenticated page has opened.
+    setTimeout(()=>{
+      if(!current()||!cloudReady||loadingCloud)return;
+      setupCloudRealtime();void primeCloudRemoteRevisions();
+      void drainBatchCameraQueue();void window.PlatePlanFiles?.resume();
+      announceDeliveryPhotoRequests?.();if(typeof primeSystemNotificationEvents==='function')primeSystemNotificationEvents();
+      void runCloudSessionMaintenance(current);
+    },0);
     const sessionUser=currentUser.id;
     setTimeout(()=>{
       if(currentUser?.id!==sessionUser||cloudOutbox.length||cloudSyncing||!canAutoApplyRemoteRefresh())return;
@@ -7826,11 +7849,13 @@ async function loadCloudSession(session) {
       setTimeout(processCloudOutbox, 0);
     }
   } catch(error) {
+    if(!current())return;
+    cloudReady=false;
     console.error('Cloud load failed', error);
     setSyncState('Không tải được dữ liệu', 'err');
     showAuth('signin');
     authMessage('Không tải được dữ liệu: '+error.message);
-  } finally { loadingCloud = false; setFastCaptureAvailable(false); setCardContentLoading(false); setCloudLoadingOverlay(false); void window.KiotMappingSync?.retry(); }
+  } finally {if(current()){loadingCloud = false; setFastCaptureAvailable(false); setCardContentLoading(false); setCloudLoadingOverlay(false);if(cloudReady)void window.KiotMappingSync?.retry();}}
 }
 async function initCloudApp() {
   try {
@@ -7845,7 +7870,9 @@ async function initCloudApp() {
     sb.auth.onAuthStateChange((_event, session) => {
       if(session) startCloudSession(session);
       else {
-        currentUser=null; cloudReady=false; cloudSyncedSnapshot=null;
+        ++cloudStartupGeneration;cloudSessionStartPromise=null;cloudSessionStartUser='';
+        currentUser=null; cloudReady=false;loadingCloud=false; cloudSyncedSnapshot=null;
+        if(cloudChannel){void sb.removeChannel(cloudChannel);cloudChannel=null;}
         cloudRealtimeStatus='IDLE';cloudRemoteRevisionWorkspace='';cloudRemoteRevisions.clear();
         clearTimeout(cloudRealtimeReconnectTimer);clearTimeout(cloudRemoteReconcileTimer);
         syncAuthUI(false); showAuth(); setSyncState('Chưa đăng nhập');
