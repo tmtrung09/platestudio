@@ -465,7 +465,7 @@
       void signImages(order).then(()=>{if(scope===owner&&state.area==='success'&&state.selectedToken===order.id)paintOrderImages(order,$('.success-panel'));});
     }catch(error){
       if(scope!==owner)return;
-      if(['40001','P0001','22P02','22008'].includes(error.code)){
+      if(['PT409','40001','P0001','22P02','22008'].includes(error.code)){
         state.draft=entry.draft;state.draft.checked=false;state.pending=null;state.step=0;state.area='create';await flushSave();
       }
       showError(error);

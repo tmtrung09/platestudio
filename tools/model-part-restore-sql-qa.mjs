@@ -9,6 +9,7 @@ try{
  await db.exec(`create role authenticated;create table models(workspace_id uuid,id text,data jsonb,updated_at timestamptz default now(),primary key(workspace_id,id));grant select,insert,update on models to authenticated;`);
  await db.exec(readFileSync('supabase/migrations/202610310002_model_part_restore_guard.sql','utf8'));
  await db.exec(readFileSync('supabase/migrations/202610310003_model_part_guard_legacy_entries.sql','utf8'));
+ await db.exec(readFileSync('supabase/migrations/202611020001_nonretryable_business_conflicts.sql','utf8'));
  const put=async(data,ws=w)=>db.query("insert into models(workspace_id,id,data) values($1,'keyboard',$2) on conflict(workspace_id,id) do update set data=excluded.data,updated_at=now()",[ws,JSON.stringify(data)]);
  const get=async(ws=w)=>(await db.query("select data from models where workspace_id=$1 and id='keyboard'",[ws])).rows[0].data;
  await put(base);await put({id:'keyboard',parts:[tray],untouched:true},other);await db.exec('set role authenticated');

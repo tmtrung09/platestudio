@@ -81,9 +81,9 @@ await test('Failure retains 91 old reports; pending survives reload and retry',a
  next.sb.rpc=async(name,p)=>{assert.equal(name,'commit_kiot_sales_report');request=p.p_request_id;return {data:[{id:'cloud',updated_at:'rev'}]}};
  assert.equal(await next.retryKiotSalesPending(),true);assert.equal(next.kiotSalesPendingEntries().length,0);assert.equal(next.kiotViet.salesImports.length,92);assert.equal(request,pending[0].requestId);
 });
-await test('Conflict retained, quota errors surfaced, account scope isolated',async()=>{
+for(const conflictCode of ['PT409','40001'])await test('Conflict '+conflictCode+' retained, quota errors surfaced, account scope isolated',async()=>{
  const c=context(),e={requestId:'r',period:{from:'2026-10-08',to:'2026-10-08'},sales:[{sku:'a',qty:1}]};c.saveKiotSalesPending(e);
- let calls=0;c.sb.rpc=async()=>{calls++;return {error:{code:'40001',message:'changed'}}};
+ let calls=0;c.sb.rpc=async()=>{calls++;return {error:{code:conflictCode,message:'changed'}}};
  await c.retryKiotSalesPending();await c.retryKiotSalesPending();assert.equal(calls,1);assert.equal(c.kiotSalesPendingEntries().length,1);
  c.cloudWorkspaceId=()=> 'other';assert.equal(c.kiotSalesPendingEntries().length,0);
  c.localStorage.setItem=()=>{throw new Error('quota')};assert.throws(()=>c.saveKiotSalesPending(e),/quota/);

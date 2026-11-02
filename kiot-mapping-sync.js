@@ -89,7 +89,7 @@
           adapter.notify('Đã lưu cloud: ' + entry.sku + '.'); changed();
         } catch (error) {
           entry.attempts = (entry.attempts || 0) + 1;
-          entry.conflict = error.code === '40001';
+          entry.conflict = ['PT409','40001'].includes(error.code);
           entry.error = entry.conflict ? 'SKU đã đổi ở phiên khác; bản của bạn vẫn được giữ.' : error.code === 'PGRST202' ? 'Máy chủ chưa có bản cập nhật lưu ghép SKU.' : error.code === '42501' ? 'Chưa có quyền lưu cloud; bản ghép vẫn được giữ trên máy.' : /^(22|23)/.test(error.code || '') ? 'Máy chủ từ chối dữ liệu ghép; bản trên máy vẫn được giữ để kiểm tra.' : 'Chưa kết nối được cloud; bản ghép đã lưu trên máy.';
           await transaction('readwrite', store => store.put(entry));
           if (owner === scope()) { lastError = entry.error; changed(); }

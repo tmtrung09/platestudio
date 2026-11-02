@@ -218,6 +218,11 @@
 - Realtime không ghi đè mù local. Bản ghi có ID ổn định, revision/mốc server, cập
   nhật có điều kiện, tombstone và idempotency key. Offline lưu outbox bền vững,
   retry an toàn, có trạng thái chờ/lỗi/xung đột.
+- RPC/trigger trả xung đột nghiệp vụ bằng SQLSTATE `PT409`, không tự phát
+  `40001` vì PostgREST có thể retry giao dịch vô hạn. Giữ kiểm tra revision,
+  quyền, receipt và nguyên tử; client nhận cả `PT409` lẫn mã cũ, giữ nháp/hàng
+  chờ và dừng tự gửi lại để đối chiếu. Lỗi serialization thật không bị đổi mã.
+  Guard: `tools/business-conflict-sql-qa.mjs` và QA lưu dữ liệu từng nghiệp vụ.
 - Camera là fast path độc lập, mở trực tiếp không đợi thư viện/lịch sử/ảnh. Chụp
   liên tiếp, lưu blob/metadata tối thiểu vào local ngay; nén/thumbnail/upload/liên
   kết chạy nền bằng queue bền vững. Không mất ảnh khi reload/mất mạng/đóng app.

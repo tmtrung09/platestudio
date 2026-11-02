@@ -20764,7 +20764,7 @@ async function persistKiotSalesArchive(entry){
     kiotInventoryUpsertLocalMovements(`sales:${day}`,'sale',kiotInventoryDayEnd(day),lines.map(row=>({sku:row.sku,name:row.name,quantityDelta:-row.quantity})),entry.note||'');kiotInventoryLedger.loaded=false;kiotInventoryLedger.remoteReconciliation=[];
     return true;
   }catch(error){
-    entry.syncError=String(error.message||error);entry.syncErrorCode=String(error.code||'');entry.syncConflict=error.code==='40001';
+    entry.syncError=String(error.message||error);entry.syncErrorCode=String(error.code||'');entry.syncConflict=['PT409','40001'].includes(error.code);
     console.warn('Không lưu được báo cáo bán vào kho dữ liệu riêng',error);return false;
   }
 }

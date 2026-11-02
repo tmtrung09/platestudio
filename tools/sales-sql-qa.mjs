@@ -9,7 +9,7 @@ create table auth.users(id uuid primary key);create table public.workspaces(id u
 insert into auth.users values('${user}');insert into workspaces values('${workspace}');
 create function auth.uid() returns uuid language sql as $$ select '${user}'::uuid $$;
 create function public.is_workspace_member(id uuid) returns boolean language sql as $$ select id='${workspace}'::uuid $$;`);
-for(const name of ['202609110001_kiot_sales_archive.sql','20260911171947_kiot_inventory_ledger.sql','202610080001_kiot_sales_atomic_commit.sql']){
+for(const name of ['202609110001_kiot_sales_archive.sql','20260911171947_kiot_inventory_ledger.sql','202610080001_kiot_sales_atomic_commit.sql','202611020001_nonretryable_business_conflicts.sql']){
  const sql=readFileSync(new URL('../supabase/migrations/'+name,import.meta.url),'utf8').replace(/do \$\$ begin[\s\S]*?end \$\$;/g,'');await db.exec(sql);
 }
 const lines=[{sku:'A',quantity:2,revenue:20},{sku:'A',quantity:3,revenue:30}];
@@ -27,7 +27,7 @@ update kiot_inventory_reconciliation_lines set status='resolved',resolution_note
 select refresh_kiot_sales_reconciliation('${workspace}');`);
 assert.equal((await db.query('select status from kiot_inventory_reconciliation_lines where snapshot_id=$1',[after])).rows[0].status,'resolved');
 await commit(request);assert.equal(Number((await summary()).delta),-5);
-await assert.rejects(()=>commit(randomUUID()),e=>e.code==='40001');
+await assert.rejects(()=>commit(randomUUID()),e=>e.code==='PT409');
 await assert.rejects(()=>commit(randomUUID(),first.updated_at,[],randomUUID()),/quyền/);
 await assert.rejects(()=>commit(randomUUID(),first.updated_at,[]),/rỗng/);
 // Inject a ledger failure AFTER the report function wrote its replacement.
@@ -42,7 +42,7 @@ const reconciliation=(await db.query('select status,resolution_note from kiot_in
 assert.equal(reconciliation.resolution_note,'Keep human note');assert.equal(reconciliation.status,'open');
 // An old successful request must not undo a later edit.
 await commit(request);assert.equal(Number((await summary()).qty),20);
-await assert.rejects(()=>db.query('select delete_kiot_sales_report($1,$2,$3)',[workspace,updated.id,first.updated_at]),e=>e.code==='40001');
+await assert.rejects(()=>db.query('select delete_kiot_sales_report($1,$2,$3)',[workspace,updated.id,first.updated_at]),e=>e.code==='PT409');
 await db.query('select delete_kiot_sales_report($1,$2,$3)',[workspace,updated.id,updated.updated_at]);
 assert.equal((await db.query('select count(*)::int n from kiot_inventory_movements')).rows[0].n,0);
 assert.equal((await db.query('select count(*)::int n from kiot_sales_reports')).rows[0].n,0);

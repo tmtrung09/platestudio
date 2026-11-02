@@ -17,7 +17,7 @@ async function setup({width=390,theme='light',legacy=false}={}){
   const sample=index=>({id:'saved-'+String(index).padStart(3,'0'),customer:'Khách thử '+index,phone:'',address:'',delivery:'pickup',total:100000,deposit:0,due:'2026-11-10',stage:0,created:'2026-11-01',creator:'Nhân viên thử',lines:[{id:'line-'+index,modelId:model.id,model,variantId:null,qty:1,note:'Đơn thử độc lập',images:[],partColors:[]}]});
   if(!localStorage.getItem('qa-server'))localStorage.setItem('qa-server',JSON.stringify(Array.from({length:130},(_,index)=>sample(index))));
   const records=()=>JSON.parse(localStorage.getItem('qa-server'));
-  window.__calls=[];window.__failLists=false;window.__holdList=false;window.__releaseList=null;window.__signFailure=false;window.__loseAck=false;
+  window.__calls=[];window.__failLists=false;window.__holdList=false;window.__releaseList=null;window.__signFailure=false;window.__loseAck=false;window.__commitError=null;
   const client={auth:{getSession:async()=>({data:{session:{user:{id:localStorage.getItem('qa-user')||user}}}}),onAuthStateChange:()=>({})},
    rpc:async(name,args)=>{
     window.__calls.push({name,args});
@@ -34,6 +34,7 @@ async function setup({width=390,theme='light',legacy=false}={}){
     if(name==='custom_order_get')return {data:records().find(row=>row.id===args.oid)||null};
     if(name==='custom_order_tracking')return {data:token};
     if(name==='commit_custom_order'){
+     if(window.__commitError)return {error:{code:window.__commitError,message:'Model đã thay đổi; giữ yêu cầu để kiểm tra lại'}};
      if(window.__injectOldList){window.__injectOldList=false;window.__holdList=true;window.__poll();window.__failLists=true;}
      const previous=records().find(row=>row.id==='custom-'+args.request);
      const order=previous||{...sample(999),...args.p,id:'custom-'+args.request,lines:args.p.lines.map((line,index)=>({...line,id:'new-line-'+index,model,partColors:[]}))};
@@ -80,6 +81,17 @@ async function run(name,fn,options){
  finally{await fixture?.context.close();}
 }
 try{
+ for(const code of ['PT409','40001'])await run('business-conflict-'+code+'-stops-retry-and-keeps-draft',async({page})=>{
+  await review(page);await page.evaluate(code=>{window.__commitError=code;},code);await page.locator('#submit-order').click();
+  await page.locator('[data-note]').waitFor();await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('Model đã thay đổi'));
+  const saved=await page.evaluate(()=>CustomOrderStore.load('11111111-1111-4111-8111-111111111111:22222222-2222-4222-8222-222222222222'));
+  assert.equal(saved.pending,null);assert.equal(saved.draft.customer,'Khách xác nhận');assert.equal(saved.draft.lines[0].note,'Yêu cầu thử việc lưu đơn');assert.equal(saved.draft.checked,false);
+  assert.equal(await page.locator('.success-panel').count(),0);assert.equal(await page.evaluate(()=>window.__calls.filter(call=>call.name==='commit_custom_order').length),1);
+  await page.reload();await page.locator('[data-note]').waitFor();await page.evaluate(()=>dispatchEvent(new Event('online')));await settle(page);
+  assert.equal(await page.evaluate(()=>window.__calls.filter(call=>call.name==='commit_custom_order').length),0,'A business conflict never resumes as an automatic retry after reload/online');
+  const restored=await page.evaluate(()=>CustomOrderStore.load('11111111-1111-4111-8111-111111111111:22222222-2222-4222-8222-222222222222'));
+  assert.equal(restored.draft.customer,'Khách xác nhận');assert.equal(restored.draft.lines.length,1);
+ });
  await run('expanded-list-survives-background-refresh',async({page})=>{
   await list(page);await page.evaluate(()=>window.__poll());await page.locator('[data-action=more-orders]').click();await page.locator('[data-order=saved-119]').waitFor();
   await page.evaluate(()=>window.__poll());await settle(page);

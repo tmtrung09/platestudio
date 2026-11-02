@@ -14,6 +14,7 @@ create function auth.uid() returns uuid language sql as $$select '${user}'::uuid
 create function public.is_workspace_member(id uuid) returns boolean language sql as $$select id='${workspace}'::uuid$$;
 create table settings(id text,user_id uuid,workspace_id uuid,data jsonb,updated_at timestamptz,primary key(user_id,id));`);
 await db.exec(readFileSync(new URL('../supabase/migrations/202610150001_kiot_mapping_commit.sql', import.meta.url), 'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/202611020001_nonretryable_business_conflicts.sql', import.meta.url), 'utf8'));
 const read = async () => (await db.query("select data from settings where id='kiotviet'")).rows[0]?.data || { id: 'kiotviet', values: { catalog: [], mappings: [], skippedSkus: [] } };
 const rpc = async ({ name, args }) => {
   try {
@@ -241,6 +242,20 @@ try {
     await page.waitForFunction(() => !!kiotViet.mappingRevisions?.['LATE-INIT'] && window.KiotMappingSync.status().pending.length === 0);
     assert.equal((await read()).values.mappings.find(row => row.sku === 'LATE-INIT').modelId, 'model-a');
     console.log('PASS mapping: a module loaded after cloud readiness resumes its durable outbox automatically');
+    for(const code of ['PT409','40001']){
+      await prepare(page, 'CODE-'+code);
+      await page.evaluate(async code=>{
+        qaSelect();await qaSave();sb.rpc=async(name,args)=>{qaRequests.push({name,args});return {error:{code,message:'Business conflict'}};};
+        cloudReady=true;await KiotMappingSync.retry();await KiotMappingSync.retry();
+      },code);
+      const pending=await page.evaluate(()=>KiotMappingSync.status().pending.find(row=>row.sku===kiotViet.catalog[0].sku));
+      assert.equal(pending.conflict,true);assert.ok(pending.requestId);assert.equal(pending.desired.mapping.modelId,'model-a');
+      assert.equal(await page.evaluate(()=>qaRequests.filter(row=>row.name==='commit_kiot_mapping').length),1,'Business conflicts stop automatic retries');
+      await page.reload({waitUntil:'load'});await prepare(page,'CODE-'+code);await page.evaluate(async()=>{await KiotMappingSync.restore();cloudReady=true;await KiotMappingSync.retry();});
+      assert.equal(await page.evaluate(()=>KiotMappingSync.status().pending.find(row=>row.sku===kiotViet.catalog[0].sku)?.conflict),true);
+      assert.equal(await page.evaluate(()=>qaRequests.filter(row=>row.name==='commit_kiot_mapping').length),0,'Conflict stays durable across reload');
+      console.log('PASS mapping: '+code+' retains the draft/request ID and stops automatic retry across reload');
+    }
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 } finally { await browser.close(); await db.close(); }

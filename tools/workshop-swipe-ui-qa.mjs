@@ -13,6 +13,7 @@ create function is_workspace_owner(w uuid) returns boolean language sql stable a
 for(const t of ['orders','plate_items','settings','models'])await db.exec(`create table ${t}(id text,user_id uuid,workspace_id uuid,data jsonb,updated_at timestamptz default now(),primary key(workspace_id,id));`);
 await db.exec(readFileSync('supabase/migrations/202610260001_workshop_swipe.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/202610260002_workshop_swipe_legacy_delivery_guard.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/202611020001_nonretryable_business_conflicts.sql','utf8'));
 await db.query('insert into settings values($1,$2,$3,$4,now())',['operations',user,w,JSON.stringify({id:'operations',values:{qualityIssues:[],deliveries:[],deliveryBatches:[]}})]);
 await db.query('insert into models values($1,$2,$3,$4,now())',['m',user,w,JSON.stringify({id:'m',parts:[{id:'body'},{id:'keys'}],variants:[]})]);
 let serial=0,checks=0;const errors=[];

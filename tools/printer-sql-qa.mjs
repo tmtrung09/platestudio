@@ -12,6 +12,7 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 create function is_workspace_owner(id uuid) returns boolean language sql stable security definer as $$ select exists(select 1 from workspaces where workspaces.id=$1 and owner_user_id=auth.uid()) $$;
 grant usage on schema auth to authenticated,anon;`);
 await db.exec(readFileSync('supabase/migrations/202610100001_printer_monitor.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/202611020001_nonretryable_business_conflicts.sql','utf8'));
 await db.query('insert into printer_cloud_connections(workspace_id,sealed_session,connected_by) values($1,$2,$3)',[ws,'{"cipher":"private"}',owner]);
 const claim=async(lease=token)=>(await db.query('select claim_printer_monitor($1,$2) ok',[ws,lease])).rows[0].ok;
 await db.exec('set role service_role');assert.equal(await claim(),true);assert.equal(await claim(randomUUID()),false,'Only one active producer');
@@ -19,7 +20,7 @@ assert.equal((await db.query('select claim_printer_login_code($1) ok',[ws])).row
 const event={id:'A:1',type:'printer_warning',severity:'warning'},run={id:'run-1',deviceId:'A',printingMs:10};
 const commit=async(lease=token,events=[event],runs=[run])=>db.query('select commit_printer_monitor($1,$2,$3,$4,$5)',[ws,lease,'{"devices":{"A":{}}}',JSON.stringify(events),JSON.stringify(runs)]);
 await commit();await commit();assert.equal((await db.query('select count(*)::int n from printer_monitor_events')).rows[0].n,1,'Retry is idempotent');
-await assert.rejects(()=>commit(randomUUID()),e=>e.code==='40001','Stale producers cannot overwrite');
+await assert.rejects(()=>commit(randomUUID()),e=>e.code==='PT409','Stale producers cannot overwrite');
 await db.exec('reset role');await db.exec(`update printer_monitor_runs set linked_models='[{"modelId":"kept"}]',links_revision='2026-10-10'`);await db.exec('set role service_role');await commit(token,[],[{...run,printingMs:20}]);
 assert.equal((await db.query('select linked_models from printer_monitor_runs')).rows[0].linked_models[0].modelId,'kept','Telemetry must not overwrite manual model links');
 await assert.rejects(()=>commit(token,[{bad:true}],[{...run,printingMs:999}]),e=>e.code==='23502');assert.equal((await db.query('select data from printer_monitor_runs')).rows[0].data.printingMs,20);
