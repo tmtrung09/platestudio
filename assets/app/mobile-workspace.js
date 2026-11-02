@@ -33,6 +33,14 @@
     });
   }
   function generated(tag,name){const el=document.createElement(tag);el.className=name;el.dataset.mwsGenerated='';return el;}
+  function appHeader(){
+    if(document.documentElement.dataset.studioSurface!=='app')return;
+    const brand=document.querySelector('.platedio-mobile-brand');if(!brand)return;
+    let header=document.querySelector('.mws-app-header');
+    if(!header){header=generated('div','mws-app-header');header.setAttribute('role','banner');document.body.prepend(header);}
+    const nodes=[brand,document.querySelector('.cam-fab'),document.getElementById('page-options-tools'),document.getElementById('system-notification-button')].filter(Boolean);
+    nodes.forEach((node,index)=>{place(node,header);if(header.children[index]!==node)move(node,header,header.children[index]||null);});
+  }
   function globalTools(){
     const button=document.getElementById('global-scroll-top'),panel=document.getElementById('page-options-panel');if(!button||!panel)return;
     place(button,panel);
@@ -159,6 +167,7 @@
       for(const cell of tables)if(!cell.isConnected)tables.delete(cell);
       for(const fold of folds)if(!fold.isConnected)folds.delete(fold);
       preserve(()=>{
+        appHeader();
         globalTools();
         document.querySelectorAll('.page.active').forEach(pageView);
         document.querySelectorAll('.dlg-ov .dlg').forEach(dialog=>{if(visible(dialog))dialogView(dialog);});

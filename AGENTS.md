@@ -155,7 +155,12 @@
 - Lưới ảnh dùng tỷ lệ khung thống nhất, canh giữa bằng object-fit phù hợp, không
   viền/nền sáng gây đứt đoạn ở dark mode; áp dụng ảnh dọc/ngang/thiếu/lỗi.
 - Ảnh trong thư viện báo cáo mẻ phủ sát mép thẻ, không nhận khoảng đệm của thẻ
-  thông tin chung; điện thoại xếp hai ảnh mỗi hàng. Giữ trạng thái, chọn nhiều,
+  thông tin chung; điện thoại xếp hai ảnh mỗi hàng. Thông tin và thao tác chính
+  nằm ở chân thẻ, không chồng các nút lên ảnh. Bỏ qua/Xoá nằm trong menu phụ có
+  vùng chạm 44px, đóng bằng Escape/bấm ngoài và trả focus; Xoá giữ xác nhận và
+  khả năng khôi phục. Nhãn trạng thái dùng nền phẳng, không viền/đổ sáng.
+  Header mobile dành chiều cao thực cho logo, công cụ và vùng an toàn; nội dung
+  và thanh chọn nhiều không nằm sau các nút cố định khi cuộn. Giữ trạng thái, chọn nhiều,
   thao tác 44px, ảnh thiếu/lỗi và thứ tự dữ liệu. Guard: `tools/batch-gallery-qa.mjs`.
 - Hàng công việc theo model, kể cả nhóm plate/màu, có thumbnail thật khi có dữ
   liệu; ảnh lỗi giữ khung fallback, tên và bố cục.

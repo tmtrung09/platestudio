@@ -2753,9 +2753,6 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
  .batch-report-card .batch-report-status-chip{max-width:calc(100% - 16px);font-size:9px;white-space:nowrap}
  .batch-report-media.is-missing::after{top:49px;bottom:auto}
 }
-.batch-report-card.batch-pending{outline:2px solid rgba(241,86,92,.92);outline-offset:0;box-shadow:0 0 0 4px rgba(241,86,92,.12),0 14px 32px rgba(106,23,32,.24)!important}
-.batch-report-card.batch-done{outline:2px solid rgba(63,195,123,.92);outline-offset:0;box-shadow:0 0 0 4px rgba(63,195,123,.11),0 14px 32px rgba(19,94,54,.24)!important}
-.batch-report-card.batch-skipped{outline:2px solid rgba(142,151,162,.72);outline-offset:0;box-shadow:0 0 0 4px rgba(142,151,162,.09),0 14px 32px rgba(0,0,0,.2)!important;filter:saturate(.62)}
 .batch-report-status-filters .status-filter-btn.skipped.active{background:#58616d!important;color:#fff!important}
 .batch-report-card.is-selected{outline-color:var(--ac)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--ac) 30%,transparent),0 16px 34px rgba(38,25,110,.3)!important}.batch-report-card:focus-visible{outline:3px solid var(--ac)!important;outline-offset:3px}.batch-report-select-box{position:absolute;z-index:6;top:3px;right:3px;box-sizing:border-box!important;width:44px;height:44px;min-width:44px!important;min-height:44px!important;padding:0!important;border:0!important;border-radius:12px;background:transparent!important;color:transparent;display:grid;place-items:center;font-size:16px;line-height:1;font-weight:900;box-shadow:none!important;cursor:pointer}.batch-report-select-box::before{content:'';position:absolute;z-index:0;inset:6px;border:1px solid rgba(255,255,255,.7);border-radius:10px;background:rgba(14,16,27,.82);box-shadow:0 4px 10px rgba(0,0,0,.25);pointer-events:none}.batch-report-select-box.is-selected::before{background:var(--ac);border-color:var(--ac)}.batch-report-select-box.is-selected::after{content:'✓';position:absolute;z-index:1;color:#fff;font-size:16px;line-height:1;pointer-events:none}.batch-report-selection-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 14px;border-color:color-mix(in srgb,var(--ac) 42%,var(--line))!important}.batch-report-selection-bar b{margin-right:auto}.batch-report-selection-hint{font-size:11px;color:var(--t3);width:100%}
 .batch-report-selection-bar{position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:58;background:color-mix(in srgb,var(--s) 93%,transparent)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 26px color-mix(in srgb,var(--bg) 24%,transparent)}
@@ -2777,6 +2774,32 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
 .batch-report-media.is-missing::after{content:'Ảnh chưa khả dụng';position:absolute;left:0;right:0;bottom:13px;text-align:center;font-size:11px;font-weight:650;color:var(--t3)}
 .batch-report-media.is-missing .batch-report-missing-action{position:absolute;z-index:5;top:3px;right:3px;width:44px;height:44px;display:grid;place-items:center}.batch-report-missing-action .btn-icon-only{width:44px;height:44px;color:var(--t)}
 .batch-report-media.is-panning-preview{cursor:grabbing}.batch-report-media.is-panning-preview .batch-report-overlay,.batch-report-media.is-panning-preview .batch-report-status-chip{opacity:0!important;pointer-events:none!important;transition:none}.batch-report-image-stage.is-image-panning .batch-report-image-meta,.batch-report-image-stage.is-image-panning .batch-report-ai-action{opacity:0;pointer-events:none;transition:none}
+/* Gallery photos keep their own space; controls belong to the caption. */
+#batch-report-page .batch-report-media{height:auto;aspect-ratio:1;display:block}
+#batch-report-page .batch-report-media>img{position:absolute;inset:0}
+#batch-report-page .batch-report-media.is-missing{display:grid;place-items:center}
+#batch-report-page .batch-report-media.is-missing::after{top:60%;bottom:auto}
+.batch-report-footer{display:flex;align-items:center;min-width:0;min-height:64px;padding:0 4px 0 10px;gap:2px;background:inherit}
+.batch-report-primary{display:flex;flex:1;min-width:0;min-height:64px;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:8px 0;border:0;background:transparent;color:var(--t);font:inherit;text-align:left;cursor:pointer}
+.batch-report-primary .batch-report-overlay-title{font-size:12px;font-weight:650;line-height:1.4;max-width:100%}
+.batch-report-primary small{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t3);font-size:10px;line-height:1.5}
+.batch-report-footer>.btn-icon-only{flex:0 0 44px;min-width:44px;min-height:44px;color:var(--t2)}
+.batch-report-footer svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.batch-report-empty-art svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;margin-bottom:8px}
+#batch-report-page .batch-report-status-chip{top:8px;left:8px;padding:4px 7px;max-width:calc(100% - 16px);font-size:10px;font-weight:650;line-height:1.3;letter-spacing:0;text-transform:none;background:var(--s);color:var(--t);border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+#batch-report-page .batch-report-status-chip::before{width:5px;height:5px;background:var(--am);box-shadow:none}
+#batch-report-page .batch-report-status-chip.is-done::before{background:var(--gr)}
+#batch-report-page .batch-report-status-chip.is-skipped::before{background:var(--t3)}
+#batch-report-page .batch-report-media:has(.batch-report-select-box,.batch-report-missing-action) .batch-report-status-chip{max-width:calc(100% - 58px);white-space:normal}
+.batch-report-photo-badges{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none}
+#batch-report-page .batch-report-photo-badges :is(.badge,.batch-report-ai-mark){display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:4px 6px;background:var(--s);color:var(--t);font-size:9px;line-height:1.3;box-shadow:none;border:0;border-radius:8px}
+.batch-report-photo-badges svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8}
+.batch-report-actions-menu{position:fixed;z-index:1600;width:210px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:6px;border-radius:14px;background:var(--s);color:var(--t);box-shadow:var(--sm)}
+.batch-report-actions-menu[hidden]{display:none!important}
+.batch-report-actions-menu button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:44px;padding:10px;border:0;border-radius:9px;background:transparent;color:var(--t);font:500 13px var(--font);text-align:left;cursor:pointer}
+.batch-report-actions-menu button:hover{background:var(--s2)}
+.batch-report-actions-menu button[data-action="delete"]{color:var(--re)}
+.batch-report-actions-menu svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;flex-shrink:0}
 .batch-report-detail-media{width:100%;min-height:220px;max-height:330px;display:grid;place-items:center;position:relative;overflow:hidden;background:var(--s2);border-radius:var(--r)}
 .batch-report-detail-media>img{width:100%;max-height:330px;object-fit:contain;display:block}
 .batch-report-detail-media.is-zoomable{cursor:zoom-in;touch-action:none}
@@ -5246,6 +5269,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 </div>
 
 <div id="toast"></div>
+<div id="batch-report-actions-menu" class="batch-report-actions-menu" role="menu" aria-label="Thao tác báo cáo mẻ" hidden></div>
 <button id="global-scroll-top" type="button" aria-label="Cuộn lên đầu trang" title="Cuộn lên đầu trang" onclick="scrollActiveViewToTop()">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
 </button>
@@ -15330,6 +15354,42 @@ function handleBatchReportSelectionShortcut(event){
   return false;
 }
 document.addEventListener('keydown',event=>{if(handleBatchReportSelectionShortcut(event))event.stopImmediatePropagation();},true);
+let batchReportActionsTrigger=null;
+function closeBatchReportActions(restoreFocus=false){
+  const menu=document.getElementById('batch-report-actions-menu'),trigger=batchReportActionsTrigger;
+  if(menu){menu.hidden=true;menu.replaceChildren();}
+  trigger?.setAttribute('aria-expanded','false');batchReportActionsTrigger=null;
+  if(restoreFocus&&trigger?.isConnected)trigger.focus({preventScroll:true});
+}
+function openBatchReportActions(id,event){
+  event?.preventDefault();event?.stopPropagation();
+  const trigger=event?.currentTarget;if(!trigger)return;
+  const same=batchReportActionsTrigger===trigger;closeBatchReportActions();if(same)return;
+  const report=findOperationalBatchReport(id);if(!report||!canEditBatchReports()||batchReportMultiSelect)return;
+  let menu=document.getElementById('batch-report-actions-menu');
+  if(!menu){menu=document.createElement('div');menu.id='batch-report-actions-menu';menu.className='batch-report-actions-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','Thao tác báo cáo mẻ');document.body.append(menu);}
+  const items=[];
+  if(report.status!=='done'&&report.status!=='skipped')items.push(['skip','Bỏ qua','chevron-right',()=>skipBatchReport(id)]);
+  items.push(['delete','Chuyển vào thùng rác','trash',()=>deleteBatchReport(id)]);
+  for(const [key,label,icon,action]of items){const button=document.createElement('button');button.type='button';button.dataset.action=key;button.setAttribute('role','menuitem');button.innerHTML=appIcon(icon);const text=document.createElement('span');text.textContent=label;button.append(text);button.onclick=()=>{closeBatchReportActions(true);void action();};menu.append(button);}
+  batchReportActionsTrigger=trigger;trigger.setAttribute('aria-expanded','true');menu.hidden=false;
+  const box=trigger.getBoundingClientRect(),rect=menu.getBoundingClientRect(),view=window.visualViewport,top=view?.offsetTop||0,height=view?.height||innerHeight,margin=12;
+  menu.style.left=Math.max(margin,Math.min(box.right-rect.width,innerWidth-rect.width-margin))+'px';
+  const below=box.bottom+6,above=box.top-rect.height-6;
+  menu.style.top=Math.max(top+margin,Math.min(below+rect.height<=top+height-margin?below:above,top+height-rect.height-margin))+'px';
+  menu.querySelector('button')?.focus({preventScroll:true});
+}
+document.addEventListener('pointerdown',event=>{if(batchReportActionsTrigger&&!event.target.closest('#batch-report-actions-menu,.batch-report-more'))closeBatchReportActions();},true);
+document.addEventListener('focusin',event=>{if(batchReportActionsTrigger&&event.target!==batchReportActionsTrigger&&!event.target.closest('#batch-report-actions-menu'))closeBatchReportActions();});
+document.addEventListener('keydown',event=>{
+  if(!batchReportActionsTrigger)return;
+  if(event.key==='Escape'||event.key==='Tab'){if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();}closeBatchReportActions(true);return;}
+  if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+  event.preventDefault();const buttons=[...document.querySelectorAll('#batch-report-actions-menu button')],index=buttons.indexOf(document.activeElement);
+  buttons[event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowUp'?-1:1)+buttons.length)%buttons.length]?.focus();
+},true);
+addEventListener('resize',()=>closeBatchReportActions());
+document.addEventListener('scroll',event=>{if(batchReportActionsTrigger&&!event.target.closest?.('#batch-report-actions-menu'))closeBatchReportActions();},true);
 function batchReportPagerHTML(position='bottom'){
   const meta=batchReportPaginationMeta||{matched:0,totalPages:1};
   const total=Math.max(1,Number(meta.totalPages)||1);
@@ -15535,6 +15595,7 @@ function applyBatchReportSmartFocus(image){
 }
 function initBatchReportCardFocus(scope=document){scope.querySelectorAll?.('.batch-report-media>img').forEach(image=>{if(image.complete)applyBatchReportSmartFocus(image);else image.addEventListener('load',()=>applyBatchReportSmartFocus(image),{once:true});});}
 function renderBatchReportPage(){
+  closeBatchReportActions();
   const el=document.getElementById('batch-report-page'); if(!el) return;
   const canEdit=canEditBatchReports();
   const canDescribe=canDescribeBatchReports();
@@ -15557,7 +15618,7 @@ function renderBatchReportPage(){
   if(!list.length){
     batchReportVisibleIds=[];
     const filtered=serverPaged && ((FILTERS.batches.search||'').trim() || FILTERS.batches.status!=='all');
-    el.innerHTML=filtered?`<div class="empty">Không có báo cáo phù hợp.</div>`:`<div class="empty"><div style="font-size:28px;margin-bottom:8px">📷</div>Chưa có báo cáo mẻ in.</div>`;
+    el.innerHTML=filtered?`<div class="empty">Không có báo cáo phù hợp.</div>`:`<div class="empty"><div class="batch-report-empty-art" aria-hidden="true">${appIcon('batch')}</div>Chưa có báo cáo mẻ in.</div>`;
     return;
   }
   const query=(FILTERS.batches.search||'').trim();
@@ -15599,8 +15660,8 @@ function renderBatchReportPage(){
     const aiAssisted=!!r.aiAssisted?.reviewedAt;
     const aiAnalyzed=!!r.aiAnalysis?.generatedAt;
     const queueState=brAiQueue.states?.[r.id]||'';
-    const queueBadge=queueState==='analyzing'?'✦ Đang phân tích':queueState==='queued'?'✦ Đang chờ AI':queueState==='failed'?'✦ AI cần thử lại':'';
-    const aiBadge=aiAssisted?'<span class="batch-report-ai-mark">✦ AI đã duyệt</span>':aiAnalyzed?'<span class="batch-report-ai-mark">✦ AI đã phân tích</span>':'';
+    const queueBadge=queueState==='analyzing'?'Đang phân tích':queueState==='queued'?'Đang chờ AI':queueState==='failed'?'AI cần thử lại':'';
+    const aiBadge=aiAssisted?`<span class="batch-report-ai-mark">${appIcon('sparkle')} AI đã duyệt</span>`:aiAnalyzed?`<span class="batch-report-ai-mark">${appIcon('sparkle')} AI đã phân tích</span>`:'';
     const thumb=String(r.thumb||'').trim();
     const fullImage=String(r.image||'').trim();
     const hasMedia=Boolean(thumb||fullImage),uploading=r.status==='uploading';
@@ -15612,7 +15673,10 @@ function renderBatchReportPage(){
       : '';
     const selectionControl=batchReportMultiSelect?`<button type="button" class="batch-report-select-box ${selected?'is-selected':''}" aria-label="${selected?'Bỏ chọn':'Chọn'} ảnh báo cáo" onclick="toggleBatchReportSelection('${r.id}',event)">${selected?'✓':''}</button>`:'';
     const cardAction=`handleBatchReportCardClick('${r.id}',event)`;
-    const overlayActions=batchReportMultiSelect?'':`<div class="batch-report-overlay-actions" onclick="event.stopPropagation()">${canEdit?`<button class="btn btn-xs" onclick="${done?`viewBatchReport('${r.id}')`:`resumeBatchReport('${r.id}')`}">${done?'Xem chi tiết':isSkipped?'Xử lý lại':'Tiếp tục xử lý'}</button>${!done&&!isSkipped?`<button class="btn btn-ghost btn-xs" onclick="skipBatchReport('${r.id}')">Bỏ qua</button>`:''}<button class="btn btn-danger btn-xs" onclick="deleteBatchReport('${r.id}');renderBatchReportPage()">Xoá</button>`:canDescribe&&!done&&!isSkipped?`<button class="btn btn-xs" onclick="declareBatchReportContents('${r.id}')">Khai báo đã in</button>`:`<button class="btn btn-xs" onclick="viewBatchReport('${r.id}')">Xem chi tiết</button>`}</div>`;
+    const primaryLabel=canEdit?(done?'Xem chi tiết':isSkipped?'Xử lý lại':'Tiếp tục xử lý'):canDescribe&&!done&&!isSkipped?'Khai báo đã in':'Xem chi tiết';
+    const primaryAction=canEdit&&!done?`resumeBatchReport('${r.id}')`:canDescribe&&!canEdit&&!done&&!isSkipped?`declareBatchReportContents('${r.id}')`:`viewBatchReport('${r.id}')`;
+    const colorLabel=fil?fil.brand+' '+fil.name:'Chưa chọn màu';
+    const caption=`<div class="batch-report-footer"><button type="button" class="batch-report-primary" aria-label="${batchReportMultiSelect?'Chọn ảnh báo cáo':primaryLabel}" ${batchReportMultiSelect?'tabindex="-1"':''} onclick="${batchReportMultiSelect?`handleBatchReportCardClick('${r.id}',event)`:`event.stopPropagation();${primaryAction}`}" title="${esc(colorLabel+' · '+fmtDate(r.createdAt)+' · '+capturedBy+(removedBy?' · '+removedBy:''))}"><span class="batch-report-overlay-title"><i style="background:${fil?.hex||'var(--t3)'}"></i><span class="batch-report-filament-name">${esc(colorLabel)}</span></span><small>${batchReportMultiSelect?'Chọn ảnh':canEdit&&!done?'Xử lý':canDescribe&&!done&&!isSkipped?'Khai báo':'Xem'} · <time datetime="${esc(r.createdAt||'')}">${fmtDate(r.createdAt).replace(/\/\d{4}$/,'')}</time></small></button>${canEdit&&!batchReportMultiSelect?`<button type="button" class="btn btn-icon-only batch-report-more" aria-label="Thao tác báo cáo mẻ" aria-haspopup="menu" aria-controls="batch-report-actions-menu" aria-expanded="false" onclick="openBatchReportActions('${r.id}',event)">${appIcon('more-dots')}</button>`:''}</div>`;
     const missingMediaAction=!hasMedia&&canEdit&&!uploading&&!batchReportMultiSelect?`<div class="batch-report-missing-action"><button type="button" class="btn btn-ghost btn-icon-only" aria-label="Tìm ảnh trên cloud" title="Tìm ảnh trên cloud" onclick="event.stopPropagation();recoverMissingBatchReportMedia('${r.id}')">${appIcon('refresh')}</button></div>`:'';
     const stateLabel=uploading?'Đang tải ảnh':done?'Đã xử lý':isSkipped?'Bỏ qua':hasMedia?'Chưa xử lý':'Thiếu ảnh';
     const stateMeta=uploading?'Đang tải ảnh lên cloud':!hasMedia?'Bản ghi không còn nguồn ảnh':done?`Đã cập nhật ${applied} part`:isSkipped?'Đã bỏ qua, chưa đối chiếu':'Chưa đối chiếu tiến độ';
@@ -15620,11 +15684,8 @@ function renderBatchReportPage(){
       <div class="batch-report-media${media?'':' is-missing'}">${media||batchReportMissingIconHTML()}
         ${selectionControl}
         <span class="batch-report-status-chip ${done?'is-done':isSkipped?'is-skipped':'is-pending'}">${stateLabel}</span>${missingMediaAction}
-        <div class="batch-report-overlay">
-          <div class="batch-report-overlay-head"><div class="batch-report-overlay-badges">${queueBadge?`<span class="badge" style="background:var(--s);color:var(--ac)">${queueBadge}</span>`:''}</div>${aiBadge}</div>
-          <div class="batch-report-overlay-copy"><div class="batch-report-overlay-title"><i style="background:${fil?.hex||'#aaa'}"></i><span class="batch-report-filament-name" title="${esc(fil?fil.brand+' '+fil.name:'Chưa chọn màu')}">${esc(fil?fil.brand+' '+fil.name:'Chưa chọn màu')}</span></div><div class="batch-report-overlay-meta">${fmtDate(r.createdAt)} · ${stateMeta}<br/>${appIcon('batch')} ${esc(capturedBy)}${done?`<br/>${appIcon('check')} Gỡ / xác nhận: ${esc(removedBy)}`:''}</div>${overlayActions}</div>
-        </div>
-      </div></div>`;
+        <div class="batch-report-photo-badges">${queueBadge?`<span class="badge">${appIcon('sparkle')}${queueBadge}</span>`:''}${aiBadge}</div>
+      </div>${caption}</div>`;
   };
   const section=(title,items,accent,empty)=>`<section class="batch-report-library" aria-label="${esc(title)}" style="margin-bottom:24px">
     ${items.length?`<div ${batchReportMultiSelect?'role="listbox" aria-multiselectable="true"':''} class="batch-report-grid">${items.map(reportCard).join('')}</div>`:`<div style="padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--t3);font-size:13px">${empty}</div>`}
