@@ -4842,6 +4842,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <script src="assets/app/workshop-swipe-store.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe.js?v=__DEPLOY_REVISION__" defer></script>
 <link rel="stylesheet" href="assets/app/mobile-workspace.css?v=__DEPLOY_REVISION__">
+<link rel="stylesheet" href="assets/app/custom-order-overview.css?v=__DEPLOY_REVISION__">
 <script src="assets/app/mobile-routes.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/mobile-workspace.js?v=__DEPLOY_REVISION__" defer></script>
 </head>
@@ -5522,9 +5523,14 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
         Order <span class="sect-count" id="cnt-orders">0</span>
         </span>
-        <div class="page-smart-search list-header-search" title="Tìm đơn, người đặt, model hoặc biến thể"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="order-smart-search" aria-label="Tìm đơn, người đặt, model hoặc biến thể" autocomplete="off" placeholder="Tìm đơn hoặc model..." oninput="setOrderSmartSearch(this.value)"></div>
+        <div class="page-smart-search list-header-search" title="Tìm đơn, khách hàng, số điện thoại hoặc model"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="order-smart-search" aria-label="Tìm đơn, khách hàng, số điện thoại hoặc model" autocomplete="off" placeholder="Tìm đơn, khách hoặc model..." oninput="setOrderSmartSearch(this.value)"></div>
         <button type="button" class="btn btn-ghost btn-sm order-filter-toggle" id="ftbtn-orders" onclick="toggleFilterBars('orders')" aria-controls="filters-orders" aria-expanded="true" title="Ẩn bộ lọc"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg>Bộ lọc <span class="order-filter-badge" id="order-filter-badge" hidden></span></button>
         <div class="order-library-create"><button class="btn btn-ac btn-sm" onclick="openOrderForm()">+ Tạo Order</button></div>
+      </div>
+      <div class="order-kind-picker" role="group" aria-label="Loại đơn hàng">
+        <button type="button" data-order-kind="all" aria-pressed="true" onclick="setOrderKind('all')">Tất cả <small>0</small></button>
+        <button type="button" data-order-kind="regular" aria-pressed="false" onclick="setOrderKind('regular')">Đơn thường <small>0</small></button>
+        <button type="button" data-order-kind="custom" aria-pressed="false" onclick="setOrderKind('custom')">Đơn custom <small>0</small></button>
       </div>
       <div class="order-filter-workspace">
         <div class="filter-bars-wrap" id="filters-orders" role="group" aria-label="Bộ lọc đơn hàng">
@@ -8050,7 +8056,7 @@ document.addEventListener('keydown',event=>{
 /* ═══ BỘ LỌC — dùng chung cho mọi trang danh sách ═══ */
 const FILTERS = {
   models:    { cat: 'all', sort: 'created_desc', search: '' },
-  orders:    { status: 'all', projectId: 'all', orderedBy: 'all', search: '' },
+  orders:    { kind: 'all', status: 'all', projectId: 'all', orderedBy: 'all', search: '' },
   plates:    { status: 'all', filamentId: 'all', sort: 'created_desc', search: '' },
   projects:  { status: 'all', search: '' },
   filaments: { brand: 'all', mat: 'all', search: '' },
@@ -8507,7 +8513,12 @@ function pageFromLocation(){
   if(validHistoryPage(value))return value;
   try{const saved=localStorage.getItem('ps_last_open_page')||'';return validHistoryPage(saved)?saved:'dashboard';}catch(_){return 'dashboard';}
 }
-function pageHistoryUrl(page){const params=new URLSearchParams({[PAGE_HISTORY_KEY]:page});if(['reminders','inventory'].includes(page)){params.set('source',productionNeedsState.source);params.set('status',productionNeedsState.status);if(productionNeedsState.query)params.set('q',productionNeedsState.query);}if(page==='progress'){params.set('view',ppViewMode);params.set('status',ppFilter);params.set('group',ppExternalGroupMode);const query=document.getElementById('pp-search')?.value||'';if(query)params.set('q',query);if(ppScope){params.set('scope',ppScope.type);params.set('scope_id',ppScope.id);}}return `${location.pathname}${location.search}#${params}`;}
+function pageHistoryUrl(page){const params=new URLSearchParams({[PAGE_HISTORY_KEY]:page});if(page==='orders'){for(const key of ['kind','status','projectId','orderedBy'])if(FILTERS.orders[key]&&FILTERS.orders[key]!=='all')params.set(key,FILTERS.orders[key]);if(FILTERS.orders.search)params.set('q',FILTERS.orders.search);}if(['reminders','inventory'].includes(page)){params.set('source',productionNeedsState.source);params.set('status',productionNeedsState.status);if(productionNeedsState.query)params.set('q',productionNeedsState.query);}if(page==='progress'){params.set('view',ppViewMode);params.set('status',ppFilter);params.set('group',ppExternalGroupMode);const query=document.getElementById('pp-search')?.value||'';if(query)params.set('q',query);if(ppScope){params.set('scope',ppScope.type);params.set('scope_id',ppScope.id);}}return `${location.pathname}${location.search}#${params}`;}
+function restoreOrderFiltersFromLocation(page){
+  if(page!=='orders')return;
+  const params=new URLSearchParams(location.hash.slice(1));
+  FILTERS.orders={kind:['custom','regular'].includes(params.get('kind'))?params.get('kind'):'all',status:params.get('status')||'all',projectId:params.get('projectId')||'all',orderedBy:params.get('orderedBy')||'all',search:params.get('q')||''};
+}
 function rememberCurrentPageScroll(){
   const state={...(history.state||{}),plateStudioPage:curPage,plateStudioScroll:window.scrollY||document.getElementById('pg-content')?.scrollTop||0};
   history.replaceState(state,'',pageHistoryUrl(curPage));
@@ -8519,6 +8530,7 @@ function writePageHistory(page,mode='push'){
   else history.pushState(state,'',pageHistoryUrl(page));
 }
 const initialHistoryPage=pageFromLocation();
+restoreOrderFiltersFromLocation(initialHistoryPage);
 restoreProductionNeedsFromLocation(initialHistoryPage);
 if(initialHistoryPage!=='dashboard')curPage=initialHistoryPage;
 if('scrollRestoration' in history)history.scrollRestoration='manual';
@@ -8848,6 +8860,7 @@ function goPage(p,{historyMode='push',restoreScroll=null}={}) {
   if(p==='inventory'){productionNeedsState.source='stock';productionNeedsState.status='all';}
   if(historyMode==='none')restoreProductionNeedsFromLocation(p);
   if(p==='progress'&&['none','replace'].includes(historyMode))restorePrintProgressFromLocation();
+  if(p==='orders'&&['none','replace'].includes(historyMode))restoreOrderFiltersFromLocation(p);
   // Work surfaces live inside .page now. Hide them before changing pages so a
   // fixed child from an old mobile rule can never outlive its destination page.
   closeModelCategoryDrawer();
@@ -11899,7 +11912,7 @@ function renderDashboard() {
   const active  = plates.filter(x=>x.status!=='done');
   const today   = plates.filter(x=>x.status==='done'&&x.completedAt&&
                     (new Date()-new Date(x.completedAt))<86400000).length;
-  const inProc  = orders.filter(x=>x.status==='processing').length;
+  const inProc  = orders.filter(x=>orderOverviewStatus(x)==='processing').length;
 
   // ô điều hướng lớn — số lượng
   const tileModels = document.getElementById('tile-cnt-models'); if(tileModels) tileModels.textContent = models.length;
@@ -12024,7 +12037,7 @@ function renderDashboard() {
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:13px;font-weight:500;flex:1">
               ${esc(o.note||'Order #'+o.id.slice(-4))}</span>
-            ${sbadge(ORDER_ST,o.status)}
+            ${sbadge(ORDER_ST,orderOverviewStatus(o))}
           </div>
           <div style="font-size:11px;color:var(--t3);margin-top:2px">
             ${proj?esc(proj.name):'—'} · ${fmtRel(o.createdAt)}${o.orderedBy?' · 👤 '+esc(o.orderedBy):''}</div>
@@ -12062,7 +12075,7 @@ function renderLegacyDashboard(){
   normalizeOperations();
   const host=document.getElementById('dashboard-command'); if(!host)return;
   const activePlates=platePageEntries().filter(plate=>plate.status!=='done');
-  const processingOrders=orders.filter(order=>order.status==='processing');
+  const processingOrders=orders.filter(order=>orderOverviewStatus(order)==='processing');
   const operationalReports=fulfillmentReportSource();
   const reconcileReports=operationalReports.map(report=>({report,matches:getBatchReportReconciliationCandidates(report)})).filter(item=>item.matches.length);
   const pendingReports=operationalReports.filter(report=>report.status==='pending');
@@ -12201,7 +12214,7 @@ function dashboardOperationalSnapshot(){
     packaging,packagingOpen:packaging.filter(item=>item.task.packagingStatus!=='ready'||item.task.tagStatus!=='ready'),packagingReady:packaging.filter(item=>item.task.packagingStatus==='ready'&&item.task.tagStatus==='ready'),
     reports,pendingReports:reports.filter(report=>report.status==='pending'),reportsToday:reports.filter(report=>dashboardIsToday(report.capturedAt||report.createdAt)),
     deliveries,waitingReceive:deliveries.filter(batch=>['in_transit','partial_received','discrepancy'].includes(batch.status)),deliveryGaps:deliveries.filter(batch=>['partial_received','discrepancy'].includes(batch.status)),receivedToday:deliveries.filter(batch=>batch.status==='received'&&dashboardIsToday(batch.receivedAt)),readyDelivery,
-    readyDeliveryQty:readyDelivery.reduce((sum,item)=>sum+item.qty,0),activePlates:plates.filter(plate=>plate.status!=='done'),processingOrders:orders.filter(order=>order.status==='processing'),inventoryAlerts:getInventoryAlerts(),qualityIssues:(operations.qualityIssues||[]).filter(issue=>issue.status!=='resolved')
+    readyDeliveryQty:readyDelivery.reduce((sum,item)=>sum+item.qty,0),activePlates:plates.filter(plate=>plate.status!=='done'),processingOrders:orders.filter(order=>orderOverviewStatus(order)==='processing'),inventoryAlerts:getInventoryAlerts(),qualityIssues:(operations.qualityIssues||[]).filter(issue=>issue.status!=='resolved')
   };
 }
 function dashboardKpis(ctx,data){
@@ -12298,6 +12311,42 @@ function dashboardActionIcon(icon){
   const kinds={'＋':'plus','◇':'model','◉':'batch','✦':'sparkle','⌘':'check','▣':'inbox','↗':'delivery','⇣':'arrow-down','▤':'data','↻':'refresh','◎':'check','▶':'play','⌁':'data','✓':'check','⌛':'progress','!':'warning'};
   return appIcon(kinds[icon]||'progress');
 }
+function customOrderDateKey(value){
+  if(!value)return '';
+  const raw=String(value);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+    const date=new Date(raw+'T12:00:00Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===raw?raw:'';
+  }
+  const date=new Date(value);if(!Number.isFinite(date.getTime()))return '';
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function orderOverviewStatus(order){
+  if(order.status==='cancelled')return 'cancelled';
+  return order.kind==='custom'&&order.customCustomerCompletedAt?'done':order.status;
+}
+function customOrderDue(order,now=new Date()){
+  const status=orderOverviewStatus(order),date=customOrderDateKey(order.deliveryDate),today=customOrderDateKey(now);
+  if(['done','cancelled'].includes(status))return {state:'closed',date,label:status==='done'?'Hoàn thành':'Đã huỷ'};
+  if(!date)return {state:'undated',date:'',label:'Chưa hẹn ngày'};
+  const state=date<today?'overdue':date===today?'today':'upcoming',display=fmtDate(date);
+  return {state,date,label:state==='overdue'?`Quá hẹn · ${display}`:state==='today'?'Hẹn hôm nay':`Hẹn ${display}`};
+}
+function customOrderOverview(source=orders,now=new Date()){
+  const custom=source.filter(order=>order.kind==='custom'),active=custom.filter(order=>!['done','cancelled'].includes(orderOverviewStatus(order)));
+  const urgency={overdue:0,today:1,upcoming:2,undated:3};
+  const rows=active.map(order=>({order,due:customOrderDue(order,now)})).sort((a,b)=>urgency[a.due.state]-urgency[b.due.state]||(a.due.date||'9999').localeCompare(b.due.date||'9999')||String(b.order.createdAt||'').localeCompare(String(a.order.createdAt||''))||String(a.order.id).localeCompare(String(b.order.id)));
+  return {total:custom.length,active:active.length,overdue:rows.filter(row=>row.due.state==='overdue').length,today:rows.filter(row=>row.due.state==='today').length,rows};
+}
+function dashboardCustomOrdersHTML(ctx){
+  if(!ctx.ready||!currentUser||!dashboardHas(ctx,'orders.manage'))return '';
+  const summary=customOrderOverview(),stale=!navigator.onLine||!cloudReady||loadingCloud;
+  const status=!navigator.onLine?'Ngoại tuyến · đang xem dữ liệu trên máy.':stale?'Đang hiển thị dữ liệu trên máy, chờ cập nhật.':'Theo dõi ngày hẹn và các đơn chưa hoàn tất.';
+  const rows=summary.rows.slice(0,4).map(({order,due})=>{
+    const image=models.find(model=>model.id===order.items?.[0]?.modelId)?.images?.[0];
+    return `<a class="dashboard-custom-row" href="custom-orders.html?order=${encodeURIComponent(order.id)}" data-custom-order-id="${esc(order.id)}"><span class="dashboard-custom-thumb">${image?`<img loading="lazy" src="${esc(image)}" alt="" onerror="this.replaceWith(document.createTextNode('—'))">`:appIcon('order')}</span><span class="dashboard-custom-copy"><b>${esc(order.custom?.customer||order.note||'Khách chưa có tên')}</b><span class="custom-order-due" data-urgency="${due.state}">${esc(due.label)}</span><small>#${esc(String(order.id).slice(-6).toUpperCase())} · ${esc(ORDER_ST[orderOverviewStatus(order)]?.lbl||'Chưa rõ trạng thái')}</small></span>${appIcon('arrow-right')}</a>`;
+  }).join('');
+  return `<section class="dashboard-custom" aria-labelledby="dashboard-custom-title"><div class="dashboard-custom-head"><div class="dashboard-custom-heading">${appIcon('order')}<div><h3 id="dashboard-custom-title">Đơn custom</h3><p>${status}</p></div></div><button type="button" class="btn btn-ghost" onclick="setOrderKind('custom',{reset:true})">Xem đơn custom</button></div><div class="dashboard-custom-stats"><div class="dashboard-custom-stat"><b>${summary.active}</b><span>Chưa hoàn tất</span></div><div class="dashboard-custom-stat ${summary.overdue?'is-overdue':''}"><b>${summary.overdue}</b><span>Quá hẹn</span></div><div class="dashboard-custom-stat ${summary.today?'is-today':''}"><b>${summary.today}</b><span>Hẹn hôm nay</span></div></div>${rows?`<div class="dashboard-custom-list">${rows}</div>`:`<div class="dashboard-custom-empty">${stale&&!summary.total?'Chưa có dữ liệu đơn custom trên máy. Kết nối để cập nhật.':'Không có đơn custom chưa hoàn tất.'}</div>`}${summary.active>4?`<div class="dashboard-custom-footer">Còn ${summary.active-4} đơn chưa hoàn tất trong danh sách.</div>`:''}</section>`;
+}
 function dashboardQuickNavHTML(ctx){
   const links=[
     {permission:'orders.manage',icon:'＋',label:'Tạo đơn',color:'#ff8c75',action:'openOrderForm()'},
@@ -12359,7 +12408,7 @@ function renderDashboard(){
   const priorityHTML=priorities.slice(0,8).map(item=>`<div class="dashboard-focus-row" style="--row-color:${item.color}"><i></i><div class="dashboard-focus-copy"><b>${esc(item.title)}</b><small>${esc(item.detail||'')}</small></div><button class="btn btn-ghost btn-xs" onclick="${item.action}">${esc(item.label)}</button></div>`).join('');
   const ownerWidgets=[];
   if(ctx.owner){const pins=dashboardPinnedWidgets(),sales=dashboardSalesSnapshot();if(pins.includes('sales_summary'))ownerWidgets.push(dashboardSalesSummaryHTML(sales));if(pins.includes('top_sellers'))ownerWidgets.push(dashboardTopSellersHTML(sales));if(pins.includes('inventory'))ownerWidgets.push(dashboardInventoryHTML());if(pins.includes('print_plan'))ownerWidgets.push(dashboardPrintPlanHTML());if(pins.includes('fulfillment'))ownerWidgets.push(dashboardFulfillmentHTML());if(pins.includes('batch_pending'))ownerWidgets.push(dashboardBatchPendingHTML());}
-  host.innerHTML=`<section class="dashboard-role-hero"><div><div class="dashboard-role-kicker">CA LÀM CỦA ${esc(name)} · ${dateLabel}</div><h2>${esc(title)}</h2><p>${esc(summary)}</p><div class="dashboard-role-strip">${ctx.owner?'<span class="dashboard-role-chip" style="--role-color:#ffd369"><i></i>Chủ xưởng · toàn quyền</span>':''}${roleChips}</div></div><div><div class="dashboard-shift-card"><span>TRỌNG TÂM</span><b>${priorities.length?`${priorities.length} việc ưu tiên`:'Ca làm ổn định'}</b></div><div class="dashboard-role-actions" style="margin-top:10px">${actionCandidates.map((item,index)=>`<button class="btn ${index?'btn-ghost':'btn-ac'} btn-sm" onclick="${item.action}">${esc(item.label)}</button>`).join('')}</div></div></section>${kpiHTML?`<section class="dashboard-role-kpis" style="--dashboard-kpi-cols:${Math.min(4,visibleKpis.length)}">${kpiHTML}</section>`:''}<div class="dashboard-ops-layout"><section class="dashboard-focus"><div class="dashboard-focus-head"><div><h3>Ưu tiên của bạn</h3></div><span class="dashboard-focus-count">${priorities.length}</span></div><div class="dashboard-focus-list">${priorityHTML||'<div class="dashboard-lane-empty">✓ Chưa có việc cần xử lý ngay.</div>'}</div></section>${dashboardQuickNavHTML(ctx)}</div>${dashboardRoleLanesHTML(ctx,data)}${ctx.owner?`<section class="dashboard-owner-widgets"><div class="dashboard-section-label"><div><h3>Góc nhìn kinh doanh</h3></div><button class="btn btn-ghost btn-xs" onclick="openDashboardPinDialog()">⚙ Tùy chỉnh</button></div>${ownerWidgets.length?`<div class="dashboard-widget-grid">${ownerWidgets.join('')}</div>`:'<div class="dashboard-access-empty"><span>Chưa ghim khối kinh doanh nào.</span></div>'}</section>`:''}`;
+  host.innerHTML=`<section class="dashboard-role-hero"><div><div class="dashboard-role-kicker">CA LÀM CỦA ${esc(name)} · ${dateLabel}</div><h2>${esc(title)}</h2><p>${esc(summary)}</p><div class="dashboard-role-strip">${ctx.owner?'<span class="dashboard-role-chip" style="--role-color:#ffd369"><i></i>Chủ xưởng · toàn quyền</span>':''}${roleChips}</div></div><div><div class="dashboard-shift-card"><span>TRỌNG TÂM</span><b>${priorities.length?`${priorities.length} việc ưu tiên`:'Ca làm ổn định'}</b></div><div class="dashboard-role-actions" style="margin-top:10px">${actionCandidates.map((item,index)=>`<button class="btn ${index?'btn-ghost':'btn-ac'} btn-sm" onclick="${item.action}">${esc(item.label)}</button>`).join('')}</div></div></section>${kpiHTML?`<section class="dashboard-role-kpis" style="--dashboard-kpi-cols:${Math.min(4,visibleKpis.length)}">${kpiHTML}</section>`:''}${dashboardCustomOrdersHTML(ctx)}<div class="dashboard-ops-layout"><section class="dashboard-focus"><div class="dashboard-focus-head"><div><h3>Ưu tiên của bạn</h3></div><span class="dashboard-focus-count">${priorities.length}</span></div><div class="dashboard-focus-list">${priorityHTML||'<div class="dashboard-lane-empty">✓ Chưa có việc cần xử lý ngay.</div>'}</div></section>${dashboardQuickNavHTML(ctx)}</div>${dashboardRoleLanesHTML(ctx,data)}${ctx.owner?`<section class="dashboard-owner-widgets"><div class="dashboard-section-label"><div><h3>Góc nhìn kinh doanh</h3></div><button class="btn btn-ghost btn-xs" onclick="openDashboardPinDialog()">⚙ Tùy chỉnh</button></div>${ownerWidgets.length?`<div class="dashboard-widget-grid">${ownerWidgets.join('')}</div>`:'<div class="dashboard-access-empty"><span>Chưa ghim khối kinh doanh nào.</span></div>'}</section>`:''}`;
   const sub=document.getElementById('hd-sub');if(sub)sub.textContent=ctx.owner?`${priorities.length} việc ưu tiên · toàn xưởng`:`${roles.map(role=>role.label).join(' · ')} · ${priorities.length} việc`;
 }
 
@@ -15961,11 +16010,11 @@ function renderProjectDetail() {
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);margin-bottom:2px">
             #${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom · Ưu tiên</span>':''} ${ordererTag(o.orderedBy)}</div>
+          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':''} ${ordererTag(o.orderedBy)}</div>
           ${rel.length ? `<div class="prog-bg" style="margin-top:6px"><div class="prog-fill" style="width:${pct}%"></div></div>` : ''}
         </div>
         <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-          ${sbadge(ORDER_ST, o.status)}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
+          ${sbadge(ORDER_ST, orderOverviewStatus(o))}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
           <div class="gap-row">
             <button class="btn btn-ghost btn-xs" onclick="openEditOrder('${o.id}')">Sửa</button>
             <button class="btn btn-danger btn-xs" onclick="deleteOrder('${o.id}',true)">Xoá</button>
@@ -15979,13 +16028,18 @@ function renderProjectDetail() {
 /* ── RENDER orders page ── */
 function renderOrders() {
   const el = document.getElementById('order-list'); if(!el) return;
-  const all = [...orders].sort((a,b)=>Number(b.kind==='custom'&&b.status==='processing')-Number(a.kind==='custom'&&a.status==='processing')||new Date(b.createdAt)-new Date(a.createdAt));
-  document.getElementById('cnt-orders').textContent = all.length;
+  const kind=['regular','custom'].includes(FILTERS.orders.kind)?FILTERS.orders.kind:'all';
+  document.querySelectorAll('[data-order-kind]').forEach(button=>{
+    const value=button.dataset.orderKind,count=orders.filter(order=>value==='all'||(order.kind==='custom')===(value==='custom')).length;
+    button.setAttribute('aria-pressed',String(value===kind));button.querySelector('small').textContent=count;
+  });
+  const all = orders.filter(order=>kind==='all'||(order.kind==='custom')===(kind==='custom')).sort((a,b)=>Number(b.kind==='custom'&&!['done','cancelled'].includes(orderOverviewStatus(b)))-Number(a.kind==='custom'&&!['done','cancelled'].includes(orderOverviewStatus(a)))||new Date(b.createdAt)-new Date(a.createdAt));
+  document.getElementById('cnt-orders').textContent = orders.length;
   const searchEl=document.getElementById('order-smart-search');if(searchEl&&searchEl.value!==FILTERS.orders.search)searchEl.value=FILTERS.orders.search;
 
   /* Bộ lọc trạng thái */
   const statusCounts = {};
-  all.forEach(o => { statusCounts[o.status] = (statusCounts[o.status]||0)+1; });
+  all.forEach(o => { const status=orderOverviewStatus(o);statusCounts[status] = (statusCounts[status]||0)+1; });
   const statusChips = [{val:'all', label:'Tất cả', count:all.length}]
     .concat(Object.keys(ORDER_ST).filter(k=>statusCounts[k]).map(k => ({val:k, label:ORDER_ST[k].lbl, count:statusCounts[k]})));
 
@@ -16021,17 +16075,17 @@ function renderOrders() {
   if(orderFilterMenuKey) renderOrderFilterOptions();
 
   const sorted = all
-    .filter(o => FILTERS.orders.status==='all' || o.status===FILTERS.orders.status)
+    .filter(o => FILTERS.orders.status==='all' || orderOverviewStatus(o)===FILTERS.orders.status)
     .filter(o => FILTERS.orders.projectId==='all' || (FILTERS.orders.projectId==='none' ? !o.projectId : o.projectId===FILTERS.orders.projectId))
     .filter(o => !FILTERS.orders.orderedBy || FILTERS.orders.orderedBy==='all' || (FILTERS.orders.orderedBy==='none' ? !o.orderedBy : o.orderedBy===FILTERS.orders.orderedBy))
-    .filter(o => {const q=kvNorm(FILTERS.orders.search||'');if(!q)return true;const project=projects.find(project=>project.id===o.projectId);const itemText=(o.items||[]).map(item=>`${item.modelName||''} ${item.variantName||''} ${item.productName||''}`).join(' ');return kvNorm(`${o.note||''} ${o.orderedBy||''} ${project?.name||''} ${itemText}`).includes(q);});
+    .filter(o => {const q=kvNorm(FILTERS.orders.search||'');if(!q)return true;const project=projects.find(project=>project.id===o.projectId);const itemText=(o.items||[]).map(item=>`${item.modelName||''} ${item.variantName||''} ${item.productName||''}`).join(' ');return kvNorm(`${o.id||''} ${o.note||''} ${o.orderedBy||''} ${o.custom?.customer||''} ${o.custom?.phone||''} ${project?.name||''} ${itemText}`).includes(q);});
 
   document.getElementById('order-filter-result').textContent=hasFilters?`${sorted.length} / ${all.length} đơn`:`${all.length} đơn`;
   if (!sorted.length) {
     el.innerHTML = `<div class="empty">
       <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
         <line x1="3" y1="6" x2="21" y2="6"/></svg>
-      ${all.length ? 'Không có order nào khớp bộ lọc' : 'Chưa có order nào — tạo Order để phân bổ Plate'}</div>`;
+      ${hasFilters?'Không có đơn nào khớp bộ lọc':kind==='custom'?'Chưa có đơn custom trong dữ liệu hiện có':kind==='regular'?'Chưa có đơn thường trong dữ liệu hiện có':all.length?'Không có đơn nào khớp bộ lọc':'Chưa có đơn hàng trong dữ liệu hiện có'}</div>`;
     return;
   }
 
@@ -16041,22 +16095,22 @@ function renderOrders() {
     const done = rel.filter(pi=>pi.qtyDone>=pi.qty).length;
     const pct  = rel.length ? Math.round(done/rel.length*100) : 0;
     const orderItems = o.items||[];
-    return `<div class="order-card" onclick="openPrintProgress('${o.id}')">
+    return `<div class="order-card" data-order-id="${esc(o.id)}" onclick="openPrintProgress('${o.id}')">
       <div class="oc-top">
         <div class="oc-thumb-area" onclick="event.stopPropagation()">
           ${thumbStackHTML(orderItems.map(i=>i.modelId), 3)}
         </div>
         <div class="oc-info">
           <div class="oc-code">#${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div class="oc-title">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom · Ưu tiên</span>':''} ${ordererTag(o.orderedBy)}</div>
+          <div class="oc-title">${esc(o.note||o.custom?.customer||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':''} ${ordererTag(o.orderedBy).replace('👤',appIcon('user'))}</div>
           <div class="oc-meta">
-            ${proj ? `<span>📁 ${esc(proj.name)}</span>` : ''}
-            ${o.deliveryDate ? `<span>📅 ${fmtDate(o.deliveryDate)}</span>` : ''}
+            ${proj ? `<span>${appIcon('project')} ${esc(proj.name)}</span>` : ''}
+            ${o.kind==='custom'?`<span>${appIcon('user')} ${esc(o.custom?.customer||'Khách chưa có tên')}${o.custom?.phone?` · ${esc(o.custom.phone)}`:''}</span><span class="custom-order-due" data-urgency="${customOrderDue(o).state}">${esc(customOrderDue(o).label)}</span>`:o.deliveryDate?`<span>${fmtDate(o.deliveryDate)}</span>`:''}
             <span>${orderItems.length} model</span>
           </div>
         </div>
         <div class="oc-status" onclick="event.stopPropagation()">
-          ${sbadge(ORDER_ST, o.status)}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
+          ${sbadge(ORDER_ST, orderOverviewStatus(o))}${o.kind==='custom'?`<button class="btn btn-ghost btn-xs" onclick="location.href='custom-orders.html?order=${encodeURIComponent(o.id)}'">Chi tiết custom</button>`:''}
           <div class="gap-row">
             <button class="btn btn-ghost btn-xs" onclick="viewOrderModelImages('${o.id}')">Xem ảnh</button>
             <button class="btn btn-ghost btn-xs" onclick="openEditOrder('${o.id}')">Sửa</button>
@@ -16136,7 +16190,7 @@ function renderOrderFilterOptions(){
     button.orderFilterKey=key;button.orderFilterValue=option.val;
     button.setAttribute('aria-pressed',String(option.val===(FILTERS.orders[key]||'all')));
     button.innerHTML=`<span>${esc(option.label)}</span><small>${option.count}</small>${option.val===(FILTERS.orders[key]||'all')?appIcon('check'):''}`;
-    button.onclick=()=>{closeOrderFilterMenu();FILTERS.orders[key]=option.val;renderOrders();};return button;
+    button.onclick=()=>{closeOrderFilterMenu();FILTERS.orders[key]=option.val;renderOrders();syncOrderFilterHistory();};return button;
   });
   if(!options.length){const empty=document.createElement('div');empty.className='order-filter-empty';empty.textContent='Không tìm thấy lựa chọn';nodes.push(empty);}
   if(options.length>orderFilterMenuLimit){const more=document.createElement('button');more.type='button';more.className='order-filter-option';more.textContent=`Xem thêm (${options.length-orderFilterMenuLimit})`;more.onclick=()=>{const top=host.scrollTop;orderFilterMenuLimit+=60;renderOrderFilterOptions();host.scrollTop=top;host.querySelectorAll('.order-filter-option')[orderFilterMenuLimit-60]?.focus();};nodes.push(more);}
@@ -16146,12 +16200,24 @@ function renderOrderFilterOptions(){
 function clearOrderFilters(){
   closeOrderFilterMenu(false);
   Object.assign(FILTERS.orders,{status:'all',projectId:'all',orderedBy:'all',search:''});
-  renderOrders();document.getElementById('order-smart-search')?.focus();
+  renderOrders();syncOrderFilterHistory();document.getElementById('order-smart-search')?.focus();
 }
-function setOrderFilterStatus(status) { FILTERS.orders.status = status; renderOrders(); }
-function setOrderFilterProject(projectId) { FILTERS.orders.projectId = projectId; renderOrders(); }
-function setOrderFilterOrderer(name) { FILTERS.orders.orderedBy = name; renderOrders(); }
-function setOrderSmartSearch(value){FILTERS.orders.search=String(value||'');renderOrders();}
+function syncOrderFilterHistory(){if(curPage==='orders')history.replaceState({...history.state,plateStudioPage:'orders'},'',pageHistoryUrl('orders'));}
+function setOrderKind(kind,{reset=false}={}){
+  if(currentUser&&!canAccess('orders.manage')){toast('Tài khoản này chưa được cấp quyền xem đơn hàng.');return;}
+  if(!['all','regular','custom'].includes(kind))return;
+  if(curPage==='orders'&&FILTERS.orders.kind===kind&&!reset)return;
+  closeOrderFilterMenu(false);
+  if(curPage==='orders')rememberCurrentPageScroll();
+  if(reset)Object.assign(FILTERS.orders,{status:'all',projectId:'all',orderedBy:'all',search:''});
+  FILTERS.orders.kind=kind;
+  if(curPage==='orders'){writePageHistory('orders');renderOrders();}
+  else{goPage('orders');document.getElementById('pg-content')?.scrollTo({top:0,behavior:'instant'});document.querySelector(`[data-order-kind="${kind}"]`)?.focus({preventScroll:true});}
+}
+function setOrderFilterStatus(status) { FILTERS.orders.status = status; renderOrders();syncOrderFilterHistory(); }
+function setOrderFilterProject(projectId) { FILTERS.orders.projectId = projectId; renderOrders();syncOrderFilterHistory(); }
+function setOrderFilterOrderer(name) { FILTERS.orders.orderedBy = name; renderOrders();syncOrderFilterHistory(); }
+function setOrderSmartSearch(value){FILTERS.orders.search=String(value||'');renderOrders();syncOrderFilterHistory();}
 function viewOrderModelImages(orderId) {
   const order = orders.find(o=>o.id===orderId); if(!order) return;
   const grouped = new Map();

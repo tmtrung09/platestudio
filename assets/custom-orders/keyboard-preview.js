@@ -6,6 +6,8 @@
   const labels={tray:'Khay bàn phím',buttons:'Nút bàn phím',characters:'Ký tự'};
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const color=s=>/^#[a-f\d]{6}$/i.test(s||'')?s:/^#[a-f\d]{3}$/i.test(s||'')?'#'+s.slice(1).split('').map(c=>c+c).join(''):null;
+  const keyboardCharacters=text=>Array.from(new Intl.Segmenter('vi',{granularity:'grapheme'}).segment((text||'').trim()),x=>x.segment);
+  const lengthLabel=text=>{const count=keyboardCharacters(text).length;return count?`${count} ký tự · Khay dài theo tên`:'Chiều dài khay thay đổi theo tên khách nhập.';};
   function profile(line,model){const v=model?.variants?.find(v=>v.id===line.variantId),p=v&&Object.hasOwn(v,'keyboardProfile')?v.keyboardProfile:model?.keyboardProfile;return p?.version===1&&p.partIds?.tray&&p.partIds?.keys&&(!Array.isArray(v?.partIds)||[p.partIds.tray,p.partIds.keys].every(id=>v.partIds.includes(id)))?p:null;}
   function init(line,p){
     if(!line.keyboard)line.keyboard={version:1,text:'',partIds:{...p.partIds},colors:Object.fromEntries(Object.keys(labels).filter(r=>line.colorChoices?.[r==='tray'?p.partIds.tray:p.partIds.keys]).map(r=>[r,line.colorChoices[r==='tray'?p.partIds.tray:p.partIds.keys]]))};
@@ -14,7 +16,7 @@
   function ids(line,p){return Object.fromEntries(Object.keys(labels).map(r=>[r,line.keyboard?.colors?.[r]||p?.defaults?.[r]||null]));}
   function fields(line,p,fils){
     const k=init(line,p);
-    return `<section class="keyboard-custom" data-keyboard-line="${esc(line.id)}" aria-label="Phối màu bàn phím tên"><div class="keyboard-illustration"><canvas data-keyboard-canvas role="img" aria-label="Minh họa bàn phím tên"></canvas><span class="keyboard-render-message" role="status">Nhập ký tự để xem phối màu</span></div><div class="field"><label for="keyboard-text-${esc(line.id)}">Ký tự trên bàn phím <span class="required">*</span></label><input id="keyboard-text-${esc(line.id)}" data-keyboard-text="${esc(line.id)}" value="${esc(k.text)}" maxlength="120" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Tên hoặc ký tự khách yêu cầu (IN HOA)"></div><fieldset class="part-colors keyboard-color-fields"><legend>Phối màu bàn phím</legend>${Object.keys(labels).map(role=>{
+    return `<section class="keyboard-custom" data-keyboard-line="${esc(line.id)}" aria-label="Phối màu bàn phím tên"><div class="keyboard-illustration"><canvas data-keyboard-canvas role="img" aria-label="Minh họa bàn phím tên"></canvas><span class="keyboard-render-message" role="status">Nhập ký tự để xem phối màu</span></div><div class="field"><label for="keyboard-text-${esc(line.id)}">Ký tự trên bàn phím <span class="required">*</span></label><input id="keyboard-text-${esc(line.id)}" data-keyboard-text="${esc(line.id)}" value="${esc(k.text)}" aria-describedby="keyboard-size-${esc(line.id)}" maxlength="120" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Tên hoặc ký tự khách yêu cầu (IN HOA)"><p class="keyboard-size-hint" id="keyboard-size-${esc(line.id)}" data-keyboard-size>${esc(lengthLabel(k.text))}</p></div><fieldset class="part-colors keyboard-color-fields"><legend>Phối màu bàn phím</legend>${Object.keys(labels).map(role=>{
       const base=p.defaults?.[role],fil=fils.find(f=>f.id===base),sourceIds=p.sourceColorIds?.[role==='tray'?'tray':'keys']||[];
       const baseLabel=fil?.name||(sourceIds.length>1?'Chưa xác định màu gốc theo vùng':'Chưa chỉ định');
       return `<label class="part-color-field"><span>${labels[role]}</span><select class="br-color-native" data-keyboard-role="${role}" data-keyboard-line="${esc(line.id)}" aria-label="${labels[role]}"><option value="" data-filament-id="${esc(base||'')}">Giữ màu gốc: ${esc(baseLabel)}</option>${fils.map(f=>`<option value="${esc(f.id)}" ${k.colors?.[role]===f.id?'selected':''}>${esc([f.brand,f.name,f.mat].filter(Boolean).join(' · '))}</option>`).join('')}</select></label>`;
@@ -50,7 +52,8 @@
   }
   async function paint(holder,line,p,getFil){
     const canvas=holder.querySelector('[data-keyboard-canvas]');if(!canvas)return;
-    const message=holder.querySelector('.keyboard-render-message'),chars=Array.from(new Intl.Segmenter('vi',{granularity:'grapheme'}).segment((line.keyboard?.text||'').trim()),x=>x.segment);
+    const message=holder.querySelector('.keyboard-render-message'),chars=keyboardCharacters(line.keyboard?.text);
+    const lengthHint=holder.querySelector('[data-keyboard-size]');if(lengthHint)lengthHint.textContent=lengthLabel(line.keyboard?.text);
     const chosen=ids(line,p),colors=Object.keys(labels).map(r=>color(getFil(chosen[r])?.hex));
     const signature=JSON.stringify([chars,chosen,colors,Object.keys(labels).map(r=>getFil(chosen[r])?.name)]);
     if(paintStates.get(canvas)===signature)return;

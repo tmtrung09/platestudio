@@ -9,6 +9,8 @@ import AxeBuilder from '@axe-core/playwright';
 // Isolated data and blocked network: this guard never reads or changes live Kiot data.
 const out=resolve('qa-results/kiot-workspace');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+async function waitForSearch(page,value){await page.waitForFunction(value=>window.qaAppliedCatalogQuery===value,value,{timeout:5000});}
+async function search(page,value){await page.locator('#kv-search').fill(value);await waitForSearch(page,value);}
 try{
  for(const width of [320,390,768,1024,1440])for(const theme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
@@ -26,6 +28,10 @@ try{
    kiotInventoryLedger={...kiotInventoryLedger,loaded:true,movements:[]};kiotChromeSync={status:'idle',detail:''};kiotDailySchedule={available:false,enabled:true};
    kiotCatalogQuery='';kiotCatalogLinkFilter='all';kiotSalesArchiveLoaded=true;salesPageReportId='day';salesPageDatePreset='all';
    window.bridgeCalls=0;refreshKiotDailySchedule=async()=>{bridgeCalls++;};
+   // Observe completed reconciliation, rather than assuming a 180ms debounce
+   // plus painting always finishes within an arbitrary 250ms sleep.
+   const applyCatalog=updateKiotSyncCatalog;
+   updateKiotSyncCatalog=(...args)=>{const result=applyCatalog(...args);window.qaAppliedCatalogQuery=kiotCatalogQuery;return result;};
    goPage('kiotviet',{historyMode:'none'});
    window.originalInput=document.getElementById('kv-search');window.originalRow=document.querySelector('[data-kv-sku="QA0"]');window.originalImage=originalRow.querySelector('img');
    window.originalCatalog=JSON.stringify(kiotViet);
@@ -46,18 +52,26 @@ try{
   const contrast=await new AxeBuilder({page}).include('.kv-sync-workspace').withRules(['color-contrast']).analyze();
   assert.deepEqual(contrast.violations,[],`${width}/${theme}: text contrast`);
   await page.screenshot({path:resolve(out,`${width}-${theme}-top.png`)});
-  await page.locator('#kv-search').fill('lot ly');await page.waitForTimeout(250);
+  await search(page,'lot ly');
   assert.equal(await page.locator('.kv-row').count(),1,'Vietnamese accent-insensitive query');
   assert.deepEqual(await page.evaluate(()=>[originalInput===document.getElementById('kv-search'),originalInput===document.activeElement,originalRow===document.querySelector('[data-kv-sku="QA0"]'),originalImage===originalRow.querySelector('img'),bridgeCalls]),[true,true,true,true,1]);
-  await page.locator('#kv-search').fill('hoa tim');await page.waitForTimeout(250);assert.equal(await page.locator('.kv-row').count(),1,'Variant searchable');
+  await search(page,'hoa tim');assert.equal(await page.locator('.kv-row').count(),1,'Variant searchable');
   await page.evaluate(()=>{originalInput.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));originalInput.value='Đồ';originalInput.dispatchEvent(new InputEvent('input',{bubbles:true,isComposing:true}));});
   await page.waitForTimeout(220);assert.equal(await page.locator('.kv-row').count(),1,'IME does not redraw midway');
-  await page.evaluate(()=>originalInput.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'Đồ'})));await page.waitForTimeout(250);
+  await page.evaluate(()=>originalInput.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'Đồ'})));await waitForSearch(page,'Đồ');
   assert.equal(await page.locator('.kv-row').count(),100);
   await page.locator('#kv-sync-clear').click();await page.locator('[data-filter="unlinked"]').click();assert.equal(await page.locator('[data-kv-sku="QA0"]').count(),0);
   await page.locator('#kv-sync-clear').click();await page.locator('#kv-sync-more').click();assert.equal(await page.locator('.kv-row').count(),200);
-  await page.locator('#kv-search').fill('QA419');await page.waitForTimeout(250);assert.equal(await page.locator('[data-kv-sku="QA419"]').count(),1,'Search includes records beyond first page');
-  await page.locator('#kv-search').fill('nothing-matches');await page.waitForTimeout(250);assert.match(await page.locator('.kv-list').textContent(),/Không có kết quả/);
+  if(width===1024&&theme==='dark'){
+   // A held search models a busy event loop deterministically. An early read
+   // still sees the previous page; only completed work is a final result.
+   await page.evaluate(()=>{const nativeTimeout=window.setTimeout;window.qaRestoreSearchTimer=()=>{window.setTimeout=nativeTimeout;};window.setTimeout=(callback,delay,...args)=>delay===180?nativeTimeout.call(window,()=>{window.qaReleaseSearch=()=>callback(...args);},0):nativeTimeout.call(window,callback,delay,...args);});
+   await page.locator('#kv-search').fill('QA419');await page.waitForFunction(()=>typeof window.qaReleaseSearch==='function');
+   assert.equal(await page.locator('[data-kv-sku="QA419"]').count(),0,'A pending search is not yet the final result');
+   await page.evaluate(()=>{qaRestoreSearchTimer();qaReleaseSearch();delete window.qaReleaseSearch;delete window.qaRestoreSearchTimer;});await waitForSearch(page,'QA419');
+  }else await search(page,'QA419');
+  assert.equal(await page.locator('[data-kv-sku="QA419"]').count(),1,'Search includes records beyond first page');
+  await search(page,'nothing-matches');assert.match(await page.locator('.kv-list').textContent(),/Không có kết quả/);
   await page.locator('#kv-sync-clear').click();
   await page.evaluate(()=>{const details=document.querySelector('.kv-sync-extra');details.open=true;window.focusedInput=document.getElementById('kv-search');focusedInput.focus();focusedInput.setSelectionRange(0,0);renderKiotVietPage();});
   assert.deepEqual(await page.evaluate(()=>[document.querySelector('.kv-sync-extra').open,focusedInput===document.activeElement,originalImage===originalRow.querySelector('img'),JSON.stringify(kiotViet)===originalCatalog]),[true,true,true,true],'Background refresh preserves UI and source data');

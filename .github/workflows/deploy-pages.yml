@@ -29,7 +29,7 @@ jobs:
           mkdir -p site
           cp custom-orders.html order-status.html index.html plate-studio.html printer-monitor.js plate-plan-files.js filament-picker.js kiot-pending-store.js kiot-mapping-sync.js manifest.webmanifest push-sw.js plate-studio-mark.svg site/
           cp -R assets site/assets
-          sed -i "s/__DEPLOY_REVISION__/${GITHUB_SHA}/g" site/plate-studio.html
+          sed -i "s/__DEPLOY_REVISION__/${GITHUB_SHA}/g" site/plate-studio.html site/custom-orders.html site/order-status.html
           printf '{"revision":"%s"}\n' "$GITHUB_SHA" > site/release.json
 
       - name: Configure Pages

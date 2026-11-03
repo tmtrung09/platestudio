@@ -479,6 +479,22 @@
 
 ## Đơn custom tại cửa hàng
 
+- Form tiếp nhận custom có một header gọn, ưu tiên sản phẩm và thông tin cần
+  nhập; không lặp thẻ “Đơn custom mới”/khẩu hiệu/tổng tiền bên cạnh hoặc dưới
+  form. Đối chiếu đầy đủ ở bước Xem lại đơn. Mobile có bộ chọn sản phẩm rộng
+  bằng vùng yêu cầu cả khi thu gọn; thanh nút theo bước chừa vùng cuộn theo
+  chiều cao thực và visual viewport, không che ô nhập khi mở bàn phím. Lỗi
+  nhập liệu nằm cạnh trường liên quan, không mang thông báo lỗi của bước trước
+  sang bước mới. Giữ nháp, focus, ảnh, ba bước và bố cục hai cột desktop.
+- Trang Đơn hàng có mục Đơn custom trong cùng thư viện, dùng chung tìm kiếm,
+  bộ lọc và nguồn đơn; không nhân đôi bản ghi hoặc thêm vòng tải dữ liệu riêng.
+  Dashboard có khu vực đơn custom hiển thị sẵn theo quyền quản lý đơn, nêu số
+  chưa hoàn tất/quá hẹn/hẹn hôm nay và mở đúng đơn hoặc danh sách đã lọc. Ngày
+  hẹn tính theo ngày địa phương; đơn huỷ/hoàn thành hoặc đã xác nhận khách nhận
+  hàng không báo quá hẹn. Mốc khách nhận lấy từ receipt server, đồng bộ nguyên
+  tử vào đơn chung, không cho client tự ghi/xoá mốc. Giữ mục lọc khi tải lại và
+  Back/Forward, trạng thái cache/offline và giao diện mobile/desktop hai theme.
+  Guard: `tools/custom-order-overview-qa.mjs` và QA SQL đơn custom.
 - Nhân viên cửa hàng đăng nhập Plate Studio với nhóm quyền riêng để tạo đơn custom
   và xem tất cả đơn custom của cửa hàng; sau khi tạo chỉ xem tiến độ. Hỗ trợ điện
   thoại và máy tính tại quầy. Luồng và trang đăng nhập mới phải có demo để duyệt
@@ -509,7 +525,10 @@
   trong dòng sản phẩm, không mở trang riêng. Có ba vùng màu: khay bàn phím,
   nút bàn phím, ký tự. Model giữ hai part nguồn “khay”/“Khay bàn phím” và “nút+ký tự”; hai màu
   nút/chữ thuộc cùng part in chung, không tạo part giả hoặc cộng đôi số lượng.
-  Tên nhập mặc định chuyển thành chữ in hoa, giữ dấu tiếng Việt; ô nhập, hình
+    Chiều dài khay và số nút minh họa thay đổi theo tên nhập; tên biến thể nguồn
+    không giới hạn số ký tự. Hiển thị rõ chiều dài theo tên, giữ hai part in
+    chung và định mức nguồn, không cộng thêm part theo số ký tự.
+    Tên nhập mặc định chuyển thành chữ in hoa, giữ dấu tiếng Việt; ô nhập, hình
   minh họa, bước xác nhận và yêu cầu sản xuất dùng cùng ký tự. Giữ caret/focus
   khi gõ/dán, chỉ chuyển hoa sau khi bộ gõ hoàn tất composition.
   Gắn bằng ID model/part đã đối chiếu ở server; lưu ký tự và snapshot ba vùng
@@ -638,14 +657,26 @@
   trạng thái liên quan, focus/hover/active/vùng chạm.
 - Thêm assertion tái hiện lớp lỗi, thất bại trước bản vá hoặc điều kiện chấp
   nhận cụ thể. Xem render/screenshot thực tế; test pass không thay đánh giá UI.
-  Ưu tiên test mục tiêu, chốt diff rồi QA tổng.
-- Sửa ứng dụng phải qua `npm run qa:all`, `git diff --check`, không đẩy khi có
-  failure. Nêu phần chưa kiểm chứng, phân biệt warning/failure, không kết luận
-  hoàn tất từ một điểm đã ổn hoặc QA cũ.
+  Ưu tiên test mục tiêu và xem ảnh render đại diện của phần thay đổi.
+- Kiểm tra theo phạm vi ảnh hưởng, không mặc định chạy toàn bộ sau mỗi sửa đổi.
+  Sửa giao diện cục bộ: kiểm tra component/luồng liên quan trên mobile/desktop,
+  hai theme và một lượt thao tác chính; thay đổi lưu/đồng bộ/quyền phải kiểm tra
+  hồi quy dữ liệu tương ứng. Chạy `npm run qa:all` khi thay đổi nền tảng dùng
+  chung có ảnh hưởng rộng hoặc chưa xác định được phạm vi, không vì sửa tài liệu.
+- Tái sử dụng kết quả đạt khi mã, phụ thuộc, cấu hình và môi trường liên quan
+  không đổi. Ghi phạm vi, phiên bản/hash đầu vào và bằng chứng kiểm tra; chỉ
+  chạy lại nhóm bị vô hiệu bởi diff mới. Không coi toàn bộ kết quả cũ mất hiệu
+  lực vì một chỉnh sửa cục bộ; cũng không dùng quy tắc thiết kế thay bằng chứng
+  cho hành vi lưu dữ liệu, quyền hoặc tương tác mới.
+- Áp dụng sẵn quy tắc giao diện đã được chốt, không dựng lại demo hoặc xin duyệt
+  lại cùng một quyết định. Gộp các chỉnh sửa trước một lượt kiểm tra mục tiêu;
+  chỉ mở rộng khi có lỗi hoặc rủi ro cụ thể chưa được kiểm chứng. Báo cáo ngắn
+  kết quả và ngoại lệ, lưu log/ảnh chi tiết ngoài hội thoại. Mọi bản phát hành
+  qua `git diff --check`; không phát hành khi còn failure chưa được giải quyết.
 - Không thiết kế lại toàn ứng dụng ngoài phạm vi; chỉ hỏi khi thiếu nghiệp vụ/
   phạm vi/quyền. Tư vấn Cài đặt/khả năng mới không cấp quyền triển khai; phân biệt
   tính năng có sẵn và đề xuất.
-- Phát hành cần QA trên diff cuối, migration cần thiết đã áp dụng, staged diff
+- Phát hành cần bằng chứng QA còn hiệu lực cho diff cuối, migration cần thiết đã áp dụng, staged diff
   chỉ gồm phần được giao, push theo quyền đã cấp, xác nhận revision/asset đang
   phục vụ. Không gộp thay đổi song song không liên quan hoặc báo xong khi web/
   server còn bản cũ.

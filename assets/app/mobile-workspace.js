@@ -146,6 +146,12 @@
     orderStep=step==='requirements'?'requirements':'catalog';orderVisible=true;
     const root=document.getElementById('ov-order-form');if(root)syncOrderState(root);sync();return true;
   }
+  let counterDock=null,counterDockObserver=null;
+  function trackCounterDock(node){
+    if(counterDock!==node){counterDockObserver?.disconnect();counterDock=node;if(node){counterDockObserver ||= new ResizeObserver(sync);counterDockObserver.observe(node);}}
+    const value=(node?Math.ceil(node.getBoundingClientRect().height):0)+'px',root=document.documentElement;
+    if(root.style.getPropertyValue('--mws-counter-actions-height')!==value)root.style.setProperty('--mws-counter-actions-height',value);
+  }
   function externalView(){
     const surface=document.documentElement.dataset.studioSurface;
     if(surface!=='custom')return;
@@ -155,13 +161,15 @@
     // One requirements form and one draft: mobile arranges the same owned widgets.
     app.querySelectorAll('.product-layout,.customer-columns,.work-grid').forEach(el=>add(el,'mws-flow'));
     app.querySelectorAll('.form-actions,.product-actions').forEach(el=>add(el,'mws-form-actions'));
+    app.querySelectorAll('.top-context>.btn.text').forEach(el=>add(el,'btn-icon-only'));
+    trackCounterDock(app.querySelector('.counter-step-actions'));
     tableViews(app);
   }
   function apply(){
     if(working)return;working=true;
     try{
       const enabled=media.matches;attr(document.documentElement,'data-mobile-studio',enabled?'active':'desktop');
-      if(!enabled){if(lastMode===true){restore();document.querySelectorAll('#of-cart-pane,.of-cat-pane').forEach(el=>el.inert=false);if(typeof applyPageLayout==='function'&&typeof curPage!=='undefined')applyPageLayout(curPage);}lastMode=false;return;}
+      if(!enabled){trackCounterDock(null);if(lastMode===true){restore();document.querySelectorAll('#of-cart-pane,.of-cat-pane').forEach(el=>el.inert=false);if(typeof applyPageLayout==='function'&&typeof curPage!=='undefined')applyPageLayout(curPage);}lastMode=false;return;}
       lastMode=true;
       for(const record of [...records])if(!record.node.isConnected&&!record.marker.isConnected)records.delete(record);
       for(const cell of tables)if(!cell.isConnected)tables.delete(cell);

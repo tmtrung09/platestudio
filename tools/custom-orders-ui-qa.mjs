@@ -68,12 +68,27 @@ async function beginOrder(page){
 }
 async function fillCustomer(page){
  await page.locator('#next-step').click();await page.locator('#customer-name').fill('Linh');await page.locator('#customer-phone').fill('0901234567');await page.locator('#order-total').fill('280000');await page.locator('#order-deposit').fill('100000');await page.locator('#order-due').fill('2026-10-29');
+ assert.equal(await page.locator('#order-summary,#product-summary-slot').count(),0);
+ if(await page.evaluate(()=>window.PlateMobileWorkspace.active())){
+  const original=page.viewportSize();await page.setViewportSize({...original,height:500});
+  for(const selector of ['#customer-name','#customer-phone','#order-total','#order-deposit','#order-due']){
+   await page.locator(selector).focus();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const geometry=await page.locator(selector).evaluate(field=>{const r=field.getBoundingClientRect(),dock=document.querySelector('.counter-step-actions').getBoundingClientRect(),viewport=window.visualViewport,workspace=document.querySelector('.workspace');return {fieldTop:r.top,fieldBottom:r.bottom,dockTop:dock.top,dockBottom:dock.bottom,viewTop:viewport.offsetTop,viewBottom:viewport.offsetTop+viewport.height,padding:parseFloat(getComputedStyle(workspace).paddingBottom),height:dock.height};});
+   assert.ok(geometry.fieldTop>=geometry.viewTop&&geometry.fieldBottom<=geometry.dockTop-5,'Keyboard-sized viewport keeps '+selector+' above the action dock: '+JSON.stringify(geometry));
+   assert.ok(geometry.dockTop>=geometry.viewTop&&geometry.dockBottom<=geometry.viewBottom+1&&geometry.padding>=geometry.height+16,'Dock reserves its real height: '+JSON.stringify(geometry));
+  }
+  await page.setViewportSize(original);await page.locator('#order-due').focus();
+ }
+ if([390,1440].includes(page.viewportSize().width))await page.screenshot({path:resolve(out,page.viewportSize().width+'-'+await page.evaluate(()=>document.documentElement.dataset.theme)+'-customer-fields.png')});
 }
 
 async function checkProductFlow(width,theme){
  const {page,context}=await setup(width,theme,true);
  const wide=width>=1100;
  if(width===844)await page.setViewportSize({width,height:390});
+ assert.equal(await page.locator('#order-summary,#product-summary-slot').count(),0,'Confirmation is not duplicated beside/below the draft');
+ assert.equal(await page.locator('#theme-toggle').count(),1,'One theme control survives header rendering');
+ assert.equal(await page.locator('#theme-toggle').isVisible(),true,'Theme stays reachable in the compact header');
  await page.waitForFunction(()=>document.querySelectorAll('.model-card').length===60);
  for(const count of [120,180,200]){await page.locator('#more-models').click();await page.waitForFunction(count=>document.querySelectorAll('.model-card').length===count,count);}
  if(wide){
@@ -85,10 +100,16 @@ async function checkProductFlow(width,theme){
  const position=await page.locator('.selected-line').first().evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:innerHeight};});
  assert.ok(position.top>=0&&position.top<position.height/2,'Selected requirement must be in view immediately, without scrolling past 200 models: '+JSON.stringify(position));
  assert.equal(await page.locator('#model-search').isVisible(),wide,'Desktop keeps catalog visible; narrow layouts fold it after selection');
+ if(!wide){const columns=await page.evaluate(()=>({picker:document.querySelector('#model-picker').getBoundingClientRect().width,requirements:document.querySelector('#custom-requirements-panel').getBoundingClientRect().width,workspace:document.querySelector('.workspace').clientWidth-parseFloat(getComputedStyle(document.querySelector('.workspace')).paddingLeft)-parseFloat(getComputedStyle(document.querySelector('.workspace')).paddingRight)}));assert.ok(Math.abs(columns.picker-columns.requirements)<=2&&Math.abs(columns.picker-columns.workspace)<=2,'Collapsed picker spans the full workspace: '+JSON.stringify(columns));}
  assert.equal(await page.locator('#next-step').isVisible(),true);
  const nextBounds=await page.locator('#next-step').boundingBox();assert.ok(nextBounds.y>=0&&nextBounds.y+nextBounds.height<=page.viewportSize().height,'Next action remains in the viewport');
  if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-selected-viewport.png')});
+ await page.locator('#next-step').click();
+ assert.equal(await page.locator('[data-step="0"]').getAttribute('aria-current'),'step','Missing requirement cannot advance the wizard');
+ await page.locator('#custom-field-error').waitFor();assert.equal(await page.locator('#toast').isVisible(),false,'Validation stays next to its field');
+ assert.equal(await page.locator('[data-note]').getAttribute('aria-invalid'),'true');
  await page.locator('[data-note]').fill('Yêu cầu màu và tên đã chốt cùng khách');
+ assert.equal(await page.locator('#custom-field-error').count(),0,'Editing clears the relevant inline error');
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  const notePosition=await page.locator('[data-note]').evaluate(el=>{const note=el.getBoundingClientRect(),actions=document.querySelector('.product-actions').getBoundingClientRect();return {top:note.top,bottom:note.bottom,actions:actions.top};});
  assert.ok(notePosition.top>=0&&notePosition.bottom<=notePosition.actions,'The action bar must not cover the focused request: '+JSON.stringify(notePosition));
@@ -155,6 +176,8 @@ try{
   await fillCustomer(page);await noOverflow(page,`${width}/${theme}/customer-form`);
   await page.locator('[data-action=back]').click();assert.equal(await page.locator('[data-part=tray]').inputValue(),'green');assert.equal(await page.locator('[data-part=key]').inputValue(),'cream');
   await page.locator('#next-step').click();await page.locator('[data-action=next]').click();assert.equal(await page.locator('#submit-order').isDisabled(),true);
+  assert.equal(await page.locator('#order-summary').count(),0);assert.equal(await page.locator('.money-row.total').count(),1,'One financial confirmation at the review step');
+  assert.equal(await page.locator('#toast').isVisible(),false,'No stale validation message on the next step');
   assert.match(await page.locator('.part-summary').first().innerText(),/Khay.*Xanh rêu/s);
   await page.locator('#review-confirm').check();await page.locator('#submit-order').click();await page.locator('.success-panel').waitFor();
   assert.equal(await page.locator('.qr-code svg').count(),1);assert.match(await page.locator('.qr-link').innerText(),/order-status\.html#[a-f0-9]{64}$/);

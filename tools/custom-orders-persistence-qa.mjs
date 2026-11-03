@@ -21,6 +21,7 @@ async function setup({width=390,theme='light',legacy=false}={}){
   const client={auth:{getSession:async()=>({data:{session:{user:{id:localStorage.getItem('qa-user')||user}}}}),onAuthStateChange:()=>({})},
    rpc:async(name,args)=>{
     window.__calls.push({name,args});
+    if(name==='ensure_workspace_membership'&&localStorage.getItem('qa-membership-denied'))return {error:{code:'42501',message:'Quyền cửa hàng đã thay đổi trong kiểm thử'}};
     if(name==='ensure_workspace_membership')return localStorage.getItem('qa-offline')?{error:{message:'Kết nối thử đang ngoại tuyến'}}:{data:[{workspace_id:ws,owner_user_id:'owner',permissions:['custom_orders.create','custom_orders.view']}]};
     if(name==='custom_order_catalog')return {data:{models:[model],total:1}};
     if(name==='custom_order_filaments')return {data:[]};
@@ -81,6 +82,15 @@ async function run(name,fn,options){
  finally{await fixture?.context.close();}
 }
 try{
+ await run('theme-control-survives-cached-startup-denial',async({page})=>{
+  await page.locator('[data-model=model-1]').click();await page.locator('[data-note]').fill('Giữ nguyên nháp khi quyền thay đổi');
+  await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
+  await page.evaluate(()=>localStorage.setItem('qa-membership-denied','1'));await page.reload();await page.locator('.broken-link h1').waitFor();
+  assert.equal(await page.locator('#theme-toggle').count(),1);assert.equal(await page.locator('#theme-toggle').isVisible(),true,'Error routing must return the owned theme control to its header');
+  const theme=await page.evaluate(()=>document.documentElement.dataset.theme);await page.locator('#theme-toggle').click();assert.notEqual(await page.evaluate(()=>document.documentElement.dataset.theme),theme);
+  await page.evaluate(()=>localStorage.removeItem('qa-membership-denied'));await page.reload();await page.locator('[data-note]').waitFor();
+  assert.equal(await page.locator('[data-note]').inputValue(),'Giữ nguyên nháp khi quyền thay đổi');assert.equal(await page.locator('#theme-toggle').count(),1);
+ });
  for(const code of ['PT409','40001'])await run('business-conflict-'+code+'-stops-retry-and-keeps-draft',async({page})=>{
   await review(page);await page.evaluate(code=>{window.__commitError=code;},code);await page.locator('#submit-order').click();
   await page.locator('[data-note]').waitFor();await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('Model đã thay đổi'));

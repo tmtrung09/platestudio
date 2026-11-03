@@ -1,0 +1,60 @@
+/* Orders and Dashboard share records; these surfaces only change presentation. */
+.order-kind-picker{display:flex;align-items:center;gap:4px;max-width:100%;width:max-content;padding:4px;background:var(--s2);border-radius:16px;margin:0 0 12px}
+.order-kind-picker button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:9px 16px;border:0;border-radius:12px;background:transparent;color:var(--t2);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.order-kind-picker button[aria-pressed="true"]{background:var(--acb);color:var(--ac)}
+.order-kind-picker button:hover{background:var(--s3)}
+.order-kind-picker button[aria-pressed="true"]:hover{background:var(--acb)}
+.order-kind-picker small{font-size:11px;font-variant-numeric:tabular-nums}
+.order-kind-picker button:focus-visible,.dashboard-custom a:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.dashboard-custom{padding:20px;border-radius:22px;background:var(--s);min-width:0}
+.dashboard-custom-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.dashboard-custom-heading{display:flex;align-items:center;gap:10px;min-width:0}
+.dashboard-custom-heading>svg{width:23px;height:23px;flex:0 0 auto;color:var(--ac)}
+.dashboard-custom h3{font-size:17px;margin:0;color:var(--t);line-height:1.35}
+.dashboard-custom p{margin:3px 0 0;color:var(--t2);font-size:12px;line-height:1.5}
+.dashboard-custom-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.dashboard-custom-stat{display:flex;align-items:baseline;gap:9px;padding:12px 14px;border-radius:14px;background:var(--s2);color:var(--t2);font-size:12px}
+.dashboard-custom-stat b{font-size:23px;line-height:1.2;color:var(--t);font-variant-numeric:tabular-nums}
+.dashboard-custom-stat.is-overdue{background:var(--reb);color:var(--re)}
+.dashboard-custom-stat.is-today{background:var(--amb);color:var(--am)}
+.dashboard-custom-stat:is(.is-overdue,.is-today) b{color:inherit}
+.dashboard-custom-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dashboard-custom-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px;border-radius:14px;background:var(--s2);color:var(--t);text-decoration:none;min-width:0}
+.dashboard-custom-row:hover{background:var(--s3)}
+.dashboard-custom-thumb{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--s);overflow:hidden;color:var(--t2)}
+.dashboard-custom-thumb img{width:100%;height:100%;object-fit:contain}
+.dashboard-custom-thumb>svg{width:22px;height:22px}
+.dashboard-custom-copy{min-width:0;overflow-wrap:anywhere}
+.dashboard-custom-copy b{display:block;font-size:13px;line-height:1.4}
+.dashboard-custom-copy small{display:block;color:var(--t2);font-size:11px;margin-top:3px;line-height:1.45}
+.dashboard-custom-row>svg{width:18px;height:18px;color:var(--t2)}
+.custom-order-due{display:inline-flex;align-items:center;gap:5px;color:var(--t2);font-size:11px;line-height:1.5}
+.custom-order-due[data-urgency="overdue"]{color:var(--re)}
+.custom-order-due[data-urgency="today"]{color:var(--am)}
+.dashboard-custom-empty{padding:18px 12px;border-radius:14px;background:var(--s2);color:var(--t2);font-size:13px;line-height:1.5}
+.dashboard-custom-footer{margin-top:12px;font-size:12px;color:var(--t2)}
+.oc-meta .custom-order-due{font-size:inherit}
+.oc-meta>span{display:inline-flex;align-items:center;gap:4px;overflow-wrap:anywhere}
+.oc-meta svg{width:14px;height:14px;flex:0 0 auto}
+.dashboard-custom svg,.oc-meta svg,.oc-title .badge svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.oc-title .badge svg{width:12px;height:12px;vertical-align:middle}
+/* Mobile keeps the custom entry and due dates exposed above the order list. */
+html[data-mobile-studio="active"] .order-kind-picker{width:100%;margin:0;box-sizing:border-box;gap:2px;padding:3px}
+html[data-mobile-studio="active"] .order-kind-picker button{flex:1;min-width:0;padding:9px 5px;gap:4px;font-size:12px;white-space:nowrap}
+html[data-mobile-studio="active"] .order-kind-picker small{font-size:10px}
+html[data-mobile-studio="active"] #page-orders .oc-top{grid-template-columns:56px minmax(0,1fr);gap:10px}
+html[data-mobile-studio="active"] #page-orders .oc-thumb-area{width:56px;min-width:0}
+html[data-mobile-studio="active"] #page-orders .oc-thumb-area .thumb-sm{width:32px;height:32px;margin-left:-20px;flex:0 0 auto}
+html[data-mobile-studio="active"] #page-orders .oc-thumb-area .thumb-sm:first-child{margin-left:0}
+html[data-mobile-studio="active"] #page-orders .oc-status{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+html[data-mobile-studio="active"] #page-orders .oc-status .gap-row{flex-basis:100%;display:flex;justify-content:flex-end;margin:0}
+html[data-mobile-studio="active"] .dashboard-custom{padding:16px 12px;border-radius:18px}
+html[data-mobile-studio="active"] .dashboard-custom-head{align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+html[data-mobile-studio="active"] .dashboard-custom-head>.btn{min-height:44px;margin-left:auto}
+html[data-mobile-studio="active"] .dashboard-custom-heading{flex:1 1 160px}
+html[data-mobile-studio="active"] .dashboard-custom-stats{gap:6px}
+html[data-mobile-studio="active"] .dashboard-custom-stat{flex-direction:column;gap:4px;padding:10px 8px;font-size:11px}
+html[data-mobile-studio="active"] .dashboard-custom-stat b{font-size:24px}
+html[data-mobile-studio="active"] .dashboard-custom-list{grid-template-columns:minmax(0,1fr)}
+html[data-mobile-studio="active"] .dashboard-custom-row{grid-template-columns:44px minmax(0,1fr) 18px;padding:12px 10px;min-height:64px}
+@media(forced-colors:active){.order-kind-picker button[aria-pressed="true"]{outline:2px solid Highlight}.dashboard-custom-row{outline:1px solid CanvasText}}
