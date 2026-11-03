@@ -570,6 +570,11 @@
   chờ theo xưởng + tài khoản; ngoại tuyến hoặc lỗi đọc giữ bản trước và nêu rõ
   chưa cập nhật, không báo danh sách rỗng hay lưu cloud từ cache. Lỗi ảnh tham
   khảo không làm mất xác nhận đơn. Guard: `tools/custom-orders-persistence-qa.mjs`.
+- Gửi đơn custom bị máy chủ từ chối phải trở về nháp có thể chỉnh sửa, giữ dòng,
+  ảnh, mô tả, ký tự, màu và thông tin khách. Model đổi phiên bản có thao tác cập
+  nhật ngay trên dòng, giữ ID và lựa chọn còn hợp lệ; biến thể/part bị gỡ phải
+  được đối chiếu rõ trước gửi lại. Không bỏ kiểm tra revision ở server. Mất phản
+  hồi chưa rõ kết quả phải giữ mã yêu cầu cũ để đối chiếu, không tạo đơn mới thay thế.
 
 ## KiotViet, bán hàng và tồn kho
 
