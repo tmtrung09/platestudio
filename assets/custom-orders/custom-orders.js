@@ -129,6 +129,7 @@
     if(state.step===0) {
       $('#model-picker').open=productWide.matches||!state.draft.lines.length;
       renderCatalog('');renderLines();
+      if(state.draft.submitError){$('#form-error').textContent=state.draft.submitError;$('#form-error').hidden=false;}
     }
   }
   function productStep() {
@@ -153,7 +154,55 @@
   }
   function lineHTML(line) {
     const model=getModel(line);if(!model)return '';
-    return `<article class="selected-line" data-line="${line.id}" tabindex="-1" aria-label="Yêu cầu custom cho ${esc(model.name)}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <span class="required">*</span></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
+    return `<article class="selected-line" data-line="${line.id}" tabindex="-1" aria-label="Yêu cầu custom cho ${esc(model.name)}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${modelRecoveryHTML(line)}${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <span class="required">*</span></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
+  }
+  const modelConflict=error=>/^Model (đã thay đổi|không còn tồn tại)/.test(error?.message||'');
+  function sourceError(line){
+    if(line.modelNeedsReview)return 'Cập nhật model rồi kiểm tra lại part và màu trước khi gửi.';
+    const model=getModel(line);
+    if(model?.variants?.length&&!model.variants.some(variant=>variant.id===line.variantId))return 'Biến thể cũ không còn. Cập nhật model và chọn lại biến thể.';
+    if(Object.keys(line.colorChoices||{}).some(id=>!eligibleParts(line).some(part=>part.id===id)))return 'Có màu đã chọn cho part không còn dùng. Kiểm tra lựa chọn bên dưới.';
+    return '';
+  }
+  function modelRecoveryHTML(line){
+    const cached=modelIndex.get(line.modelId),changed=cached&&cached.revision!==line.model?.revision;
+    const stale=Object.entries(line.colorChoices||{}).filter(([id])=>!eligibleParts(line).some(part=>part.id===id));
+    return `<div class="model-recovery" data-model-recovery="${line.id}" ${line.modelNeedsReview||changed||sourceError(line)?'':'hidden'}><p>${esc(sourceError(line)||'Model có bản mới. Cập nhật để kiểm tra lại part và màu.')}</p><button class="btn secondary" data-refresh-model="${line.id}">Cập nhật model</button>${stale.map(([id,color])=>`<p>Màu part đã gỡ: ${esc(window.getFil(color)?.name||color)} <button class="btn text" data-remove-stale-color="${line.id}" data-stale-part="${esc(id)}">Bỏ lựa chọn này</button></p>`).join('')}</div>`;
+  }
+  let modelCandidate=null;
+  async function refreshLineModel(id,button){
+    const line=state.draft.lines.find(row=>row.id===id),owner=scope;if(!line||saving||state.pending)return;
+    button.disabled=true;
+    try{
+      let latest;
+      // Search the old name first; an ID-preserving rename can require the full catalog.
+      for(const query of [...new Set([line.model?.name||'',''])]){
+        for(let off=0;;){
+          const data=await rpc('custom_order_catalog',{w:workspace.workspace_id,q:query,off});
+          if(scope!==owner||!state.draft.lines.includes(line))return;
+          latest=data.models.find(model=>model.id===line.modelId);off+=data.models.length;
+          if(latest||!data.models.length||off>=data.total)break;
+        }
+        if(latest)break;
+      }
+      if(!latest)throw Error('Model không còn trong thư viện. Nháp và ảnh vẫn được giữ; chọn sản phẩm thay thế trước khi bỏ dòng cũ.');
+      const variants=latest.variants||[],variantId=variants.some(variant=>variant.id===line.variantId)?line.variantId:variants.length?null:'';
+      modelCandidate={owner,line,model:latest,variantId};
+      const dialog=$('#detail-dialog');
+      dialog.innerHTML=`<div class="dialog-header"><h2 id="dialog-title">Cập nhật ${esc(latest.name)}</h2><button class="btn-icon-only" data-close-dialog aria-label="Đóng cập nhật model">${icon('close')}</button></div><p>Giữ nguyên số lượng, mô tả, ký tự, màu đã chọn và ảnh tham khảo. Kiểm tra lại part và màu gốc theo bản mới trước khi xác nhận đơn.</p><p class="muted">${latest.parts.map(part=>esc(part.name)+' × '+esc(part.qtyPerModel||1)).join(' · ')||'Model không có part.'}</p>${variants.length?`<div class="variant-options">${variants.map(variant=>`<button data-source-variant="${esc(variant.id)}" aria-pressed="${variant.id===variantId}">${esc(variant.name)}</button>`).join('')}</div>`:''}<div class="form-actions"><button class="btn secondary" data-close-dialog>Giữ bản nháp</button><button class="btn primary" data-action="apply-model" ${variantId===null?'disabled':''}>Cập nhật và kiểm tra</button></div>`;
+      dialog.showModal();
+    }catch(error){showError(error);}finally{if(button.isConnected)button.disabled=false;}
+  }
+  async function applyLineModel(){
+    const candidate=modelCandidate;if(!candidate||candidate.owner!==scope||!state.draft.lines.includes(candidate.line)||candidate.variantId===null||state.pending)return;
+    const line=candidate.line;
+    line.model=structuredClone(candidate.model);line.variantId=candidate.variantId;delete line.modelNeedsReview;
+    modelIndex.set(line.modelId,candidate.model);state.draft.checked=false;
+    $('#detail-dialog').close();modelCandidate=null;persist();
+    // An explicit model update replaces this row only; other rows retain their DOM and inputs.
+    $(`[data-line="${line.id}"]`).outerHTML=lineHTML(line);
+    const row=$(`[data-line="${line.id}"]`);window.FilamentPickers?.init(row);paintKeyboards(line);row.focus({preventScroll:true});
+    toast('Đã cập nhật model. Kiểm tra lại part và màu rồi đối chiếu đơn với khách.');
   }
   const imageHTML = line => line.images.map((image,index)=>`<div class="attachment"><img src="${esc(image.src)}" alt="Ảnh tham khảo ${index+1}"><span>${esc(image.name)}</span><button class="btn-icon-only" data-remove-image="${line.id}" data-index="${index}" aria-label="Bỏ ảnh ${esc(image.name)}">${icon('close')}</button></div>`).join('');
   function selectModel(id) {
@@ -209,6 +258,7 @@
     const d=state.draft;
     if(state.step===0) {
       if(!d.lines.length)return stepError('Chọn ít nhất một model.','#model-search');
+      const stale=d.lines.find(line=>sourceError(line));if(stale)return stepError(sourceError(stale),`[data-refresh-model="${stale.id}"]`);
       for(const line of d.lines){const error=keyboardError(line);if(error)return stepError(error,`[data-keyboard-text="${line.id}"]`);}
       const partMissing=d.lines.find(line=>eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id))));
       if(partMissing)return stepError('Màu của part không còn trong thư viện. Kiểm tra lại màu gốc hoặc chọn màu thay thế.',`[data-line="${partMissing.id}"] .br-color-picker-toggle`);
@@ -440,19 +490,32 @@
     if(PUBLIC)return;const order=findOrder(id);if(!order)return;
     try{await ensureTracking(order);location.href=trackingURL(order);}catch(error){showError(error);}
   }
-  function pendingHTML(){return `<section class="panel"><div class="section-top"><div><span class="eyebrow">ĐƠN CHỜ MÁY CHỦ XÁC NHẬN</span><h1>${saving?'Đang gửi yêu cầu của khách…':'Đơn đang được giữ trên thiết bị.'}</h1></div>${icon('clock')}</div><p class="muted">${saving?'Ảnh và thông tin đang được gửi. Bạn có thể giữ trang mở để nhận mã QR.':'Khi có mạng, trang sẽ tự gửi lại cùng mã yêu cầu để tránh tạo trùng. Chưa có xác nhận từ máy chủ.'}</p>${orderDetails(state.pending?.draft||state.draft)}<div class="form-actions"><button class="btn secondary" data-action="orders">Xem đơn đã tạo</button><button class="btn primary" data-action="retry" ${saving?'disabled':''}>Thử gửi lại${icon('arrow')}</button></div></section>`;}
+  const canEditPending=entry=>entry&&(entry.commitAttempted===false||entry.failure?.rejected);
+  function pendingHTML(){return `<section class="panel"><div class="section-top"><div><span class="eyebrow">ĐƠN CHỜ MÁY CHỦ XÁC NHẬN</span><h1>${saving?'Đang gửi yêu cầu của khách…':'Đơn đang được giữ trên thiết bị.'}</h1></div>${icon('clock')}</div><p class="muted">${saving?'Ảnh và thông tin đang được gửi. Bạn có thể giữ trang mở để nhận mã QR.':'Khi có mạng, trang sẽ tự gửi lại cùng mã yêu cầu để tránh tạo trùng. Chưa có xác nhận từ máy chủ.'}</p>${state.pending?.failure?`<p class="error-box" role="alert">${esc(state.pending.failure.message)}${canEditPending(state.pending)?' Có thể quay lại chỉnh sửa; thông tin và ảnh vẫn được giữ.':' Đang giữ nguyên mã yêu cầu để kiểm tra xác nhận, tránh tạo trùng đơn.'}</p>`:''}${orderDetails(state.pending?.draft||state.draft)}<div class="form-actions counter-step-actions">${canEditPending(state.pending)?`<button class="btn secondary" data-action="edit-pending" ${saving?'disabled':''}>${icon('back')}Chỉnh sửa đơn</button>`:'<button class="btn secondary" data-action="orders">Xem đơn đã tạo</button>'}<button class="btn primary" data-action="retry" ${saving?'disabled':''}>Thử gửi lại${icon('arrow')}</button></div></section>`;}
+  async function editPending(){
+    const entry=state.pending;if(saving||!canEditPending(entry)||entry.scope!==scope)return;
+    const previous=state.draft;
+    state.draft=structuredClone(entry.draft);state.draft.checked=false;
+    state.draft.submitError=entry.failure?.message||'';
+    if(modelConflict(entry.failure))state.draft.lines.forEach(line=>{line.modelNeedsReview=true;});
+    state.pending=null;state.step=0;state.area='create';dirtyVersion++;
+    if(!await flushSave()){state.pending=entry;state.draft=previous;state.area='pending';return;}
+    render();window.scrollTo({top:0,behavior:'instant'});
+    $('[data-refresh-model]:not([hidden])')?.focus({preventScroll:true});
+  }
   async function queueOrder(){
     if(saving||state.pending||!state.draft.checked)return;
     const draft=structuredClone(state.draft);
-    for(const line of draft.lines){const error=keyboardError(line);if(error){toast(error);return;}if(eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id)))){toast('Kiểm tra lại màu gốc hoặc chọn màu thay thế trước khi tạo đơn.');return;}}
-    state.pending={requestId:uid(),draft,uploads:{},scope};dirtyVersion++;
+    for(const line of draft.lines){const error=sourceError(line)||keyboardError(line);if(error){state.step=0;render();toast(error);return;}if(eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id)))){toast('Kiểm tra lại màu gốc hoặc chọn màu thay thế trước khi tạo đơn.');return;}}
+    delete draft.submitError;
+    state.pending={requestId:uid(),draft,uploads:{},scope,commitAttempted:false};dirtyVersion++;
     const submit=$('#submit-order');if(submit){submit.disabled=true;submit.textContent='Đang giữ yêu cầu…';}
     if(!await flushSave()){state.pending=null;render();return;}
     state.area='pending';render();void drainPending();
   }
   async function drainPending(){
     if(saving||!state.pending||!navigator.onLine||!session||state.offline)return;
-    const entry=state.pending,owner=scope;if(entry.scope!==owner)return;
+    const entry=state.pending,owner=scope;if(entry.scope!==owner||entry.failure?.rejected)return;
     saving=true;if(state.area==='pending')render();
     try{
       const payload={customer:entry.draft.customer,phone:entry.draft.phone,delivery:entry.draft.delivery,address:entry.draft.address,total:String(entry.draft.total),deposit:String(entry.draft.deposit),due:entry.draft.due,lines:[]};
@@ -473,6 +536,9 @@
         payload.lines.push({modelId:line.modelId,modelRevision:line.model.revision,variantId:line.variantId,qty:line.qty,note:line.note,colorChoices:line.colorChoices||{},images,...(line.keyboard?{keyboard:line.keyboard}:{})});
       }
       if(scope!==owner)return;
+      // Persist the boundary before the RPC: a lost response may already have created the order.
+      entry.commitAttempted=true;delete entry.failure;
+      if(!await flushSave())throw Error('Chưa giữ được trạng thái gửi. Nháp vẫn được giữ để thử lại.');
       const result=await rpc('commit_custom_order',{w:workspace.workspace_id,request:entry.requestId,p:payload});
       if(scope!==owner)return;
       const order=result?.order;if(!order?.id||!result.token)throw Error('Chưa nhận đủ xác nhận của máy chủ. Đang giữ yêu cầu để thử lại cùng mã.');
@@ -485,9 +551,12 @@
       void signImages(order).then(()=>{if(scope===owner&&state.area==='success'&&state.selectedToken===order.id)paintOrderImages(order,$('.success-panel'));});
     }catch(error){
       if(scope!==owner)return;
-      if(['PT409','40001','P0001','22P02','22008'].includes(error.code)){
-        state.draft=entry.draft;state.draft.checked=false;state.pending=null;state.step=0;state.area='create';await flushSave();
-      }
+      // Known server validation messages also cover old responses which omitted SQLSTATE.
+      // Never abandon an uncertain response or a receipt/payload mismatch with a new request ID.
+      const rejected=!/Yêu cầu đã có nội dung khác/.test(error.message||'')&&(['PT409','40001','P0001','22P02','22008'].includes(error.code)||modelConflict(error));
+      entry.failure={message:error.message||'Chưa nhận được xác nhận của máy chủ.',rejected};
+      await flushSave();
+      if(rejected){saving=false;await editPending();}
       showError(error);
     }finally{saving=false;if(scope===owner)render();}
   }
@@ -550,6 +619,9 @@
     if(button.id==='theme-toggle'){state.theme=state.theme==='light'?'dark':'light';persist();document.documentElement.dataset.theme=state.theme;button.innerHTML=icon(state.theme==='light'?'moon':'sun');button.setAttribute('aria-label',`Chuyển giao diện ${state.theme==='light'?'tối':'sáng'}`);return;}
     if(button.hasAttribute('data-close-dialog')){button.closest('dialog').close();return;}
     if(button.dataset.model){selectModel(button.dataset.model);return;}
+    if(button.dataset.refreshModel){void refreshLineModel(button.dataset.refreshModel,button);return;}
+    if(button.dataset.sourceVariant&&modelCandidate){modelCandidate.variantId=button.dataset.sourceVariant;$('#detail-dialog').querySelectorAll('[data-source-variant]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));$('#detail-dialog [data-action="apply-model"]').disabled=false;return;}
+    if(button.dataset.removeStaleColor){const line=state.draft.lines.find(row=>row.id===button.dataset.removeStaleColor);if(line&&!eligibleParts(line).some(part=>part.id===button.dataset.stalePart)){delete line.colorChoices[button.dataset.stalePart];state.draft.checked=false;persist();const box=$(`[data-model-recovery="${line.id}"]`);box.outerHTML=modelRecoveryHTML(line);}return;}
     if(button.dataset.variant){$('.variant-options').querySelectorAll('button').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));const add=$('#add-variant');add.disabled=false;add.dataset.chosenModel=button.dataset.variantModel;add.dataset.variantId=button.dataset.variant;return;}
     if(button.dataset.step!==undefined){changeStep(Number(button.dataset.step));return;}
     if(button.dataset.removeLine){const index=state.draft.lines.findIndex(line=>line.id===button.dataset.removeLine);const line=state.draft.lines[index];if(!line)return;
@@ -570,6 +642,8 @@
       case 'orders':state.area='orders';state.query='';route('staff');void loadOrders().catch(showError);break;
       case 'create':if(!canCreate()){toast('Tài khoản chỉ có quyền xem đơn custom.');break;}state.area=state.pending?'pending':'create';route('staff');break;
       case 'retry':void drainPending();break;
+      case 'edit-pending':await editPending();render();break;
+      case 'apply-model':await applyLineModel();break;
       case 'reload':location.reload();break;
       case 'refresh':if(state.offline){toast('Đang ngoại tuyến. Giữ bản đã nhận trên thiết bị và tự cập nhật khi kết nối lại.');break;}void loadOrders().then(()=>toast('Đã cập nhật tiến độ.')).catch(showError);break;
       case 'more-models':void loadCatalog($('#model-search')?.value||'',true).catch(showError);break;
