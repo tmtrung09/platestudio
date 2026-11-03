@@ -35,12 +35,19 @@
     return new Promise((resolve,reject)=>{
       const transaction=db.transaction('confirmed-orders',write?'readwrite':'readonly'),store=transaction.objectStore('confirmed-orders');
       let result=[];
-      if(write){for(const order of values){const request=store.get([scope,order.id]);request.onsuccess=()=>{if(!request.result||request.result.observedAt<=observedAt)store.put({scope,id:order.id,order,observedAt});};}}
-      else {const request=store.index('scope').getAll(scope);request.onsuccess=()=>{result=request.result.map(row=>row.order);};}
+      if(write){for(const order of values){const request=store.get([scope,order.id]);request.onsuccess=()=>{if(!request.result?.deleted&&(!request.result||request.result.observedAt<=observedAt))store.put({scope,id:order.id,order,observedAt});};}}
+      else {const request=store.index('scope').getAll(scope);request.onsuccess=()=>{result=request.result.filter(row=>!row.deleted).map(row=>row.order);};}
       transaction.oncomplete=()=>resolve(write?true:result);
       transaction.onabort=()=>reject(transaction.error||Error('Không giữ được đơn đã xác nhận trên thiết bị.'));
       transaction.onerror=()=>{};
     });
   }
-  window.CustomOrderStore={load:scope=>run(scope),save:(scope,value)=>run(scope,value,true),loadOrders:scope=>orders(scope),saveOrders:(scope,values,observedAt)=>orders(scope,values,observedAt)};
+  async function deleteOrders(scope,ids){
+    const db=await openOrders();return new Promise((resolve,reject)=>{
+      const transaction=db.transaction('confirmed-orders','readwrite'),store=transaction.objectStore('confirmed-orders');
+      for(const id of ids)store.put({scope,id,deleted:true,observedAt:Date.now()});
+      transaction.oncomplete=()=>resolve(true);transaction.onabort=()=>reject(transaction.error||Error('Chưa cập nhật bản xem đơn đã xóa.'));transaction.onerror=()=>{};
+    });
+  }
+  window.CustomOrderStore={load:scope=>run(scope),save:(scope,value)=>run(scope,value,true),loadOrders:scope=>orders(scope),saveOrders:(scope,values,observedAt)=>orders(scope,values,observedAt),deleteOrders};
 })();

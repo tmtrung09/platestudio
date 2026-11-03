@@ -576,6 +576,15 @@
   được đối chiếu rõ trước gửi lại. Không bỏ kiểm tra revision ở server. Mất phản
   hồi chưa rõ kết quả phải giữ mã yêu cầu cũ để đối chiếu, không tạo đơn mới thay thế.
 
+- Đơn custom cho phép chủ xưởng/tài khoản có quyền quản lý đơn xóa mọi đơn;
+  người tạo còn quyền truy cập được xóa đơn do chính mình tạo, đối chiếu bằng
+  ID tài khoản trong receipt, không dựa tên hiển thị. Nút xóa nằm trong chi tiết,
+  có xác nhận và phản hồi máy chủ; từ chối phải giữ đơn để đối chiếu/thử lại.
+  RPC kiểm tra quyền, phiên bản đơn và tiến độ; máy chủ lưu bản phục hồi riêng tư rồi
+  gỡ đơn/part phân bổ nguyên tử; giữ ảnh, báo cáo mẻ, model, màu và receipt chống
+  trùng. Tombstone chặn phiên cũ đẩy lại đơn/part; cache theo tài khoản/xưởng phải
+  nhận xóa và không phục hồi bản cũ khi lưu nháp, tải lại hoặc thử lại yêu cầu.
+
 ## KiotViet, bán hàng và tồn kho
 
 - Trang Bán hàng dùng khoảng ngày trên lịch/lọc nhanh làm kỳ thống kê duy nhất;

@@ -217,6 +217,15 @@ try{
   assert.equal(result.order.stage,3,'Older in-flight reads and stale draft snapshots cannot erase a newer confirmed cache record');
   assert.deepEqual(result.foreign,[],'Confirmed cache is scoped by workspace and account');
  },{legacy:true});
+ await run('deleted-cache-cannot-be-resurrected-by-stale-refresh',async({page})=>{
+  const result=await page.evaluate(async()=>{
+   const scope='11111111-1111-4111-8111-111111111111:22222222-2222-4222-8222-222222222222',other='another-workspace:another-user';
+   await CustomOrderStore.saveOrders(scope,[{id:'deleted-proof',stage:0}]);await CustomOrderStore.saveOrders(other,[{id:'deleted-proof',stage:0}]);
+   await CustomOrderStore.deleteOrders(scope,['deleted-proof']);await CustomOrderStore.saveOrders(scope,[{id:'deleted-proof',stage:3}],Date.now()+100000);
+   return {current:(await CustomOrderStore.loadOrders(scope)).some(o=>o.id==='deleted-proof'),other:(await CustomOrderStore.loadOrders(other)).some(o=>o.id==='deleted-proof')};
+  });assert.equal(result.current,false);assert.equal(result.other,true);
+  await page.reload();await page.locator('#model-search').waitFor();assert.equal(await page.evaluate(async()=>(await CustomOrderStore.loadOrders('11111111-1111-4111-8111-111111111111:22222222-2222-4222-8222-222222222222')).some(o=>o.id==='deleted-proof')),false,'Deletion survives reload');
+ });
  writeFileSync(resolve(out,'summary.json'),JSON.stringify({status:results.every(row=>row.status==='PASS')?'PASS':'FAIL',scope:'Isolated browser/IndexedDB, mocked transport; no production writes',results},null,2));
  assert.ok(results.every(row=>row.status==='PASS'),results.filter(row=>row.status==='FAIL').map(row=>row.name).join(', '));
 }finally{await browser.close();}

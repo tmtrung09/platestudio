@@ -324,8 +324,35 @@
   function openOrder(token) {
     const order=findOrder(token);if(!order)return;
     state.selectedToken=token;const dialog=$('#detail-dialog');
-    dialog.innerHTML=`<div class="dialog-header"><div><span class="eyebrow">ĐƠN CUSTOM · CHI TIẾT</span><h2 id="dialog-title">${esc(order.id)} · ${esc(order.customer)}</h2></div><button class="btn-icon-only" data-close-dialog aria-label="Đóng chi tiết đơn">${icon('close')}</button></div><div class="status-line">${icon('clock')}${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</div>${orderDetails(order)}<div class="detail-bottom">${!order.cancelled?`<button class="btn secondary" data-share="${order.token}">${icon('qr')}QR dành cho khách</button><button class="btn primary" data-track="${order.token}">Xem trang khách${icon('arrow')}</button>`:''}${canManage()&&order.stage===3&&!order.cancelled?`<button class="btn secondary" data-complete="${order.id}">Xác nhận khách nhận hàng</button>`:''}</div>`;
+    dialog.innerHTML=`<div class="dialog-header"><div><span class="eyebrow">ĐƠN CUSTOM · CHI TIẾT</span><h2 id="dialog-title">${esc(order.id)} · ${esc(order.customer)}</h2></div><button class="btn-icon-only" data-close-dialog aria-label="Đóng chi tiết đơn">${icon('close')}</button></div><div class="status-line">${icon('clock')}${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</div>${orderDetails(order)}<div class="detail-bottom">${!order.cancelled?`<button class="btn secondary" data-share="${order.token}">${icon('qr')}QR dành cho khách</button><button class="btn primary" data-track="${order.token}">Xem trang khách${icon('arrow')}</button>`:''}${order.canDelete?`<button class="btn secondary" data-delete-order="${esc(order.id)}">${icon('trash')}Xóa đơn</button>`:''}${canManage()&&order.stage===3&&!order.cancelled?`<button class="btn secondary" data-complete="${order.id}">Xác nhận khách nhận hàng</button>`:''}</div>`;
     dialog.showModal();
+  }
+  const deletedByScope=new Map(),deletingOrders=new Set();
+  function deletedOrders(owner=scope){if(!deletedByScope.has(owner))deletedByScope.set(owner,new Set());return deletedByScope.get(owner);}
+  async function forgetDeletedOrders(ids,owner=scope){
+    if(owner===scope){for(const id of ids){deletedOrders(owner).add(id);orderIndex.delete(id);}state.orders=state.orders.filter(order=>!deletedOrders(owner).has(order.id));}
+    try{await CustomOrderStore.deleteOrders(owner,ids);}catch{if(owner===scope)orderCacheError=true;}
+  }
+  function confirmDeleteOrder(id){
+    const order=findOrder(id);if(!order?.canDelete)return;
+    const dialog=$('#confirm-dialog');dialog.innerHTML=`<div class="dialog-header"><h2 id="confirm-title">Xóa đơn của ${esc(order.customer)}?</h2><button class="btn-icon-only" data-close-dialog aria-label="Đóng xác nhận xóa">${icon('close')}</button></div><p>Đơn và các part phân bổ sẽ được gỡ khỏi danh sách làm việc. Ảnh và báo cáo mẻ vẫn được giữ. Hệ thống lưu bản phục hồi riêng tư.</p><p class="error-box" id="delete-order-error" role="alert" hidden></p><div class="form-actions"><button class="btn secondary" data-close-dialog>Giữ đơn</button><button class="btn primary" data-confirm-delete-order="${esc(id)}">Xóa đơn</button></div>`;dialog.showModal();
+  }
+  async function deleteOrderConfirmed(id,button){
+    const order=findOrder(id),owner=scope;if(!order?.canDelete||deletingOrders.has(id))return;
+    deletingOrders.add(id);button.disabled=true;button.textContent='Đang xóa…';$('#delete-order-error').hidden=true;
+    try{
+      const result=await rpc('delete_custom_order',{w:workspace.workspace_id,oid:id,expected:order.deleteRevision});
+      if(result?.id!==id||!result.deletedAt)throw Error('Chưa nhận được xác nhận xóa từ máy chủ. Thử lại để kiểm tra.');
+      if(owner===scope)++listSequence;await forgetDeletedOrders([id],owner);if(owner!==scope)return;
+      orderTotal=Math.max(0,orderTotal-1);const wasSelected=state.selectedToken===id;
+      if($('#confirm-dialog [data-confirm-delete-order]')?.dataset.confirmDeleteOrder===id)$('#confirm-dialog').close();
+      if(wasSelected){$('#detail-dialog').close();state.selectedToken='';}
+      if($('#order-list')){renderOrderList();if(wasSelected)($('#order-list [data-order]')||$('#order-search'))?.focus({preventScroll:true});}
+      const badge=$('.sidebar [data-action=orders] small');if(badge)badge.textContent=orderTotal;
+      toast(orderCacheError?'Đã xóa trên máy chủ; chưa cập nhật được bản xem trên thiết bị.':'Đã xóa đơn.');
+      void loadOrders().catch(showError);
+    }catch(error){if(owner===scope&&button.isConnected){const node=$('#delete-order-error');node.textContent=error.message||'Chưa xóa được đơn. Giữ lại để thử lại.';node.hidden=false;}}
+    finally{deletingOrders.delete(id);if(button.isConnected){button.disabled=false;button.textContent='Xóa đơn';}}
   }
   async function showQR(token) {
     const order=findOrder(token);if(!order)return;
@@ -469,7 +496,7 @@
   let listSequence=0,listWindow=60,listQuery='',listStatus='loading',orderCacheError=false;
   async function rememberOrders(rows,owner=scope,observedAt=Date.now()){
     if(owner!==scope)return;
-    for(const row of rows)orderIndex.set(row.id,row);
+    rows=rows.filter(row=>!deletedOrders(owner).has(row.id));for(const row of rows)orderIndex.set(row.id,row);
     // Signed URLs expire and tracking tokens are fetched on demand. Cache only
     // the authoritative order projection, independently of the draft/outbox.
     const cached=structuredClone(rows);
@@ -490,7 +517,8 @@
         const result=await rpc('custom_order_list',{w:workspace.workspace_id,off:offset,q:query});
         if(owner!==scope||generation!==listSequence)return;
         if(!Array.isArray(result?.orders)||!Number.isFinite(result.total))throw Error('Phản hồi danh sách đơn chưa đầy đủ. Thử làm mới tiến độ.');
-        total=result.total;fetched.push(...result.orders.filter(Boolean));offset+=result.orders.length;
+        if(result.deletedIds?.length)await forgetDeletedOrders(result.deletedIds,owner);if(owner!==scope||generation!==listSequence)return;
+        total=result.total;fetched.push(...result.orders.filter(order=>order&&!deletedOrders(owner).has(order.id)));offset+=result.orders.length;
         if(!result.orders.length)break;
       }while(offset<target&&offset<total);
       const rows=[...new Map(fetched.map(order=>[order.id,{...order,token:order.id,trackingToken:orderIndex.get(order.id)?.trackingToken}])).values()];
@@ -659,6 +687,8 @@
     if(button.dataset.filter){state.filter=button.dataset.filter;$('.order-tabs').querySelectorAll('button').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));renderOrderList();return;}
     if(button.dataset.order){openOrder(button.dataset.order);return;}
     if(button.dataset.share){showQR(button.dataset.share);return;}
+    if(button.dataset.deleteOrder){confirmDeleteOrder(button.dataset.deleteOrder);return;}
+    if(button.dataset.confirmDeleteOrder){await deleteOrderConfirmed(button.dataset.confirmDeleteOrder,button);return;}
     if(button.dataset.complete){const id=button.dataset.complete,owner=scope;if(!confirm('Xác nhận khách đã nhận đủ sản phẩm của đơn này?'))return;try{const order={...findOrder(id),...await rpc('complete_custom_order',{w:workspace.workspace_id,oid:id})};if(owner!==scope)return;++listSequence;listStatus='ready';const index=state.orders.findIndex(row=>row.id===id);if(index>=0)state.orders[index]=order;await rememberOrders([order],owner);if(owner!==scope)return;openOrder(id);toast('Đã xác nhận khách nhận hàng.');}catch(error){if(owner===scope)showError(error);}return;}
     if(button.dataset.track){route('customer',button.dataset.track);window.scrollTo({top:0,behavior:'instant'});return;}
     if(button.dataset.copy){const order=findOrder(button.dataset.copy);try {await navigator.clipboard.writeText(trackingURL(order));toast('Đã sao chép đường dẫn theo dõi đơn.');}catch{toast('Chưa sao chép được. Chọn đường dẫn dưới mã QR để chép thủ công.');}return;}
