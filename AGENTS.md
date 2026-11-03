@@ -485,7 +485,8 @@
 ## Đơn custom tại cửa hàng
 
 - Form tiếp nhận custom có một header gọn, ưu tiên sản phẩm và thông tin cần
-  nhập; không lặp thẻ “Đơn custom mới”/khẩu hiệu/tổng tiền bên cạnh hoặc dưới
+  nhập; header trang tạo/xem đơn custom không có nút đăng xuất. Không lặp thẻ
+  “Đơn custom mới”/khẩu hiệu/tổng tiền bên cạnh hoặc dưới
   form. Đối chiếu đầy đủ ở bước Xem lại đơn. Mobile có bộ chọn sản phẩm rộng
   bằng vùng yêu cầu cả khi thu gọn; thanh nút theo bước chừa vùng cuộn theo
   chiều cao thực và visual viewport, không che ô nhập khi mở bàn phím. Lỗi

@@ -84,6 +84,12 @@ async function run(name,fn,options){
  finally{await fixture?.context.close();}
 }
 try{
+ for(const width of [424,1440])await run('header-without-logout-'+width,async({page})=>{
+  assert.equal(await page.locator('.top-context [data-action=logout]').count(),0);
+  assert.equal(await page.locator('.sidebar [data-action=logout]').count(),1);
+  const theme=await page.evaluate(()=>document.documentElement.dataset.theme);await page.locator('#theme-toggle').click();assert.notEqual(await page.evaluate(()=>document.documentElement.dataset.theme),theme);
+  await list(page);assert.equal(await page.locator('.top-context [data-action=logout]').count(),0);await page.screenshot({path:resolve(out,'header-no-logout-'+width+'.png')});
+ },{width});
  await run('theme-control-survives-cached-startup-denial',async({page})=>{
   await page.locator('[data-model=model-1]').click();await page.locator('[data-note]').fill('Giữ nguyên nháp khi quyền thay đổi');
   await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
