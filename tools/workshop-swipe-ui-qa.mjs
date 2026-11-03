@@ -45,7 +45,7 @@ try{
   });
   await open(p);assert.equal(await p.locator('#ws-count').textContent(),'5 thẻ');assert.equal(await p.locator('#ws-filter-label').textContent(),'Tất cả');assert.equal(await p.locator('#ws-sync').textContent(),'Không có lượt chờ');
   for(const [filter,label]of [['handover','Chưa giao xưởng'],['printing','Chờ in'],['external','Ngoài đơn'],['review','Cần đối chiếu']]){
-   await p.locator('#ws-options-toggle').click();await p.locator(`[data-ws-filter="${filter}"]`).click();assert.equal(await p.locator('#ws-empty').isVisible(),false);assert.equal(await p.locator('#ws-state').textContent(),label);assert.equal(await p.locator('#ws-variant').textContent(),'Bản đôi');
+   await p.locator('#ws-options-toggle').click();await p.locator(`[data-ws-filter="${filter}"]`).click();assert.equal(await p.locator('#ws-empty').isVisible(),false);assert.equal(await p.locator('#ws-state').textContent(),label);assert.match(await p.locator('#ws-progress').textContent(),/Tiến độ in model/);assert.ok(await p.locator('#ws-progress li').count()>=2,'Every configured model part is visible in progress details');assert.equal(await p.locator('#ws-variant').textContent(),'Bản đôi');
    assert.equal(await p.locator('#ws-qty').isDisabled(),true);assert.equal(await p.locator('#ws-qty-label').textContent(),'Số lượng nguồn');assert.equal(await p.locator('#ws-right').textContent(),'Mở danh sách');assert.equal(await p.locator('#ws-image img').count(),1);await p.locator('#ws-image img').evaluate(img=>img.decode());await p.locator('#ws-card').press('ArrowRight');assert.equal((await queue(p)).length,0,'Inspection cards cannot submit business transitions');
    if(width===390)await p.screenshot({path:resolve(out,`source-${filter}-${theme}.png`),fullPage:true});
   }

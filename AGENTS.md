@@ -314,6 +314,11 @@
   đương để thao tác không phụ thuộc cử chỉ.
 - Toàn bộ thẻ nhận cử chỉ quẹt, gồm ảnh, tiêu đề, trạng thái, màu và ghi chú;
   loại trừ ô nhập/nút số lượng để chỉnh số không đổi trạng thái hoặc chuyển thẻ.
+- Tiến độ trên thẻ quẹt phân biệt số đã in/còn thiếu của part đang xem và tiến độ
+  in đủ các loại part trong model; mở được danh sách từng part và số lượng nguồn.
+  Part chưa phân bổ hoặc số lượng chưa rõ phải nêu rõ, không suy thành 0 hoặc
+  hoàn tất. Phân bổ nhiều plate/màu cộng theo ID part, không sửa trạng thái hay
+  chuyển nguồn chỉ để thay cách hiển thị.
 - Mặc định xử lý toàn bộ số lượng còn lại, cho chỉnh trước khi quẹt. Khi xử lý
   một phần, phần chưa xử lý giữ trạng thái cũ và xuống cuối chồng thẻ.
 
@@ -504,15 +509,18 @@
   theo quyền chủ xưởng/quản lý đơn/tạo hoặc xem custom và ẩn ngay khi mất quyền
   hay đăng xuất. Guard: `tools/custom-orders-navigation-qa.mjs`.
 - Bước sản phẩm của đơn custom trên màn hình rộng đặt thư viện model bên trái,
-  màu và yêu cầu bên phải, cùng hàng; hai cột cân đối, cột yêu cầu chỉ nhỉnh hơn
-  thư viện. Giữ thư viện mở khi thêm model. Màn hẹp
+  màu và yêu cầu bên phải, cùng hàng; hai cột rộng tương đương, thư viện có vùng
+  xem ảnh và cuộn đủ lớn. Sidebar desktop thu gọn/mở rộng được, nhớ tùy chọn
+  theo tài khoản/xưởng trên thiết bị, không dựng lại form hay mất nháp. Giữ thư viện mở khi thêm model. Màn hẹp
   thu gọn thư viện sau khi thêm và đưa dòng yêu cầu vừa thêm vào vùng nhìn.
   Tìm/thêm/đổi kích thước màn hình không dựng lại dòng đang nhập hoặc mất màu/
   ảnh/số lượng/nháp. Danh sách có vùng cuộn giới hạn, nút sang bước khách luôn
   tiếp cận được; tải lại/quay lại giữ dữ liệu. Guard: custom-orders UI QA.
 - Chọn sản phẩm từ model đã nhập, tìm theo tên hoặc mã KiotViet và giữ định danh
   model/biến thể. Ghi số lượng, yêu cầu custom tự do và ảnh tham khảo theo từng
-  dòng; không áp quy luật màu/ký tự/kích thước từ một ví dụ sản phẩm cụ thể.
+  dòng; mô tả yêu cầu là tùy chọn ở cả client và server. Thanh bước căn đều số
+  và nhãn, cùng chiều cao ở mọi trạng thái. Không áp quy luật màu/ký tự/kích thước
+  từ một ví dụ sản phẩm cụ thể.
 - Part của đơn custom chưa chỉnh màu mặc định giữ màu gốc theo biến thể đã chọn,
   kế thừa màu part khi biến thể không ghi đè; giữ đủ màu gốc nếu có nhiều màu và
   giữ chưa chỉ định nếu nguồn chưa có màu. Chỉ đổi part được nhân viên chọn,
@@ -525,9 +533,11 @@
   trong dòng sản phẩm, không mở trang riêng. Có ba vùng màu: khay bàn phím,
   nút bàn phím, ký tự. Model giữ hai part nguồn “khay”/“Khay bàn phím” và “nút+ký tự”; hai màu
   nút/chữ thuộc cùng part in chung, không tạo part giả hoặc cộng đôi số lượng.
-    Chiều dài khay và số nút minh họa thay đổi theo tên nhập; tên biến thể nguồn
-    không giới hạn số ký tự. Hiển thị rõ chiều dài theo tên, giữ hai part in
-    chung và định mức nguồn, không cộng thêm part theo số ký tự.
+  Chiều dài khay và số nút minh họa thay đổi theo tên nhập. Với các biến thể
+  “Khay N chữ”, bỏ hộp chọn khay; sau khi nhập tên, chọn đúng ID biến thể theo
+  số ký tự và kiểm chứng lại ở server. Thiếu/trùng biến thể phù hợp phải báo rõ,
+  không đoán khay hoặc tự chọn biến thể đầu tiên. Giữ hai part in chung và định
+  mức nguồn, không cộng thêm part theo số ký tự; sản phẩm khác giữ bộ chọn biến thể.
     Tên nhập mặc định chuyển thành chữ in hoa, giữ dấu tiếng Việt; ô nhập, hình
   minh họa, bước xác nhận và yêu cầu sản xuất dùng cùng ký tự. Giữ caret/focus
   khi gõ/dán, chỉ chuyển hoa sau khi bộ gõ hoàn tất composition.

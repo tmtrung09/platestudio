@@ -27,3 +27,8 @@ tasks=Core.catalog([{...row,o:{...row.o,status:'cancelled'}}]);assert.equal(task
 assert.equal(Core.groups([{...row,source:'external',o:null}]).length,0,'Inspection cards never become writable order parts');
 assert.equal(Core.groups([{...row,handed:false}]).length,0,'Inspection never implicitly hands goods to the workshop');checks++;
 console.log(`PASS workshop catalog: ${checks} source/eligibility cases; all sources accounted for, no fabricated order IDs or implicit handover.`);
+
+const progressRow={...row,m:{parts:[{id:'p',name:'Thân'},{id:'missing',name:'Trứng'}]},parts:[{...row.parts[0],qty:3,qtyDone:2},{...row.parts[0],id:'second',qty:2,qtyDone:1}]};
+const beforeProgress=JSON.stringify(progressRow),progress=Core.printProgress(progressRow);
+assert.equal(progress[0].required,5);assert.equal(progress[0].printed,3);assert.equal(progress[1].known,false);assert.equal(progress[1].missing,true);assert.equal(JSON.stringify(progressRow),beforeProgress,'Progress rendering never writes source data');
+assert.equal(Core.printProgress({...row,parts:[{...row.parts[0],qtyDone:null}]})[0].known,false,'Unknown printed quantity is not reported as zero');

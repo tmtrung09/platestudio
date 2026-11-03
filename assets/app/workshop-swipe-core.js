@@ -36,5 +36,18 @@
   }
   return tasks;
  }
- window.WorkshopSwipeCore={states,key,seed,groups,move,project,catalog};
+ function printProgress(row){
+  const by=new Map();
+  for(const part of row.parts||[]){
+   const id=part.partId||part.id||part.partName,g=by.get(id)||{id,name:part.partName||'Part chưa có tên',required:0,printed:0,known:true};
+   const qty=Number(part.qty),done=Number(part.qtyDone);
+   if(part.unconfigured||part.qty==null||!Number.isFinite(qty)||qty<0||part.qtyDone==null||!Number.isFinite(done)||done<0)g.known=false;
+   else{g.required+=qty;g.printed+=done;}
+   by.set(id,g);
+  }
+  const variant=(row.m?.variants||[]).find(v=>v.id===row.it.variantId);
+  for(const part of row.m?.parts||[]){if(Array.isArray(variant?.partIds)&&!variant.partIds.includes(part.id))continue;if(!by.has(part.id))by.set(part.id,{id:part.id,name:part.name||'Part chưa có tên',known:false,missing:true});}
+  return [...by.values()];
+ }
+ window.WorkshopSwipeCore={states,key,seed,groups,move,project,catalog,printProgress};
 })();

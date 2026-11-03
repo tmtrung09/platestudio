@@ -25,6 +25,7 @@ await db.exec(readFileSync('supabase/migrations/202610300002_custom_keyboard_pre
 await db.exec(readFileSync('supabase/migrations/202610260001_workshop_swipe.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/202610260002_workshop_swipe_legacy_delivery_guard.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/202611020001_nonretryable_business_conflicts.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/202611030002_custom_counter_name_variant.sql','utf8'));
 const insert=async(table,id,data,w=ws)=>db.query(`insert into ${table}(id,user_id,workspace_id,data,updated_at) values($1,$2,$3,$4,$5)`,[id,owner,w,JSON.stringify(data),revision]);
 await insert('models','model-1',{id:'model-1',name:'Bàn phím tên',secretCost:999,parts:[{id:'tray',name:'Khay',qtyPerModel:1},{id:'key',name:'Nút',qtyPerModel:5},{id:'unused',name:'Không dùng',qtyPerModel:1}],variants:[{id:'v1',name:'Nhỏ',partIds:['tray','key']}]});
 await insert('filaments','green',{id:'green',name:'Xanh rêu',hex:'#315d34',brand:'Generic',mat:'PLA'});await insert('filaments','cream',{id:'cream',name:'Kem',hex:'#e5ddc0'});
@@ -164,12 +165,15 @@ const untouched=structuredClone(kbPayload);untouched.lines[0].modelId=ambiguousM
 const originalKeyboard=await rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(untouched)]);assert.equal(originalKeyboard.order.lines[0].keyboard.colors.buttons,null,'Unmapped original colors never acquire an invented role');assert.deepEqual(originalKeyboard.order.lines[0].keyboard.keyFilamentIds,['cream','red']);assert.match(originalKeyboard.order.lines[0].keyboard.components.characters.name,/Màu gốc:.*Kem.*Đỏ/);
 const ambiguousChange=structuredClone(untouched);ambiguousChange.lines[0].keyboard.colors.buttons='green';await assert.rejects(()=>rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(ambiguousChange)]),/Chọn đủ màu nút và ký tự/);
 await db.exec('reset role');
-const dynamicModel={...keyboardModel,id:'dynamic-name-keyboard',parts:keyboardModel.parts.map(part=>({...part,qtyPerModel:1})),variants:[{id:'source-three',name:'Khay 3 chữ'}]};
+const dynamicModel={...keyboardModel,id:'dynamic-name-keyboard',parts:keyboardModel.parts.map(part=>({...part,qtyPerModel:1})),variants:[{id:'source-three',name:'Khay 3 chữ'},{id:'source-five',name:'Khay 5 chữ'}]};
 await insert('models',dynamicModel.id,dynamicModel);await as(staff);
-const dynamicPayload=structuredClone(kbPayload);Object.assign(dynamicPayload.lines[0],{modelId:dynamicModel.id,variantId:'source-three'});dynamicPayload.lines[0].keyboard.text='TRUNG';
+const dynamicPayload=structuredClone(kbPayload);Object.assign(dynamicPayload.lines[0],{modelId:dynamicModel.id,variantId:''});dynamicPayload.lines[0].keyboard.text='TRUNG';
 const dynamicOrder=await rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(dynamicPayload)]);
 assert.equal(dynamicOrder.order.lines[0].keyboard.text,'TRUNG','Source variant label does not truncate the entered name');
-assert.equal(dynamicOrder.order.lines[0].variantId,'source-three','Changing the name does not silently choose another source variant');
+assert.equal(dynamicOrder.order.lines[0].variantId,'source-five','Server derives the exact tray ID from the name');
+const wrongTray=structuredClone(dynamicPayload);wrongTray.lines[0].variantId='source-three';await assert.rejects(()=>rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(wrongTray)]),/không khớp/);
+const missingTray=structuredClone(dynamicPayload);missingTray.lines[0].keyboard.text='ABCD';await assert.rejects(()=>rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(missingTray)]),/phù hợp/);
+const blankDescription=structuredClone(dynamicPayload);blankDescription.lines[0].note='';const blankSaved=await rpc('commit_custom_order',[ws,randomUUID(),JSON.stringify(blankDescription)]);assert.equal(blankSaved.order.lines[0].note,'','Blank description is accepted at the server');
 await db.exec('reset role');
 const dynamicParts=(await db.query("select data from plate_items where data->>'orderId'=$1",[dynamicOrder.order.id])).rows.map(row=>row.data);
 assert.equal(dynamicParts.length,2);assert.ok(dynamicParts.every(part=>part.qty===2&&part.keyboardText==='TRUNG'),'Two ordered keyboards retain one tray and one combined keys/text set each, rather than multiplying whole sets by character count');

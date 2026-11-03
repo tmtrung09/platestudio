@@ -94,9 +94,17 @@ async function checkProductFlow(width,theme){
  if(wide){
   const columns=await page.evaluate(()=>{const catalog=document.querySelector('#model-picker').getBoundingClientRect(),requirements=document.querySelector('#selected-lines').parentElement.getBoundingClientRect();return {catalogRight:catalog.right,requirementsLeft:requirements.left,rightShare:requirements.width/(catalog.width+requirements.width),topDifference:Math.abs(catalog.top-requirements.top)};});
   assert.ok(columns.catalogRight<=columns.requirementsLeft&&columns.topDifference<=2,'Desktop requirements must sit beside the catalog, aligned at the top: '+JSON.stringify(columns));
-  assert.ok(columns.rightShare>=.53&&columns.rightShare<=.56,'Right column should take about 55% of usable column width: '+JSON.stringify(columns));
+  assert.ok(columns.rightShare>=.49&&columns.rightShare<=.51,'Balanced columns enlarge the product catalog: '+JSON.stringify(columns));
  }
  await page.locator('[data-model=m1]').click();await page.locator('[data-variant=v1]').click();await page.locator('#add-variant').click();
+ if(wide){
+  const steps=await page.locator('.workflow-steps .step').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return {top:r.top,height:r.height,width:r.width};}));
+  assert.ok(steps.every(r=>Math.abs(r.top-steps[0].top)<1&&Math.abs(r.height-steps[0].height)<1&&Math.abs(r.width-steps[0].width)<1),'Step buttons align in every state');
+  await page.evaluate(()=>window.__collapseNote=document.querySelector('[data-note]'));
+  await page.locator('.sidebar-toggle').click();assert.equal(await page.locator('.sidebar').evaluate(n=>n.getBoundingClientRect().width),76);
+  assert.equal(await page.evaluate(()=>window.__collapseNote===document.querySelector('[data-note]')),true,'Collapse preserves draft DOM');
+  await page.locator('.sidebar-toggle').click();
+ }
  const position=await page.locator('.selected-line').first().evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:innerHeight};});
  assert.ok(position.top>=0&&position.top<position.height/2,'Selected requirement must be in view immediately, without scrolling past 200 models: '+JSON.stringify(position));
  assert.equal(await page.locator('#model-search').isVisible(),wide,'Desktop keeps catalog visible; narrow layouts fold it after selection');
@@ -105,9 +113,9 @@ async function checkProductFlow(width,theme){
  const nextBounds=await page.locator('#next-step').boundingBox();assert.ok(nextBounds.y>=0&&nextBounds.y+nextBounds.height<=page.viewportSize().height,'Next action remains in the viewport');
  if([390,1440].includes(width))await page.screenshot({path:resolve(out,width+'-'+theme+'-selected-viewport.png')});
  await page.locator('#next-step').click();
- assert.equal(await page.locator('[data-step="0"]').getAttribute('aria-current'),'step','Missing requirement cannot advance the wizard');
- await page.locator('#custom-field-error').waitFor();assert.equal(await page.locator('#toast').isVisible(),false,'Validation stays next to its field');
- assert.equal(await page.locator('[data-note]').getAttribute('aria-invalid'),'true');
+ assert.equal(await page.locator('[data-step="1"]').getAttribute('aria-current'),'step','Blank product description is optional');
+ await page.locator('[data-action=next]').click();await page.locator('#custom-field-error').waitFor();assert.equal(await page.locator('#customer-name').getAttribute('aria-invalid'),'true','Required customer errors remain inline');
+ await page.locator('[data-step="0"]').click();
  await page.locator('[data-note]').fill('Yêu cầu màu và tên đã chốt cùng khách');
  assert.equal(await page.locator('#custom-field-error').count(),0,'Editing clears the relevant inline error');
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -118,7 +126,7 @@ async function checkProductFlow(width,theme){
  await page.locator('[data-files]').setInputFiles({name:'flow-reference.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j/WQAAAAASUVORK5CYII=','base64')});await page.locator('.attachment img').waitFor();
  await page.evaluate(()=>{window.__flowNote=document.querySelector('[data-note]');window.__flowImage=document.querySelector('.attachment img');window.__flowNote.setSelectionRange(3,9);window.__flowSearch=document.querySelector('#model-search');});
  if(!await page.locator('#model-search').isVisible())await page.locator('#model-picker summary').click();
- const grid=await page.locator('#catalog').evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,viewport:innerHeight}));assert.ok(grid.height<=Math.min(grid.viewport*.45,360)+1&&grid.scroll>grid.height,'Large library scrolls within a bounded picker');
+ const grid=await page.locator('#catalog').evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,viewport:innerHeight}));assert.ok(grid.height<=Math.min(grid.viewport*(wide?.55:.45),wide?480:360)+1&&grid.scroll>grid.height,'Large library scrolls within a bounded picker');
  await page.locator('#model-search').fill('zz-no-model');await page.locator('#catalog .empty').waitFor();
  await page.keyboard.press('Escape');assert.equal(await page.locator('#model-search').isVisible(),false);
  await page.locator('#model-picker summary').press('Enter');assert.equal(await page.locator('#model-search').inputValue(),'zz-no-model','Toggling preserves query');
@@ -138,7 +146,9 @@ async function checkProductFlow(width,theme){
  }
  await page.locator('[data-note]').nth(1).fill('Món thứ hai của khách');
  await page.waitForFunction(()=>document.querySelector('.draft-hint')?.textContent.includes('Đã giữ'));
+ if(wide)await page.locator('.sidebar-toggle').click();
  await page.reload();await page.locator('.selected-line').nth(1).waitFor();
+ if(wide){assert.equal(await page.locator('.sidebar-toggle').getAttribute('aria-expanded'),'false','Reload remembers collapsed sidebar in the scoped device preference');await page.screenshot({path:resolve(out,width+'-'+theme+'-sidebar-collapsed.png')});await page.locator('.sidebar-toggle').click();}
  assert.equal(await page.locator('#model-search').isVisible(),wide,'Reload keeps both desktop columns, or the saved requirements on narrow screens');
  assert.equal(await page.locator('[data-note]').first().inputValue(),'Yêu cầu màu và tên đã chốt cùng khách');assert.equal(await page.locator('[data-quantity]').first().inputValue(),'2');
  assert.equal(await page.locator('[data-part=tray]').inputValue(),'green');assert.equal(await page.locator('.attachment img').count(),1);

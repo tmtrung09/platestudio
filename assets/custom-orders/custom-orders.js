@@ -118,9 +118,16 @@
     if(state.view==='staff' && state.area==='orders') renderOrderList();
     if(state.view==='staff' && state.area==='success') renderQRCode($('.qr-code'), selectedOrder());
   }
+  function sidebarCollapsed(){try{return localStorage.getItem('ps-counter-sidebar:'+scope)==='collapsed';}catch{return false;}}
+  document.addEventListener('click',event=>{
+    if(!event.target.closest('[data-action="toggle-sidebar"]'))return;
+    const collapsed=$('.shell')?.classList.toggle('sidebar-collapsed'),button=$('.sidebar-toggle');
+    button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',collapsed?'Mở rộng thanh bên':'Thu gọn thanh bên');button.title=button.getAttribute('aria-label');
+    try{localStorage.setItem('ps-counter-sidebar:'+scope,collapsed?'collapsed':'expanded');}catch{toast('Chưa lưu được tùy chọn thanh bên trên thiết bị.');}
+  });
   function staffHTML() {
     const list = state.area === 'orders';
-    return `<div class="shell"><aside class="sidebar">${brand()}<div class="store-label"><b>Bánh Mì Stationery</b>Không gian cửa hàng</div><nav aria-label="Công việc tại cửa hàng"><button class="side-nav ${!list?'active':''}" data-action="create">${icon('plus')}Nhận đơn custom</button><button class="side-nav ${list?'active':''}" data-action="orders">${icon('bag')}Đơn custom<small>${orderTotal}</small></button></nav><div class="sidebar-bottom"><div class="staff-person"><span class="avatar">${esc(actorInitials())}</span><div><b>${esc(actorName())}</b><small>${esc(workspace?.role==='store_custom'?'Nhân viên cửa hàng':'Quản lý đơn')}</small></div></div>${workspace?.role!=='store_custom'?'<a class="side-nav" href="plate-studio.html">Về Plate Studio</a>':''}<button class="side-nav" data-action="logout">${icon('lock')}Đăng xuất</button></div></aside><main class="workspace"><div class="workspace-top"><div class="breadcrumb">Cửa hàng ${icon('chevron')}<span>${list?'Đơn custom':'Nhận đơn custom'}</span></div><span class="mobile-brand">${brand()}</span><div class="top-context"><span>Bánh Mì Stationery</span><button class="btn text" aria-label="${list?'Tạo đơn custom':'Xem đơn custom'}" title="${list?'Tạo đơn custom':'Xem đơn custom'}" data-action="${list?'create':'orders'}">${icon(list?'plus':'bag')}${list?'Tạo đơn':'Đơn custom'}</button><span id="counter-theme-slot" class="counter-theme-slot"></span><button class="btn-icon-only" data-action="logout" aria-label="Đăng xuất ${esc(actorName())}" title="Đăng xuất">${icon('lock')}</button><span class="avatar" aria-label="${esc(actorName())}">${esc(actorInitials())}</span></div></div>${state.area==='pending'?pendingHTML():state.area === 'success' ? successHTML() : `<div class="staff-heading"><div><h1>${list?'Đơn custom':'Nhận đơn custom'}</h1><p>${list?'Theo dõi tiến độ và mở lại mã QR cho khách.':'Chọn sản phẩm và ghi yêu cầu của khách.'}</p></div></div>${list?ordersHTML():`<nav class="workflow-steps" aria-label="Các bước nhận đơn">${['Sản phẩm','Khách & hẹn','Xem lại'].map((label,index)=>`<button class="step ${index<state.step?'done':''}" data-step="${index}" ${index>state.step?'disabled':''} ${index===state.step?'aria-current="step"':''}><span>${index<state.step?'✓':index+1}</span>${label}</button>`).join('')}</nav><div class="work-grid"><section id="step-body" aria-label="Thông tin đơn custom"></section></div>`}`}</main></div>`;
+    return `<div class="shell ${sidebarCollapsed()?'sidebar-collapsed':''}"><aside class="sidebar"><button class="btn-icon-only sidebar-toggle" data-action="toggle-sidebar" aria-label="${sidebarCollapsed()?'Mở rộng thanh bên':'Thu gọn thanh bên'}" title="${sidebarCollapsed()?'Mở rộng thanh bên':'Thu gọn thanh bên'}" aria-expanded="${!sidebarCollapsed()}">${icon('chevron')}</button>${brand()}<div class="store-label"><b>Bánh Mì Stationery</b>Không gian cửa hàng</div><nav aria-label="Công việc tại cửa hàng"><button title="Nhận đơn custom" aria-label="Nhận đơn custom" class="side-nav ${!list?'active':''}" data-action="create">${icon('plus')}<span class="side-label">Nhận đơn custom</span></button><button title="Đơn custom" aria-label="Đơn custom" class="side-nav ${list?'active':''}" data-action="orders">${icon('bag')}<span class="side-label">Đơn custom</span><small>${orderTotal}</small></button></nav><div class="sidebar-bottom"><div class="staff-person"><span class="avatar">${esc(actorInitials())}</span><div><b>${esc(actorName())}</b><small>${esc(workspace?.role==='store_custom'?'Nhân viên cửa hàng':'Quản lý đơn')}</small></div></div>${workspace?.role!=='store_custom'?`<a class="side-nav" href="plate-studio.html" title="Về Plate Studio" aria-label="Về Plate Studio">${icon('back')}<span class="side-label">Về Plate Studio</span></a>`:''}<button class="side-nav" data-action="logout" aria-label="Đăng xuất" title="Đăng xuất">${icon('lock')}<span class="side-label">Đăng xuất</span></button></div></aside><main class="workspace"><div class="workspace-top"><div class="breadcrumb">Cửa hàng ${icon('chevron')}<span>${list?'Đơn custom':'Nhận đơn custom'}</span></div><span class="mobile-brand">${brand()}</span><div class="top-context"><span>Bánh Mì Stationery</span><button class="btn text" aria-label="${list?'Tạo đơn custom':'Xem đơn custom'}" title="${list?'Tạo đơn custom':'Xem đơn custom'}" data-action="${list?'create':'orders'}">${icon(list?'plus':'bag')}${list?'Tạo đơn':'Đơn custom'}</button><span id="counter-theme-slot" class="counter-theme-slot"></span><button class="btn-icon-only" data-action="logout" aria-label="Đăng xuất ${esc(actorName())}" title="Đăng xuất">${icon('lock')}</button><span class="avatar" aria-label="${esc(actorName())}">${esc(actorInitials())}</span></div></div>${state.area==='pending'?pendingHTML():state.area === 'success' ? successHTML() : `<div class="staff-heading"><div><h1>${list?'Đơn custom':'Nhận đơn custom'}</h1><p>${list?'Theo dõi tiến độ và mở lại mã QR cho khách.':'Chọn sản phẩm và ghi yêu cầu của khách.'}</p></div></div>${list?ordersHTML():`<nav class="workflow-steps" aria-label="Các bước nhận đơn">${['Sản phẩm','Khách & hẹn','Xem lại'].map((label,index)=>`<button class="step ${index<state.step?'done':''}" data-step="${index}" ${index>state.step?'disabled':''} ${index===state.step?'aria-current="step"':''}><span>${index<state.step?'✓':index+1}</span>${label}</button>`).join('')}</nav><div class="work-grid"><section id="step-body" aria-label="Thông tin đơn custom"></section></div>`}`}</main></div>`;
   }
   function renderStep() {
     const host=$('#step-body'); if(!host)return;
@@ -153,12 +160,12 @@
   }
   function lineHTML(line) {
     const model=getModel(line);if(!model)return '';
-    return `<article class="selected-line" data-line="${line.id}" tabindex="-1" aria-label="Yêu cầu custom cho ${esc(model.name)}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <span class="required">*</span></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
+    return `<article class="selected-line" data-line="${line.id}" tabindex="-1" aria-label="Yêu cầu custom cho ${esc(model.name)}"><div class="line-header">${productArt(model)}<div class="line-title"><b>${esc(model.name)}</b><small>${esc(model.sku)}${variantName(line)?` · ${esc(variantName(line))}`:''}</small></div><button class="btn-icon-only" data-remove-line="${line.id}" aria-label="Bỏ ${esc(model.name)}">${icon('trash')}</button></div>${partFields(line)}<div class="field"><label for="note-${line.id}">Mô tả yêu cầu <small>(tùy chọn)</small></label><textarea id="note-${line.id}" data-note="${line.id}" rows="3" maxlength="4000" placeholder="Màu sắc, nội dung, chi tiết khách muốn thay đổi…">${esc(line.note)}</textarea></div><div class="line-meta"><div class="qty" role="group" aria-label="Số lượng ${esc(model.name)}"><button data-qty="${line.id}" data-delta="-1" aria-label="Giảm số lượng">${icon('minus')}</button><input aria-label="Số lượng ${esc(model.name)}" type="number" min="1" max="9999" step="1" data-quantity="${line.id}" value="${esc(line.qty)}"><button data-qty="${line.id}" data-delta="1" aria-label="Tăng số lượng">${icon('plus')}</button></div><label class="upload-label" for="files-${line.id}">${icon('image')}Thêm ảnh tham khảo<input class="sr-only" id="files-${line.id}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-files="${line.id}"></label></div><div class="attachments" id="images-${line.id}">${imageHTML(line)}</div><small class="line-attach">Tối đa 4 ảnh/dòng · JPG, PNG, WebP · 2 MB/ảnh.</small></article>`;
   }
   const imageHTML = line => line.images.map((image,index)=>`<div class="attachment"><img src="${esc(image.src)}" alt="Ảnh tham khảo ${index+1}"><span>${esc(image.name)}</span><button class="btn-icon-only" data-remove-image="${line.id}" data-index="${index}" aria-label="Bỏ ảnh ${esc(image.name)}">${icon('close')}</button></div>`).join('');
   function selectModel(id) {
     const model=models.find(model=>model.id===id);if(!model)return;
-    if(!model.variants.length) {addLine(model.id,'');return;}
+    if(!model.variants.length||autoKeyboard(model)) {addLine(model.id,'');return;}
     const dialog=$('#detail-dialog');
     dialog.innerHTML=`<div class="dialog-header"><div><span class="eyebrow">CHỌN BIẾN THỂ</span><h2 id="dialog-title">${esc(model.name)}</h2></div><button class="btn-icon-only" data-close-dialog aria-label="Đóng chọn biến thể">${icon('close')}</button></div>${productArt(model,'variant-photo')}<p>Chọn đúng biến thể khách muốn custom.</p><div class="variant-options">${model.variants.map(variant=>`<button data-variant="${esc(variant.id)}" data-variant-model="${esc(model.id)}" aria-pressed="false">${esc(variant.name)}</button>`).join('')}</div><div class="form-actions"><button class="btn text" data-close-dialog>Quay lại</button><button class="btn primary" id="add-variant" disabled data-action="add-variant">Thêm vào đơn${icon('plus')}</button></div>`;
     dialog.showModal();
@@ -212,8 +219,6 @@
       for(const line of d.lines){const error=keyboardError(line);if(error)return stepError(error,`[data-keyboard-text="${line.id}"]`);}
       const partMissing=d.lines.find(line=>eligibleParts(line).some(part=>resolvedColorIds(line,part).some(id=>!window.getFil(id))));
       if(partMissing)return stepError('Màu của part không còn trong thư viện. Kiểm tra lại màu gốc hoặc chọn màu thay thế.',`[data-line="${partMissing.id}"] .br-color-picker-toggle`);
-      const missing=d.lines.find(line=>!line.note.trim());
-      if(missing)return stepError('Ghi yêu cầu custom trước khi tiếp tục.',`[data-note="${missing.id}"]`);
       const invalidQty=d.lines.find(line=>!Number.isInteger(line.qty)||line.qty<1||line.qty>9999);
       if(invalidQty)return stepError('Số lượng phải là số nguyên từ 1 đến 9.999.',`[data-quantity="${invalidQty.id}"]`);
       return true;
@@ -309,7 +314,26 @@
     return Array.isArray(ids)&&ids.length?ids.filter(Boolean):Array.isArray(part.filamentIds)?part.filamentIds.filter(Boolean):part.filamentId?[part.filamentId]:[];
   }
   const keyboardProfile=line=>window.CustomKeyboardPreview?.profile(line,getModel(line));
+  function autoKeyboard(model){return normalized(model?.name||'').trim()==='ban phim ten'&&!!model?.keyboardProfile&&(model.variants||[]).some(v=>/^khay [1-9]\d* chu$/.test(normalized(v.name).trim()));}
+  function matchKeyboardVariant(line){
+    const model=getModel(line);if(!autoKeyboard(model))return '';
+    const text=(line.keyboard?.text||'').normalize('NFC').trim(),count=Array.from(new Intl.Segmenter('vi',{granularity:'grapheme'}).segment(text)).length;
+    const matches=model.variants.filter(v=>normalized(v.name).trim()===`khay ${count} chu`&&v.keyboardProfile);
+    line.variantId=matches.length===1?matches[0].id:'';
+    return !text?'Nhập tên để xác định khay.':matches.length!==1?`Chưa có một biến thể khay phù hợp với ${count} ký tự. Kiểm tra thư viện model trước khi tạo đơn.`:'';
+  }
+  function syncKeyboardVariant(line){
+    const model=getModel(line);if(!autoKeyboard(model))return;
+    const previous=line.variantId;matchKeyboardVariant(line);
+    const article=$(`[data-line="${line.id}"]`),label=article?.querySelector('.line-title small');
+    if(label)label.textContent=[model.sku,variantName(line)||'Khay được xác định theo tên'].filter(Boolean).join(' · ');
+    if(previous!==line.variantId){
+      const p=keyboardProfile(line),fieldset=article?.querySelector('.keyboard-color-fields');
+      if(p&&fieldset){const template=document.createElement('template');template.innerHTML=window.CustomKeyboardPreview.fields(line,p,window.fils);fieldset.replaceWith(template.content.querySelector('.keyboard-color-fields'));window.FilamentPickers?.init(article);}
+    }
+  }
   function keyboardError(line){
+    const variantError=matchKeyboardVariant(line);if(variantError)return variantError;
     if(getModel(line)?.keyboardProfile&&!window.CustomKeyboardPreview)return 'Chưa tải được công cụ bàn phím. Nháp vẫn được giữ; tải lại trang để thử lại.';
     return window.CustomKeyboardPreview?.validation(line,keyboardProfile(line),window.getFil)||'';
   }
@@ -624,7 +648,7 @@
       input.value=upper(value);
       if(start!==null&&end!==null)input.setSelectionRange(upper(value.slice(0,start)).length,upper(value.slice(0,end)).length,direction);
     }
-    window.CustomKeyboardPreview.init(line,p).text=input.value;state.draft.checked=false;persist();if(!composing)paintKeyboards(line);
+    window.CustomKeyboardPreview.init(line,p).text=input.value;if(!composing)syncKeyboardVariant(line);state.draft.checked=false;persist();if(!composing)paintKeyboards(line);
   }
   document.addEventListener('compositionend',event=>{if(event.target.dataset.keyboardText)updateKeyboardText(event.target);});
   document.addEventListener('input', event => {

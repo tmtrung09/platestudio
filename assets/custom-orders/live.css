@@ -28,4 +28,24 @@ body[data-page="counter"] .shell{min-height:100dvh}
 .product-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;min-width:0;align-items:start}
 .product-model-column{display:contents}.product-model-column>#model-picker{order:1}.product-requirement-column{order:2;min-width:0}
 .product-layout .model-picker{margin:0}.product-layout .product-actions{margin-top:20px}
-@media(min-width:1100px){.product-layout{grid-template-columns:minmax(290px,1fr) minmax(0,1.2fr);gap:24px}.product-model-column{display:block;min-width:0;order:1}.product-requirement-column{order:2}.product-model-column .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-requirement-column .part-color-field{grid-template-columns:1fr;gap:6px}}
+@media(min-width:1100px){.product-layout{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}.product-model-column{display:block;min-width:0;order:1}.product-requirement-column{order:2}.product-model-column .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-requirement-column .part-color-field{grid-template-columns:1fr;gap:6px}.model-picker #catalog{max-height:min(55dvh,480px)}}
+
+/* A stable step row in every state; number and label share one centered group. */
+.workflow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:8px;width:min(100%,540px)}
+.workflow-steps .step{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 12px;margin:0;line-height:1.35;min-width:0}
+.workflow-steps .step>span{display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;margin:0;line-height:1}
+.workflow-steps .step:disabled{opacity:1;color:var(--muted)}
+.workflow-steps .step>span{font-size:12px;font-weight:650}
+.sidebar{height:100dvh}.sidebar-toggle{align-self:flex-end;color:inherit;flex:none}.sidebar-toggle .icon{transform:rotate(180deg)}
+@media(min-width:901px){
+ .sidebar-toggle{position:absolute;top:18px;right:8px}
+ .sidebar>.wordmark{font-size:25px;padding-right:38px}
+ .shell.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)}
+ .sidebar-collapsed .sidebar{width:76px;padding:16px 10px;align-items:center}
+ .sidebar-collapsed .sidebar-toggle{position:static;align-self:center}.sidebar-collapsed .sidebar-toggle .icon{transform:none}
+ .sidebar-collapsed .sidebar>.wordmark,.sidebar-collapsed .store-label,.sidebar-collapsed .side-label,.sidebar-collapsed .side-nav>small,.sidebar-collapsed .staff-person>div{display:none}
+ .sidebar-collapsed .sidebar nav,.sidebar-collapsed .sidebar-bottom{width:100%}
+ .sidebar-collapsed .side-nav{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 0;gap:0}
+ .sidebar-collapsed .staff-person{justify-content:center;padding-inline:0}
+}
+@media(min-width:901px) and (max-width:1150px){.sidebar>.wordmark{font-size:20px}}
