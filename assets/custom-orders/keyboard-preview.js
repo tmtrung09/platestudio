@@ -39,18 +39,19 @@
     if(!cache.has(src))cache.set(src,new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(im,0,0);resolve({width:c.width,height:c.height,pixels:ctx.getImageData(0,0,c.width,c.height)});};im.onerror=()=>{cache.delete(src);reject(Error('Chưa tải được bộ hình bàn phím.'));};im.src=src;}));
     return cache.get(src);
   }
-  function tint(map,colors){
+  function tint(map,colors,material){
     const c=document.createElement('canvas');c.width=map.width;c.height=map.height;const ctx=c.getContext('2d'),output=ctx.createImageData(map.width,map.height),src=map.pixels.data,dst=output.data;
     const pigments=[null,...colors.map(hex=>(hex||'#a7aaa6').slice(1).match(/../g).map(v=>{const x=parseInt(v,16)/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}))];
     for(let i=0;i<src.length;i+=4){
       if(!src[i+3])continue;const role=Math.min(4,Math.round(src[i]/64)),pigment=pigments[role];
+      if(material&&role!==material)continue;
       if(pigment){const diffuse=2*(src[i+1]/255)**2,specular=(src[i+2]/255)**2;for(let channel=0;channel<3;channel++)dst[i+channel]=displayGamma[Math.min(16384,Math.round((pigment[channel]*diffuse+specular)*16384))];}
       else if(role!==4)continue;
       dst[i+3]=src[i+3];
     }
     ctx.putImageData(output,0,0);return c;
   }
-  async function paint(holder,line,p,getFil){
+  async function paint(holder,line,p,getFil,part){
     const canvas=holder.querySelector('[data-keyboard-canvas]');if(!canvas)return;
     const message=holder.querySelector('.keyboard-render-message'),chars=keyboardCharacters(line.keyboard?.text);
     const lengthHint=holder.querySelector('[data-keyboard-size]');if(lengthHint)lengthHint.textContent=lengthLabel(line.keyboard?.text);
@@ -58,7 +59,8 @@
     const filaments=Object.keys(labels).map(role=>line.keyboard?.components?.[role]??getFil(chosen[role]));
     const colors=filaments.map(filament=>color(filament?.hex));
     const names=filaments.map(filament=>filament?.name);
-    const signature=JSON.stringify([chars,chosen,colors,names]);
+    const material=Object.keys(labels).indexOf(part)+1;
+    const signature=JSON.stringify([chars,chosen,colors,names,material]);
     if(paintStates.get(canvas)===signature)return;
     const version=(paintVersions.get(canvas)||0)+1;paintVersions.set(canvas,version);
     canvas.hidden=false;message.hidden=false;message.textContent='Đang dựng hình minh họa…';
@@ -66,7 +68,7 @@
       if(data?.version!==2||data.specularReflectanceApplied!==true||data.materialEncoding!=='spaced-red-v1')throw Error('Chưa tải được bộ hình bàn phím.');
       const n=chars.length||3,base=data.trays[String(Math.min(n,10))];
       const [map,glyphMaps]=await Promise.all([image(base.image),Promise.all(chars.map(c=>data.glyphs[c]?image(data.glyphs[c].image):null))]);
-      const body=tint(map,colors);
+      const body=tint(map,colors,material);
       if(paintVersions.get(canvas)!==version||!holder.isConnected)return;
       const pitch=data.pitch*data.scale;
       const nativeWidth=n<=10?body.width:body.width+(n-10)*pitch,renderScale=Math.min(1,4096/nativeWidth);
@@ -83,8 +85,8 @@
       const fallback=[];
       for(let i=0;i<chars.length;i++){
         const glyph=data.glyphs[chars[i]],center=originX+(i-(n-1)/2)*pitch;
-        if(glyph){const g=tint(glyphMaps[i],colors);ctx.drawImage(g,Math.round(center+glyph.offset[0]),Math.round(base.origin[1]+glyph.offset[1]));}
-        else if(chars[i]!==' '){fallback.push(chars[i]);ctx.fillStyle=colors[2]||'#a7aaa6';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${data.scale*11}px Georgia,serif`;ctx.fillText(chars[i],center,base.origin[1]-data.scale*22*Math.cos(data.cameraElevation*Math.PI/180));}
+        if(glyph){const g=tint(glyphMaps[i],colors,material);ctx.drawImage(g,Math.round(center+glyph.offset[0]),Math.round(base.origin[1]+glyph.offset[1]));}
+        else if(chars[i]!==' '&&(!material||part==='characters')){fallback.push(chars[i]);ctx.fillStyle=colors[2]||'#a7aaa6';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${data.scale*11}px Georgia,serif`;ctx.fillText(chars[i],center,base.origin[1]-data.scale*22*Math.cos(data.cameraElevation*Math.PI/180));}
       }
       if(paintVersions.get(canvas)!==version||!holder.isConnected)return;
       // A rigid photo-style placement preserves the baked perspective and proportions.
@@ -93,6 +95,7 @@
       const display=canvas.getContext('2d');display.clearRect(0,0,canvas.width,canvas.height);display.save();display.translate(width/2,height/2);display.rotate(angle);display.drawImage(next,-next.width/2,-next.height/2);display.restore();paintStates.set(canvas,signature);
       const notes=[];if(!chars.length)notes.push('Nhập ký tự để xem hình theo tên khách.');if(colors.some(c=>!c))notes.push('Vùng chưa có màu xác định đang được tô trung tính.');if(fallback.length)notes.push('Ký tự chưa có mẫu đang dùng font minh họa thay thế.');
       message.hidden=!notes.length;message.textContent=notes.join(' ');canvas.setAttribute('aria-label',`Minh họa ${chars.join('')||'chưa nhập ký tự'}; ${Object.values(labels).map((label,index)=>label+': '+(names[index]||'chưa xác định')).join('; ')}`);
+      if(material)canvas.setAttribute('aria-label',`${labels[part]} · ${chars.join('')} · ${names[material-1]||'Chưa xác định màu'}`);
     }catch(error){if(paintVersions.get(canvas)!==version)return;paintStates.delete(canvas);canvas.hidden=true;message.hidden=false;message.textContent=error.message;}
   }
   window.CustomKeyboardPreview={profile,init,ids,fields,validation,summary,paint,labels};
