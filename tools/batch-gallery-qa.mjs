@@ -45,6 +45,10 @@ try{
     assert.ok(header.bar.height>=56+safeTop-1,'Safe-area height is reserved rather than covering content');
     assert.ok(header.controls.every((r,i,a)=>r.top>=safeTop&&r.left>=0&&r.right<=width&&(!i||r.left>=a[i-1].right-1)),'Header controls stay separate inside the safe area');
    }
+   if(!mobile){
+    const controls=await page.locator('.batch-library-toolbar').evaluate(bar=>['.compact-expand-search','.batch-sort-select','#btn-batch-multi-select','.batch-library-more summary'].map(sel=>{const el=bar.querySelector(sel),r=el.getBoundingClientRect(),style=getComputedStyle(el);return {sel,center:r.y+r.height/2,margin:style.margin,align:style.alignSelf,transform:style.transform};}));
+    assert.ok(controls.every(control=>Math.abs(control.center-controls[0].center)<1),JSON.stringify(controls));
+   }
    const geometry=await page.evaluate(()=>{
     const cards=[...document.querySelectorAll('.batch-report-card')];return {columns:getComputedStyle(cards[0].parentElement).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth+1,cards:cards.map(card=>{const media=card.querySelector('.batch-report-media'),footer=card.querySelector('.batch-report-footer'),image=media.querySelector('img');return {card:card.getBoundingClientRect().toJSON(),media:media.getBoundingClientRect().toJSON(),footer:footer.getBoundingClientRect().toJSON(),padding:getComputedStyle(card).padding,margin:getComputedStyle(card).margin,fit:image?getComputedStyle(image).objectFit:null};})};
    });
@@ -72,6 +76,16 @@ try{
    await more.click();await menu.getByRole('menuitem',{name:'Bỏ qua',exact:true}).click();assert.deepEqual(await page.evaluate(()=>qaGallerySkipped),['qa-gallery-0']);
    await more.click();await menu.getByRole('menuitem',{name:'Chuyển vào thùng rác',exact:true}).click();assert.equal(await page.evaluate(()=>qaGalleryConfirm),1,'Delete retains its real confirmation');assert.equal(await first.count(),1,'Cancel never removes a report');
    await more.click();await page.mouse.click(1,1);assert.equal(await menu.isVisible(),false,'Outside click closes the portal');assert.equal(await page.evaluate(()=>curPage),'batches','Outside dismissal does not navigate');
+   if(!mobile){
+    const photo=first.locator('.batch-report-media img');
+    await photo.click({button:'right'});await menu.getByRole('menuitem',{name:'Bỏ qua',exact:true}).click();
+    assert.deepEqual(await page.evaluate(()=>qaGallerySkipped),['qa-gallery-0','qa-gallery-0']);
+    await photo.click({button:'right'});await menu.getByRole('menuitem',{name:'Chuyển vào thùng rác',exact:true}).click();
+    assert.equal(await page.evaluate(()=>qaGalleryConfirm),2,'Right click uses the same deletion confirmation');
+    await page.locator('[data-batch-report-id="qa-gallery-2"] img').click({button:'right'});
+    await menu.waitFor({state:'visible'});assert.equal(await menu.locator('[data-action=skip]').count(),0,'Completed reports cannot be skipped');
+    await page.keyboard.press('Escape');
+   }
    assert.equal(await page.evaluate(()=>qaGalleryImage===document.querySelector('.batch-report-media>img')),true,'Opening and closing tools never rebuilds the gallery images');
    const recover=page.locator('[data-batch-report-id="qa-gallery-4"]').getByRole('button',{name:'Tìm ảnh trên cloud',exact:true});
    assert.equal(await recover.count(),1,await page.locator('[data-batch-report-id="qa-gallery-4"]').evaluate(el=>el.outerHTML));await recover.click();assert.deepEqual(await page.evaluate(()=>qaGalleryRecovered),['qa-gallery-4']);
