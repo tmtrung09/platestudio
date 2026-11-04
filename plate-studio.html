@@ -5256,7 +5256,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 
 <div id="ov-batch-report" style="display:none">
   <div class="br-hd">
-    <button class="br-back" id="br-back-btn" onclick="batchBack()" title="Quay lại">
+    <button type="button" class="br-back" id="br-back-btn" onclick="batchBack()" title="Quay lại" aria-label="Quay lại">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div style="flex:1;min-width:0">
@@ -13469,7 +13469,7 @@ function renderBatchHub(){
   ensureOperationalManualReports();
   document.getElementById('br-title').textContent = STAFF_REPORT_MODE ? 'Gửi báo cáo mẻ in' : 'Báo cáo mẻ in';
   document.getElementById('br-sub').textContent = STAFF_REPORT_MODE ? 'Ảnh sẽ được gửi về Plate Studio của xưởng' : 'Chụp ảnh mẻ vừa in xong để cập nhật tiến độ';
-  document.getElementById('br-back-btn').style.visibility = 'hidden';
+  document.getElementById('br-back-btn').style.visibility = STAFF_REPORT_MODE ? 'hidden' : 'visible';
   const pending = operationalBatchReportSource().filter(r=>r.status==='pending').sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   const el = document.getElementById('br-content');
   const actor=getBatchActor();
