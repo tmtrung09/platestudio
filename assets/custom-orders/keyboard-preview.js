@@ -54,8 +54,11 @@
     const canvas=holder.querySelector('[data-keyboard-canvas]');if(!canvas)return;
     const message=holder.querySelector('.keyboard-render-message'),chars=keyboardCharacters(line.keyboard?.text);
     const lengthHint=holder.querySelector('[data-keyboard-size]');if(lengthHint)lengthHint.textContent=lengthLabel(line.keyboard?.text);
-    const chosen=ids(line,p),colors=Object.keys(labels).map(r=>color(getFil(chosen[r])?.hex));
-    const signature=JSON.stringify([chars,chosen,colors,Object.keys(labels).map(r=>getFil(chosen[r])?.name)]);
+    const chosen=ids(line,p);
+    const filaments=Object.keys(labels).map(role=>line.keyboard?.components?.[role]??getFil(chosen[role]));
+    const colors=filaments.map(filament=>color(filament?.hex));
+    const names=filaments.map(filament=>filament?.name);
+    const signature=JSON.stringify([chars,chosen,colors,names]);
     if(paintStates.get(canvas)===signature)return;
     const version=(paintVersions.get(canvas)||0)+1;paintVersions.set(canvas,version);
     canvas.hidden=false;message.hidden=false;message.textContent='Đang dựng hình minh họa…';
@@ -89,7 +92,7 @@
       if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
       const display=canvas.getContext('2d');display.clearRect(0,0,canvas.width,canvas.height);display.save();display.translate(width/2,height/2);display.rotate(angle);display.drawImage(next,-next.width/2,-next.height/2);display.restore();paintStates.set(canvas,signature);
       const notes=[];if(!chars.length)notes.push('Nhập ký tự để xem hình theo tên khách.');if(colors.some(c=>!c))notes.push('Vùng chưa có màu xác định đang được tô trung tính.');if(fallback.length)notes.push('Ký tự chưa có mẫu đang dùng font minh họa thay thế.');
-      message.hidden=!notes.length;message.textContent=notes.join(' ');canvas.setAttribute('aria-label',`Minh họa ${chars.join('')||'chưa nhập ký tự'}; ${Object.keys(labels).map(r=>labels[r]+': '+(getFil(chosen[r])?.name||'chưa xác định')).join('; ')}`);
+      message.hidden=!notes.length;message.textContent=notes.join(' ');canvas.setAttribute('aria-label',`Minh họa ${chars.join('')||'chưa nhập ký tự'}; ${Object.values(labels).map((label,index)=>label+': '+(names[index]||'chưa xác định')).join('; ')}`);
     }catch(error){if(paintVersions.get(canvas)!==version)return;paintStates.delete(canvas);canvas.hidden=true;message.hidden=false;message.textContent=error.message;}
   }
   window.CustomKeyboardPreview={profile,init,ids,fields,validation,summary,paint,labels};

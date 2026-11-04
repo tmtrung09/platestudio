@@ -326,6 +326,20 @@
     state.selectedToken=token;const dialog=$('#detail-dialog');
     dialog.innerHTML=`<div class="dialog-header"><div><span class="eyebrow">ĐƠN CUSTOM · CHI TIẾT</span><h2 id="dialog-title">${esc(order.id)} · ${esc(order.customer)}</h2></div><button class="btn-icon-only" data-close-dialog aria-label="Đóng chi tiết đơn">${icon('close')}</button></div><div class="status-line">${icon('clock')}${esc(order.cancelled?'Đã hủy':stages[order.stage].label)}</div>${orderDetails(order)}<div class="detail-bottom">${!order.cancelled?`<button class="btn secondary" data-share="${order.token}">${icon('qr')}QR dành cho khách</button><button class="btn primary" data-track="${order.token}">Xem trang khách${icon('arrow')}</button>`:''}${order.canDelete?`<button class="btn secondary" data-delete-order="${esc(order.id)}">${icon('trash')}Xóa đơn</button>`:''}${canManage()&&order.stage===3&&!order.cancelled?`<button class="btn secondary" data-complete="${order.id}">Xác nhận khách nhận hàng</button>`:''}</div>`;
     dialog.showModal();
+    const thumbnails=dialog.querySelectorAll('.review-product > .product-art');
+    order.lines.forEach((line,index)=>void paintOrderThumbnail(thumbnails[index],line));
+  }
+  async function paintOrderThumbnail(thumbnail,line){
+    const preview=window.CustomKeyboardPreview;
+    if(!thumbnail||!line.keyboard?.text?.trim()||!preview)return;
+    const holder=document.createElement('span');
+    holder.hidden=true;
+    holder.innerHTML='<canvas data-keyboard-canvas role="img"></canvas><span class="keyboard-render-message"></span>';
+    thumbnail.append(holder);
+    const canvas=holder.firstElementChild;
+    await preview.paint(holder,line,null,window.getFil);
+    if(holder.isConnected&&canvas.hasAttribute('aria-label'))thumbnail.replaceChildren(canvas);
+    else holder.remove();
   }
   const deletedByScope=new Map(),deletingOrders=new Set();
   function deletedOrders(owner=scope){if(!deletedByScope.has(owner))deletedByScope.set(owner,new Set());return deletedByScope.get(owner);}
