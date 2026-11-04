@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 const out=resolve('qa-results/progress');mkdirSync(out,{recursive:true});
-const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--allow-file-access-from-files']});
 try{
  for(const [width,height] of [[320,780],[390,900],[768,900],[1024,900],[1440,900],[844,390]])for(const theme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<900,reducedMotion:'reduce'}),page=await context.newPage();
@@ -24,6 +24,7 @@ try{
    projects=[{id:'project',name:'Dự án kiểm tra'}];
    orders=Array.from({length:20},(_,i)=>({id:'o'+i,note:'Đơn '+i+' — Tên đơn dài để kiểm tra trên điện thoại',projectId:i<3?'project':'',status:i===19?'cancelled':'waiting',createdAt:new Date(Date.UTC(2026,9,9,0,i)).toISOString(),items:[{id:'item'+i,modelId:'m'+i%3,modelName:models[i%3].name,variantId:i%2?'large':'small',qty:4}]}));
    plates=[{id:'plate',name:'Plate đỏ',filamentId:'red'}];
+   orders[1].items[0].keyboard={version:1,text:'LOC',components:{tray:{name:'Kem',hex:'#eed8b3'},buttons:{name:'Xanh',hex:'#48c'},characters:{name:'Đỏ',hex:'#c44'}}};
    pitems=orders.flatMap((order,i)=>[1,4,120].map((qty,n)=>({id:'p'+i+'-'+n,orderId:order.id,orderItemId:'item'+i,modelId:'m'+i%3,variantId:i%2?'large':'small',partId:n?'foot':'body',partName:n?'Chân dài cần kiểm tra bố cục':'Thân',filamentId:n%2?'blue':'red',plateId:'plate',qty,qtyDone:i===0?qty:n===1?2:0})));
    operations={qualityIssues:[],deliveries:[],printPlans:[]};normalizeOperations();
    batchReports=[{id:'report',external:true,status:'done',createdAt:new Date().toISOString(),filamentId:'red',manualItems:[{modelId:'m0',modelName:models[0].name,partId:'body',partName:'Thân',qty:3}]},{id:'pending',status:'pending',createdAt:new Date().toISOString(),manualItems:[]}];fulfillmentCloudManualReports=[];
@@ -37,6 +38,9 @@ try{
   await page.locator('[data-progress-focus="complete:o0"]').click();
   assert.equal(await page.locator('#pp-queue-list [data-oid="o0"] .pp-mi').count(),1);
   const modelToggle=page.locator('[data-progress-focus="model:o1::item1"]');
+  const previews=modelToggle.locator('canvas[role="img"]');
+  await previews.last().waitFor();
+  assert.deepEqual(await previews.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label'))),['Khay bàn phím · LOC · Kem','Nút bàn phím · LOC · Xanh','Ký tự · LOC · Đỏ']);
   await modelToggle.focus();await page.keyboard.press('Enter');
   assert.equal(await modelToggle.getAttribute('aria-expanded'),'true','Keyboard expands model');
   const partInput=page.locator('[data-progress-focus="quantity:p1-1"]');

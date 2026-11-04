@@ -2115,6 +2115,8 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
 #print-progress-workspace .pp-mi-hd{display:grid;grid-template-columns:16px 48px minmax(0,1fr) 100px;align-items:center;gap:9px;width:100%;min-height:72px;padding:10px 0;border:0;background:transparent;color:var(--t);text-align:left;font:inherit;cursor:pointer}
 #print-progress-workspace .pp-mi-chev{width:14px;transition:transform .15s}
 #print-progress-workspace .pp-mi-hd[aria-expanded="true"] .pp-mi-chev{transform:rotate(90deg)}
+#print-progress-workspace .pp-mi-hd:has([data-progress-keyboard]){grid-template-columns:16px 84px minmax(0,1fr) 100px}
+#print-progress-workspace .pp-mi-media[data-progress-keyboard]{width:84px;height:72px;padding:3px}
 #print-progress-workspace :is(.pp-mi-media,.pp-group-media,.pp-external-photo){position:relative;display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:10px;background:var(--s2);color:var(--t2);overflow:hidden}
 #print-progress-workspace :is(.pp-mi-media,.pp-group-media,.pp-external-photo) img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #print-progress-workspace .pp-mi-info{min-width:0}
@@ -2189,6 +2191,8 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
  #print-progress-workspace .pp-oc-right .pp-oc-pct{margin-right:auto}
  #print-progress-workspace .pp-mi-hd{grid-template-columns:14px 40px minmax(0,1fr);gap:8px}
  #print-progress-workspace .pp-mi-media{width:40px;height:40px}
+ #print-progress-workspace .pp-mi-hd:has([data-progress-keyboard]){grid-template-columns:14px 68px minmax(0,1fr)}
+ #print-progress-workspace .pp-mi-media[data-progress-keyboard]{width:68px;height:66px}
  #print-progress-workspace .pp-mi-right{grid-column:3;display:flex;align-items:center;gap:8px;text-align:left}
  #print-progress-workspace .pp-mi-right .pp-pbar{max-width:100px}
  #print-progress-workspace .pp-pr-qty{margin-left:auto}
@@ -4845,6 +4849,8 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <script src="assets/app/workshop-swipe-core.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe-store.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/workshop-swipe.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/custom-orders/keyboard-render-data.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/custom-orders/keyboard-preview.js?v=__DEPLOY_REVISION__" defer></script>
 <link rel="stylesheet" href="assets/app/mobile-workspace.css?v=__DEPLOY_REVISION__">
 <link rel="stylesheet" href="assets/app/custom-order-overview.css?v=__DEPLOY_REVISION__">
 <script src="assets/app/mobile-routes.js?v=__DEPLOY_REVISION__" defer></script>
@@ -18007,7 +18013,7 @@ function ppOrders() {
             hex: getFil(pi.filamentId)?.hex || '#ccc', filamentName: getFil(pi.filamentId)?.name || '',
             qtyNeeded: pi.qty, qtyDone: pi.qtyDone,
           }));
-        return { id: oi.id, modelId: oi.modelId, modelName: m?.name || '(model đã xoá)', qty: oi.qty, variantId:oi.variantId||'', variantName:oi.variantName||m?.variants?.find(variant=>variant.id===oi.variantId)?.name||'', note:oi.note||'', parts };
+        return { id: oi.id, modelId: oi.modelId, modelName: m?.name || '(model đã xoá)', qty: oi.qty, variantId:oi.variantId||'', variantName:oi.variantName||m?.variants?.find(variant=>variant.id===oi.variantId)?.name||'', note:oi.note||'', keyboard:oi.keyboard, parts };
       });
       return { id:o.id, kind:o.kind, priority:o.priority, note:o.note, deliveryDate:o.deliveryDate, orderedBy:o.orderedBy, status:o.status, createdAt:o.createdAt, items };
     });
@@ -22389,6 +22395,7 @@ function renderQueue(){
       if(!list.length)body='<div class="pp-empty"><div class="pp-empty-title">'+(q?'Không có kết quả phù hợp':'Chưa có đơn ở trạng thái này')+'</div><button type="button" class="btn btn-ghost btn-sm" onclick="resetProgressFilters()">Xóa bộ lọc</button></div>';
     }
     patchProgressList(body);
+    paintProgressKeyboardParts(host);
   }catch(error){
     console.error('Không render được Tiến độ in',error);
     host.innerHTML='<div class="pp-empty"><div class="pp-empty-title">Chưa tải được tiến độ</div><button type="button" class="btn btn-ghost btn-sm" onclick="renderQueue()">Thử lại</button></div>';
@@ -22473,12 +22480,44 @@ function toggleCompletedOrder(orderId) {
 function progressModelMedia(model,name=''){
   return appIcon('model')+(model?.images?.[0]?`<img src="${esc(model.images[0])}" alt="${esc(name)}" loading="lazy" onerror="this.remove()">`:'');
 }
+function paintProgressKeyboardParts(host){
+  const preview=window.CustomKeyboardPreview;
+  if(!preview)return;
+  for(const media of host.querySelectorAll('[data-progress-keyboard]')){
+    if(media.shadowRoot)continue;
+    const keyboard=JSON.parse(media.dataset.progressKeyboard);
+    // Keep the thumbnail outside the list's HTML comparison so unchanged cards are reused.
+    const shadow=media.attachShadow({mode:'open'});
+    const fallback=document.createElement('slot');
+    const stack=document.createElement('span');
+    stack.hidden=true;
+    stack.style.cssText='width:100%;height:100%;grid-template-rows:repeat(3,minmax(0,1fr));gap:2px';
+    shadow.append(fallback,stack);
+    const renders=Object.keys(preview.labels).map(part=>{
+      const tile=document.createElement('span');
+      tile.style.cssText='min-height:0;overflow:hidden';
+      tile.innerHTML='<canvas data-keyboard-canvas role="img" style="display:block;width:100%;height:100%;object-fit:contain"></canvas><span class="keyboard-render-message" style="display:none"></span>';
+      stack.append(tile);
+      return preview.paint(tile,{keyboard},null,getFil,part);
+    });
+    void Promise.all(renders).then(()=>{
+      if(![...stack.querySelectorAll('canvas')].every(canvas=>canvas.hasAttribute('aria-label')))return;
+      fallback.remove();
+      stack.hidden=false;
+      stack.style.display='grid';
+    });
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const host=document.getElementById('pp-queue-list');
+  if(host)paintProgressKeyboardParts(host);
+},{once:true});
 function modelItemHTML(order,item){
   const p=itemProgress(item),key=order.id+'::'+item.id,open=ppOpenKeys.has(key),model=models.find(row=>row.id===item.modelId);
   const colors=[...new Map(item.parts.map(part=>[part.hex,part])).values()],remaining=Math.max(0,p.need-p.done),bodyId='pp-parts-'+encodeURIComponent(key);
   return `<section class="pp-mi"><button type="button" class="pp-mi-hd" aria-expanded="${open}" aria-controls="${bodyId}" data-progress-focus="model:${esc(key)}" onclick="toggleModelItem('${esc(key)}')">
     <svg class="pp-mi-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg>
-    <span class="pp-mi-media">${progressModelMedia(model,item.modelName)}</span>
+    <span class="pp-mi-media" ${typeof item.keyboard?.text==='string'&&item.keyboard.text.trim()?`data-progress-keyboard="${esc(JSON.stringify(item.keyboard))}"`:''}>${progressModelMedia(model,item.modelName)}</span>
     <span class="pp-mi-info"><span class="pp-mi-title"><span class="pp-mi-name">${esc(item.modelName)}</span><span class="pp-mi-qty">× ${item.qty}</span></span>
     <span class="pp-mi-summary">${item.variantName?`<span class="pp-mi-stat">${esc(item.variantName)}</span>`:''}<span class="pp-mi-stat">${item.parts.length} part</span>${colors.slice(0,3).map(part=>`<span class="pp-mi-stat"><i class="pp-mi-color" style="background:${esc(part.hex)}"></i>${esc(part.filamentName||'Màu')}</span>`).join('')}<span class="pp-mi-stat${remaining?' warn':''}">${remaining?'Còn '+remaining:'Đã đủ'}</span></span></span>
     <span class="pp-mi-right"><span class="pp-pbar"><span class="pp-pbar-fill${p.pct>=100?' pp-done':''}" style="display:block;width:${p.pct}%"></span></span><span class="pp-mi-pct">${p.done}/${p.need}</span></span>
