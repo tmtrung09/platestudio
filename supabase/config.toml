@@ -21,3 +21,9 @@ verify_jwt = true
 
 [functions.custom-order-status]
 verify_jwt = false
+
+[functions.custom-order-care]
+verify_jwt = false
+
+[functions.custom-care-zalo]
+verify_jwt = false

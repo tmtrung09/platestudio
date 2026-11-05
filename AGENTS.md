@@ -484,6 +484,21 @@
 
 ## Đơn custom tại cửa hàng
 
+- Chăm sóc sau mua nằm trong link theo dõi riêng của đơn: khách đánh giá riêng
+  trải nghiệm mua hàng và chất lượng sản phẩm; yêu cầu bảo hành chọn sản phẩm,
+  bộ phận hỏng, mô tả và ảnh. Đánh giá không là điều kiện để được bảo hành.
+  Cửa hàng nhận thông báo, xem xét và duyệt trước khi xếp in thay thế; không
+  tự chấp nhận từ mô tả/ảnh. Phần thay thế giữ liên kết đơn và đúng part nguồn,
+  không sửa lịch sử hay cộng lại số lượng của đơn mua. Khách theo dõi tiến độ
+  bảo hành riêng và biết khi sẵn sàng đến nhận. Không tự đặt thời hạn, mức phí
+  hoặc điều kiện chấp nhận bảo hành khi người dùng chưa chốt.
+  Chỉ báo sẵn sàng sau in/QC và cửa hàng nhận đủ phần thay thế; xác nhận khách
+  nhận là bước riêng. Retry giữ request ID/ảnh/nháp, chỉ báo thành công sau ACK
+  server. Quyền/token/ảnh phải giới hạn đúng đơn và xưởng; QA dữ liệu cô lập ở
+  `tools/customer-care-sql-qa.mjs`, `tools/customer-care-api-qa.ts` và QA giao diện
+  `tools/customer-care-ui-qa.mjs`. Thông báo Zalo tách khỏi tiến độ bảo hành;
+  thiếu cấu hình/lỗi gửi không làm mất phiếu, mất ACK không tự gửi lại mù.
+
 - Form tiếp nhận custom có một header gọn, ưu tiên sản phẩm và thông tin cần
   nhập; header trang tạo/xem đơn custom không có nút đăng xuất. Không lặp thẻ
   “Đơn custom mới”/khẩu hiệu/tổng tiền bên cạnh hoặc dưới

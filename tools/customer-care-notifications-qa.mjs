@@ -1,0 +1,24 @@
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+let tick,actor={workspaceId:'workspace',userId:'one',ready:true},failRead=false,delayed,updates=0;
+const event={id:'care:11111111-1111-4111-8111-111111111111',kind:'warranty',orderId:'order',createdAt:'2026-11-05',permissions:['orders.manage']};
+const client={rpc:async name=>{if(name==='mark_custom_care_read')return failRead?{error:{}}:{};if(delayed)return delayed;return {data:[structuredClone(event)]};}};
+const ctx=vm.createContext({window:{},document:{hidden:false,addEventListener(){}},Date,setInterval(fn){tick=fn;}});
+vm.runInContext(readFileSync('assets/custom-orders/care-notifications.js','utf8'),ctx);
+const api=ctx.window.CustomCareNotifications;
+api.configure({getContext:()=>({...actor,client}),updated:()=>updates++});await new Promise(resolve=>setImmediate(resolve));
+assert.equal(api.events().length,1);assert.equal(api.events()[0].title,'Yêu cầu bảo hành mới');
+failRead=true;await assert.rejects(()=>api.markRead(api.events()));assert.equal(api.events()[0].readAt,undefined,'Failed read ACK never pretends to persist');
+failRead=false;await api.markRead(api.events());assert.ok(api.events()[0].readAt);
+let release;delayed=new Promise(resolve=>release=resolve);tick();actor={workspaceId:'other',userId:'two',ready:true};assert.equal(api.events().length,0,'Scope switch hides previous data immediately');release({data:[event]});await new Promise(resolve=>setImmediate(resolve));assert.equal(api.events().length,0,'Old in-flight response cannot cross scopes');
+delayed=null;tick();await new Promise(resolve=>setImmediate(resolve));assert.equal(api.events().length,1);
+actor.ready=false;assert.equal(api.events().length,0,'Signout/permission loss hides care events');assert.ok(updates>0);
+console.log('PASS care notifications: server ACK reads, failed ACK, account/workspace isolation, stale response and permission loss');
+
+const main=readFileSync('plate-studio.html','utf8');
+const start=main.indexOf('function notificationDestination(event)'),end=main.indexOf('function ensureNotificationPopups()',start);
+const marked=[];ctx.window.CustomCareNotifications={markRead:async events=>{marked.push(...events.map(e=>e.id));}};
+ctx.location={href:''};ctx.notificationEventsForCurrentUser=()=>[{id:'care:record',type:'custom_care',careId:'request-id'}];ctx.markSystemNotificationRead=()=>{throw Error('Care read must use server ACK');};ctx.toast=()=>{};
+vm.runInContext(main.slice(start,end),ctx);await ctx.openSystemNotificationById('care:record');assert.deepEqual(marked,['care:record']);assert.equal(ctx.location.href,'custom-orders.html?care=request-id');
+console.log('PASS native notification destination: care event acknowledges server read then opens the matching request');

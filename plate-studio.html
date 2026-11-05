@@ -4855,6 +4855,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <link rel="stylesheet" href="assets/app/custom-order-overview.css?v=__DEPLOY_REVISION__">
 <script src="assets/app/mobile-routes.js?v=__DEPLOY_REVISION__" defer></script>
 <script src="assets/app/mobile-workspace.js?v=__DEPLOY_REVISION__" defer></script>
+<script src="assets/custom-orders/care-notifications.js?v=__DEPLOY_REVISION__" defer></script>
 </head>
 <body>
 <div id="platedio-startup" role="status" aria-live="polite" aria-busy="true"><div class="ps-loading-composition"><div class="loading-art" aria-hidden="true">
@@ -16025,7 +16026,7 @@ function renderProjectDetail() {
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);margin-bottom:2px">
             #${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':''} ${ordererTag(o.orderedBy)}</div>
+          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${esc(o.note||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':o.kind==='warranty'?'<span class="custom-order-tag">Bảo hành</span>':''} ${ordererTag(o.orderedBy)}</div>
           ${rel.length ? `<div class="prog-bg" style="margin-top:6px"><div class="prog-fill" style="width:${pct}%"></div></div>` : ''}
         </div>
         <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
@@ -16117,7 +16118,7 @@ function renderOrders() {
         </div>
         <div class="oc-info">
           <div class="oc-code">#${o.id.slice(-6).toUpperCase()} · ${fmtDate(o.createdAt)}</div>
-          <div class="oc-title">${esc(o.note||o.custom?.customer||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':''} ${ordererTag(o.orderedBy).replace('👤',appIcon('user'))}</div>
+          <div class="oc-title">${esc(o.note||o.custom?.customer||'Order không tên')} ${o.kind==='custom'?'<span class="custom-order-tag">Custom</span>':o.kind==='warranty'?'<span class="custom-order-tag">Bảo hành</span>':''} ${ordererTag(o.orderedBy).replace('👤',appIcon('user'))}</div>
           <div class="oc-meta">
             ${proj ? `<span>${appIcon('project')} ${esc(proj.name)}</span>` : ''}
             ${o.kind==='custom'?`<span>${appIcon('user')} ${esc(o.custom?.customer||'Khách chưa có tên')}${o.custom?.phone?` · ${esc(o.custom.phone)}`:''}</span><span class="custom-order-due" data-urgency="${customOrderDue(o).state}">${esc(customOrderDue(o).label)}</span>`:o.deliveryDate?`<span>${fmtDate(o.deliveryDate)}</span>`:''}
@@ -22948,6 +22949,7 @@ function removeAccessMember(id){const control=ensureAccessControl(),member=contr
 
 let notificationAudioUnlocked=false,notificationAudioEnabled=localStorage.getItem('ps_notification_sound')!=='0';
 let notificationAudioContext=null;
+window.addEventListener('DOMContentLoaded',()=>window.CustomCareNotifications?.configure({getContext:()=>({client:sb,workspaceId:cloudWorkspaceId(),userId:currentUser?.id,ready:cloudReady&&!loadingCloud&&!!currentUser&&(isWorkspaceOwner()||canAccess('orders.manage'))}),updated:()=>{const seen=seenNotificationIds();(window.CustomCareNotifications?.events()||[]).filter(event=>event.readAt).forEach(event=>seen.add(event.id));saveSeenNotificationIds(seen);announceUnseenSystemEvents();renderSystemNotificationRows();}}));
 function notificationSeenKey(){return `ps_seen_events_${cloudWorkspaceId()||currentUser?.id||'local'}`;}
 function seenNotificationIds(){try{return new Set(JSON.parse(localStorage.getItem(notificationSeenKey())||'[]'));}catch(_){return new Set();}}
 function saveSeenNotificationIds(ids){try{localStorage.setItem(notificationSeenKey(),JSON.stringify([...ids].slice(-180)));}catch(_){}}
@@ -22973,11 +22975,11 @@ function eventIsForCurrentUser(event){
   /* Event cũ chưa có người nhận vẫn được giữ trong lịch sử thay vì biến mất. */
   return !recipients.length&&!permissions.length;
 }
-function notificationEventsForCurrentUser(){normalizeOperations();return [...(operations.events||[]),...(window.PlatePrinterMonitor?.events()||[])].filter(eventIsForCurrentUser).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));}
+function notificationEventsForCurrentUser(){normalizeOperations();return [...(operations.events||[]),...(window.PlatePrinterMonitor?.events()||[]),...(window.CustomCareNotifications?.events()||[])].filter(eventIsForCurrentUser).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));}
 function eventReadByCurrentUser(event){const key=notificationUserKey();return Array.isArray(event.readBy)?event.readBy.includes(key):!!event.readAt;}
 function eventAudienceLabel(event){const permissions=Array.isArray(event?.permissions)?event.permissions:[];const labels=permissions.map(permission=>ACCESS_PERMISSION_LIST.find(row=>row[0]===permission)?.[1]).filter(Boolean);return labels.length?`Gửi đến: ${labels.join(', ')}`:'';}
-function notificationDestination(event){if(event?.type?.startsWith('printer_'))return {page:'printer-monitor',label:'Xem máy in'};return ({order_created:{page:'orders',label:'Xem đơn hàng'},batch_reported:{page:'batches',label:'Xem mẻ in'},print_completed:{page:'fulfillment',label:'Bàn giao gia công'},assembly_handover:{page:'fulfillment',label:'Xem QC part'},part_qc_accepted:{page:'fulfillment',label:'Bắt đầu gia công'},quality_rejected:{page:'progress',label:'Xử lý in bù'},packaging_ready:{page:'packaging',label:'Xem bao bì'},assembly_completed:{page:'delivery-builder',label:'Tạo đợt giao'},assembly_accepted:{page:'fulfillment',label:'Tạo đợt giao'},delivery_created:{page:'delivery-receive',label:'Kiểm hàng'},delivery_received:{page:'kiotviet',label:'Tạo file KiotViet'}})[event?.type]||null;}
-function openSystemNotificationById(id){const event=notificationEventsForCurrentUser().find(row=>row.id===id);if(!event)return;markSystemNotificationRead(event);const target=notificationDestination(event);if(target){closeSystemNotifications(false);goPage(target.page);return;}openSystemNotifications();}
+function notificationDestination(event){if(event?.type==='custom_care')return {href:'custom-orders.html?care='+encodeURIComponent(event.careId||''),label:'Xem đánh giá / bảo hành'};if(event?.type?.startsWith('printer_'))return {page:'printer-monitor',label:'Xem máy in'};return ({order_created:{page:'orders',label:'Xem đơn hàng'},batch_reported:{page:'batches',label:'Xem mẻ in'},print_completed:{page:'fulfillment',label:'Bàn giao gia công'},assembly_handover:{page:'fulfillment',label:'Xem QC part'},part_qc_accepted:{page:'fulfillment',label:'Bắt đầu gia công'},quality_rejected:{page:'progress',label:'Xử lý in bù'},packaging_ready:{page:'packaging',label:'Xem bao bì'},assembly_completed:{page:'delivery-builder',label:'Tạo đợt giao'},assembly_accepted:{page:'fulfillment',label:'Tạo đợt giao'},delivery_created:{page:'delivery-receive',label:'Kiểm hàng'},delivery_received:{page:'kiotviet',label:'Tạo file KiotViet'}})[event?.type]||null;}
+async function openSystemNotificationById(id){const event=notificationEventsForCurrentUser().find(row=>row.id===id);if(!event)return;const target=notificationDestination(event);if(target?.href){try{await window.CustomCareNotifications?.markRead([event]);}catch(error){toast(error.message);}location.href=target.href;return;}markSystemNotificationRead(event);if(target){closeSystemNotifications(false);goPage(target.page);return;}openSystemNotifications();}
 function ensureNotificationPopups(){let host=document.getElementById('system-notification-popups');if(!host){host=document.createElement('div');host.id='system-notification-popups';host.setAttribute('aria-live','polite');document.getElementById('toast').append(host);}return host;}
 /* One rail for feedback and events; timers stop while the reader is interacting
    or the dropdown occupies that corner. Dismissing never edits business data. */
@@ -23087,9 +23089,9 @@ function closeSystemNotifications(returnFocus=true){
   const panel=document.getElementById('system-notification-panel');if(!panel||panel.hidden)return;panel.hidden=true;document.body.classList.remove('notifications-open');document.getElementById('system-notification-button')?.setAttribute('aria-expanded','false');refreshNotificationVisibility();if(returnFocus)document.getElementById('system-notification-button')?.focus({preventScroll:true});
 }
 function refreshNotificationVisibility(){document.querySelectorAll('.notification-card').forEach(card=>card.notificationVisibility?.());}
-function markSystemNotificationRead(event){if(eventReadByCurrentUser(event))return;if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);ensureSystemNotificationButton();return;}const key=notificationUserKey();event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);sv(K.operations,operations);ensureSystemNotificationButton();}
+function markSystemNotificationRead(event){if(eventReadByCurrentUser(event))return;if(event.type==='custom_care'){void window.CustomCareNotifications?.markRead([event]).catch(error=>toast(error.message));return;}if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);ensureSystemNotificationButton();return;}const key=notificationUserKey();event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);sv(K.operations,operations);ensureSystemNotificationButton();}
 function toggleNotificationSound(){notificationAudioEnabled=!notificationAudioEnabled;localStorage.setItem('ps_notification_sound',notificationAudioEnabled?'1':'0');if(notificationAudioEnabled){unlockNotificationAudio();playNotificationSound();}renderSystemNotificationRows();}
-function markSystemNotificationsRead(){normalizeOperations();const key=notificationUserKey();notificationEventsForCurrentUser().forEach(event=>{if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);return;}if(!eventReadByCurrentUser(event)){event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);}});sv(K.operations,operations);ensureSystemNotificationButton();}
+function markSystemNotificationsRead(){normalizeOperations();void window.CustomCareNotifications?.markRead(notificationEventsForCurrentUser().filter(event=>event.type==='custom_care')).catch(error=>toast(error.message));const key=notificationUserKey();notificationEventsForCurrentUser().forEach(event=>{if(event.type==='custom_care')return;if(event.id?.startsWith('printer:')){window.PlatePrinterMonitor?.markRead(event);return;}if(!eventReadByCurrentUser(event)){event.readBy=Array.isArray(event.readBy)?event.readBy:[];if(!event.readBy.includes(key))event.readBy.push(key);}});sv(K.operations,operations);ensureSystemNotificationButton();}
 document.addEventListener('pointerdown',event=>{if(document.body.classList.contains('notifications-open')&&!event.target.closest('#system-notification-panel,#system-notification-button'))closeSystemNotifications(false);});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('notifications-open')){event.preventDefault();event.stopImmediatePropagation();closeSystemNotifications();}},true);
 

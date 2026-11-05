@@ -35,10 +35,10 @@ async function setup(width=390,theme='light',largeCatalog=false){
     return {data:null,error:{message:'Unsupported QA RPC '+name}};
    },
    storage:{from:()=>({upload:async(path,blob)=>{window.__uploads.push({path,size:blob.size});return {};},createSignedUrls:async paths=>({data:paths.map(path=>({path,signedUrl:'http://custom-orders.test/fixture.svg'}))})})},
-   functions:{invoke:async(name,{body})=>{window.__calls.push({name:'public',token:body.token});if(body.token!==token)return {error:Error('Not found')};const full=records()[0]?.order||sample;const {phone,address,...order}=full;return {data:{order:{...order,stage:window.__publicStage??order.stage,cancelled:window.__cancelled||false,lines:order.lines.map(line=>({...line,qty:window.__maliciousQty||line.qty,images:line.images.map(image=>({...image,src:'http://custom-orders.test/fixture.svg'}))}))}}};}}
+   functions:{invoke:async(name,{body})=>{if(name==='custom-order-care')return {data:{care:{eligible:false,review:null,warranties:[]}}};window.__calls.push({name:'public',token:body.token});if(body.token!==token)return {error:Error('Not found')};const full=records()[0]?.order||sample;const {phone,address,...order}=full;return {data:{order:{...order,stage:window.__publicStage??order.stage,cancelled:window.__cancelled||false,lines:order.lines.map(line=>({...line,qty:window.__maliciousQty||line.qty,images:line.images.map(image=>({...image,src:'http://custom-orders.test/fixture.svg'}))}))}}};}}
   };
   window.supabase={createClient:(...args)=>{window.__clientOptions=args[2];return client;}};
-  const originalInterval=window.setInterval;window.setInterval=(fn,delay,...args)=>delay===30000?(window.__poll=fn,999):originalInterval(fn,delay,...args);
+  const originalInterval=window.setInterval,polls=[];window.setInterval=(fn,delay,...args)=>delay===30000?(polls.push(fn),window.__poll=()=>polls.forEach(poll=>poll()),999):originalInterval(fn,delay,...args);
  },largeCatalog);
  const page=await context.newPage();page.on('pageerror',error=>issues.push(error.message));
  await page.route(/^https?:/,route=>{

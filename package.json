@@ -13,7 +13,7 @@
     "qa:plate-editor": "node tools/plate-editor-qa.mjs && node tools/plan-report-qa.mjs && node tools/plate-manual-qa.mjs && node tools/plate-files-sql-qa.mjs && node tools/filament-picker-qa.mjs && npm run qa:filament-palette",
     "qa:printers": "node tools/printer-polling-qa.mjs && node tools/printer-chime-qa.mjs && node tools/printer-voice-sql-qa.mjs && node tools/printer-voice-qa.mjs && node tools/printer-alert-policy-qa.mjs && node tools/printer-alert-art-qa.mjs && node tools/printer-core-qa.mjs && node tools/printer-sql-qa.mjs && node tools/printer-ui-qa.mjs",
     "qa:printer-api": "npx --yes deno test --node-modules-dir=none --allow-env tools/printer-api-qa.ts tools/printer-voice-api-qa.ts",
-    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor && npm run qa:printers && npm run qa:custom-orders && npm run qa:workshop-swipe",
+    "qa:all": "npm run qa:mobile && npm run qa:desktop && npm run qa:workflow && npm run qa:kiot-sync && npm run qa:cloud && npm run qa:plate-editor && npm run qa:printers && npm run qa:custom-orders && npm run qa:workshop-swipe && npm run qa:care",
     "qa:install": "node tools/shortcut-install-qa.mjs",
     "qa:camera-startup": "node tools/camera-startup-qa.mjs",
     "qa:custom-orders": "node tools/custom-orders-sql-qa.mjs && node tools/custom-order-overview-qa.mjs && node tools/custom-orders-persistence-qa.mjs && node tools/custom-orders-ui-qa.mjs && node tools/custom-keyboard-ui-qa.mjs && node tools/login-layout-qa.mjs && node tools/custom-orders-navigation-qa.mjs",
@@ -21,7 +21,9 @@
     "qa:forest": "node tools/forest-theme-qa.mjs && node tools/surface-qa.mjs",
     "qa:workshop-swipe": "node tools/workshop-swipe-catalog-qa.mjs && node tools/workshop-swipe-sql-qa.mjs && node tools/workshop-swipe-ui-qa.mjs",
     "qa:order-stepper": "node tools/order-stepper-qa.mjs",
-    "qa:filament-palette": "node tools/filament-palette-sql-qa.mjs && node tools/filament-palette-ui-qa.mjs"
+    "qa:filament-palette": "node tools/filament-palette-sql-qa.mjs && node tools/filament-palette-ui-qa.mjs",
+    "qa:care": "node tools/customer-care-sql-qa.mjs && node tools/customer-care-notifications-qa.mjs && node tools/customer-care-ui-qa.mjs",
+    "qa:care-api": "npx --yes deno@2.7.10 test --frozen --node-modules-dir=none --allow-env tools/customer-care-api-qa.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

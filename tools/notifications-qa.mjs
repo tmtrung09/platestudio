@@ -10,8 +10,8 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:
 const profiles=[{width:320,height:740,touch:true},{width:390,height:844,touch:true},{width:640,height:360},{width:640,height:900},{width:1280,height:900}];
 try{for(const profile of profiles)for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},hasTouch:!!profile.touch,isMobile:!!profile.touch,reducedMotion:'reduce'});
- await context.route(/^https?:/,route=>route.abort());const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.goto(pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
+ const base=process.env.QA_NOTIFICATIONS_BASE;await context.route(/^https?:/,route=>{if(route.request().url().startsWith('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'))return;return base&&new URL(route.request().url()).origin===new URL(base).origin?route.continue():route.abort();});const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(base?new URL('plate-studio.html',base).href:pathToFileURL(resolve('plate-studio.html')).href,{waitUntil:'domcontentloaded'});
  await waitForAppReady(page);
  await page.evaluate(theme=>{
   document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');cloudReady=false;currentUser=null;sb=null;
