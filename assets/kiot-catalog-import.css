@@ -1,0 +1,231 @@
+#kiot-catalog-import-dialog {
+  --panel: var(--s, #212422);
+  --ink: var(--t, #f3f7f3);
+  --sub: var(--t2, #b8c5bc);
+  --rule: var(--bm, #424b45);
+  --green: var(--gr, #a8edc2);
+  --danger: var(--re, #ffa7a1);
+  box-sizing: border-box;
+  width: min(740px, calc(100% - 16px));
+  max-width: none;
+  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--sd, 0 18px 42px #0006);
+  font: 14px/1.42 "Segoe UI", system-ui, sans-serif;
+}
+#kiot-catalog-import-dialog::backdrop {
+  background: #101b16ad;
+}
+#kiot-catalog-import-dialog *,
+#kiot-catalog-import-dialog *::before,
+#kiot-catalog-import-dialog *::after {
+  box-sizing: border-box;
+}
+#kiot-catalog-import-dialog [hidden] { display: none !important; }
+#kiot-catalog-import-dialog .import-header { padding: 15px 20px 12px; }
+#kiot-catalog-import-dialog .import-kicker {
+  margin: 0;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .075em;
+}
+#kiot-catalog-import-dialog h2 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-size: clamp(19px, 4.5vw, 26px);
+  line-height: 1.2;
+  letter-spacing: -.026em;
+}
+@layer platedio-surfaces {
+  /* Initial focus is on the static title for screen readers. Controls keep their focus ring. */
+  #kiot-catalog-import-title:focus { outline: none !important; }
+}
+#kiot-catalog-import-dialog .import-filename {
+  margin: 4px 0 0;
+  color: var(--sub);
+  overflow-wrap: anywhere;
+}
+#kiot-catalog-import-dialog .import-scene {
+  position: relative;
+  isolation: isolate;
+  margin-inline: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #121a17;
+  color: #dcebe2;
+}
+#kiot-catalog-import-dialog canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 700 / 406;
+  min-height: 278px;
+}
+#kiot-catalog-import-dialog .scene-label,
+#kiot-catalog-import-dialog .scene-file,
+#kiot-catalog-import-dialog .scene-legend {
+  position: absolute;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+#kiot-catalog-import-dialog .scene-label,
+#kiot-catalog-import-dialog .scene-file { top: 12px; }
+#kiot-catalog-import-dialog .scene-label {
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+#kiot-catalog-import-dialog .scene-lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8af1ac;
+  box-shadow: 0 0 10px #82ff9c96;
+}
+#kiot-catalog-import-dialog [data-phase="error"] .scene-lamp,
+#kiot-catalog-import-dialog [data-phase="waiting"] .scene-lamp {
+  background: #f7d290;
+  box-shadow: 0 0 10px #f7d29073;
+}
+#kiot-catalog-import-dialog .scene-file { right: 14px; letter-spacing: .08em; }
+#kiot-catalog-import-dialog .scene-file span { color: #8af1ac; }
+#kiot-catalog-import-dialog .scene-alarm {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  overflow: clip;
+  padding: clamp(7px, 1.5vw, 13px) clamp(17px, 4vw, 36px);
+  border: 1px solid #ac6451;
+  background: repeating-linear-gradient(0deg, #0c0b0b38 0 1px, transparent 1px 4px), #291916ef;
+  color: #ffe9dc;
+  box-shadow: inset 0 0 22px #ff795b22, 0 0 24px #ff795b40, 0 6px 20px #08050480;
+  font: 700 clamp(14px, 3.3vw, 27px)/1.15 "Segoe UI", system-ui, sans-serif;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+  pointer-events: none;
+  animation: platedio-alarm-signal 1.5s ease-out both;
+}
+#kiot-catalog-import-dialog .scene-alarm[hidden] { display: none; }
+#kiot-catalog-import-dialog .scene-alarm::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
+  background: repeating-linear-gradient(-45deg, #ef9c72 0 4px, #61352b 4px 8px);
+  box-shadow: 0 0 14px #ff795b45;
+}
+#kiot-catalog-import-dialog .scene-alarm::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg,transparent 32%,#ffb58b22 50%,transparent 68%);
+  transform: translateX(110%);
+  animation: platedio-alarm-scan .8s ease-out both;
+}
+#kiot-catalog-import-dialog .alarm-tag {
+  color: #ffb595;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+#kiot-catalog-import-dialog .scene-alarm strong {
+  font-weight: 750;
+  text-shadow: 0 0 13px #ffa57e70;
+}
+@keyframes platedio-alarm-signal {
+  0%, 26%, 62%, 100% { opacity: 1; }
+  13%, 44% { opacity: .74; }
+}
+@keyframes platedio-alarm-scan {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(110%); }
+}
+@media(prefers-reduced-motion: reduce) {
+  #kiot-catalog-import-dialog .scene-alarm,
+  #kiot-catalog-import-dialog .scene-alarm::after { animation: none; }
+}
+#kiot-catalog-import-dialog .scene-legend {
+  inset: auto 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: linear-gradient(transparent,#111a17 38%);
+  text-align: center;
+  padding: 12px 6px 9px;
+  color: #98b3a4;
+}
+#kiot-catalog-import-dialog .scene-legend b { color: #dcebe2; font-weight: 500; }
+#kiot-catalog-import-dialog [data-inspection="true"] .scene-legend { visibility: hidden; }
+#kiot-catalog-import-dialog .import-body { padding: 13px 20px 15px; }
+#kiot-catalog-import-dialog .import-status { min-height: 59px; }
+#kiot-catalog-import-dialog .import-status strong { font-size: 17px; }
+#kiot-catalog-import-dialog .import-status p { margin: 2px 0 0; color: var(--sub); }
+#kiot-catalog-import-dialog[data-outcome="error"] .import-status strong {
+  color: var(--danger);
+}
+#kiot-catalog-import-dialog .import-steps {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#kiot-catalog-import-dialog .import-steps li {
+  border-top: 3px solid var(--rule);
+  padding-top: 7px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--sub);
+}
+#kiot-catalog-import-dialog .import-steps li span { margin-right: 3px; }
+#kiot-catalog-import-dialog .import-steps [data-state="active"],
+#kiot-catalog-import-dialog .import-steps [data-state="done"] {
+  color: var(--green);
+  border-color: var(--green);
+}
+#kiot-catalog-import-dialog .import-steps [data-state="error"] {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+#kiot-catalog-import-dialog .import-status p { overflow-wrap: anywhere; }
+#kiot-catalog-import-dialog .import-footer {
+  position: sticky;
+  z-index: 3;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 20px 12px;
+  border-top: 1px solid var(--rule);
+  background: var(--panel);
+}
+#kiot-catalog-import-dialog .import-footer button {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  min-height: 44px;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  #kiot-catalog-import-dialog .import-header,
+  #kiot-catalog-import-dialog .import-body,
+  #kiot-catalog-import-dialog .import-footer { padding-inline: 12px; }
+  #kiot-catalog-import-dialog .scene-file { display: none; }
+}

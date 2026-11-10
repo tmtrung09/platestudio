@@ -612,6 +612,18 @@
 - Đồng bộ giữ danh mục/báo cáo bán/ghép SKU/sổ đối chiếu và đường nhập file/Chrome/
   bù ngày. Trạng thái thật, không coi chưa kết nối/thiếu dữ liệu là thành công;
   giữ focus/caret/ảnh khi tìm hoặc tải nền.
+- Khi nhập file danh mục sản phẩm, hiển thị hoạt ảnh riêng trong lúc xử lý.
+  Giai đoạn bám theo thao tác thực tế. Phân biệt lỗi tải bộ đọc Excel, mất kết
+  nối, hết thời gian chờ, phiên hết hạn, thiếu quyền, dịch vụ lưu không khả dụng
+  và lỗi ghi do server xác nhận, theo tín hiệu đã có. Diễn tả từng lỗi bằng
+  chuyển động và thay đổi của cảnh xử lý. Giữ cảnh cận lỗi đủ để nhận ra sự cố
+  trước khi hiện nhãn “Xử lý thất bại” giữa khung; dành vùng riêng cho chữ và chi tiết lỗi
+  để chúng không che nhau. Cảnh báo nháy nhẹ rồi đứng yên để đọc; chế độ giảm
+  chuyển động hiển thị tĩnh. Khi chưa biết kết quả, hiển thị chưa xác nhận
+  lưu; chỉ báo lưu cloud sau xác nhận server. Không tự gửi lại lần ghi chưa
+  xác nhận nếu server chưa chống trùng. Duyệt demo dùng dữ liệu mẫu trước khi
+  tích hợp; kiểm tra điện thoại, hai theme và chế độ giảm chuyển động.
+  Guard: `tools/kiot-catalog-import-qa.mjs`.
 - Ghép/gỡ ghép/bỏ qua SKU lưu bền nội dung thao tác theo xưởng + người dùng trước
   khi chuyển mục; cache đầy hoặc lỗi kho local giữ nháp và báo lỗi. Tự phục hồi
   hàng chờ qua reload/online, gửi lại cùng request ID; chỉ xác nhận lưu cloud sau
