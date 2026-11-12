@@ -1,12 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.0'
+import { albumPageCursor, photoCaptureTime, publicImageId } from './album-order.ts'
 
 const origin = 'https://anh-xuong.betweenus57btuxuong.chatgpt.site'
 const url = Deno.env.get('SUPABASE_URL')!
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const admin = createClient(url, serviceKey)
+const pageCursor = albumPageCursor(serviceKey)
 const bucket = 'photo-album'
 const maxBytes = 12 * 1024 * 1024
 const pageSize = 24
+const legacyImageId = /^[1-9]\d{0,14}$/
 const photoTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const headers = {
   'Access-Control-Allow-Origin': origin,
@@ -70,7 +73,8 @@ function batchMediaPath(value: unknown) {
 
 async function servePhoto(workspace: string, id: string, full: boolean) {
   const { data: item, error } = await admin.from('photo_album_images')
-    .select('upload_hash,report_user_id,report_id,report_image,report_thumb').eq('workspace_id', workspace).eq('id', id).maybeSingle()
+    .select('upload_hash,report_user_id,report_id,report_image,report_thumb').eq('workspace_id', workspace)
+    .eq(legacyImageId.test(id) ? 'id' : 'public_id', id).maybeSingle()
   if (error) throw error
   if (!item) return json({ error: 'Ảnh không còn trong album.' }, 404)
 
@@ -115,17 +119,24 @@ Deno.serve(async req => {
     const params = new URL(req.url).searchParams
     const id = params.get('id')
     const before = params.get('before')
-    const validId = (value: string) => /^[1-9]\d{0,14}$/.test(value)
 
     if (req.method === 'GET') {
-      if ((id && !validId(id)) || (before && !validId(before))) return json({ error: 'Mã ảnh không hợp lệ.' }, 400)
+      if (id && !publicImageId.test(id) && !legacyImageId.test(id)) return json({ error: 'Mã ảnh không hợp lệ.' }, 400)
       if (id) return await servePhoto(workspace, id, params.get('full') === '1')
-      let query = admin.from('photo_album_images').select('id').eq('workspace_id', workspace)
-      if (before) query = query.lt('id', before)
-      const { data, error } = await query.order('id', { ascending: false }).limit(pageSize + 1)
+      if (before && legacyImageId.test(before)) return json({ images: [], next: null })
+      const anchor = before ? await pageCursor.decode(before, workspace) : null
+      if (before && !anchor) return json({ error: 'Mốc xem ảnh không hợp lệ.' }, 400)
+      const { data, error } = await admin.rpc('photo_album_capture_page', {
+        p_workspace_id: workspace,
+        p_before_at: anchor?.sort_at ?? null,
+        p_before_id: anchor?.public_id ?? null,
+      })
       if (error) throw error
-      const images = data.slice(0, pageSize).map(item => String(item.id))
-      return json({ images, next: data.length > pageSize ? images.at(-1) : null })
+      const page = data.slice(0, pageSize)
+      return json({
+        images: page.map((item: { public_id: string }) => item.public_id),
+        next: data.length > pageSize ? await pageCursor.encode(page.at(-1), workspace) : null,
+      })
     }
 
     if (Number(req.headers.get('content-length')) > maxBytes) return json({ error: 'Ảnh tối đa 12 MB.' }, 413)
@@ -144,7 +155,7 @@ Deno.serve(async req => {
     })
     if (uploadError) throw uploadError
     const { error: saveError } = await admin.from('photo_album_images').upsert({
-      workspace_id: workspace, upload_hash: hash,
+      workspace_id: workspace, upload_hash: hash, sort_at: photoCaptureTime(bytes) ?? '-infinity',
     }, { onConflict: 'workspace_id,upload_hash', ignoreDuplicates: true })
     if (saveError) throw saveError
     return json({ ok: true }, 201)

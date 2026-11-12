@@ -63,14 +63,47 @@ try {
   assert.deepEqual((await db.query('select report_id, report_image from photo_album_images')).rows, [
     { report_id: 'chosen', report_image: `${media}/owner/batch/one.jpg` },
   ]);
-  await db.query('update batch_reports set data=$1 where id=$2', [JSON.stringify({ image: `${media}/owner/changed.jpg` }), 'chosen']);
+  await db.query('update batch_reports set data=$1 where id=$2', [JSON.stringify({ image: `${media}/owner/changed.jpg`, photoTakenAt: '2026-01-04T08:00:00+07:00', capturedAt: '2026-01-08T00:00:00Z' }), 'chosen']);
   assert.equal((await db.query('select report_image from photo_album_images')).rows[0].report_image, `${media}/owner/batch/one.jpg`);
+  await db.exec(readFileSync('supabase/migrations/202611120002_photo_album_capture_order.sql', 'utf8'));
+  const backfill = (await db.query('select sort_at from photo_album_images')).rows[0];
+  assert.equal(backfill.sort_at.toISOString(), '2026-01-04T01:00:00.000Z', 'An existing share keeps its original report photo time');
   await runAs(owner);
+  await assert.rejects(() => db.query('select * from photo_album_capture_page($1)', [workspace]), error => error.code === '42501');
   assert.deepEqual(await rpc('unshare', ['chosen']), { active: true, affected: 1 });
   assert.deepEqual(await rpc('revoke'), { active: false, affected: 0 });
   await db.exec('reset role');
   assert.equal((await db.query('select count(*)::int n from batch_reports')).rows[0].n, 6);
   console.log('PASS photo album SQL: owner scope, exact shares, private storage, link rotation and revocation');
+
+  const reports = [
+    ['last-shared-first', { photoTakenAt: '2026-02-02T06:00:00+07:00', capturedAt: '2026-02-10T00:00:00Z' }],
+    ['old-shared-later', { photoTakenAt: 'bad-date', capturedAt: '2026-01-01T00:00:00Z' }],
+    ['undated', { photoTakenAtSource: 'upload', capturedAt: '2026-03-02T00:00:00Z' }],
+  ];
+  for (const [id, date] of reports) await insert(id, owner, workspace, { image: `${media}/owner/${id}.jpg`, ...date });
+  await runAs(owner);
+  await rpc('share', [reports[0][0]]);
+  await rpc('share', reports.slice(1).map(([id]) => id));
+  await db.exec('reset role');
+  await db.query(`insert into photo_album_images (workspace_id, upload_hash, sort_at)
+    values ($1, $2, '2026-02-01T12:00:00Z')`, [workspace, 'd'.repeat(64)]);
+  const ordered = (await db.query(`select i.report_id from photo_album_capture_page($1) p
+    join photo_album_images i on i.public_id=p.public_id`, [workspace])).rows.map(row => row.report_id);
+  assert.deepEqual(ordered, ['last-shared-first', null, 'old-shared-later', 'undated']);
+
+  // A same-second burst crosses the page boundary. Removing its anchor must not skip or repeat an image.
+  await db.query(`insert into photo_album_images (workspace_id, upload_hash, sort_at)
+    select $1, lpad(n::text, 64, '0'), '2026-02-03T00:00:00Z' from generate_series(1, 26) n`, [workspace]);
+  const page = (await db.query('select * from photo_album_capture_page($1)', [workspace])).rows;
+  assert.equal(page.length, 25);
+  const anchor = page[23];
+  await db.query('delete from photo_album_images where public_id=$1', [anchor.public_id]);
+  const rest = (await db.query('select * from photo_album_capture_page($1,$2,$3)', [workspace, anchor.sort_at, anchor.public_id])).rows;
+  assert.equal(rest.length, 6);
+  assert.equal(rest[0].public_id, page[24].public_id);
+  assert.ok(rest.every(row => !page.slice(0, 24).some(first => first.public_id === row.public_id)));
+  console.log('PASS photo album order: existing report backfill, upload vs share time, undated images, tied dates and page boundary');
 } finally {
   await db.close();
 }
@@ -90,7 +123,9 @@ try {
     });
     let available = true;
     let fail = true;
-    let images = ['8', '7'];
+    const images = ['21', '11', '31', '01'].map(prefix => `${prefix}000000-0000-4000-8000-000000000000`);
+    const cursor = 'ordered_page-2';
+    let uploaded = false;
     await context.route('https://*.supabase.co/functions/v1/photo-album**', route => {
       const request = route.request();
       const headers = { 'access-control-allow-origin': origin, 'access-control-allow-headers': 'x-album-key,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
@@ -101,11 +136,16 @@ try {
       if (request.method() === 'POST') {
         if (fail) return route.fulfill({ status: 503, headers, json: {} });
         assert.deepEqual(request.postDataBuffer(), png);
-        images = ['9', ...images];
+        uploaded = true;
         return route.fulfill({ status: 201, headers, json: { ok: true } });
       }
-      if (new URL(request.url()).searchParams.has('id')) return route.fulfill({ headers, body: png, contentType: 'image/png' });
-      return route.fulfill({ headers, json: { images, next: null } });
+      const params = new URL(request.url()).searchParams;
+      if (params.has('id')) return route.fulfill({ headers, body: png, contentType: 'image/png' });
+      if (params.has('before')) {
+        assert.equal(params.get('before'), cursor);
+        return route.fulfill({ headers, json: { images: images.slice(2, 3), next: null } });
+      }
+      return route.fulfill({ headers, json: { images: uploaded ? [images[3], ...images.slice(0, 2)] : images.slice(0, 2), next: cursor } });
     });
     const page = await context.newPage();
     await page.goto(`${origin}/`);
@@ -113,6 +153,9 @@ try {
     assert.equal(await page.getByRole('button', { name: 'Tải ảnh lên' }).count(), 0);
     await page.goto(`${origin}/#album=${key}`);
     await page.getByRole('button', { name: 'Xem ảnh 2' }).waitFor();
+    await page.getByRole('button', { name: 'Xem thêm ảnh' }).click();
+    await page.getByRole('button', { name: 'Xem ảnh 3' }).waitFor();
+    assert.deepEqual(await page.locator('.photo').evaluateAll(cards => cards.map(card => card.dataset.photo)), images.slice(0, 3));
     assert.equal(await page.locator('[capture], a[href], video, select').count(), 0);
     assert.equal(await page.locator('.photos').evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length), width <= 720 ? 2 : 4);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -123,6 +166,7 @@ try {
     await page.getByRole('button', { name: 'Thử lại' }).click();
     await page.getByText('Đã nhận 1/1 ảnh.').waitFor();
     await page.getByRole('button', { name: 'Xem ảnh 3' }).waitFor();
+    assert.equal(await page.locator('.photo').first().getAttribute('data-photo'), images[3]);
     await page.reload();
     const first = page.getByRole('button', { name: 'Xem ảnh 1' });
     await first.click();

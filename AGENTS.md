@@ -185,11 +185,16 @@
   sắp xếp; không khôi phục ngày từ localStorage hoặc gửi điều kiện ngày lên cloud.
   Chỉ khôi phục khi người dùng yêu cầu thiết kế mới và đã kiểm thử lại.
 - Album ảnh gửi người ngoài dùng địa chỉ độc lập với trang chính, chỉ tải ảnh
-  từ thiết bị và xem ảnh. Chỉ hiện ảnh tải qua link và ảnh báo cáo mẻ được chủ
+  từ thiết bị và xem ảnh. Người có link đầy đủ được mở album mà không cần tài
+  khoản hoặc đăng nhập. Chỉ hiện ảnh tải qua link và ảnh báo cáo mẻ được chủ
   xưởng chọn chia sẻ. Không mở camera, điều hướng tới trang chính hoặc trả dữ
   liệu báo cáo mẻ ngoài ảnh. Chủ xưởng có thể bỏ chia sẻ từng ảnh, đổi hoặc tắt
   link. Kiểm tra quyền theo link và xưởng ở server cho mọi thao tác ảnh. Guard:
   `tools/photo-album-qa.mjs`.
+- Album ảnh xếp ảnh từ mới đến cũ theo mốc chụp có sẵn của báo cáo mẻ hoặc
+  metadata ảnh gốc khi tải trực tiếp. Ảnh thiếu mốc hợp lệ nằm cuối. Phân trang
+  và thứ tự khi trùng mốc không dựa vào lúc tải hoặc lúc thêm vào album. Guard:
+  `tools/photo-album-order-qa.ts`.
 
 ## Khởi động, đồng bộ và camera
 
