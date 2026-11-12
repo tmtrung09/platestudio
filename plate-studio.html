@@ -279,6 +279,21 @@ mark { background:rgba(200,80,26,.15); color:var(--ac); border-radius:2px; paddi
 .cloud-activity-orb{position:relative;width:26px;height:26px;flex:0 0 26px;filter:drop-shadow(0 0 7px rgba(99,210,255,.72));animation:cloudActivityTurn 2.7s linear infinite}.cloud-activity-orb::before,.cloud-activity-orb::after,.cloud-activity-orb span{content:'';position:absolute;inset:3px;border-radius:42% 58% 60% 40% / 46% 38% 62% 54%;background:linear-gradient(135deg,#c9f7ff,#5cd7ff 30%,#786bff 62%,#e278ff);mix-blend-mode:screen;box-shadow:inset 0 1px 2px rgba(255,255,255,.8),0 0 8px rgba(102,210,255,.62);animation:cloudActivityBlob 1.7s ease-in-out infinite}.cloud-activity-orb::after{inset:5px;animation-delay:-.6s}.cloud-activity-orb span{inset:7px;animation-delay:-1.15s}.cloud-activity-label{max-width:180px;overflow:hidden;font:700 11px/1.1 'Be Vietnam Pro',sans-serif;letter-spacing:.01em;text-overflow:ellipsis;white-space:nowrap}.cloud-fast-capture{display:none;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-6px -8px -6px 1px;padding:0 12px;border:0;border-left:1px solid rgba(255,255,255,.14);border-radius:0 999px 999px 0;background:rgba(255,255,255,.08);color:#fff;font:800 11px 'Be Vietnam Pro',sans-serif;cursor:pointer}.cloud-fast-capture.is-visible{display:inline-flex}.cloud-fast-capture:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @keyframes cloudActivityTurn{to{transform:rotate(360deg)}}@keyframes cloudActivityBlob{50%{border-radius:62% 38% 42% 58% / 55% 62% 38% 45%;transform:scale(.78) rotate(72deg)}}
 @media(prefers-reduced-motion:reduce){.cloud-activity-orb,.cloud-activity-orb::before,.cloud-activity-orb::after,.cloud-activity-orb span{animation:none}}
+.cloud-activity-trigger{display:flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;margin:-6px 0 -6px -7px;padding:6px 9px;border:0;border-radius:999px;background:none;color:inherit;cursor:pointer}
+.cloud-activity-trigger:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.cloud-activity-details{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(320px,calc(100vw - 24px));max-height:min(400px,65dvh);overflow:auto;overscroll-behavior:contain;padding:8px 12px 12px;border-radius:16px;background:var(--s);color:var(--t);box-shadow:var(--sl);font-size:13px}
+.cloud-activity-details header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cloud-activity-details header button{min-width:44px;min-height:44px}
+.cloud-activity-details ul{display:grid;gap:6px;margin:4px 0 0;padding:0;list-style:none}
+.cloud-activity-details li{padding:6px 8px;border-radius:8px;background:var(--s2);overflow-wrap:anywhere}
+.cloud-activity-details [hidden],.cloud-activity-details[hidden]{display:none!important}
+.cloud-activity-details p{margin:4px 0;color:var(--t2)}
+.pull-refresh{position:fixed;z-index:3401;top:max(12px,env(safe-area-inset-top));left:50%;display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--s);color:var(--t);box-shadow:var(--sl);font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none;transform:translate(-50%,var(--pull-offset,-50px))}
+.pull-refresh[hidden]{display:none}
+.pull-refresh .cloud-activity-orb{animation:none;transform:rotate(var(--pull-spin,0deg)) scale(var(--pull-scale,.65))}
+.pull-refresh.is-ready .cloud-activity-orb{filter:drop-shadow(0 0 9px var(--ac))}
+@media(pointer:coarse){#pg-content{overscroll-behavior-y:contain}}
+@media(prefers-reduced-motion:reduce){.pull-refresh .cloud-activity-orb{transform:none}}
 
 /* Cloud loader — amorphous neon signal while the initial workspace loads. */
 .cloud-loading-ov{position:fixed;z-index:3200;inset:0;display:grid;place-items:center;padding:24px;background:rgba(5,6,8,.78);backdrop-filter:blur(16px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}
@@ -4906,11 +4921,19 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 
 <!-- THANH TIẾN TRÌNH ĐỒNG BỘ — cố định mép trên, không ảnh hưởng layout -->
 <div class="sync-bar"><div class="sync-bar-fill" id="sync-bar-fill"></div></div>
-<div class="cloud-activity" id="cloud-activity" role="status" aria-live="polite" aria-hidden="true">
-  <span class="cloud-activity-orb" aria-hidden="true"><span></span></span>
-  <span class="cloud-activity-label" id="cloud-activity-label">Đang kết nối cloud…</span>
+<div class="cloud-activity" id="cloud-activity" aria-hidden="true">
+  <button class="cloud-activity-trigger" id="cloud-activity-trigger" type="button" aria-label="Xem tác vụ đồng bộ" aria-expanded="false" aria-controls="cloud-activity-details" onclick="toggleCloudActivityDetails()">
+    <span class="cloud-activity-orb" aria-hidden="true"><span></span></span>
+    <span class="cloud-activity-label" id="cloud-activity-label" role="status" aria-live="polite">Đang kết nối cloud…</span>
+  </button>
   <button class="cloud-fast-capture" id="cloud-fast-capture" type="button" onclick="openBatchReportHub()" aria-label="Mở camera ngay trong khi dữ liệu đồng bộ">📷 Chụp ngay</button>
+  <section class="cloud-activity-details" id="cloud-activity-details" aria-labelledby="cloud-activity-title" hidden>
+    <header><strong id="cloud-activity-title">Tác vụ đồng bộ</strong><button type="button" class="btn btn-ghost btn-sm" onclick="toggleCloudActivityDetails(false,true)">Đóng</button></header>
+    <ul id="cloud-activity-tasks"></ul>
+    <p id="cloud-activity-empty">Hiện không có tác vụ đang chạy.</p>
+  </section>
 </div>
+<div class="pull-refresh" id="pull-refresh" aria-hidden="true" hidden><span class="cloud-activity-orb"><span></span></span><span id="pull-refresh-label">Kéo xuống để làm mới</span></div>
 <div class="kiot-sync-popup" id="kiot-sync-popup" role="status" aria-live="polite" aria-atomic="true">
   <span class="kiot-sync-popup-spinner" aria-hidden="true"></span>
   <div class="kiot-sync-popup-copy"><b id="kiot-sync-popup-title">Đang lấy báo cáo KiotViet</b><small id="kiot-sync-popup-detail">Đang chuẩn bị…</small><div class="kiot-sync-steps" aria-hidden="true"><i class="kiot-sync-step"></i><i class="kiot-sync-step"></i><i class="kiot-sync-step"></i></div></div>
@@ -6620,6 +6643,7 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
   if(!sb || !currentUser) return [];
   if(batchCloudLoading)throw new Error('Báo cáo đang tải, vui lòng thử lại.');
   batchCloudLoading=true;
+  const finishTask=beginCloudActivityTask('Tải báo cáo mẻ');
   try {
     const safePage=Math.max(1,Number(page)||1), safeSize=Math.max(1,Math.min(100,Number(pageSize)||BATCH_CLOUD_PAGE_SIZE));
     if(reset) { batchCloudCursor=null; batchCloudHasMore=true; batchCloudQuery=query||''; }
@@ -6676,7 +6700,7 @@ async function loadBatchReportsFromCloud({reset=false,query=batchCloudQuery,page
     saveLocalValue(K.batchReports,batchReports);
     queueMissingBatchReportMediaRepair(batchReports);
     return batchReports;
-  } finally { batchCloudLoading=false; }
+  } finally { batchCloudLoading=false;finishTask(); }
 }
 
 function batchReportHasMedia(report){return Boolean(String(report?.thumb||'').trim()||String(report?.image||'').trim());}
@@ -6707,12 +6731,70 @@ async function clearStaleBatchUploadReservations(rows){
 }
 
 let cloudActivityForced=false;
+let cloudActivityRequested=false, cloudActivityScope='';
+const cloudActivityTasks=new Set();
+const cloudActivityNames={models:'model',fils:'màu nhựa',projects:'dự án',orders:'đơn hàng',plates:'plate',pitems:'tiến độ in',settings:'cài đặt và dữ liệu xưởng'};
+function cloudActivityOwner(){return currentUser?.id ? JSON.stringify([currentUser.id,cloudWorkspaceId()]) : '';}
+function beginCloudActivityTask(label){
+  const task={label,owner:cloudActivityOwner()};
+  cloudActivityTasks.add(task);
+  renderCloudActivity();
+  return ()=>{cloudActivityTasks.delete(task);renderCloudActivity();};
+}
+function toggleCloudActivityDetails(open,restoreFocus=false){
+  const panel=document.getElementById('cloud-activity-details'),trigger=document.getElementById('cloud-activity-trigger');
+  const owner=cloudActivityOwner();
+  const next=(open??panel.hidden)&&!!owner;
+  cloudActivityScope=next?owner:'';
+  panel.hidden=!next;
+  trigger.setAttribute('aria-expanded',String(next));
+  renderCloudActivity();
+  if(restoreFocus&&!next&&document.getElementById('cloud-activity').classList.contains('is-visible'))trigger.focus({preventScroll:true});
+}
+function renderCloudActivity(){
+  const indicator=document.getElementById('cloud-activity'),panel=document.getElementById('cloud-activity-details');
+  if(!indicator||!panel)return;
+  const owner=cloudActivityOwner();
+  if(!panel.hidden&&owner!==cloudActivityScope){
+    panel.hidden=true;cloudActivityScope='';
+    document.getElementById('cloud-activity-trigger').setAttribute('aria-expanded','false');
+  }
+  const tasks=[...cloudActivityTasks].filter(task=>owner&&task.owner===owner).map(task=>task.label);
+  const visible=cloudActivityRequested||tasks.length>0||!panel.hidden;
+  indicator.classList.toggle('is-visible',visible);
+  indicator.setAttribute('aria-hidden',String(!visible));
+  if(panel.hidden)return;
+  if(cloudReady&&cloudOutbox.length)tasks.push(`${cloudOutbox.length} thay đổi đang chờ xác nhận`);
+  if(!tasks.length&&cloudActivityRequested)tasks.push(document.getElementById('cloud-activity-label').textContent);
+  const list=document.getElementById('cloud-activity-tasks');
+  if(JSON.stringify(tasks)!==list.dataset.labels){
+    list.dataset.labels=JSON.stringify(tasks);
+    list.replaceChildren(...tasks.map(label=>{const item=document.createElement('li');item.textContent=label;return item;}));
+  }
+  document.getElementById('cloud-activity-empty').hidden=tasks.length>0;
+}
 function setCloudActivity(visible,label='Đang kết nối cloud…'){
-  const indicator=document.getElementById('cloud-activity'),copy=document.getElementById('cloud-activity-label');
-  if(!indicator)return;
+  const copy=document.getElementById('cloud-activity-label');
   if(copy)copy.textContent=label;
-  indicator.classList.toggle('is-visible',!!visible);
-  indicator.setAttribute('aria-hidden',visible?'false':'true');
+  cloudActivityRequested=!!visible;
+  renderCloudActivity();
+}
+document.addEventListener('click',event=>{
+  if(document.getElementById('cloud-activity-details')?.hidden===false&&!event.target.closest?.('#cloud-activity'))toggleCloudActivityDetails(false);
+});
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||document.getElementById('cloud-activity-details')?.hidden!==false)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  toggleCloudActivityDetails(false,true);
+},true);
+async function readCloudActivityCollection(key,workspace){
+  const finish=beginCloudActivityTask(`Tải ${cloudActivityNames[key]}`);
+  try{
+    const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
+    if(error)throw error;
+    return [key,(data||[]).map(row=>row.data)];
+  }finally{finish();}
 }
 function setSyncState(label, kind='') {
   const el = document.getElementById('sync-state'); if(!el) return;
@@ -7334,10 +7416,7 @@ async function applyRemoteDataRefresh(){
        nhầm snapshot mới. */
     /* Một thay đổi từ thiết bị khác thường chỉ chạm một bảng. Trước đây lần
        nào cũng tải lại mọi bảng + lịch sử mẻ, gây khựng rõ khi xưởng có dữ liệu lớn. */
-    const entries=await Promise.all(tables.filter(key=>key!=='batchReports').map(async key=>{
-      const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
-      if(error)throw error;return [key,(data||[]).map(row=>row.data)];
-    }));
+    const entries=await Promise.all(tables.filter(key=>key!=='batchReports').map(key=>readCloudActivityCollection(key,workspace)));
     if(!canCommit())return;
     if(tables.includes('batchReports')){
       await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit});
@@ -7400,6 +7479,56 @@ async function refreshPageFromCloud(page=curPage){
   }
   return refreshed;
 }
+function bindPullToRefresh(){
+  const scroller=document.getElementById('pg-content'),indicator=document.getElementById('pull-refresh');
+  const label=document.getElementById('pull-refresh-label');
+  if(!scroller||!indicator)return;
+  let gesture=null,refreshing=false;
+  const threshold=88;
+  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+  const allowed=()=>!!currentUser&&scroller.scrollTop<=0&&!loadingCloud&&!remoteRefreshApplying&&
+    document.getElementById('cloud-activity-details').hidden&&!document.querySelector('dialog[open]')&&canAutoApplyRemoteRefresh();
+  const reset=()=>{gesture=null;indicator.hidden=true;indicator.classList.remove('is-ready');};
+  scroller.addEventListener('touchstart',event=>{
+    reset();
+    if(refreshing||event.touches.length!==1||!allowed()||event.target.closest(
+      'button,a,input,textarea,select,summary,[contenteditable],[role="dialog"],[draggable="true"],.ws-card,.ws-stack'
+    ))return;
+    for(let node=event.target;node&&node!==scroller;node=node.parentElement){
+      if(node.scrollHeight>node.clientHeight&&/auto|scroll/.test(getComputedStyle(node).overflowY))return;
+    }
+    const touch=event.touches[0];
+    gesture={x:touch.clientX,y:touch.clientY,page:curPage,owner:cloudActivityOwner(),ready:false};
+  },{passive:true});
+  scroller.addEventListener('touchmove',event=>{
+    if(!gesture)return;
+    if(event.touches.length!==1||!allowed()||gesture.page!==curPage||gesture.owner!==cloudActivityOwner()){reset();return;}
+    const touch=event.touches[0],distance=touch.clientY-gesture.y;
+    if(distance<-8||Math.abs(touch.clientX-gesture.x)>Math.max(12,distance*.65)){reset();return;}
+    if(distance<10){indicator.hidden=true;gesture.ready=false;return;}
+    if(event.cancelable)event.preventDefault();
+    const progress=Math.min(1,distance/threshold);
+    const ready=distance>=threshold;
+    gesture.ready=ready;
+    indicator.hidden=false;
+    indicator.classList.toggle('is-ready',ready);
+    label.textContent=ready?'Thả để làm mới':'Kéo xuống để làm mới';
+    indicator.style.setProperty('--pull-offset',`${reducedMotion.matches?0:-48+58*progress}px`);
+    indicator.style.setProperty('--pull-spin',`${progress*300}deg`);
+    indicator.style.setProperty('--pull-scale',String(.65+progress*.35));
+  },{passive:false});
+  scroller.addEventListener('touchcancel',reset,{passive:true});
+  scroller.addEventListener('touchend',async ()=>{
+    const run=gesture?.ready&&allowed()&&gesture.page===curPage&&gesture.owner===cloudActivityOwner();
+    reset();
+    if(!run||refreshing)return;
+    refreshing=true;
+    try{await refreshPageFromCloud();}
+    catch(error){console.warn('Không làm mới được dữ liệu',error);toast('Chưa làm mới được dữ liệu. Hãy thử lại.');}
+    finally{refreshing=false;}
+  },{passive:true});
+}
+bindPullToRefresh();
 /* Dữ liệu từ thiết bị khác tự hiện ngay khi chỉ đang xem. Lúc đang gõ, mở form
    hay modal, hệ thống giữ nguyên snapshot hiện tại và tự nạp lại khi thao tác
    kết thúc — không có nút “Cập nhật” bắt người dùng tự xử lý. */
@@ -7574,10 +7703,7 @@ async function loadCloudData(canCommit=()=>true) {
         const batchPagePromise=changed.includes('batchReports')
           ?loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit:()=>canCommit()&&workspace===cloudWorkspaceId()}).then(rows=>({rows}),error=>({error}))
           :Promise.resolve({rows:batchReports});
-        const entries=await Promise.all(changed.filter(key=>key!=='batchReports').map(async key=>{
-          const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
-          if(error)throw error;return [key,(data||[]).map(row=>row.data)];
-        }));
+        const entries=await Promise.all(changed.filter(key=>key!=='batchReports').map(key=>readCloudActivityCollection(key,workspace)));
         const batchPage=await batchPagePromise;
         if(!canCommit()||workspace!==cloudWorkspaceId())return;
         entries.forEach(([key,rows])=>refreshRemoteCloudTable(key,rows));
@@ -7594,11 +7720,7 @@ async function loadCloudData(canCommit=()=>true) {
   const batchPagePromise=loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:batchReportCurrentPage,pageSize:batchReportPageSize,canCommit:()=>canCommit()&&workspace===cloudWorkspaceId()}).then(rows=>({rows}),error=>({error}));
   /* batch_reports được nạp riêng theo cursor phía dưới; các collection khác nhỏ hơn
      nên vẫn nạp đồng thời để các logic Order/Plate luôn nhất quán. */
-  const entries = await Promise.all(Object.entries(CLOUD_TABLES).filter(([key])=>key!=='batchReports').map(async ([key, table]) => {
-    const { data, error } = await sb.from(table).select('data').eq('workspace_id',cloudWorkspaceId()).order('updated_at', {ascending:true});
-    if(error) throw error;
-    return [key, data.map(row => row.data)];
-  }));
+  const entries=await Promise.all(Object.keys(CLOUD_TABLES).filter(key=>key!=='batchReports').map(key=>readCloudActivityCollection(key,workspace)));
   const remote = Object.fromEntries(entries);
   const batchPage=await batchPagePromise;
   if(!canCommit()||workspace!==cloudWorkspaceId())return;
@@ -7753,17 +7875,21 @@ async function writeCloudSnapshot(snapshot) {
       const now=new Map(values.map(x=>[x.id,x]));
       const changed=values.filter(x=>before.get(x.id)!==cloudRecordFingerprint(x));
       const deleted=previous.filter(x=>!now.has(x.id)).map(x=>x.id);
-      if(changed.length) {
-        const stamp=new Date().toISOString();
-        const kiot=key==='settings'?changed.find(row=>row.id==='kiotviet'):null;
-        if(kiot){await preserveLegacyKiotMappingChanges(kiot.values);const {error}=await sb.rpc('merge_kiot_settings',{p_workspace_id:cloudWorkspaceId(),p_values:kiot.values});if(error)throw error;}
-        const rows=changed.filter(data=>!kiot||data.id!=='kiotviet').map(data=>({id:data.id,user_id:cloudWorkspaceOwnerId(),workspace_id:cloudWorkspaceId(),data,updated_at:stamp}));
-        if(rows.length){const {error}=await sb.from(table).upsert(rows);if(error)throw error;}
-      }
-      if(deleted.length) {
-        const {error}=await sb.from(table).delete().eq('workspace_id',cloudWorkspaceId()).in('id',deleted);
-        if(error) throw error;
-      }
+      if(!changed.length&&!deleted.length)continue;
+      const finishTask=beginCloudActivityTask(`Đồng bộ ${cloudActivityNames[key]}`);
+      try{
+        if(changed.length) {
+          const stamp=new Date().toISOString();
+          const kiot=key==='settings'?changed.find(row=>row.id==='kiotviet'):null;
+          if(kiot){await preserveLegacyKiotMappingChanges(kiot.values);const {error}=await sb.rpc('merge_kiot_settings',{p_workspace_id:cloudWorkspaceId(),p_values:kiot.values});if(error)throw error;}
+          const rows=changed.filter(data=>!kiot||data.id!=='kiotviet').map(data=>({id:data.id,user_id:cloudWorkspaceOwnerId(),workspace_id:cloudWorkspaceId(),data,updated_at:stamp}));
+          if(rows.length){const {error}=await sb.from(table).upsert(rows);if(error)throw error;}
+        }
+        if(deleted.length) {
+          const {error}=await sb.from(table).delete().eq('workspace_id',cloudWorkspaceId()).in('id',deleted);
+          if(error) throw error;
+        }
+      }finally{finishTask();}
     }
     /* ID + dấu vân tay đủ để biết bản ghi thay đổi, không cần giữ thêm cả workspace trong RAM. */
     cloudSyncedSnapshot=cloudSnapshotFingerprints(snapshot);

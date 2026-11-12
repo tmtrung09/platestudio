@@ -224,6 +224,13 @@
 - Local-first: reload dựng từ cache gần nhất rồi sync thay đổi ở nền, không chặn
   thao tác để tải lại toàn bộ dữ liệu đã biết. Cache có version/migration/độ mới;
   server là nguồn xác nhận cuối cùng.
+- Bấm biểu tượng đồng bộ để xem các tác vụ đang chạy và số thay đổi còn chờ xác
+  nhận trong xưởng hiện tại. Danh sách cập nhật theo tác vụ thật, hỗ trợ bàn phím
+  và đóng bằng Escape hoặc bấm ra ngoài.
+- Trên cảm ứng, kéo xuống ở đầu vùng nội dung chính và thả sau khi qua ngưỡng để
+  làm mới dữ liệu. Hiệu ứng bám theo lực kéo, báo lúc có thể thả và tôn trọng chế
+  độ giảm chuyển động. Không bắt cử chỉ trong form, dialog hoặc vùng quẹt riêng.
+  Guard: `tools/cloud-activity-qa.mjs`.
 - Khởi động chỉ đánh dấu workspace sẵn sàng sau các bước bắt buộc; lỗi phải hạ
   trạng thái để cùng tài khoản thử lại được. Danh bạ quyền, chuyển ảnh cũ và việc
   bảo trì phụ không chặn hoặc đưa giao diện đã mở về đăng nhập. Tác vụ nền chỉ
