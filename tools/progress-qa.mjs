@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 const out=resolve('qa-results/progress');mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--allow-file-access-from-files']});
 try{
- for(const [width,height] of [[320,780],[390,900],[768,900],[1024,900],[1440,900],[844,390]])for(const theme of ['light','dark']){
+ for(const [width,height] of [[320,780],[390,900],[426,668],[768,900],[1024,900],[1440,900],[844,390]])for(const theme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<900,reducedMotion:'reduce'}),page=await context.newPage();
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*.supabase.co/**',route=>route.abort());
@@ -56,6 +56,24 @@ try{
   assert.ok(await page.locator('#pp-queue-list .pp-oc').count()>0,'Search folds Vietnamese accents');
   await search.fill('khong co ket qua');assert.equal(await page.locator('#pp-queue-list .pp-oc').count(),0);
   await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();
+  const orderBar=page.locator('#pp-queue-list .pp-oc-progress-row').first();
+  assert.equal(await orderBar.getByRole('progressbar').getAttribute('aria-valuenow'),(await orderBar.locator('.pp-oc-pct').textContent()).replace('%',''));
+  if(width<=844){
+   const hierarchy=await page.evaluate(()=>{
+    const rect=selector=>document.querySelector(selector).getBoundingClientRect();
+    const tools=rect('.progress-toolbar'),summary=rect('.progress-summary'),track=rect('#pp-st-progress'),pct=rect('#pp-st-pct');
+    const heading=rect('#page-progress>.page-heading'),nav=rect('#page-progress .production-navigation');
+    const modes=[...document.querySelectorAll('#page-progress .production-mode')].map(el=>el.getBoundingClientRect());
+    return {
+     heading:heading.height,nav:nav.height,
+     controlsGap:summary.top-tools.bottom,trackGap:track.top-pct.bottom,
+     fillsRow:track.width>=summary.width-30,
+     guttersAligned:Math.abs(nav.left-tools.left)<=1&&Math.abs(nav.right-tools.right)<=1,
+     tabsAligned:modes.every(item=>Math.abs(item.width-modes[0].width)<=1&&item.height>=43.99),
+    };
+   });
+   assert.ok(hierarchy.heading<=105&&hierarchy.nav<=62&&hierarchy.controlsGap>=8&&hierarchy.trackGap>=4&&hierarchy.fillsRow&&hierarchy.guttersAligned&&hierarchy.tabsAligned,JSON.stringify(hierarchy));
+  }
   const metrics=async()=>page.evaluate(()=>{
    const root=document.getElementById('print-progress-workspace'),summary=root.querySelector('.progress-summary'),list=document.getElementById('pp-queue-list');
    return {overflow:document.documentElement.scrollWidth>innerWidth+1,nested:[...root.querySelectorAll('*')].filter(el=>['auto','scroll'].includes(getComputedStyle(el).overflowY)&&el.scrollHeight>el.clientHeight+1).map(el=>el.className),gap:list.getBoundingClientRect().top-summary.getBoundingClientRect().bottom,touch:[...root.querySelectorAll('.progress-toolbar select,.progress-toolbar .btn,.progress-quantity button,.pp-quality-btn')].filter(el=>el.getClientRects().length).every(el=>el.getBoundingClientRect().height>=43.99),cards:[...root.querySelectorAll('.pp-oc,.pp-group-card,.pp-external-card')].every(el=>el.getBoundingClientRect().right<=innerWidth+1)};
@@ -64,7 +82,7 @@ try{
    await page.locator('#pp-view').selectOption(mode);await page.waitForTimeout(150);
    const m=await metrics();assert.equal(m.overflow,false,mode);assert.deepEqual(m.nested,[],mode+' shares app scroll');assert.ok(m.gap<=14&&m.gap>=0,mode+' no viewport blank gap');assert.equal(m.touch,true,mode+' 44px controls');assert.equal(m.cards,true);
    if(mode==='external')assert.equal(await page.locator('#pp-status').isVisible(),false,'Order status is not applied to outside reports');
-   if(width===390||width===1440||height<500){await page.evaluate(()=>document.getElementById('pg-content').scrollTo(0,0));await page.screenshot({path:`${out}/${width}-${height}-${theme}-${mode}.png`});}
+   if(width===390||width===426||width===1440||height<500){await page.evaluate(()=>document.getElementById('pg-content').scrollTo({top:0,behavior:'instant'}));await page.screenshot({path:`${out}/${width}-${height}-${theme}-${mode}.png`});}
   }
   await page.evaluate(()=>openPrintProgress({type:'project',id:'project'}));
   assert.equal(await page.locator('#pp-scope-banner').isVisible(),true);

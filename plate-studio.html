@@ -2203,7 +2203,6 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
  .progress-toolbar select{flex:1;min-width:0}
  #print-progress-workspace .pp-oc-top{flex-wrap:wrap}
  #print-progress-workspace .pp-oc-right{width:100%;justify-content:flex-end}
- #print-progress-workspace .pp-oc-right .pp-oc-pct{margin-right:auto}
  #print-progress-workspace .pp-mi-hd{grid-template-columns:14px 40px minmax(0,1fr);gap:8px}
  #print-progress-workspace .pp-mi-media{width:40px;height:40px}
  #print-progress-workspace .pp-mi-hd:has([data-progress-keyboard]){grid-template-columns:14px 68px minmax(0,1fr)}
@@ -13071,7 +13070,7 @@ function renderBatchAiQueuePanel(){
   const currentText=current?`Đang phân tích ảnh ${brAiQueue.ids.indexOf(current.id)+1}/${brAiQueue.ids.length}`:`${stats.queued} ảnh đang chờ`;
   const cooldown=batchAiCooldownText();
   const queueStats=brAiQueue.running?`<div class="batch-ai-queue-stats">${stats.queued?`<span class="badge">Chờ ${stats.queued}</span>`:''}${stats.working?`<span class="badge">Chạy ${stats.working}</span>`:''}${stats.failed?`<span class="badge bg-re">Lỗi ${stats.failed}</span>`:''}</div>`:'';
-  return `<section class="batch-ai-queue" aria-label="Hàng chờ Gemini"><span class="br-ai-mark">✦</span><div class="batch-ai-queue-copy"><b>Gemini</b><small>${brAiQueue.running?(cooldown||currentText):finishingAfterPause?'Đang hoàn tất ảnh hiện tại':`${candidates.length} ảnh chờ phân tích`}</small></div>${queueStats}${brAiQueue.running?`<button class="btn btn-ghost btn-xs" onclick="pauseBatchAiQueue()">Dừng</button>`:`<button class="btn btn-ac btn-xs" ${canStart?'':'disabled'} onclick="startBatchAiQueue()">Phân tích ${candidates.length}</button>`}</section>`;
+  return `<section class="batch-ai-queue${canStart?' is-compact':''}" aria-label="Hàng chờ Gemini"><span class="br-ai-mark">✦</span><div class="batch-ai-queue-copy"><b>Gemini</b><small>${brAiQueue.running?(cooldown||currentText):finishingAfterPause?'Đang hoàn tất ảnh hiện tại':`${candidates.length} ảnh chờ phân tích`}</small></div>${queueStats}${brAiQueue.running?`<button class="btn btn-ghost btn-xs" onclick="pauseBatchAiQueue()">Dừng</button>`:`<button class="btn btn-ac btn-xs" ${canStart?'':'disabled'} onclick="startBatchAiQueue()">Phân tích ${candidates.length}</button>`}</section>`;
 }
 function startBatchAiQueue(){
   if(!sb||!currentUser){ showActionDialog({title:'Cần đăng nhập để dùng hàng chờ AI',icon:'✨',message:'Gemini được gọi an toàn qua cloud, nên cần tài khoản xưởng đang đăng nhập.',primaryLabel:'Đã hiểu'}); return; }
@@ -22730,10 +22729,10 @@ function orderCardHTML(order){
   return `<article class="pp-oc${collapsed?' pp-complete-collapsed':''}" data-oid="${esc(order.id)}" data-progress-key="order:${esc(order.id)}">
     <header class="pp-oc-hd"><div class="pp-oc-top">
       <div class="pp-oc-identity">${thumbStackHTML(order.items.map(item=>item.modelId))}<div><div class="pp-oc-title">${esc(order.note||'Đơn không tên')}${ordererTag(order.orderedBy).replace('👤',appIcon('user'))}<span class="badge ${tone}">${label}</span></div><div class="pp-oc-meta"><span>${order.items.length} model</span><span>${order.items.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} sản phẩm</span>${order.deliveryDate?`<span>Giao ${fmtDate(order.deliveryDate)}</span>`:''}</div></div></div>
-      <div class="pp-oc-right"><strong class="pp-oc-pct">${prog.pct}%</strong>
+      <div class="pp-oc-right">
         ${complete?`<button type="button" class="pp-complete-toggle" aria-expanded="${!collapsed}" data-progress-focus="complete:${esc(order.id)}" onclick="toggleCompletedOrder('${esc(order.id)}')">${collapsed?'Mở chi tiết':'Thu gọn'}</button>`:''}
         ${manage?`<button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Sửa đơn ${esc(order.note||'')}" onclick="openEditOrder('${esc(order.id)}')">${appIcon('edit')}</button><button type="button" class="btn btn-ghost btn-xs btn-icon-only" aria-label="Xóa đơn ${esc(order.note||'')}" onclick="ppDeleteOrder('${esc(order.id)}')">${appIcon('trash')}</button>`:''}
-      </div></div><div class="pp-oc-progress-row"><div class="pp-pbar"><div class="pp-pbar-fill${complete?' pp-done':''}" style="width:${prog.pct}%"></div></div><span class="pp-oc-progress-cnt">${prog.done}/${prog.need} part</span></div></header>
+      </div></div><div class="pp-oc-progress-row"><strong class="pp-oc-pct">${prog.pct}%</strong><div class="pp-pbar" role="progressbar" aria-label="Tiến độ in của đơn" aria-valuenow="${prog.pct}"><div class="pp-pbar-fill${complete?' pp-done':''}" style="width:${prog.pct}%"></div></div><span class="pp-oc-progress-cnt">${prog.done}/${prog.need} part</span></div></header>
     ${collapsed?'':order.items.map(item=>modelItemHTML(order,item)).join('')}
     ${collapsed?'':`<footer class="pp-oc-actions"><span class="pp-missing">${missing.length?'Còn thiếu: '+esc(missing.slice(0,4).join(', '))+(missing.length>4?' +'+(missing.length-4):''):'Đã in đủ part'} </span>${fulfillmentActionHTML(raw,stage)||(stage==='delivered'?`<button type="button" class="btn btn-ghost btn-sm" onclick="openOrderFulfillmentHistory('${esc(order.id)}')">Lịch sử giao</button>`:'')}</footer>`}
   </article>`;

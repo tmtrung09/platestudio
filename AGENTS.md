@@ -117,6 +117,10 @@
   có số lượng/trạng thái thật/một hành động chính; không tự chiếm cả hàng ngang.
 - Control cùng toolbar có cùng chiều cao/bán kính/vùng chạm; không trộn kích thước
   mặc định của select, button, menu ba chấm, tìm kiếm và chip.
+- Trên mobile, tiêu đề mục thu gọn có khoảng đệm ngang; nút tác vụ Trang chủ
+  phân biệt rõ với nền thẻ. Thẻ Bao bì xếp số đã sẵn sàng cạnh minh họa với
+  khoảng cách rõ giữa số và nhãn. Thanh Báo cáo mẻ giữ ô sắp xếp vừa nội dung
+  và đặt hành động Gemini cùng hàng khi đủ chỗ. Guard: `tools/mobile-layout-qa.mjs`.
 - Nội dung nút hành động phải căn giữa theo cả hai chiều, kể cả nút có chiều rộng
   tối thiểu, giãn rộng hoặc nhãn xuống dòng. Nút có icon và chữ căn giữa cả cụm;
   không chèn khoảng trắng để căn chữ. Chỉ căn trái khi nút là dòng danh sách/menu
@@ -301,6 +305,12 @@
   tìm kiếm và bộ lọc.
 
 ### Tiến độ in
+
+- Trên điện thoại, đầu trang Tiến độ gọn, ba mục Sản xuất chia đều hàng khi
+  có đủ quyền và vùng chạm tối thiểu 44px. Tách bộ lọc khỏi tổng tiến độ bằng
+  khoảng cách rõ. Phần trăm và số part của đơn đi cùng thanh tiến độ để đọc
+  trong một lượt nhìn. Kiểm tra ảnh render ở viewport 426×668, sáng và tối,
+  cùng các màn hình hẹp và góc xem hiện có. Guard: `tools/progress-qa.mjs`.
 
 - Tiến độ là trang native trong Sản xuất, dùng header/toolbar/theme và vùng cuộn
   `.pg-content` chung. Không mount legacy, sidebar/drawer hoặc navigation mobile
