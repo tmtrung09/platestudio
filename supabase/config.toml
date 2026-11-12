@@ -27,3 +27,6 @@ verify_jwt = false
 
 [functions.custom-care-zalo]
 verify_jwt = false
+
+[functions.photo-album]
+verify_jwt = false

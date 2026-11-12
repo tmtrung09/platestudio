@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src blob:; connect-src https://mapmfngikmumvghapqcu.supabase.co; base-uri 'none'; form-action 'none'">
+  <title>Ảnh xưởng</title>
+  <link rel="stylesheet" href="album.css">
+  <script src="album.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Ảnh xưởng</h1>
+      <button id="pick" class="primary" type="button" hidden>Tải ảnh lên</button>
+      <input id="files" type="file" aria-label="Chọn ảnh từ thiết bị" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
+    </header>
+    <section class="gallery" aria-label="Album ảnh">
+      <p id="notice" role="status">Đang mở album…</p>
+      <button id="retry" class="secondary" type="button" hidden>Thử lại</button>
+      <div id="photos" class="photos"></div>
+      <button id="more" class="secondary more" type="button" hidden>Xem thêm ảnh</button>
+    </section>
+  </main>
+  <dialog id="viewer" aria-label="Xem ảnh">
+    <form method="dialog"><button class="close" aria-label="Đóng ảnh" autofocus>×</button></form>
+    <div id="preview" class="preview"></div>
+  </dialog>
+</body>
+</html>
