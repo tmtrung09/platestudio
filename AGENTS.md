@@ -184,6 +184,9 @@
 - Thư viện báo cáo mẻ không có lọc/timeline theo ngày. Giữ tìm kiếm/trạng thái/
   sắp xếp; không khôi phục ngày từ localStorage hoặc gửi điều kiện ngày lên cloud.
   Chỉ khôi phục khi người dùng yêu cầu thiết kế mới và đã kiểm thử lại.
+- Phân trang thư viện báo cáo mẻ dùng nút số để chọn trực tiếp, đánh dấu trang
+  hiện tại, rút gọn dải dài bằng dấu ba chấm và giữ bộ chọn số báo cáo mỗi trang.
+  Nút số hỗ trợ bàn phím, vùng chạm 44×44px và xuống hàng an toàn trên mobile.
 - Album ảnh gửi người ngoài dùng địa chỉ độc lập với trang chính, chỉ tải ảnh
   từ thiết bị và xem ảnh. Người có link đầy đủ được mở album mà không cần tài
   khoản hoặc đăng nhập. Chỉ hiện ảnh tải qua link và ảnh báo cáo mẻ được chủ

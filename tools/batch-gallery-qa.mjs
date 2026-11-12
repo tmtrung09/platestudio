@@ -95,6 +95,53 @@ try{
    if(mobile)assert.equal(await select.evaluate(el=>{const box=el.getBoundingClientRect(),status=el.closest('.batch-report-card').querySelector('.batch-report-status-chip').getBoundingClientRect();return status.right<=box.left||status.bottom<=box.top;}),true);
    await page.evaluate(()=>{document.activeElement?.blur();cancelBatchReportMultiSelect();setBatchReportStatusFilter('done');});assert.equal(await page.locator('.batch-report-card').count(),1);
    assert.equal(await page.evaluate(()=>JSON.stringify(batchReports)===qaGallerySource),true,'Layout, menus and cancelled deletion preserve every record');assert.deepEqual(errors,[]);
+   await page.evaluate(()=>{
+    batchReports=Array.from({length:130},(_,i)=>({...batchReports[0],id:'qa-page-'+i,createdAt:new Date(Date.UTC(2026,0,1,0,-i)).toISOString()}));
+    FILTERS.batches.status='all';batchReportPageSize=12;batchReportCurrentPage=1;
+    renderBatchReportPage();
+   });
+   const pager=page.locator('#batch-library-pagination-top');
+   assert.deepEqual(await pager.locator('.batch-library-pages button').allTextContents(),['1','2','3','4','11']);
+   assert.equal(await pager.locator('[aria-current="page"]').textContent(),'1');
+   assert.equal(await pager.locator('.batch-library-page-gap').count(),1);
+   assert.equal(await pager.locator('.batch-library-pages button').evaluateAll(buttons=>buttons.every(button=>{
+    const rect=button.getBoundingClientRect();return rect.width>=44&&rect.height>=44&&rect.right<=innerWidth;
+   })),true);
+   await page.locator('#batch-library-pagination-bottom').getByRole('button',{name:'Trang 11',exact:true}).press('Enter');
+   assert.equal(await pager.locator('[aria-current="page"]').textContent(),'11');
+   assert.equal(await pager.locator('[aria-current="page"]').evaluate(button=>document.activeElement===button),true);
+   assert.equal(await pager.locator('.batch-library-page-range').textContent(),'121–130 / 130');
+   assert.equal(await page.locator('.batch-report-card').count(),10);
+   await pager.getByRole('combobox',{name:'Số báo cáo mỗi trang'}).selectOption('60');
+   assert.equal(await pager.locator('[aria-current="page"]').textContent(),'1');
+   assert.equal(await page.locator('.batch-report-card').count(),60);
+   if(width===320||width===1280)await pager.screenshot({path:resolve(output,`pager-${width}-${theme}.png`)});
+   if(width===1280){
+    await page.evaluate(()=>{
+     currentUser={id:'qa-pager'};sb={};batchCloudServerPaged=true;batchCloudTotal=130;
+     batchReportPageSize=12;batchReports=batchReports.slice(0,12);
+     window.qaPageRequests=[];
+     loadBatchReportsFromCloud=async ({page,pageSize})=>{
+      qaPageRequests.push([page,pageSize]);
+      if(page===11)throw new Error('QA cloud unavailable');
+      batchReports=batchReports.map((report,index)=>({...report,id:`qa-cloud-${page}-${index}`}));
+     };
+     renderBatchReportPage();
+    });
+    await pager.getByRole('button',{name:'Trang 4',exact:true}).click();
+    await pager.locator('[aria-current="page"]').filter({hasText:'4'}).waitFor();
+    assert.equal(await page.locator('.batch-report-card').first().getAttribute('data-batch-report-id'),'qa-cloud-4-0');
+    await pager.getByRole('button',{name:'Trang 11',exact:true}).click();
+    await page.waitForFunction(()=>qaPageRequests.length===2&&!batchReportPageLoading);
+    assert.deepEqual(await page.evaluate(()=>qaPageRequests),[[4,12],[11,12]]);
+    assert.equal(await pager.locator('[aria-current="page"]').textContent(),'4');
+    assert.equal(await page.locator('.batch-report-card').first().getAttribute('data-batch-report-id'),'qa-cloud-4-0');
+    await page.evaluate(()=>{batchServerPagingAvailable=false;batchCloudServerPaged=false;renderBatchReportPage();});
+    await pager.getByRole('button',{name:'Trang 1',exact:true}).click();
+    await pager.locator('[aria-current="page"]').filter({hasText:/^1$/}).waitFor();
+    assert.deepEqual(await page.evaluate(()=>qaPageRequests.at(-1)),[1,12]);
+    assert.equal(await page.locator('.batch-report-card').count(),12);
+   }
    results.push({width,height,theme,safeTop,status:'PASS'});console.log(`PASS batch gallery ${width}/${theme}: 24 cards, exposed photos, flat badges, safe header, 44px footer/menu, keyboard, confirmation, selection and unchanged data`);
   }finally{await context.close();}
  }

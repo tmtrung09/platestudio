@@ -3912,7 +3912,17 @@ html:not([data-theme="light"]) .sb-nav-item:hover{transform:none!important}
 </style>
 <style>
 /* Thư viện báo cáo: một dải điều khiển nhỏ, các bộ lọc phụ chỉ mở khi cần. */
-.batch-library-toolbar{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.batch-library-toolbar .compact-expand-search,.batch-library-toolbar .batch-sort-select,.batch-library-toolbar>#btn-batch-multi-select,.batch-library-toolbar .batch-library-more summary{height:44px!important;min-height:44px!important;border-radius:14px!important}.batch-library-toolbar .batch-sort-select{min-width:122px;max-width:156px;padding:7px 10px}.batch-library-toolbar>#btn-batch-multi-select{padding:6px 11px}.batch-library-more{position:relative}.batch-library-more summary{display:grid;place-items:center;width:44px;background:var(--s2);color:var(--t2);font-weight:900;letter-spacing:1px;cursor:pointer;list-style:none}.batch-library-more summary::-webkit-details-marker{display:none}.batch-library-more[open] summary{background:var(--ac);color:var(--primary-ink,#fff)}.batch-library-more:not([open])>div{display:none}.batch-library-more[open]>div{position:absolute;z-index:120;right:0;top:calc(100% + 7px);display:grid;gap:6px;min-width:145px;padding:8px;border-radius:14px;background:var(--s);box-shadow:var(--sl)}.batch-library-more>div .btn{justify-content:flex-start;white-space:nowrap}.batch-report-status-filters{padding:7px 9px!important;margin:0 0 8px!important;border-radius:15px!important;background:var(--s2)!important;box-shadow:none!important}.batch-report-status-filters .status-filter-label{font-size:11px!important}.batch-report-status-filters .status-filter-btn{padding:6px 9px!important;font-size:11px!important;box-shadow:none!important}.batch-library-pager{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:8px 0 12px;padding:0;font-size:12px}.batch-library-pager .btn{padding:6px 9px}.batch-library-pager .inp{min-width:56px!important;padding:4px 6px!important}.batch-ai-queue-slot{order:5;display:flex;min-width:0}.batch-ai-queue-slot:empty{display:none}.batch-ai-queue{display:flex;align-items:center;gap:6px;min-width:0;min-height:44px;max-width:100%;margin:0;padding:0 7px;border-radius:14px;background:var(--s2);box-shadow:var(--ss)}.batch-ai-queue .br-ai-mark{font-size:15px}.batch-ai-queue-copy{min-width:0}.batch-ai-queue-copy b,.batch-ai-queue-copy small{display:block;white-space:nowrap}.batch-ai-queue-copy b{font-size:11px}.batch-ai-queue-copy small{margin-top:1px;color:var(--t3);font-size:10px;overflow:hidden;text-overflow:ellipsis}.batch-ai-queue-stats{display:flex;gap:4px;flex-wrap:nowrap}.batch-ai-queue-stats .badge{white-space:nowrap;font-size:9px;padding:3px 5px}.batch-ai-queue .btn{min-height:44px;padding:5px 8px;white-space:nowrap}.page-smart-search:has(#batch-smart-search) .search-hint{display:none}@media(max-width:760px){.batch-library-toolbar{width:100%;margin:8px 0 0}.batch-library-toolbar .batch-sort-select{flex:1;max-width:none}.batch-library-toolbar>#btn-batch-multi-select{display:none}.batch-report-status-filters{gap:6px!important}.batch-report-status-filters .status-filter-label{display:none}.batch-ai-queue-slot{order:0;max-width:100%}.batch-ai-queue{max-width:100%}.batch-ai-queue-copy small{max-width:126px}.batch-library-pager{justify-content:flex-start}.batch-library-pager label{margin-left:auto}}@media(max-width:600px){.batch-library-toolbar{flex-wrap:wrap!important}}
+.batch-library-toolbar{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.batch-library-toolbar .compact-expand-search,.batch-library-toolbar .batch-sort-select,.batch-library-toolbar>#btn-batch-multi-select,.batch-library-toolbar .batch-library-more summary{height:44px!important;min-height:44px!important;border-radius:14px!important}.batch-library-toolbar .batch-sort-select{min-width:122px;max-width:156px;padding:7px 10px}.batch-library-toolbar>#btn-batch-multi-select{padding:6px 11px}.batch-library-more{position:relative}.batch-library-more summary{display:grid;place-items:center;width:44px;background:var(--s2);color:var(--t2);font-weight:900;letter-spacing:1px;cursor:pointer;list-style:none}.batch-library-more summary::-webkit-details-marker{display:none}.batch-library-more[open] summary{background:var(--ac);color:var(--primary-ink,#fff)}.batch-library-more:not([open])>div{display:none}.batch-library-more[open]>div{position:absolute;z-index:120;right:0;top:calc(100% + 7px);display:grid;gap:6px;min-width:145px;padding:8px;border-radius:14px;background:var(--s);box-shadow:var(--sl)}.batch-library-more>div .btn{justify-content:flex-start;white-space:nowrap}.batch-report-status-filters{padding:7px 9px!important;margin:0 0 8px!important;border-radius:15px!important;background:var(--s2)!important;box-shadow:none!important}.batch-report-status-filters .status-filter-label{font-size:11px!important}.batch-report-status-filters .status-filter-btn{padding:6px 9px!important;font-size:11px!important;box-shadow:none!important}.batch-library-pager{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:8px 0 12px;padding:0;font-size:12px}.batch-library-pager .btn{padding:6px 9px}.batch-library-pager .inp{min-width:56px!important;padding:4px 6px!important}
+.batch-library-pages{display:flex;align-items:center;gap:4px;flex-wrap:wrap;max-width:100%}
+.batch-library-pager .batch-library-pages .btn{min-width:44px;min-height:44px;justify-content:center;font-variant-numeric:tabular-nums}
+.batch-library-pager select.inp{min-height:44px}
+.batch-library-page-gap,.batch-library-page-range{color:var(--t2);font-variant-numeric:tabular-nums}
+@media(max-width:480px){
+  nav.batch-library-pager{justify-content:center}
+  nav.batch-library-pager label{margin-left:0}
+  .batch-library-pages{flex-basis:100%;justify-content:center}
+}
+.batch-ai-queue-slot{order:5;display:flex;min-width:0}.batch-ai-queue-slot:empty{display:none}.batch-ai-queue{display:flex;align-items:center;gap:6px;min-width:0;min-height:44px;max-width:100%;margin:0;padding:0 7px;border-radius:14px;background:var(--s2);box-shadow:var(--ss)}.batch-ai-queue .br-ai-mark{font-size:15px}.batch-ai-queue-copy{min-width:0}.batch-ai-queue-copy b,.batch-ai-queue-copy small{display:block;white-space:nowrap}.batch-ai-queue-copy b{font-size:11px}.batch-ai-queue-copy small{margin-top:1px;color:var(--t3);font-size:10px;overflow:hidden;text-overflow:ellipsis}.batch-ai-queue-stats{display:flex;gap:4px;flex-wrap:nowrap}.batch-ai-queue-stats .badge{white-space:nowrap;font-size:9px;padding:3px 5px}.batch-ai-queue .btn{min-height:44px;padding:5px 8px;white-space:nowrap}.page-smart-search:has(#batch-smart-search) .search-hint{display:none}@media(max-width:760px){.batch-library-toolbar{width:100%;margin:8px 0 0}.batch-library-toolbar .batch-sort-select{flex:1;max-width:none}.batch-library-toolbar>#btn-batch-multi-select{display:none}.batch-report-status-filters{gap:6px!important}.batch-report-status-filters .status-filter-label{display:none}.batch-ai-queue-slot{order:0;max-width:100%}.batch-ai-queue{max-width:100%}.batch-ai-queue-copy small{max-width:126px}.batch-library-pager{justify-content:flex-start}.batch-library-pager label{margin-left:auto}}@media(max-width:600px){.batch-library-toolbar{flex-wrap:wrap!important}}
 </style>
 <style>
 /* Native popup của select không tự kế thừa nền glass. Ép bảng chọn của Chrome
@@ -15544,20 +15554,24 @@ function batchReportPagerHTML(position='bottom'){
   const current=Math.min(Math.max(1,Number(batchReportCurrentPage)||1),total);
   const start=meta.matched ? ((current-1)*batchReportPageSize)+1 : 0;
   const end=Math.min(current*batchReportPageSize,Number(meta.matched)||0);
-  const canNext=current<total || batchCloudHasMore;
+  const middleStart=Math.max(2,Math.min(current-1,total-3));
+  const pages=total<=5 ? Array.from({length:total},(_,i)=>i+1) : [1,middleStart,middleStart+1,middleStart+2,total];
+  const numbers=pages.map((page,index)=>{
+    const gap=index>0&&page>pages[index-1]+1 ? '<span class="batch-library-page-gap" aria-hidden="true">…</span>' : '';
+    return `${gap}<button type="button" class="btn btn-sm ${page===current?'btn-ac':'btn-ghost'}" aria-label="Trang ${page}" ${page===current?'aria-current="page"':''} onclick="goBatchReportPage(${page})">${page}</button>`;
+  }).join('');
   const sizes=[12,24,36,48,60];
   const margin=position==='top'?'0 0 8px':'12px 0 22px';
-  return `<div id="batch-library-pagination-${position}" class="batch-library-pager" aria-label="Phân trang báo cáo mẻ in" style="margin:${margin}">
-    <button class="btn btn-ghost btn-sm btn-icon-only" ${current<=1?'disabled':''} onclick="goBatchReportPage(${current-1})" aria-label='Trang trước'>${appIcon('chevron-left')}</button>
-    <span style="color:var(--t2)"><b>${current}</b>/${total}${batchCloudHasMore?'+':''}${meta.matched?` · ${start}–${end}`:''}</span>
-    <button class="btn btn-ghost btn-sm btn-icon-only" ${canNext?'':'disabled'} onclick="goBatchReportPage(${current+1})" aria-label='Trang sau'>${appIcon('chevron-right')}</button>
+  return `<nav id="batch-library-pagination-${position}" class="batch-library-pager" aria-label="Phân trang báo cáo mẻ in ${position==='top'?'phía trên':'phía dưới'}" style="margin:${margin}">
+    <div class="batch-library-pages">${numbers}</div>
+    ${meta.matched&&!meta.hideRange?`<span class="batch-library-page-range">${start}–${end} / ${meta.matched}</span>`:''}
     ${position==='bottom'?`<button class="btn btn-ghost btn-sm" type="button" onclick="scrollBatchReportsToTop()">↑ Lên đầu</button>`:''}
     <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)">
-      <select class="inp" style="width:auto;min-width:66px;padding:5px 7px" onchange="setBatchReportPageSize(this.value)">
+      <select class="inp" aria-label="Số báo cáo mỗi trang" style="width:auto;min-width:66px;padding:5px 7px" onchange="setBatchReportPageSize(this.value)">
         ${sizes.map(size=>`<option value="${size}" ${size===batchReportPageSize?'selected':''}>${size}</option>`).join('')}
       </select>/ trang
     </label>
-  </div>`;
+  </nav>`;
 }
 function setBatchReportPageSize(value){
   batchReportPageSize=Math.max(1,Number(value)||24);
@@ -15597,27 +15611,30 @@ function initGlobalScrollTop(){
 }
 async function goBatchReportPage(page){
   if(batchReportPageLoading) return;
-  const wanted=Math.max(1,Number(page)||1);
-  const currentTotal=(batchReportPaginationMeta&&batchReportPaginationMeta.totalPages)||1;
-  if(wanted===batchReportCurrentPage) return;
+  const wanted=Number(page);
+  const previous=batchReportCurrentPage;
+  if(!Number.isInteger(wanted)||wanted<1||wanted>batchReportPaginationMeta.totalPages||wanted===previous) return;
   batchReportPageLoading=true;
   try{
     batchReportSelectedIds.clear();batchReportSelectionAnchorId=null;
     batchReportCurrentPage=wanted;
-    persistBatchLibraryView();
     if(currentUser && sb) {
       setSyncState('Đang tải trang báo cáo...');
       await loadBatchReportsFromCloud({reset:true,query:(FILTERS.batches.search||'').trim(),page:wanted,pageSize:batchReportPageSize});
       setSyncState('Đã đồng bộ','ok');
     }
   }catch(error){
+    batchReportCurrentPage=previous;
     console.error('Không tải được trang báo cáo',error);
     toast('Chưa tải được trang báo cáo: '+error.message,4000);
   }finally{
     batchReportPageLoading=false;
     renderBatchReportPage();
-    const scrollRoot=document.querySelector('.pg-content');
-    if(scrollRoot) scrollRoot.scrollTop=0;
+    if(curPage==='batches'){
+      const scrollRoot=document.querySelector('.pg-content');
+      if(scrollRoot) scrollRoot.scrollTop=0;
+      document.querySelector('#batch-library-pagination-top [aria-current="page"]')?.focus({preventScroll:true});
+    }
   }
 }
 function refreshBatchReportServerPage(){
@@ -15751,6 +15768,7 @@ function renderBatchReportPage(){
   /* Khi RPC đã sẵn sàng, batchReports chính là một trang đã được lọc + sắp
      xếp ở Supabase. Không lọc hay cắt lần nữa ở browser. */
   const serverPaged=batchCloudServerPaged && !!currentUser && !!sb;
+  const fallbackPaged=!batchServerPagingAvailable && !!currentUser && !!sb && batchCloudTotal>0;
   const list=serverPaged?[...batchReports]:sortedBatchReports(batchReports);
   const multiSelectButton=document.getElementById('btn-batch-multi-select');
   if(multiSelectButton){multiSelectButton.textContent=batchReportMultiSelect?'Huỷ chọn':'Chọn nhiều';multiSelectButton.style.display=canEdit?'':'none';}
@@ -15796,12 +15814,14 @@ function renderBatchReportPage(){
   const pending=matched.filter(r=>r.status!=='done'&&r.status!=='skipped');
   const completed=matched.filter(r=>r.status==='done');
   const skipped=matched.filter(r=>r.status==='skipped');
-  const totalPages=serverPaged ? Math.max(1,Math.ceil(batchCloudTotal/batchReportPageSize)) : Math.max(1,Math.ceil(matched.length/batchReportPageSize));
+  const cloudPaged=serverPaged||fallbackPaged;
+  const matchedCount=cloudPaged?batchCloudTotal:matched.length;
+  const totalPages=Math.max(1,Math.ceil(matchedCount/batchReportPageSize));
   batchReportCurrentPage=Math.min(Math.max(1,batchReportCurrentPage),totalPages);
-  batchReportPaginationMeta={matched:serverPaged?batchCloudTotal:matched.length,totalPages};
+  batchReportPaginationMeta={matched:matchedCount,totalPages,hideRange:fallbackPaged&&!!query};
   persistBatchLibraryView();
   const pageStart=(batchReportCurrentPage-1)*batchReportPageSize;
-  const visible=serverPaged ? matched : matched.slice(pageStart,pageStart+batchReportPageSize);
+  const visible=cloudPaged ? matched : matched.slice(pageStart,pageStart+batchReportPageSize);
   batchReportVisibleIds=visible.map(report=>report.id);
   const reportCard=(r,index=0)=>{
     const fil=r.filamentId?getFil(r.filamentId):null;
