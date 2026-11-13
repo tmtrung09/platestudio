@@ -182,6 +182,7 @@ export async function handle(req: Request) {
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const { data: userData, error: userError } = await admin.auth.getUser(
       auth.slice(7),

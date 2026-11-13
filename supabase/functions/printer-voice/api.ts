@@ -34,7 +34,7 @@ export async function handle(req:Request){
  if(!authorization.startsWith('Bearer '))return json('Cần đăng nhập để dùng giọng đọc máy.',401);
  if(Number(req.headers.get('content-length')||0)>2048)return json('Yêu cầu quá lớn.',413);
  try{
-  const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||dictionary('SUPABASE_SECRET_KEYS'));
+  const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||dictionary('SUPABASE_SECRET_KEYS'),{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:auth,error:authError}=await admin.auth.getUser(authorization.slice(7));
   if(authError||!auth.user)return json('Phiên đăng nhập đã hết hạn.',401);
   const raw=await req.text();if(raw.length>2048)return json('Yêu cầu quá lớn.',413);

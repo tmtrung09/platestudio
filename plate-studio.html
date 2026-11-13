@@ -7780,6 +7780,9 @@ function scheduleCloudSync() {
   if(!currentUser || !cloudReady || loadingCloud) return;
   cloudOutbox.push({id:uid(), createdAt:new Date().toISOString(), attempts:0});
   saveLocalValue(K.syncOutbox, cloudOutbox);
+  wakeCloudOutbox();
+}
+function wakeCloudOutbox(){
   clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(processCloudOutbox, 280);
   setSyncState(`Chờ đồng bộ (${cloudOutbox.length})`);
@@ -11199,10 +11202,7 @@ function renderModels() {
   const query=(FILTERS.models.search||'').trim();
   if(query) list=list.filter(m=>{
     if(productEntries.has(m))return fuzzyTextMatch(`${m.name} ${productComponentSummary(m)}`,query);
-    const searchable=[m.name,m.desc,m.makerWorldId,(m.cats||[]).join(' '),(m.links||[]).map(x=>`${x.name||''} ${x.url||''}`).join(' '),
-      ...(m.parts||[]).flatMap(p=>[p.name,p.note,(p.filamentIds||[]).map(id=>{const f=getFil(id);return f?`${f.brand} ${f.name} ${f.hex} ${f.mat||''}`:'';}).join(' ')]),
-      ...(m.variants||[]).flatMap(v=>[v.name,v.note,(v.parts||[]).map(p=>p.name||'').join(' ')])].join(' ');
-    return fuzzyTextMatch(searchable,query);
+    return modelMatchesSearch(m,query);
   });
   const sort=FILTERS.models.sort||'created_desc';
   const orderCount=m=>orders.filter(o=>o.items?.some(i=>productEntries.has(m)?i.productId===m.id:i.modelId===m.id)).length;
@@ -12009,7 +12009,10 @@ function getBatchReportReconciliationCandidates(report){
     /* Một Part cùng tên có thể thuộc nhiều phiên bản của cùng Model. Không
        được đối chiếu chéo biến thể, nếu không một mẻ Size 10cm sẽ làm tăng
        cả Size 3,5cm và 5cm trong Order. */
-    .filter(pi=>pi.orderId && pi.modelId===item.modelId && pi.partId===item.partId && batchReportVariantKey(pi)===batchReportVariantKey(item) && pi.qtyDone<pi.qty)
+    .filter(pi=>pi.orderId && pi.modelId===item.modelId && pi.partId===item.partId
+      && batchReportVariantKey(pi)===batchReportVariantKey(item)
+      && (!item.filamentId||!pi.filamentId||item.filamentId===pi.filamentId)
+      && pi.qtyDone<pi.qty)
     .map(pi=>({report,manualIndex,item,pitem:pi,available:Math.min(item.qty||0,pi.qty-pi.qtyDone)}))
   ).filter(x=>x.available>0);
 }
@@ -12041,13 +12044,15 @@ function applyBatchReconciliation(reportId){
   report.reconciliationDeltas=report.reconciliationDeltas||[];
   matches.forEach((x,i)=>{
     if(!document.getElementById(`br-rec-check-${i}`)?.checked) return;
-    const qty=Math.min(x.available,Math.max(1,parseInt(document.getElementById(`br-rec-qty-${i}`)?.value)||1));
+    const manual=report.manualItems[x.manualIndex];
+    const qty=Math.min(x.available,manual.qty,x.pitem.qty-x.pitem.qtyDone,Math.max(1,parseInt(document.getElementById(`br-rec-qty-${i}`)?.value)||1));
+    if(qty<=0)return;
     x.pitem.qtyDone=Math.min(x.pitem.qty,x.pitem.qtyDone+qty);
     report.appliedItems=report.appliedItems||[];
     const prior=report.appliedItems.find(a=>a.pitemId===x.pitem.id);
     if(prior) prior.qty+=qty; else report.appliedItems.push({pitemId:x.pitem.id,qty});
     report.reconciliationDeltas.push({pitemId:x.pitem.id,qty});
-    const manual=report.manualItems[x.manualIndex]; manual.qty-=qty;
+    manual.qty-=qty;
     moved+=qty;
   });
   report.manualItems=(report.manualItems||[]).filter(x=>x.qty>0);
@@ -17332,7 +17337,7 @@ let activeCat = '';
    mọi part) HOẶC 1 part riêng lẻ của model đó (partId:<id>). Mỗi dòng có ghi chú riêng. */
 let cart = []; // [{id, modelId, partId, qty, note}]
 const ORDER_DRAFT_LOCAL_PREFIX='ps_order_draft_v1';
-let orderDraftCloudTimer=0,orderDraftInputTimer=0,orderDraftIsFinalized=false;
+let orderDraftCloudTimer=0,orderDraftInputTimer=0,orderDraftIsFinalized=false,orderSubmitPending=false;
 function orderDraftAccountKey(){return currentUser?.id||'';}
 function orderDraftLocalKey(){return `${ORDER_DRAFT_LOCAL_PREFIX}:${orderDraftAccountKey()||'local'}`;}
 function normalizeOrderDraft(raw){
@@ -17392,18 +17397,23 @@ function cats(){
   const set = new Set(models.flatMap(m=>m.cats||[]).filter(Boolean));
   return [...set].sort();
 }
+function modelMatchesSearch(model,query){
+  const searchable=[model.name,model.desc,model.makerWorldId,(model.cats||[]).join(' '),
+    ...(model.links||[]).map(link=>[link.name,link.url].join(' ')),
+    ...(model.parts||[]).flatMap(part=>[part.name,part.note,(part.filamentIds||[]).map(id=>{
+      const f=getFil(id);return f?[f.brand,f.name,f.hex,f.mat].join(' '):'';
+    }).join(' ')]),
+    ...(model.variants||[]).flatMap(variant=>[variant.name,variant.note,(variant.parts||[]).map(part=>part.name||'').join(' ')])];
+  return fuzzyTextMatch(searchable.join(' '),query);
+}
 function filteredModels(){
-  const q = searchQ.trim().toLowerCase();
-  return models.filter(m=>{
-    if (activeCat && !(m.cats||[]).includes(activeCat)) return false;
-    if (q && !m.name.toLowerCase().includes(q)) return false;
-    return true;
-  });
+  return models.filter(model=>(!activeCat||(model.cats||[]).includes(activeCat))
+    && (!searchQ.trim()||modelMatchesSearch(model,searchQ)));
 }
 function filteredCatalogItems(){
-  const q=searchQ.trim().toLowerCase();
-  const products=productCatalog().filter(product=>!q||[product.name,productComponentSummary(product)].join(' ').toLowerCase().includes(q)).map(product=>({kind:'product',product}));
-  return [...products,...filteredModels().map(model=>({kind:'model',model}))];
+  const products=!activeCat||activeCat===MODEL_PRODUCTS_CATEGORY?productCatalog().filter(product=>
+    fuzzyTextMatch([product.name,productComponentSummary(product)].join(' '),searchQ)):[];
+  return [...products.map(product=>({kind:'product',product})),...filteredModels().map(model=>({kind:'model',model}))];
 }
 /* dòng "cả model" mặc định của 1 model (dùng cho thao tác nhanh trên thẻ catalog) */
 function defaultLine(modelId){ return cart.find(c=>c.kind!=='product'&&c.modelId===modelId && !c.partId); }
@@ -17419,9 +17429,9 @@ function thumbHTML(m){
 /* ═══════════ RENDER: CATALOG ═══════════ */
 function renderChips(){
   const el = document.getElementById('of-p-chips');
-  const c = cats();
-  el.innerHTML = `<button class="of-chip${activeCat===''?' of-active':''}" onclick="setCat('')">Tất cả</button>`
-    + c.map(x=>`<button class="of-chip${activeCat===x?' of-active':''}" onclick="setCat('${esc(x)}')">${esc(x)}</button>`).join('');
+  const categories=[['','Tất cả'],...cats().map(name=>[name,name])];
+  if(productCatalog().length)categories.splice(1,0,[MODEL_PRODUCTS_CATEGORY,'Sản phẩm ghép']);
+  el.innerHTML=categories.map(([id,label])=>`<button type="button" class="of-chip${activeCat===id?' of-active':''}" data-order-category="${esc(id)}" onclick="setCat(this.dataset.orderCategory)">${esc(label)}</button>`).join('');
 }
 function setCat(c){ activeCat = c; renderChips(); renderGrid(); }
 
@@ -17429,7 +17439,7 @@ function renderGrid(){
   const el = document.getElementById('of-p-grid');
   const list = filteredCatalogItems();
   if (!models.length){
-    el.parentElement.innerHTML = `<div class="of-cat-empty">
+    el.innerHTML = `<div class="of-cat-empty" style="grid-column:1/-1">
       <div class="of-cat-empty-ico">📦</div>
       <h3>Chưa có model nào</h3>
       <p>Mở Plate Studio và thêm model + màu in trước, sau đó quay lại đây để tạo order thật nhanh.</p>
@@ -17742,7 +17752,7 @@ function renderCart(){
 
   const totalQty = cart.reduce((s,c)=>s+c.qty,0);
   document.getElementById('of-cf-total').textContent = totalQty;
-  document.getElementById('of-btn-confirm').disabled = cart.length===0;
+  document.getElementById('of-btn-confirm').disabled = !cart.length || orderSubmitPending || orderDraftIsFinalized;
   document.getElementById('of-hd-count').textContent = cart.length ? `${cart.length} dòng · ${totalQty} cái` : '';
 
   // mobile bar
@@ -17835,8 +17845,55 @@ function closeSheet(){
 })();
 
 /* ═══════════ SUBMIT ═══════════ */
-function submitOrder(){
-  if(!requirePermission('orders.manage','tạo hoặc sửa đơn hàng'))return;
+async function submitOrder(){
+  if(orderSubmitPending||orderDraftIsFinalized||!cart.length)return;
+  const form=document.getElementById('ov-order-form'),draft=cart;
+  const user=currentUser?.id,workspace=cloudWorkspaceId();
+  const button=document.getElementById('of-btn-confirm');
+  orderSubmitPending=true;
+  button.disabled=true;
+  try{
+    const submit=()=>{
+      if(cart!==draft||form.style.display!=='flex'||currentUser?.id!==user||cloudWorkspaceId()!==workspace||loadingCloud)return;
+      if(!requirePermission('orders.manage','tạo hoặc sửa đơn hàng'))return;
+      persistOrderDraft();
+      commitNewOrder();
+    };
+    if(navigator.locks)await navigator.locks.request('ps-create-order',submit);
+    else submit();
+  }catch(error){
+    console.warn('Không thể lưu đơn trên thiết bị',error);
+    if(!orderDraftIsFinalized)toast('Chưa lưu được đơn. Giỏ hàng vẫn mở để em thử lại.',6000);
+  }finally{
+    orderSubmitPending=false;
+    button.disabled=!cart.length||orderDraftIsFinalized;
+  }
+}
+
+function saveNewOrderLocally(changes){
+  const entries=[...changes].map(([key,value])=>({key,before:localStorage.getItem(key),after:value===null?null:JSON.stringify(lightLocalValue(key,value))}));
+  const applied=[];
+  try{
+    for(const entry of entries){
+      if(entry.before===entry.after)continue;
+      if(entry.after===null)localStorage.removeItem(entry.key);
+      else localStorage.setItem(entry.key,entry.after);
+      applied.push(entry);
+    }
+  }catch(error){
+    for(const {key,before,after} of applied.reverse()){
+      try{
+        // Do not overwrite a later write by another tab.
+        if(localStorage.getItem(key)!==after)continue;
+        if(before===null)localStorage.removeItem(key);
+        else localStorage.setItem(key,before);
+      }catch(restoreError){console.error('Không thể khôi phục dữ liệu trước khi tạo đơn',key,restoreError);}
+    }
+    throw error;
+  }
+}
+
+function commitNewOrder(){
   const valid = cart.filter(line=>(line.kind==='product'?line.productId:line.modelId)&&line.qty>0);
   if (!valid.length){ toast('Thêm ít nhất 1 sản phẩm'); return; }
   curOrderer=curOrderer||currentOrderCreator();
@@ -17868,7 +17925,27 @@ function submitOrder(){
   const now      = new Date();
   const createdAt = new Date(dateStr + 'T' + now.toTimeString().slice(0,8)).toISOString();
 
-  const orderId = uid();
+  // A restored cart retains its line IDs, including across tabs and failed saves.
+  const orderId='order-'+valid[0].id;
+  const storedOrders=ld(K.orders,orders);
+  const existingOrder=storedOrders.find(order=>order.id===orderId);
+  const savedDraft=captureOrderDraft();
+  const draftFingerprint=cloudRecordFingerprint({cart:savedDraft.cart,form:savedDraft.form});
+  if(existingOrder){
+    if(existingOrder.creationDraftFingerprint!==draftFingerprint){
+      toast('Bản nháp này đã được xác nhận ở phiên khác. Kiểm tra đơn đã tạo trước khi tiếp tục.',6000);
+      return;
+    }
+    orders=storedOrders;
+    plates=ld(K.plates,plates);
+    pitems=ld(K.pitems,pitems);
+    orderDraftIsFinalized=true;
+    clearOrderDraft();
+    showCreatedOrder(orderId,valid.length,expanded.length);
+    return;
+  }
+  const storedPlates=ld(K.plates,plates),storedParts=ld(K.pitems,pitems);
+  const nextPlates=[...storedPlates],nextParts=[...storedParts];
   const itemsArr = expanded.map(i=>{
     const m = models.find(x=>x.id===i.modelId);
     const variant = i.variantId ? (m?.variants||[]).find(v=>v.id===i.variantId) : null;
@@ -17885,18 +17962,16 @@ function submitOrder(){
   const order = {
     id: orderId, projectId: projId||null, note, deliveryDate: delivery,
     orderedBy: curOrderer, orderedByUserId:currentUser?.id||null, orderedByEmail:currentUser?.email||'',
-    status: 'processing', createdAt,
+    status: 'processing', createdAt, creationDraftFingerprint:draftFingerprint,
     items: itemsArr,
   };
-  orders.push(order);
-
-  let newPlates = 0, newItems = 0;
+  const nextOrders=[...storedOrders,order];
   expanded.forEach((oi, idx)=>{
     const {m, rows} = lineAllocations(oi); if(!m) return;
     const orderItemId = itemsArr[idx].id;
     rows.forEach(({part, qty, filamentId})=>{
       if (!qty || !filamentId) return;
-      let plate = plates.find(pl=>
+      let plate = nextPlates.find(pl=>
         pl.filamentId === filamentId &&
         pl.status === 'waiting' &&
         (pl.projectId === (projId||null) || !pl.projectId || !projId));
@@ -17907,10 +17982,9 @@ function submitOrder(){
           note:'', confirmImg:null, completedAt:null,
           createdAt: new Date().toISOString(),
         };
-        plates.push(plate);
-        newPlates++;
+        nextPlates.push(plate);
       }
-      pitems.push({
+      nextParts.push({
         id: uid(), plateId: plate.id,
         partId: part.id, orderId, orderItemId,
         modelId: oi.modelId, modelName: m.name, partName: part.name,
@@ -17918,24 +17992,55 @@ function submitOrder(){
         filamentId,
         qty, qtyDone:0, note: oi.note||'',
       });
-      newItems++;
     });
   });
 
-  sv(K.orders, orders);
-  sv(K.plates, plates);
-  sv(K.pitems, pitems);
+  const changes=new Map();
+  // Keep the order behind its production records in the local cache.
+  if(nextParts.length!==storedParts.length)changes.set(K.pitems,nextParts);
+  if(nextPlates.length!==storedPlates.length)changes.set(K.plates,nextPlates);
+  changes.set(K.orders,nextOrders);
+  const syncPending=Boolean(currentUser&&cloudWorkspaceId());
+  const account=orderDraftAccountKey();
+  const nextOutbox=syncPending?[...cloudOutbox,{id:uid(),createdAt:new Date().toISOString(),attempts:0}]:cloudOutbox;
+  let nextOperations=operations;
+  if(syncPending){
+    changes.set(K.syncOutbox,nextOutbox);
+    if(operations?.orderDrafts?.[account]){
+      const orderDrafts={...operations.orderDrafts};
+      delete orderDrafts[account];
+      nextOperations={...operations,orderDrafts};
+      changes.set(K.operations,nextOperations);
+    }
+  }
+  changes.set(orderDraftLocalKey(),null);
+  saveNewOrderLocally(changes);
+
+  const previousOperations=operations;
+  orders=nextOrders;plates=nextPlates;pitems=nextParts;operations=nextOperations;
+  for(const key of [K.orders,K.plates,K.pitems])localWorkspaceRefreshPending.delete(key);
+  if(nextOperations!==previousOperations)localWorkspaceRefreshPending.delete(K.operations);
+  orderDraftIsFinalized=true;
+  clearTimeout(orderDraftInputTimer);
+  clearTimeout(orderDraftCloudTimer);
+  commitSystemUndoCheckpoint();
+  scheduleAutomaticBackup();
+  if(syncPending){
+    cloudOutbox=nextOutbox;
+    cloudLocalEditVersion++;
+    if(cloudReady&&!loadingCloud)wakeCloudOutbox();
+  }
+  showCreatedOrder(orderId,valid.length,expanded.length);
   if(typeof recordSystemEvent==='function'){recordSystemEvent({type:'order_created',actor:curOrderer,title:`${curOrderer} vừa tạo đơn mới`,detail:`${note} · ${itemsArr.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} sản phẩm`,permissions:['plates.plan','batches.report'],metadata:{orderId}});saveOperations();}
   renderSb(); renderDashboard();
   if (typeof renderOrders==='function') renderOrders();
   if (typeof renderPlates==='function') renderPlates();
 
-  /* Đơn đã thành bản ghi chính thức; không được để bản nháp cũ hồi sinh khi
-     người dùng đóng màn hình thành công hoặc mở lại ở thiết bị khác. */
-  orderDraftIsFinalized=true;clearOrderDraft();
+}
+function showCreatedOrder(orderId,productCount,modelCount){
   lastCreatedOrderId = orderId;
   document.getElementById('of-done-msg').textContent =
-    `${valid.length} sản phẩm — ${expanded.length} model cần sản xuất — người đặt: ${curOrderer}.`;
+    `Đã lưu trên thiết bị · ${productCount} sản phẩm · ${modelCount} model cần sản xuất.`;
   document.getElementById('of-done-ov').classList.add('of-show');
   try{ if (navigator.vibrate) navigator.vibrate([10,50,18]); }catch(e){}
 }

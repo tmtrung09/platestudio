@@ -61,6 +61,10 @@
 - Lưu/thêm/upload có phản hồi thật: đang xử lý, thành công, thất bại, thử lại.
   File lên Storage chưa có nghĩa bản ghi nghiệp vụ đã lưu. Chỉ báo lưu cloud sau
   xác nhận server; lỗi phụ không xóa kết quả đã lưu.
+- Tạo đơn và phân bổ Plate chỉ báo đã lưu trên thiết bị sau khi đơn, Plate,
+  part và hàng chờ đồng bộ cần thiết đã được ghi. Lỗi ghi toàn bộ hoặc một phần
+  giữ giỏ hàng và nháp, không để bản ghi dang dở hoặc gửi thông báo tạo đơn.
+  Xác nhận lặp và thử lại không tạo thêm đơn. Guard: `tools/order-production-qa.mjs`.
 - Thao tác nội bộ không làm mất thay đổi chưa lưu; rời form giữ nháp hoặc cảnh
   báo bỏ thay đổi. Xóa có xác nhận/khả năng phục hồi phù hợp; không xóa model
   nguồn khi chỉ xóa sản phẩm ghép hoặc gỡ nhãn.
@@ -327,6 +331,10 @@
 - Guard mọi góc xem, mobile/tablet/desktop/landscape, hai theme; không tràn ngang,
   khoảng trắng viewport, cuộn lồng hoặc đổi hình học trang kế cận.
 
+- Một dòng báo cáo mẻ khi đối chiếu vào nhiều đơn chỉ phân bổ trong số part
+  thực tế của dòng đó. Không cộng vượt số còn thiếu của từng đơn hoặc đối chiếu
+  chéo biến thể/màu đã biết. Guard: `tools/order-production-qa.mjs`.
+
 ### Gia công bằng thẻ quẹt
 
 - Chế độ quẹt là không gian tập trung riêng, ẩn logo/header, sidebar, menu dưới,
@@ -433,6 +441,8 @@
   lệnh xóa lỗi. Delta thiếu HMS không chứng minh hết cảnh báo; chỉ báo tái phát
   khi nguồn xác nhận mã đã biến mất rồi xuất hiện lại. Mã chưa hiểu giữ mã/nội
   dung gốc, không đoán nguyên nhân/an toàn.
+- API máy in và giọng đọc dùng client xác thực server không lưu hoặc tự làm mới
+  phiên giữa các yêu cầu. Kiểm thử API phải hoàn tất mà không để timer chạy.
 - Guard: `tools/printer-core-qa.mjs`, `tools/printer-sql-qa.mjs`,
   `tools/printer-ui-qa.mjs`, `tools/printer-motion-probe.mjs`,
   `tools/printer-api-qa.ts`. API QA dùng Deno/dữ liệu cô lập; phân biệt deploy/live
