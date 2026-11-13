@@ -126,6 +126,10 @@
   không chèn khoảng trắng để căn chữ. Chỉ căn trái khi nút là dòng danh sách/menu
   có chủ đích, bằng override rõ ràng. Kiểm thử vị trí nội dung thực ở trạng thái
   thường, hover, active, focus và disabled trên mobile/desktop, light/dark.
+- Tạo đơn trên điện thoại dùng thanh tìm kiếm và bộ lọc danh mục thu gọn
+  để ưu tiên danh sách sản phẩm. Bỏ tiêu đề phụ và tab đánh số. Nút “Thanh toán”
+  mở bước xem lại đơn, có đường về danh sách sản phẩm và giữ nguyên nháp.
+  Guard: `tools/mobile-workspace-qa.mjs`.
 - Bộ đếm số lượng − / số / + trong form Tạo đơn, gồm thẻ chọn model và giỏ
   hàng, có nền liền mạch; nhãn số không có ô nền sáng riêng. Giữ căn giữa,
   tương phản, vùng chạm và hành vi tăng/giảm ở cả hai theme. Guard:
@@ -759,6 +763,10 @@
 - Không thiết kế lại toàn ứng dụng ngoài phạm vi; chỉ hỏi khi thiếu nghiệp vụ/
   phạm vi/quyền. Tư vấn Cài đặt/khả năng mới không cấp quyền triển khai; phân biệt
   tính năng có sẵn và đề xuất.
+- Yêu cầu sửa ứng dụng Plate Studio mặc định gồm phát hành: sau khi kiểm tra
+  đạt, tự đẩy phần thay đổi lên GitHub và xác nhận bản mới đang phục vụ trên web,
+  không chờ nhắc lại. Yêu cầu demo hoặc duyệt trước thì chờ duyệt trước khi
+  phát hành. Nếu kiểm tra phát hiện lỗi chặn phát hành, báo rõ lỗi đó.
 - Phát hành cần bằng chứng QA còn hiệu lực cho diff cuối, migration cần thiết đã áp dụng, staged diff
   chỉ gồm phần được giao, push theo quyền đã cấp, xác nhận revision/asset đang
   phục vụ. Không gộp thay đổi song song không liên quan hoặc báo xong khi web/

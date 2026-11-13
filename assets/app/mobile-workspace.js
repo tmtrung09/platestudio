@@ -8,7 +8,7 @@
   const add=(el,name)=>{if(el&&!el.classList.contains(name))el.classList.add(name);};
   const attr=(el,name,value)=>{if(el&&el.getAttribute(name)!==String(value))el.setAttribute(name,String(value));};
   const visible=el=>!!(el?.isConnected&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
-  const svg=kind=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${kind==='back'?'m14 5-7 7 7 7':kind==='next'?'m9 5 7 7-7 7':'M4 7h16M4 12h16M4 17h16'}"/></svg>`;
+  const svg=kind=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${kind==='back'?'m14 5-7 7 7 7':kind==='filter'?'M4 7h16M7 12h10m-7 5h4':'m9 5 7 7-7 7'}"/></svg>`;
   function preserve(run){
     const focus=document.activeElement,start=focus?.selectionStart,end=focus?.selectionEnd;
     const scroll=[...document.querySelectorAll('.pg-content,.dlg,.mws-dialog-body,.of-cart-scroll')].map(el=>[el,el.scrollLeft,el.scrollTop]);
@@ -118,28 +118,81 @@
     body.scrollTop=previousScroll;
     tableViews(dialog);
   }
+  const orderToolbarBindings=new WeakSet();
   function orderView(){
     const root=document.getElementById('ov-order-form');if(!root||!visible(root)){orderVisible=false;return;}
     if(!orderVisible){orderStep='catalog';orderVisible=true;}
     attr(root,'data-mobile-family','order');
-    let nav=root.querySelector('.mws-order-steps');
-    if(!nav){
-      nav=generated('nav','mws-order-steps');nav.setAttribute('aria-label','Các bước tạo đơn');
-      nav.innerHTML='<button type="button" data-mws-order="catalog">1 · Sản phẩm</button><button type="button" data-mws-order="requirements">2 · Yêu cầu</button>';
-      nav.addEventListener('click',event=>{const button=event.target.closest('[data-mws-order]');if(!button)return;orderStep=button.dataset.mwsOrder;syncOrderState(root);if(orderStep==='requirements')root.querySelector('#of-o-note')?.focus({preventScroll:true});});
-      root.querySelector('.of-hd')?.after(nav);
+    const searchRow=root.querySelector('.of-search-row');
+    const exit=root.querySelector('.of-hd-back');
+    place(exit,searchRow);
+    if(searchRow.firstElementChild!==exit)move(exit,searchRow,searchRow.firstElementChild);
+    let filter=searchRow.querySelector('.mws-order-filter');
+    if(!filter){
+      filter=generated('button','btn btn-ghost btn-icon-only mws-order-filter');
+      filter.type='button';
+      filter.innerHTML=svg('filter');
+      filter.setAttribute('aria-controls','of-p-chips');
+      filter.setAttribute('aria-expanded','false');
+      filter.onclick=()=>attr(filter,'aria-expanded',filter.getAttribute('aria-expanded')!=='true');
+      searchRow.append(filter);
     }
+    if(!orderToolbarBindings.has(root)){
+      orderToolbarBindings.add(root);
+      root.addEventListener('click',event=>{
+        const categoryClick=event.composedPath().includes(root.querySelector('#of-p-chips'));
+        if(!categoryClick||!event.target.closest('.of-chip'))return;
+        const toggle=root.querySelector('.mws-order-filter');
+        if(!toggle)return;
+        attr(toggle,'aria-expanded','false');
+        toggle.focus({preventScroll:true});
+      });
+      root.addEventListener('keydown',event=>{
+        if(event.key!=='Escape'||!media.matches)return;
+        if(orderStep==='requirements'&&!event.target.closest('select')&&!root.querySelector('#of-asheet-ov.of-show')){
+          event.stopPropagation();
+          root.querySelector('.mws-order-return')?.click();
+          return;
+        }
+        const toggle=root.querySelector('.mws-order-filter[aria-expanded="true"]');
+        if(!toggle||!event.target.closest('.of-cat-toolbar'))return;
+        event.stopPropagation();
+        attr(toggle,'aria-expanded','false');
+        toggle.focus({preventScroll:true});
+      });
+    }
+    const selected=root.querySelector('#of-p-chips .of-active');
+    const category=selected&&selected!==selected.parentElement.firstElementChild?selected.textContent:'';
+    const categoryLabel=category?'Danh mục: '+category:'Danh mục';
+    attr(filter,'aria-label',categoryLabel);
+    attr(filter,'title',categoryLabel);
+    attr(filter,'data-filtered',!!category);
+
     let actions=root.querySelector('.mws-order-actions');
-    if(!actions){actions=generated('div','mws-order-actions');actions.innerHTML='<button type="button" class="btn btn-ac">Yêu cầu & xác nhận '+svg('next')+'</button>';root.append(actions);actions.querySelector('button').onclick=()=>{orderStep='requirements';syncOrderState(root);root.querySelector('#of-o-note')?.focus({preventScroll:true});};}
+    if(!actions){
+      actions=generated('div','mws-order-actions');
+      actions.innerHTML='<button type="button" class="btn btn-ac">'+appIcon('cart')+' Thanh toán '+svg('next')+'</button>';
+      const checkout=actions.querySelector('button');
+      checkout.querySelector('svg').setAttribute('aria-hidden','true');
+      const back=generated('button','btn btn-ghost mws-order-return');
+      back.type='button';
+      back.innerHTML=svg('back')+' Sản phẩm';
+      back.setAttribute('aria-label','Quay lại chọn sản phẩm');
+      back.onclick=()=>{setOrderStep('catalog');(checkout.disabled?filter:checkout).focus({preventScroll:true});};
+      root.querySelector('.of-cart-pane').prepend(back);
+      checkout.onclick=()=>{
+        setOrderStep('requirements');
+        back.focus({preventScroll:true});
+      };
+      root.append(actions);
+    }
     syncOrderState(root);
   }
   function syncOrderState(root){
     attr(root,'data-mobile-order-step',orderStep);
-    root.querySelectorAll('[data-mws-order]').forEach(button=>{attr(button,'aria-current',button.dataset.mwsOrder===orderStep?'step':'false');});
     const catalog=root.querySelector('.of-cat-pane'),cart=root.querySelector('.of-cart-pane');
     if(catalog)catalog.inert=orderStep!=='catalog';if(cart)cart.inert=orderStep!=='requirements';
     const empty=!(Number(root.querySelector('#of-cart-count')?.textContent)||0);const next=root.querySelector('.mws-order-actions button');if(next)next.disabled=empty;
-    const requirements=root.querySelector('[data-mws-order="requirements"]');if(requirements)requirements.disabled=empty;
   }
   function setOrderStep(step){
     if(!media.matches||!document.getElementById('page-order-form')?.classList.contains('active'))return false;

@@ -5164,7 +5164,7 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
       <div class="of-search-row" id="of-search-row">
         <div class="of-search-wrap">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="of-p-search" type="text" placeholder="Tìm sản phẩm..." autocomplete="off"/>
+          <input id="of-p-search" type="text" aria-label="Tìm sản phẩm" placeholder="Tìm sản phẩm..." autocomplete="off"/>
         </div>
         <button class="of-search-cancel" id="of-search-cancel" onclick="cancelSearch()">Huỷ</button>
       </div>
@@ -18171,7 +18171,7 @@ function openOrderForm(preModelId, preProjectId){
   renderCart();
   closeSheet();
   if(restoring)setTimeout(()=>toast('↻ Đã khôi phục bản nháp đơn hàng.'),80);
-  setTimeout(()=>document.getElementById('of-p-search')?.focus(), 60);
+  if(!window.PlateMobileWorkspace?.active())setTimeout(()=>document.getElementById('of-p-search')?.focus(), 60);
 }
 function closeOrderForm(destination){
   if(!orderDraftIsFinalized)persistOrderDraft();

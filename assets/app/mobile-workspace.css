@@ -144,29 +144,40 @@ html[data-mobile-studio="active"] #order-form-page-mount{display:flex;flex:1;min
 html[data-mobile-studio="active"] #page-order-form.active #ov-order-form[data-mobile-family="order"]{display:flex!important;flex:1;min-height:0}
 html[data-mobile-studio="active"] #ov-order-form .of-cr-thumb>svg{width:26px!important;height:26px!important;fill:none;stroke:currentColor;stroke-width:1.7}
 html[data-mobile-studio="active"] #ov-order-form .of-cr-thumb>img{width:100%;height:100%;object-fit:cover}
-html[data-mobile-studio="active"] #ov-order-form .of-hd{min-height:54px;flex-shrink:0}
-html[data-mobile-studio="active"] .mws-order-steps{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px 0 12px;flex-shrink:0}
-html[data-mobile-studio="active"] .mws-order-steps button{min-height:44px;border:0;border-radius:12px;background:var(--mws-control);color:var(--mws-ink);font:600 12px 'Segoe UI',sans-serif}
-html[data-mobile-studio="active"] .mws-order-steps [aria-current="step"]{background:var(--surface-selected,var(--mws-control));color:var(--mws-accent)}
-html[data-mobile-studio="active"] #ov-order-form .of-shell{display:flex!important;flex-direction:column!important;flex:1;min-height:0;width:100%;gap:0!important}
+html[data-mobile-studio="active"] #ov-order-form .of-hd{display:none!important}
+html[data-mobile-studio="active"] #ov-order-form .of-cat-toolbar{padding:2px 0 8px!important;backdrop-filter:none!important}
+html[data-mobile-studio="active"] #ov-order-form .of-search-row{gap:6px}
+html[data-mobile-studio="active"] #ov-order-form .of-search-wrap{min-height:44px!important}
+html[data-mobile-studio="active"] #ov-order-form #of-p-search{height:44px!important;min-height:44px!important;width:100%}
+html[data-mobile-studio="active"] #ov-order-form #of-p-search:focus{outline:2px solid var(--mws-accent)!important;outline-offset:1px!important}
+html[data-mobile-studio="active"] #ov-order-form :is(.of-hd-back,.mws-order-filter){display:grid!important;place-items:center;position:relative;flex:0 0 44px;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;margin:0!important}
+html[data-mobile-studio="active"] #ov-order-form .mws-order-filter:is([data-filtered="true"],[aria-expanded="true"]){color:var(--mws-accent)!important}
+html[data-mobile-studio="active"] #ov-order-form .mws-order-filter svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+html[data-mobile-studio="active"] #ov-order-form #of-p-chips{margin-top:6px;padding:2px!important}
+html[data-mobile-studio="active"] #ov-order-form .of-cat-toolbar:not(:has(.mws-order-filter[aria-expanded="true"])) #of-p-chips{display:none!important}
+html[data-mobile-studio="active"] #ov-order-form #of-p-chips .of-chip{min-height:44px}
+html[data-mobile-studio="active"] #ov-order-form .mws-order-return{align-self:flex-start;flex-shrink:0;min-height:44px;margin:0 0 4px!important}
+html[data-mobile-studio="active"] #ov-order-form :is(.mws-order-return,.mws-order-actions) svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html[data-mobile-studio="active"] #ov-order-form .of-shell{display:flex!important;flex-direction:column!important;flex:1 1 0!important;min-height:0;width:100%;gap:0!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-cat-pane,.of-cart-pane){position:relative!important;inset:auto!important;transform:none!important;width:100%!important;max-width:100%!important;max-height:none!important;flex:1!important;min-height:0!important;display:flex!important;flex-direction:column!important;border-radius:0!important;box-shadow:none!important}
 html[data-mobile-studio="active"] #ov-order-form[data-mobile-order-step="catalog"] .of-cart-pane,html[data-mobile-studio="active"] #ov-order-form[data-mobile-order-step="requirements"] .of-cat-pane{display:none!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-mob-bar,.of-cart-sheet-hd){display:none!important}
-html[data-mobile-studio="active"] #ov-order-form .of-cart-scroll{flex:1;overflow-y:auto!important;padding:10px 0!important;min-height:0}
-html[data-mobile-studio="active"] #ov-order-form .of-cat-scroll{flex:1;overflow-y:auto!important;min-height:0;padding-bottom:12px!important}
+html[data-mobile-studio="active"] #ov-order-form .of-cart-pane{height:auto!important;z-index:auto!important}
+html[data-mobile-studio="active"] #ov-order-form .of-cart-scroll{flex:1 1 0!important;overflow-y:auto!important;padding:10px 0!important;max-height:none!important;min-height:0}
+html[data-mobile-studio="active"] #ov-order-form .of-cat-scroll{flex:1;overflow-y:auto!important;min-height:0;padding-top:6px!important;padding-bottom:12px!important}
 html[data-mobile-studio="active"] #ov-order-form .of-cart-footer,html[data-mobile-studio="active"] .mws-order-actions{flex-shrink:0;padding:10px 0;background:var(--mws-bg)}
 html[data-mobile-studio="active"] .mws-order-actions .btn{width:100%;min-height:48px}
 html[data-mobile-studio="active"] #ov-order-form[data-mobile-order-step="requirements"] .mws-order-actions{display:none!important}
 html[data-mobile-studio="active"] #ov-order-form .row2{display:grid;grid-template-columns:minmax(0,1fr)!important;gap:12px}
 html[data-mobile-studio="active"] #ov-order-form{background:var(--mws-bg)!important;color:var(--mws-ink)!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-hd,.of-cat-toolbar,.of-cart-scroll,.of-cart-footer,.of-shell,.of-cat-pane,.of-cart-pane){background:var(--mws-bg)!important;color:var(--mws-ink)!important}
-html[data-mobile-studio="active"] #ov-order-form :is(.of-p-card,.of-cart-row,.of-preview-box,.of-search-wrap){background:var(--mws-panel)!important;color:var(--mws-ink)!important;border:0!important;box-shadow:none!important}
+html[data-mobile-studio="active"] #ov-order-form :is(.of-p-card,.of-cart-row,.of-preview-box){background:var(--mws-panel)!important;color:var(--mws-ink)!important;border:0!important;box-shadow:none!important}
 html[data-mobile-studio="active"] #ov-order-form :is(input,select,.of-p-img,.of-p-thumb,.of-p-add,.of-p-stepper,.of-cr-stepper){background:var(--mws-control)!important;color:var(--mws-ink)!important;border:0!important;box-shadow:none!important;font-size:16px!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-hd-title,.of-p-name,.of-cr-name,.field label,.of-cart-section-lbl){color:var(--mws-ink)!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-hd-sub,.of-p-sub,.of-p-meta,.of-cf-summary,.of-p-note){color:var(--mws-muted)!important}
-html[data-mobile-studio="active"] #ov-order-form .of-search-cancel{color:var(--mws-accent)!important;min-width:44px;min-height:44px}
+html[data-mobile-studio="active"] #ov-order-form .of-search-row:not(.of-active) .of-search-cancel{display:none!important}
+html[data-mobile-studio="active"] #ov-order-form .of-search-cancel{color:var(--mws-accent)!important;min-width:44px;min-height:44px;margin:0!important;padding:0!important}
 html[data-mobile-studio="active"] #ov-order-form :is(.of-p-add,.of-p-add-hint,.of-btn-confirm){min-height:44px!important;background:var(--mws-accent)!important;color:var(--primary-ink)!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:13px!important}
-html[data-mobile-studio="active"] #ov-order-form :is(.of-search-wrap,.of-p-search){min-height:48px!important}
 html[data-mobile-studio="active"] #ov-order-form .of-p-thumb>svg{width:34px!important;height:34px!important;fill:none;stroke:currentColor;stroke-width:1.7;color:var(--mws-muted)}
 html[data-mobile-studio="active"] #ov-order-form .of-p-thumb{display:flex!important;align-items:center!important;justify-content:center!important;background:var(--mws-control)!important}
 html[data-mobile-studio="active"][data-studio-surface="custom"] :is(.shell,.work-grid,.mws-flow,.product-layout,.customer-columns){display:flex!important;flex-direction:column!important;align-items:stretch!important;min-width:0;gap:16px}
@@ -206,6 +217,6 @@ html[data-mobile-studio="active"][data-mobile-short-view="true"] #ov-order-form 
 html[data-mobile-studio="active"][data-mobile-short-view="true"] #ov-order-form :is(.of-cat-pane,.of-cart-pane){flex:none!important;overflow:visible!important}
 html[data-mobile-studio="active"][data-mobile-short-view="true"] #ov-order-form :is(.of-cat-scroll,.of-cart-scroll){flex:none!important;max-height:none!important;overflow:visible!important}
 html[data-mobile-studio="active"][data-mobile-short-view="true"] .mws-order-actions{position:sticky;bottom:0;z-index:5}
-@media(prefers-reduced-motion:reduce){html[data-mobile-studio="active"] :is(.mws-workspace,.mws-dialog,.mws-order-steps){scroll-behavior:auto;animation:none!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){html[data-mobile-studio="active"] :is(.mws-workspace,.mws-dialog){scroll-behavior:auto;animation:none!important;transition:none!important}}
 
 }

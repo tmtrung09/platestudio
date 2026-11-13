@@ -13,7 +13,7 @@ assert.ok(!/\bfetch\s*\(|\bXMLHttpRequest\b|\bindexedDB\b|localStorage|sessionSt
 for(const file of ['plate-studio.html','custom-orders.html','order-status.html'])assert.ok(readFileSync(file,'utf8').includes('assets/app/mobile-workspace.js'),file+' must use the shared mobile layer');
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
 let status='FAIL';const results=[];
-const profiles=[[320,740,true],[390,844,true],[640,360,false],[844,390,true],[1024,768,true],[1440,1000,false]].filter(([width])=>!process.env.QA_MWS_WIDTH||String(width)===process.env.QA_MWS_WIDTH);
+const profiles=[[320,740,true],[390,844,true],[426,668,true],[640,360,false],[844,390,true],[1024,768,true],[1440,1000,false]].filter(([width])=>!process.env.QA_MWS_WIDTH||String(width)===process.env.QA_MWS_WIDTH);
 try{for(const [width,height,touch] of profiles)for(const theme of ['light','dark']){
  const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:'reduce',serviceWorkers:'block'}),page=await context.newPage(),errors=[];
  await context.route(/^https?:/,route=>liveBase&&new URL(route.request().url()).origin===liveBase.origin?route.continue():route.abort());page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(12000);
@@ -21,7 +21,7 @@ try{for(const [width,height,touch] of profiles)for(const theme of ['light','dark
  await page.evaluate(theme=>{
   document.documentElement.dataset.theme=theme;document.head.insertAdjacentHTML('beforeend','<style>#auth-ov{display:none!important}</style>');
   isWorkspaceOwner=()=>true;canAccess=()=>true;sb=null;currentUser=null;cloudReady=false;maybeStartPageGuide=()=>{};
-  models=Array.from({length:12},(_,i)=>({id:'mobile-'+i,name:'Bàn phím tên '+i,parts:[{id:'part-'+i,name:'Khay',qtyPerModel:1,filamentIds:[]}],variants:[],images:[],cats:['QA']}));
+  models=Array.from({length:12},(_,i)=>({id:'mobile-'+i,name:'Bàn phím tên '+i,parts:[{id:'part-'+i,name:'Khay',qtyPerModel:1,filamentIds:[]}],variants:[],images:[],cats:i%2===0?['QA']:['Khác']}));
   orders=[];projects=[];plates=[];pitems=[];batchReports=[];normalizeOperations();
   kiotViet={catalog:[{sku:'MOBILE',name:'Bàn phím tên',stock:3}],mappings:[],skippedSkus:[],mappingRevisions:{},sales:[],salesImports:[],snapshots:[],aiInsights:[]};
  },theme);
@@ -66,10 +66,56 @@ try{for(const [width,height,touch] of profiles)for(const theme of ['light','dark
  if(mobile){assert.equal(await page.locator('#dlg-mv .mws-dialog').count(),1);assert.equal(await page.locator('#dlg-mv .mws-dialog-body').count(),1);}
  await page.evaluate(()=>closeDialog('dlg-mv'));
  if(mobile){
-  await page.evaluate(()=>openOrderForm('mobile-0'));await page.waitForFunction(()=>document.querySelector('.mws-order-steps'));
-  await page.locator('[data-mws-order="catalog"]').click();await page.locator('.mws-order-actions button').click();assert.equal(await page.locator('#of-o-note').evaluate(el=>el===document.activeElement),true,'Primary next action focuses the new task step');await page.locator('#of-o-note').fill('Nháp điện thoại giữ nguyên');
+  await page.evaluate(()=>openOrderForm('mobile-0'));await page.waitForFunction(()=>document.querySelector('.mws-order-actions'));
+  const checkout=page.getByRole('button',{name:'Thanh toán',exact:true}),filter=page.locator('.mws-order-filter');
+  assert.equal(await page.locator('#ov-order-form .of-hd').isVisible(),false);
+  assert.equal(await page.locator('.mws-order-steps').count(),0);
+  assert.equal(await page.locator('#of-p-chips').isVisible(),false);
+  assert.equal(await page.locator('.of-search-row .of-hd-back').isVisible(),true);
+  assert.equal(await page.locator('#of-p-search').evaluate(el=>el===document.activeElement),false);
+  const toolbar=await page.locator('.of-cat-toolbar').boundingBox();
+  assert.ok(toolbar.height<=60,'Search, back and category filter fit on one row');
+  await page.locator('#of-p-search').click();
+  await page.locator('#of-p-search').fill('ban phim');
+  assert.equal(await page.locator('#of-p-search').inputValue(),'ban phim');
+  await page.locator('#of-search-cancel').click();
+  assert.equal(await page.locator('#of-p-search').inputValue(),'');
+  await filter.click();
+  await filter.press('Escape');
+  assert.equal(await page.locator('#of-p-chips').isVisible(),false);
+  await filter.click();
+  await page.locator('#of-p-chips').getByRole('button',{name:'QA',exact:true}).click();
+  assert.equal(await page.locator('#of-p-grid .of-p-card').count(),6,'The compact filter still filters the catalog');
+  assert.equal(await filter.getAttribute('aria-expanded'),'false');
+  await page.waitForFunction(()=>document.querySelector('.mws-order-filter')?.getAttribute('aria-label')==='Danh mục: QA');
+  assert.equal(await page.locator('#of-p-chips').isVisible(),false);
+  if(width===426){
+    const catalog=await page.locator('#of-cat-scroll').boundingBox();
+    assert.ok(catalog.height>=240,'The product list has room to show cards');
+    await page.screenshot({path:resolve(out,width+'-'+theme+'-order-catalog.png')});
+  }
+  await checkout.click();
+  assert.equal(await page.locator('.mws-order-return').evaluate(el=>el===document.activeElement),true,'Checkout moves focus to the review step without opening the keyboard');
+  await page.locator('#of-o-note').fill('Nháp điện thoại giữ nguyên');
+  await page.locator('.mws-order-return').click();
+  assert.equal(await checkout.isVisible(),true);
+  assert.equal(await checkout.evaluate(el=>el===document.activeElement),true);
+  assert.equal(await filter.getAttribute('aria-label'),'Danh mục: QA');
+  await checkout.click();
+  assert.equal(await page.locator('#of-o-note').inputValue(),'Nháp điện thoại giữ nguyên');
+  if(width===426){
+    const review=await page.locator('.of-cart-scroll').boundingBox();
+    const confirm=await page.locator('#of-btn-confirm').boundingBox();
+    assert.ok(review.height>=220,'Checkout has room for the order fields and cart');
+    assert.ok(confirm.y+confirm.height<=height-70,'Confirmation remains above mobile navigation');
+    await page.screenshot({path:resolve(out,width+'-'+theme+'-order-checkout.png')});
+  }
   await page.evaluate(()=>{window.mobileOrderNote=document.getElementById('of-o-note');window.mobileCartSnapshot=JSON.stringify(cart);});
-  await page.setViewportSize({width:1440,height:1000});await page.waitForTimeout(100);await page.setViewportSize({width,height});await page.waitForTimeout(100);
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('#ov-order-form .of-hd .of-hd-back').waitFor();
+  assert.equal(await checkout.count(),0,'Desktop restores the original order controls');
+  await page.setViewportSize({width,height});
+  await page.locator('.mws-order-return').waitFor();
   assert.equal(await page.locator('#of-o-note').inputValue(),'Nháp điện thoại giữ nguyên');assert.deepEqual(await page.evaluate(()=>[mobileOrderNote===document.getElementById('of-o-note'),JSON.stringify(cart)===mobileCartSnapshot]),[true,true],'Order fields and cart survive mobile/desktop changes without copying or resubmitting');
   await page.evaluate(()=>{window.mwsOriginalViewport=visualViewport;Object.defineProperty(window,'visualViewport',{configurable:true,value:{height:280,offsetTop:0}});PlateMobileWorkspace.sync();});
   await page.waitForFunction(()=>document.documentElement.dataset.mobileShortView==='true');
@@ -77,6 +123,10 @@ try{for(const [width,height,touch] of profiles)for(const theme of ['light','dark
   await page.locator('#of-o-note').fill('Nháp khi mở bàn phím');assert.equal(await page.evaluate(()=>mobileOrderNote===document.activeElement),true);
   await page.evaluate(()=>{Object.defineProperty(window,'visualViewport',{configurable:true,value:mwsOriginalViewport});PlateMobileWorkspace.sync();});
   await page.waitForTimeout(50);assert.equal(await page.locator('#of-o-note').inputValue(),'Nháp khi mở bàn phím');
+  await page.locator('#of-o-note').press('Escape');
+  assert.equal(await checkout.isVisible(),true,'Escape returns from checkout to the catalog');
+  await page.locator('.of-search-row .of-hd-back').click();
+  await page.waitForFunction(()=>document.getElementById('page-orders').classList.contains('active'));
  }
  assert.deepEqual(errors,[]);await context.close();console.log(`PASS global mobile ${width}/${theme}: ${inventory.core.length} routes, all families, navigation, single widget ownership and preserved data across presentation changes`);
 }status='PASS';}finally{await browser.close();writeFileSync(resolve(out,'summary.json'),JSON.stringify({status,checks:results.length,results},null,2));}
