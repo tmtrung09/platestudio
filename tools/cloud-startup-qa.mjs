@@ -8,7 +8,8 @@ assert.ok(start>0&&end>start);
 function fixture(){
  const timers=[];const ctx=vm.createContext({URLSearchParams,performance:{now:()=>0},console:{warn(){},error(){}},setTimeout(fn,delay){timers.push({fn,delay});return timers.length;},clearTimeout(){}});
  vm.runInContext(`
- let cloudReady=false,currentUser=null,loadingCloud=false,cloudSyncedSnapshot=null;
+ let cloudReady=false,currentUser=null,loadingCloud=false,cloudSyncedSnapshot=null,cloudSyncConflict=null;
+ function flushOpenOrderDraft(){}
  let activeWorkspace={workspace_id:'workspace',role:'owner',permissions:['orders.manage']};
  const STAFF_RECEIVING_MODE=false,STAFF_REPORT_MODE=false;
  let curPage='dashboard',needsCloudBatchSeed=false,batchReports=[],cloudOutbox=[{id:'preserved-request'}],cloudSyncing=false;

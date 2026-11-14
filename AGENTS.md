@@ -256,6 +256,13 @@
   quyền, receipt và nguyên tử; client nhận cả `PT409` lẫn mã cũ, giữ nháp/hàng
   chờ và dừng tự gửi lại để đối chiếu. Lỗi serialization thật không bị đổi mã.
   Guard: `tools/business-conflict-sql-qa.mjs` và QA lưu dữ liệu từng nghiệp vụ.
+- Cache, nháp và hàng chờ nghiệp vụ gắn với tài khoản và xưởng. Khi chuyển phiên,
+  chỉ tải dữ liệu của phạm vi tương ứng. Hàng chờ cũ thiếu định danh được giữ trên
+  máy để đối chiếu, không tự gửi vào phiên mới.
+- Đồng bộ đơn thường, Plate và part áp dụng cùng giao dịch, kiểm tra revision và
+  dùng lại request ID khi thử lại. Sửa các trường độc lập của đơn giữ cả hai thay
+  đổi. Sửa cùng trường giữ bản trên máy để người dùng đối chiếu. Bản cũ không
+  phục hồi đơn đã xóa. Guard: `tools/production-sync-qa.mjs`.
 - Camera là fast path độc lập, mở trực tiếp không đợi thư viện/lịch sử/ảnh. Chụp
   liên tiếp, lưu blob/metadata tối thiểu vào local ngay; nén/thumbnail/upload/liên
   kết chạy nền bằng queue bền vững. Không mất ảnh khi reload/mất mạng/đóng app.

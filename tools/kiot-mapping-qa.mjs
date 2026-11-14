@@ -183,13 +183,14 @@ try {
 
     await prepare(page, 'LEGACY');
     await page.evaluate(async () => {
+      cloudStorageScope = activeCloudStorageScope();
       markCloudCacheScope();
+      cloudSyncedSnapshot = cloudSnapshotFingerprints();
       const legacy = { sku: 'LEGACY', id: 'legacy', modelId: 'model-a', components: [{ modelId: 'model-a', qty: 1, mode: 'required' }] };
       kiotViet.mappings.push(legacy);
-      cloudSyncedSnapshot = null;
       await writeCloudSnapshot(cloudSnapshot());
     });
-    assert.equal(await page.evaluate(() => window.KiotMappingSync.status().pending.some(row => row.sku === 'LEGACY')), true, 'Legacy metadata-only outbox is upgraded to a durable operation');
+    assert.equal(await page.evaluate(() => window.KiotMappingSync.status().pending.some(row => row.sku === 'LEGACY')), true, 'Unversioned links in the current workspace are upgraded to durable operations');
     await page.evaluate(async () => { cloudReady = true; await window.KiotMappingSync.retry(); });
     assert.equal((await read()).values.mappings.find(row => row.sku === 'LEGACY').modelId, 'model-a');
     console.log('PASS mapping: legacy queued links are rescued before generic settings ACK');

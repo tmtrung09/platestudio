@@ -288,6 +288,16 @@ mark { background:rgba(200,80,26,.15); color:var(--ac); border-radius:2px; paddi
 .cloud-activity-details li{padding:6px 8px;border-radius:8px;background:var(--s2);overflow-wrap:anywhere}
 .cloud-activity-details [hidden],.cloud-activity-details[hidden]{display:none!important}
 .cloud-activity-details p{margin:4px 0;color:var(--t2)}
+.cloud-activity-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cloud-activity-actions .btn{min-height:44px}
+#dlg-production-conflict{box-sizing:border-box;width:min(450px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid var(--b);border-radius:20px;padding:18px;background:var(--s);color:var(--t);box-shadow:var(--sl)}
+#dlg-production-conflict::backdrop{background:#0008}
+#dlg-production-conflict h2{margin:0;font-size:19px}
+#dlg-production-conflict p{margin:6px 0;color:var(--t2);font-size:13px}
+#dlg-production-conflict [hidden]{display:none!important}
+.cloud-conflict-values{display:grid;gap:8px;margin:12px 0}
+.cloud-conflict-values article{background:var(--s2);padding:8px;border-radius:8px;overflow-wrap:anywhere;white-space:pre-wrap}
+.cloud-conflict-values article b{display:block;margin-bottom:4px}
 .pull-refresh{position:fixed;z-index:3401;top:max(12px,env(safe-area-inset-top));left:50%;display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--s);color:var(--t);box-shadow:var(--sl);font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none;transform:translate(-50%,var(--pull-offset,-50px))}
 .pull-refresh[hidden]{display:none}
 .pull-refresh .cloud-activity-orb{animation:none;transform:rotate(var(--pull-spin,0deg)) scale(var(--pull-scale,.65))}
@@ -4930,6 +4940,11 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
     <header><strong id="cloud-activity-title">Tác vụ đồng bộ</strong><button type="button" class="btn btn-ghost btn-sm" onclick="toggleCloudActivityDetails(false,true)">Đóng</button></header>
     <ul id="cloud-activity-tasks"></ul>
     <p id="cloud-activity-empty">Hiện không có tác vụ đang chạy.</p>
+    <div class="cloud-activity-actions" id="cloud-activity-actions" hidden>
+      <button type="button" class="btn btn-xs" id="cloud-review-action" onclick="reviewProductionConflict()">Đối chiếu</button>
+      <button type="button" class="btn btn-ghost btn-xs" onclick="downloadPendingProductionChanges()">Tải bản phục hồi</button>
+    </div>
+    <button type="button" class="btn btn-ghost btn-xs" id="cloud-legacy-action" onclick="downloadLegacyWorkspaceChanges()" hidden>Tải hàng chờ cũ</button>
   </section>
 </div>
 <div class="pull-refresh" id="pull-refresh" aria-hidden="true" hidden><span class="cloud-activity-orb"><span></span></span><span id="pull-refresh-label">Kéo xuống để làm mới</span></div>
@@ -6093,8 +6108,315 @@ let needsCloudBatchSeed = false;
 var systemUndoStack=[],systemRedoStack=[],systemUndoPending=null,systemUndoRestoring=false,systemUndoReady=false;
 const SYSTEM_UNDO_LIMIT=12,SYSTEM_UNDO_MAX_BYTES=6*1024*1024;
 
+const CLOUD_LEGACY_RECOVERY_PREFIX='ps_legacy_draft_migrated_v1:';
+const CLOUD_SYNC_BASE_KEY='ps_cloud_sync_base_v2';
+const CLOUD_PRODUCTION_WRITE_KEY='ps_production_sync_request_v1';
+const CLOUD_ORDER_PATCHES_KEY='ps_order_sync_patches_v1';
+const CLOUD_ORDER_RESTORES_KEY='ps_order_undo_deletions_v1';
+const CLOUD_SYNC_SCOPE_PREFIX='ps_scope_v1:';
+const productionCloudTables=new Set(['orders','plates','pitems']);
+const cloudOrderFields=['note','projectId','deliveryDate','status'];
+let cloudStorageScope='',cloudSyncConflict=null;
+let cloudProductionWrite=null,cloudOrderPatches={},cloudOrderRestores={};
+const cloudProductionRevisions={orders:{},plates:{},pitems:{}};
+const scopedWorkspaceKeys=new Set([...LOCAL_WORKSPACE_STORAGE_TABLES.keys(),K.syncOutbox,K.backups,K.aiQueue,
+  K.kiotSalesDetails,K.kiotInventoryLedger,CLOUD_SYNC_MANIFEST_KEY,CLOUD_CACHE_SCOPE_KEY,
+  CLOUD_SYNC_BASE_KEY,CLOUD_PRODUCTION_WRITE_KEY,CLOUD_ORDER_PATCHES_KEY,CLOUD_ORDER_RESTORES_KEY]);
+
+function workspaceStorageKey(key){
+  return cloudStorageScope&&scopedWorkspaceKeys.has(key)?CLOUD_SYNC_SCOPE_PREFIX+cloudStorageScope+':'+key:key;
+}
+function activeCloudStorageScope(){
+  return currentUser?.id&&cloudWorkspaceId()?encodeURIComponent(currentUser.id)+':'+encodeURIComponent(cloudWorkspaceId()):'';
+}
+function activateCloudStorageScope(){
+  const scope=activeCloudStorageScope();
+  if(!scope||scope===cloudStorageScope)return;
+  cloudStorageScope=scope;
+  migrateLegacyWorkspaceDrafts();
+  const baseline=ld(CLOUD_SYNC_BASE_KEY,null);
+  cloudSyncedSnapshot=baseline?.snapshot||null;
+  for(const key of productionCloudTables)cloudProductionRevisions[key]=baseline?.revisions?.[key]||{};
+  cloudProductionWrite=ld(CLOUD_PRODUCTION_WRITE_KEY,null);
+  cloudOrderPatches=ld(CLOUD_ORDER_PATCHES_KEY,{});
+  cloudOrderRestores=ld(CLOUD_ORDER_RESTORES_KEY,{});
+  cloudSyncConflict=cloudProductionWrite?.conflict||null;
+  cloudOutbox=ld(K.syncOutbox,[]);
+  models=ld(K.models,[]);
+  fils=ld(K.fils,DEF_FILS);
+  projects=ld(K.projects,[]);
+  orders=ld(K.orders,[]);
+  plates=ld(K.plates,[]);
+  pitems=ld(K.pitems,[]);
+  brands=ld(K.brands,DEF_BRANDS);
+  operations=ld(K.operations,{});
+  normalizeOperations();
+  batchReports=ld(K.batchReports,[]);
+  deliveryPhotoHub=ld(K.deliveryPhotoHub,{requests:[],photos:[]});
+  normalizeDeliveryPhotoHub();
+  trashItems=ld(K.trash,[]);
+  kiotViet=ld(K.kiotViet,{});
+  kiotSalesDetailCache=ld(K.kiotSalesDetails,{});
+  kiotInventoryLedger=ld(K.kiotInventoryLedger,{movements:[],remoteSnapshots:[],remoteReconciliation:[],loaded:false,workspace:''});
+  backups=loadBackupIndex();
+  brAiQueue=ld(K.aiQueue,{running:false,ids:[],states:{}});
+  systemUndoStack=[];systemRedoStack=[];systemUndoPending=null;
+  localWorkspaceRefreshPending.clear();
+  remoteRefreshTables.clear();
+  remoteDataRefreshPending=false;
+  clearTimeout(cloudSyncTimer);clearTimeout(cloudRetryTimer);
+  clearTimeout(orderDraftCloudTimer);clearTimeout(deliveryDraftCloudTimer);
+  closeOrderFormWithoutSaving();
+  deliveryWorkspaceState=loadDeliveryWorkspaceDraft()||emptyDeliveryWorkspaceState();
+  receivingWorkspaceState={batchId:'',query:'',quantities:{},form:{},step:'select'};
+}
+function closeOrderFormWithoutSaving(){
+  clearTimeout(orderDraftInputTimer);
+  cart=[];
+  document.getElementById('ov-order-form').style.display='none';
+  document.getElementById('of-done-ov').classList.remove('of-show');
+  closeDialog('dlg-order-edit');
+  const review=document.getElementById('dlg-production-conflict');
+  if(review?.open)review.close();
+}
+function legacyWorkspaceCacheScope(){
+  try{return JSON.parse(localStorage.getItem(CLOUD_CACHE_SCOPE_KEY)||'null');}catch(_){return null;}
+}
+function migrateLegacyWorkspaceDrafts(){
+  if(legacyWorkspaceCacheScope()?.workspace!==cloudWorkspaceId())return;
+  const marker=CLOUD_LEGACY_RECOVERY_PREFIX+cloudStorageScope;
+  try{
+    if(localStorage.getItem(marker))return;
+    for(const [oldKey,newKey] of [[ORDER_DRAFT_LOCAL_PREFIX+':'+currentUser.id,orderDraftLocalKey()],[DELIVERY_CART_DRAFT_KEY+':'+currentUser.id,deliveryWorkspaceLocalKey()]]){
+      const raw=localStorage.getItem(oldKey),draft=JSON.parse(raw||'null');
+      if(draft?.accountId===currentUser.id&&!localStorage.getItem(newKey))localStorage.setItem(newKey,raw);
+    }
+    localStorage.setItem(marker,'1');
+  }catch(error){console.warn('Giữ bản nháp cũ để phục hồi',error);}
+}
+function legacyWorkspaceOutbox(){
+  if(!cloudStorageScope||currentUser?.id!==activeWorkspace?.owner_user_id||legacyWorkspaceCacheScope()?.workspace!==cloudWorkspaceId())return null;
+  try{const pending=JSON.parse(localStorage.getItem(K.syncOutbox)||'[]');return pending.length?pending:null;}catch(_){return null;}
+}
+function rememberProductionRevisions(key,rows){
+  if(productionCloudTables.has(key))cloudProductionRevisions[key]=Object.fromEntries(rows.map(row=>[row.data.id,row.updated_at]));
+}
+function saveCloudSyncBase(){
+  localStorage.setItem(workspaceStorageKey(CLOUD_SYNC_BASE_KEY),JSON.stringify({snapshot:cloudSyncedSnapshot,revisions:cloudProductionRevisions}));
+}
+function orderBusinessFingerprint(order){
+  return cloudRecordFingerprint(Object.fromEntries(Object.entries(order).filter(([key])=>!cloudOrderFields.includes(key))));
+}
+function queueOrderFieldPatch(order,before){
+  if(!cloudStorageScope||!cloudSyncedSnapshot?.orders?.some(row=>row.id===order.id))return;
+  const entry=cloudOrderPatches[order.id]||{before:{},patch:{},baseline:cloudRecordFingerprint(before),business:orderBusinessFingerprint(before)};
+  for(const field of cloudOrderFields){
+    const original=Object.hasOwn(entry.before,field)?entry.before[field]:(before[field]??null);
+    const next=order[field]??null;
+    if(Object.is(original,next)){delete entry.before[field];delete entry.patch[field];}
+    else if(!Object.is(before[field]??null,next)){entry.before[field]=original;entry.patch[field]=next;}
+  }
+  if(Object.keys(entry.patch).length)cloudOrderPatches[order.id]=entry;
+  else delete cloudOrderPatches[order.id];
+  saveLocalValue(CLOUD_ORDER_PATCHES_KEY,cloudOrderPatches);
+}
+function cloudCollectionChanges(key,snapshot){
+  const previous=cloudSyncedSnapshot?.[key]||[];
+  const fingerprints=new Map(previous.map(row=>[row.id,row.fingerprint]));
+  const values=snapshot[key]||[],ids=new Set(values.map(row=>row.id));
+  return {
+    changed:values.filter(row=>fingerprints.get(row.id)!==cloudRecordFingerprint(row)),
+    deleted:previous.filter(row=>!ids.has(row.id)).map(row=>row.id)
+  };
+}
+function productionSyncChanges(snapshot){
+  return [...productionCloudTables].flatMap(key=>{
+    const {changed,deleted}=cloudCollectionChanges(key,snapshot);
+    const changes=changed.map(data=>{
+      const patch=key==='orders'?cloudOrderPatches[data.id]:null;
+      const restore=key==='orders'&&cloudOrderRestores[data.id]?.undo&&cloudOrderRestores[data.id].request;
+      const purePatch=patch&&patch.business===orderBusinessFingerprint(data)&&cloudSyncedSnapshot?.orders?.some(row=>row.id===data.id&&row.fingerprint===patch.baseline);
+      return {table:CLOUD_TABLES[key],id:data.id,revision:cloudProductionRevisions[key][data.id]??null,data,
+        ...(purePatch?{patch:patch.patch,before:patch.before}:{}),...(restore&&!cloudProductionRevisions.orders[data.id]?{restore}:{})};
+    });
+    return [...changes,...deleted.map(id=>({table:CLOUD_TABLES[key],id,revision:cloudProductionRevisions[key][id]??null,data:null}))];
+  });
+}
+async function writeProductionCloudSnapshot(snapshot,session){
+  if(!cloudProductionWrite){
+    const changes=productionSyncChanges(snapshot);
+    if(!changes.length)return;
+    const request={id:crypto.randomUUID(),changes};
+    localStorage.setItem(workspaceStorageKey(CLOUD_PRODUCTION_WRITE_KEY),JSON.stringify(request));
+    cloudProductionWrite=request;
+  }
+  const request=cloudProductionWrite;
+  const finish=beginCloudActivityTask('Đồng bộ đơn, Plate và part');
+  try{
+    const {data,error}=await session.client.rpc('commit_production_sync',{w:session.workspace,request:request.id,changes:request.changes});
+    if(!session.current())throw Error('Phiên đồng bộ đã đổi');
+    if(error)throw error;
+    if(!Array.isArray(data)||data.length!==request.changes.length)throw Error('Chưa nhận được xác nhận cho dữ liệu sản xuất');
+    const collections={orders,plates,pitems},changedCollections=new Set();
+    const sentById=new Map(request.changes.map(change=>[change.table+':'+change.id,change]));
+    const seen=new Set();
+    for(const row of data){
+      const id=row.table+':'+row.id;
+      if(!sentById.has(id)||seen.has(id))throw Error('Xác nhận sản xuất không khớp yêu cầu');
+      seen.add(id);
+    }
+    for(const row of data){
+      const key=[...productionCloudTables].find(key=>CLOUD_TABLES[key]===row.table);
+      const sent=sentById.get(row.table+':'+row.id);
+      const records=collections[key],recordIndex=records.findIndex(item=>item.id===row.id);
+      const current=records[recordIndex]||null;
+      if(cloudRecordFingerprint(current)===cloudRecordFingerprint(sent.data)){
+        if(row.data&&recordIndex>=0)records[recordIndex]=row.data;
+        changedCollections.add(key);
+      }
+      const fingerprints=cloudSyncedSnapshot[key]||=[];
+      const at=fingerprints.findIndex(item=>item.id===row.id);
+      if(at>=0)fingerprints.splice(at,1);
+      if(row.data){
+        cloudProductionRevisions[key][row.id]=row.revision;
+        // Use the canonical server row. A merged acknowledgement is also
+        // applied to the visible record when it has not changed during this send.
+        fingerprints.push({id:row.id,fingerprint:cloudRecordFingerprint(row.data)});
+      }else delete cloudProductionRevisions[key][row.id];
+      if(key==='orders'){
+        if(row.data)delete cloudOrderRestores[row.id];
+        else cloudOrderRestores[row.id]={request:request.id,undo:!!current};
+      }
+      if(key==='orders'&&cloudOrderPatches[row.id]){
+        const patch=cloudOrderPatches[row.id];
+        for(const field of Object.keys(patch.patch)){
+          if(Object.is(patch.patch[field],sent.data?.[field]??null)){delete patch.patch[field];delete patch.before[field];}
+          else patch.before[field]=row.data?.[field]??null;
+        }
+        if(!Object.keys(patch.patch).length)delete cloudOrderPatches[row.id];
+        else if(row.data){
+          patch.baseline=cloudRecordFingerprint(row.data);
+          if(current&&patch.business===orderBusinessFingerprint(current)&&Object.keys(patch.patch).every(field=>Object.is(current[field]??null,patch.patch[field]))){
+            records[recordIndex]={...row.data,...patch.patch};
+            patch.business=orderBusinessFingerprint(row.data);
+            changedCollections.add(key);
+          }
+        }
+      }
+    }
+    for(const key of changedCollections)localStorage.setItem(workspaceStorageKey(K[key]),JSON.stringify(collections[key]));
+    saveCloudSyncBase();
+    localStorage.setItem(workspaceStorageKey(CLOUD_ORDER_PATCHES_KEY),JSON.stringify(cloudOrderPatches));
+    localStorage.setItem(workspaceStorageKey(CLOUD_ORDER_RESTORES_KEY),JSON.stringify(cloudOrderRestores));
+    localStorage.removeItem(workspaceStorageKey(CLOUD_PRODUCTION_WRITE_KEY));
+    cloudProductionWrite=null;
+    remoteRefreshTables.add('orders');remoteRefreshTables.add('plates');remoteRefreshTables.add('pitems');
+    remoteDataRefreshPending=true;
+  }finally{finish();}
+}
+
+function reviewableProductionConflict(){
+  if(cloudSyncConflict?.code!=='PT409'||cloudProductionWrite?.changes.length!==1)return null;
+  const [change]=cloudProductionWrite.changes;
+  return change.table==='orders'&&change.patch&&cloudSyncConflict.detail==='orders:'+change.id?change:null;
+}
+function downloadCloudRecovery(name,payload){
+  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;link.download=name;link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadPendingProductionChanges(){
+  if(!cloudSyncSession().current()||!cloudSyncConflict)return;
+  downloadCloudRecovery('du-lieu-cho-dong-bo.json',{workspace:cloudWorkspaceId(),request:cloudProductionWrite,
+    queuedChanges:cloudOutbox,baseline:cloudSyncedSnapshot,local:cloudSnapshot()});
+}
+function downloadLegacyWorkspaceChanges(){
+  const pending=legacyWorkspaceOutbox();
+  if(!pending)return;
+  const cache={};
+  for(const key of LOCAL_WORKSPACE_STORAGE_TABLES.keys()){
+    try{const value=localStorage.getItem(key);if(value)cache[key]=JSON.parse(value);}catch(_){}
+  }
+  downloadCloudRecovery('hang-cho-plate-studio-cu.json',{workspace:cloudWorkspaceId(),pending,cache});
+}
+async function readProductionConflictOrder(session,id){
+  const {data,error}=await session.client.from(CLOUD_TABLES.orders).select('data,updated_at').eq('workspace_id',session.workspace).eq('id',id).maybeSingle();
+  if(error)throw error;
+  return data;
+}
+async function reviewProductionConflict(){
+  const change=reviewableProductionConflict(),session=cloudSyncSession(),request=cloudProductionWrite;
+  const order=change&&orders.find(row=>row.id===change.id);
+  if(!change||!session.current())return;
+  if(!order||cloudRecordFingerprint(order)!==cloudRecordFingerprint(change.data)){
+    toast('Đơn đã có thêm thay đổi trên máy. Tải bản phục hồi để giữ đầy đủ các thay đổi.',6500);return;
+  }
+  try{
+    const remote=await readProductionConflictOrder(session,change.id);
+    if(!session.current()||cloudProductionWrite!==request)return;
+    let dialog=document.getElementById('dlg-production-conflict');
+    if(!dialog){
+      dialog=document.createElement('dialog');dialog.id='dlg-production-conflict';
+      dialog.setAttribute('aria-labelledby','production-conflict-title');
+      dialog.innerHTML='<div><h2 id="production-conflict-title">Đối chiếu thay đổi đơn</h2><p data-intro></p><div class="cloud-conflict-values"></div><div class="cloud-activity-actions"><button type="button" class="btn btn-ghost" data-close>Đóng</button><button type="button" class="btn btn-ghost" data-remote>Dùng bản cloud</button><button type="button" class="btn btn-ac" data-local>Giữ bản trên máy</button></div></div>';
+      dialog.querySelector('[data-close]').onclick=()=>dialog.close();
+      document.body.append(dialog);
+    }
+    dialog.querySelector('[data-intro]').textContent=remote?'Chọn bản dùng cho các trường dưới đây. Các thông tin khác giữ theo bản cloud.':'Đơn đã bị xóa trên cloud. Em có thể giữ bản phục hồi bằng nút tải trong Tác vụ đồng bộ.';
+    const labels={note:'Ghi chú',projectId:'Dự án',deliveryDate:'Ngày giao',status:'Trạng thái'};
+    const describe=(key,value)=>key==='projectId'&&value?projects.find(project=>project.id===value)?.name||value:(value??'')||'—';
+    dialog.querySelector('.cloud-conflict-values').replaceChildren(...Object.keys(change.patch).map(field=>{
+      const card=document.createElement('article'),label=document.createElement('b');
+      label.textContent=labels[field];
+      card.append(label,document.createTextNode('Trên máy · '+describe(field,change.patch[field])+'\nTrên cloud · '+(remote?describe(field,remote.data[field]):'Đã xóa')));
+      return card;
+    }));
+    const localButton=dialog.querySelector('[data-local]'),remoteButton=dialog.querySelector('[data-remote]');
+    localButton.hidden=!remote;localButton.disabled=false;remoteButton.disabled=false;
+    const resolve=async keepLocal=>{
+      localButton.disabled=remoteButton.disabled=true;
+      try{
+        const latest=await readProductionConflictOrder(session,change.id);
+        if(!session.current()||cloudProductionWrite!==request||!dialog.open)return;
+        if(latest?.updated_at!==remote?.updated_at||cloudRecordFingerprint(orders.find(row=>row.id===change.id)||null)!==cloudRecordFingerprint(change.data)){
+          dialog.close();toast('Đơn vừa thay đổi. Mở đối chiếu lại để xem bản mới nhất.');return;
+        }
+        const desired=latest?(keepLocal?{...latest.data,...change.patch}:latest.data):null;
+        const next=orders.filter(row=>row.id!==change.id);
+        if(desired)next.splice(orders.findIndex(row=>row.id===change.id),0,desired);
+        localStorage.setItem(workspaceStorageKey(K.orders),JSON.stringify(next));
+        orders=next;
+        cloudSyncedSnapshot.orders=cloudSyncedSnapshot.orders.filter(row=>row.id!==change.id);
+        if(latest){
+          cloudSyncedSnapshot.orders.push({id:change.id,fingerprint:cloudRecordFingerprint(latest.data)});
+          cloudProductionRevisions.orders[change.id]=latest.updated_at;
+        }else delete cloudProductionRevisions.orders[change.id];
+        if(keepLocal){
+          cloudOrderPatches[change.id]={before:Object.fromEntries(Object.keys(change.patch).map(field=>[field,latest.data[field]??null])),
+            patch:change.patch,baseline:cloudRecordFingerprint(latest.data),business:orderBusinessFingerprint(latest.data)};
+        }else delete cloudOrderPatches[change.id];
+        saveCloudSyncBase();
+        localStorage.setItem(workspaceStorageKey(CLOUD_ORDER_PATCHES_KEY),JSON.stringify(cloudOrderPatches));
+        localStorage.removeItem(workspaceStorageKey(CLOUD_PRODUCTION_WRITE_KEY));
+        cloudProductionWrite=null;cloudSyncConflict=null;
+        dialog.close();renderSb();renderPage(curPage);
+        setSyncState('Chờ đồng bộ');
+        wakeCloudOutbox();
+      }catch(error){toast('Chưa thể đối chiếu. '+error.message,6000);}
+      finally{localButton.disabled=remoteButton.disabled=false;}
+    };
+    localButton.onclick=()=>resolve(true);
+    remoteButton.onclick=()=>resolve(false);
+    toggleCloudActivityDetails(false);
+    if(!dialog.open)dialog.showModal();
+  }catch(error){if(session.current())toast('Chưa đọc được bản cloud. '+error.message,6000);}
+}
+
+const initialLegacyWorkspace=legacyWorkspaceCacheScope()?.workspace||'';
 function ld(k, def) {
-  try { const s = localStorage.getItem(k); if (s) return JSON.parse(s); } catch(e) {}
+  if(initialLegacyWorkspace&&!cloudStorageScope&&scopedWorkspaceKeys.has(k))return Array.isArray(def)?[...def]:def;
+  try { const s = localStorage.getItem(workspaceStorageKey(k)); if (s) return JSON.parse(s); } catch(e) {}
   return Array.isArray(def) ? [...def] : def;
 }
 function sv(k, v) {
@@ -6305,6 +6627,13 @@ function applySystemUndoSnapshot(serialized){
   let state;try{state=JSON.parse(serialized);}catch(_){toast('Không đọc được mốc hoàn tác.');return false;}
   systemUndoRestoring=true;
   try{
+    const currentIds=new Set(orders.map(order=>order.id));
+    for(const order of state.orders||[]){
+      if(currentIds.has(order.id))continue;
+      const deletion=cloudOrderRestores[order.id];
+      if(deletion)deletion.undo=true;
+    }
+    if(cloudStorageScope)saveLocalValue(CLOUD_ORDER_RESTORES_KEY,cloudOrderRestores);
     models=Array.isArray(state.models)?state.models:[];fils=Array.isArray(state.fils)?state.fils:[...DEF_FILS];projects=Array.isArray(state.projects)?state.projects:[];orders=Array.isArray(state.orders)?state.orders:[];plates=Array.isArray(state.plates)?state.plates:[];pitems=Array.isArray(state.pitems)?state.pitems:[];brands=Array.isArray(state.brands)?state.brands:[...DEF_BRANDS];modelCategoriesPinned=Boolean(state.modelCategoriesPinned);batchReports=Array.isArray(state.batchReports)?state.batchReports:[];trashItems=Array.isArray(state.trashItems)?state.trashItems:[];operations=state.operations&&typeof state.operations==='object'?state.operations:{qualityIssues:[],deliveries:[],deliveryBatches:[]};kiotViet=state.kiotViet&&typeof state.kiotViet==='object'?state.kiotViet:{catalog:[],snapshots:[],mappings:[],skippedSkus:[],sales:[],salesImports:[]};
     normalizeOperations();['catalog','snapshots','mappings','skippedSkus','sales','salesImports','aiInsights'].forEach(key=>{if(!Array.isArray(kiotViet[key]))kiotViet[key]=[];});
     [[K.models,models],[K.fils,fils],[K.projects,projects],[K.orders,orders],[K.plates,plates],[K.pitems,pitems],[K.brands,brands],[K.modelCategoriesPinned,modelCategoriesPinned],[K.batchReports,batchReports],[K.trash,trashItems],[K.operations,operations],[K.kiotViet,kiotViet]].forEach(([key,value])=>saveLocalValue(key,value));
@@ -6753,17 +7082,25 @@ function toggleCloudActivityDetails(open,restoreFocus=false){
 function renderCloudActivity(){
   const indicator=document.getElementById('cloud-activity'),panel=document.getElementById('cloud-activity-details');
   if(!indicator||!panel)return;
-  const owner=cloudActivityOwner();
+  const owner=cloudActivityOwner(),legacy=typeof legacyWorkspaceOutbox==='function'&&legacyWorkspaceOutbox();
   if(!panel.hidden&&owner!==cloudActivityScope){
     panel.hidden=true;cloudActivityScope='';
     document.getElementById('cloud-activity-trigger').setAttribute('aria-expanded','false');
   }
   const tasks=[...cloudActivityTasks].filter(task=>owner&&task.owner===owner).map(task=>task.label);
-  const visible=cloudActivityRequested||tasks.length>0||!panel.hidden;
+  const visible=cloudActivityRequested||tasks.length>0||!panel.hidden||Boolean(owner&&(cloudSyncConflict||legacy));
   indicator.classList.toggle('is-visible',visible);
   indicator.setAttribute('aria-hidden',String(!visible));
+  const actions=document.getElementById('cloud-activity-actions');
+  if(actions){
+    actions.hidden=!cloudSyncConflict;
+    document.getElementById('cloud-review-action').hidden=typeof reviewableProductionConflict!=='function'||!reviewableProductionConflict();
+    document.getElementById('cloud-legacy-action').hidden=!legacy;
+  }
   if(panel.hidden)return;
+  if(legacy)tasks.push('Hàng chờ từ phiên bản cũ còn trên máy. Tải bản phục hồi để kiểm tra.');
   if(cloudReady&&cloudOutbox.length)tasks.push(`${cloudOutbox.length} thay đổi đang chờ xác nhận`);
+  if(cloudSyncConflict)tasks.push(cloudSyncConflict.message);
   if(!tasks.length&&cloudActivityRequested)tasks.push(document.getElementById('cloud-activity-label').textContent);
   const list=document.getElementById('cloud-activity-tasks');
   if(JSON.stringify(tasks)!==list.dataset.labels){
@@ -6790,9 +7127,9 @@ document.addEventListener('keydown',event=>{
 async function readCloudActivityCollection(key,workspace){
   const finish=beginCloudActivityTask(`Tải ${cloudActivityNames[key]}`);
   try{
-    const {data,error}=await sb.from(CLOUD_TABLES[key]).select('data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
+    const {data,error}=await sb.from(CLOUD_TABLES[key]).select(productionCloudTables.has(key)?'data,updated_at':'data').eq('workspace_id',workspace).order('updated_at',{ascending:true});
     if(error)throw error;
-    return [key,(data||[]).map(row=>row.data)];
+    return [key,(data||[]).map(row=>row.data),data||[]];
   }finally{finish();}
 }
 function setSyncState(label, kind='') {
@@ -6801,7 +7138,7 @@ function setSyncState(label, kind='') {
   const sidebarSync = document.querySelector('.sb-sync');
   if(sidebarSync) sidebarSync.textContent = label;
   const communicating=cloudActivityForced||(!kind&&/^(đang|chờ)/i.test(String(label||'').trim()));
-  setCloudActivity(communicating,label);
+  setCloudActivity(communicating,cloudSyncConflict?'Đồng bộ cần đối chiếu':communicating?label:'Xem tác vụ đồng bộ');
 }
 function setCloudLoadingOverlay(visible){
   const overlay=document.getElementById('cloud-loading-ov');
@@ -6866,7 +7203,14 @@ async function resetPasswordCloud() {
   if (error) { authMessage(error.message); return; }
   authMessage('Đã gửi email đặt lại mật khẩu. Kiểm tra hộp thư của bạn.', false);
 }
-async function signOutCloud() { if(sb) await sb.auth.signOut(); }
+async function signOutCloud() {
+  if(!sb)return;
+  flushOpenOrderDraft();
+  await sb.auth.signOut();
+}
+function flushOpenOrderDraft(){
+  if(cloudReady&&document.getElementById('ov-order-form')?.style.display==='flex'&&!orderDraftIsFinalized)persistOrderDraft();
+}
 function isInlineImage(value) { return typeof value==='string' && value.startsWith('data:image/'); }
 function lightLocalValue(key, value) {
   // localStorage chỉ là cache offline nhẹ. Ảnh nằm ở Storage, không đặt ở đây.
@@ -6890,14 +7234,15 @@ function kiotVietForLocalCache(value){
 function releaseConfirmedKiotCache(){
   // Only replace regenerable snapshots. Pending/recovery keys are never touched.
   for(const key of [K.kiotViet,K.kiotSalesDetails]){
-    try{const old=JSON.parse(localStorage.getItem(key)||'null');if(!old)continue;
+    try{const old=JSON.parse(localStorage.getItem(workspaceStorageKey(key))||'null');if(!old)continue;
       const next=key===K.kiotViet?kiotVietForLocalCache(old):Object.fromEntries(Object.entries(old).filter(([,entry])=>!entry?.revision));
-      localStorage.setItem(key,JSON.stringify(next));
+      localStorage.setItem(workspaceStorageKey(key),JSON.stringify(next));
     }catch(error){console.warn('Giữ nguyên cache chưa thể thu gọn',key,error);}
   }
 }
 function saveLocalValue(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(lightLocalValue(key,value))); }
+  if(initialLegacyWorkspace&&!cloudStorageScope&&scopedWorkspaceKeys.has(key))return;
+  try { localStorage.setItem(workspaceStorageKey(key), JSON.stringify(lightLocalValue(key,value))); }
   catch(error) { console.warn('Local cache skipped', key, error); }
 }
 function getCloudCollections() { return {models, fils, projects, orders, plates, pitems, settings:[{id:'brands', values:brands},{id:'operations',values:operations},{id:'kiotviet',values:kiotVietForCloudSettings()},{id:'trash',values:trashItems},{id:'delivery_photo_hub',values:deliveryPhotoHub}], batchReports}; }
@@ -7368,11 +7713,15 @@ function installLocalWorkspaceSyncListeners(){
   if(localWorkspaceSyncListenersInstalled)return;
   localWorkspaceSyncListenersInstalled=true;
   window.addEventListener('storage',event=>{
-    if(event.storageArea!==localStorage||!LOCAL_WORKSPACE_STORAGE_TABLES.has(event.key)||event.newValue===null)return;
-    queueLocalWorkspaceRefresh(event.key,event.newValue);
+    if(event.storageArea!==localStorage||!event.key||event.newValue===null)return;
+    const prefix=cloudStorageScope?CLOUD_SYNC_SCOPE_PREFIX+cloudStorageScope+':':'';
+    if(!event.key.startsWith(prefix))return;
+    const key=event.key.slice(prefix.length);
+    if(LOCAL_WORKSPACE_STORAGE_TABLES.has(key))queueLocalWorkspaceRefresh(key,event.newValue);
   });
 }
-function refreshRemoteCloudTable(key,rows){
+function refreshRemoteCloudTable(key,rows,rawRows=[]){
+  rememberProductionRevisions(key,rawRows);
   if(key==='models'){models=rows;migrateModelsSchema();saveLocalValue(K.models,models);}
   else if(key==='fils'){fils=rows;saveLocalValue(K.fils,fils);}
   else if(key==='projects'){projects=rows;saveLocalValue(K.projects,projects);}
@@ -7426,8 +7775,9 @@ async function applyRemoteDataRefresh(){
     // Suppress normalization writes only during the synchronous commit, never
     // across network awaits where a real user edit must still enter the outbox.
     loadingCloud=true;
-    try{entries.forEach(([key,rows])=>refreshRemoteCloudTable(key,rows));}
+    try{entries.forEach(([key,rows,rawRows])=>refreshRemoteCloudTable(key,rows,rawRows));}
     finally{loadingCloud=false;}
+    if(cloudStorageScope)saveCloudSyncBase();
     updateCamBadge();
     succeeded=true;remoteDataRefreshPending=remoteRefreshTables.size>0;
     document.getElementById('remote-data-refresh-notice')?.remove();
@@ -7449,20 +7799,20 @@ async function applyRemoteDataRefresh(){
 }
 function setFastCaptureAvailable(visible){document.getElementById('cloud-fast-capture')?.classList.toggle('is-visible',!!visible);}
 function readCachedCloudManifest(workspace=cloudWorkspaceId()){
-  try{const value=JSON.parse(localStorage.getItem(CLOUD_SYNC_MANIFEST_KEY)||'null');return value?.workspace===workspace&&Array.isArray(value.revisions)?value:null;}catch{return null;}
+  try{const value=JSON.parse(localStorage.getItem(workspaceStorageKey(CLOUD_SYNC_MANIFEST_KEY))||'null');return value?.workspace===workspace&&Array.isArray(value.revisions)?value:null;}catch{return null;}
 }
 function writeCachedCloudManifest(workspace,revisions){
   if(!workspace||!Array.isArray(revisions))return;
-  try{localStorage.setItem(CLOUD_SYNC_MANIFEST_KEY,JSON.stringify({workspace,revisions,checkedAt:new Date().toISOString()}));}catch(_){ }
+  try{localStorage.setItem(workspaceStorageKey(CLOUD_SYNC_MANIFEST_KEY),JSON.stringify({workspace,revisions,checkedAt:new Date().toISOString()}));}catch(_){ }
 }
 function markCloudCacheScope(workspace=cloudWorkspaceId()){
-  if(!workspace)return;try{localStorage.setItem(CLOUD_CACHE_SCOPE_KEY,JSON.stringify({workspace,complete:true,updatedAt:new Date().toISOString()}));}catch(_){ }
+  if(!workspace)return;try{localStorage.setItem(workspaceStorageKey(CLOUD_CACHE_SCOPE_KEY),JSON.stringify({workspace,complete:true,updatedAt:new Date().toISOString()}));}catch(_){ }
 }
 function hasCompleteCloudCache(workspace=cloudWorkspaceId()){
   try{
-    const scope=JSON.parse(localStorage.getItem(CLOUD_CACHE_SCOPE_KEY)||'null');
+    const scope=JSON.parse(localStorage.getItem(workspaceStorageKey(CLOUD_CACHE_SCOPE_KEY))||'null');
     if(scope?.workspace!==workspace||!scope.complete)return false;
-    return [K.models,K.fils,K.projects,K.orders,K.plates,K.pitems,K.brands,K.operations,K.kiotViet,K.trash,K.deliveryPhotoHub,K.batchReports].every(key=>localStorage.getItem(key)!==null);
+    return !!cloudSyncedSnapshot&&[...LOCAL_WORKSPACE_STORAGE_TABLES.keys()].every(key=>localStorage.getItem(workspaceStorageKey(key))!==null);
   }catch{return false;}
 }
 async function refreshPageFromCloud(page=curPage){
@@ -7536,7 +7886,7 @@ function canAutoApplyRemoteRefresh(){
   const isSearch=active?.matches?.('input[type="search"],input[id*="search"]');
   const isTyping=!isSearch&&active?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable="true"]');
   if(isTyping)return false;
-  const protectedOverlays=['ov-batch-report','ov-order-form','ov-project-detail','dlg-model','dlg-project','dlg-order-edit','dlg-plate','dlg-fil','dlg-mv','dlg-model-history','dlg-category-assign','dlg-maker','dlg-action','confirm-ov','more-sheet-ov','spotlight-ov'];
+  const protectedOverlays=['ov-batch-report','ov-order-form','ov-project-detail','dlg-model','dlg-project','dlg-order-edit','dlg-production-conflict','dlg-plate','dlg-fil','dlg-mv','dlg-model-history','dlg-category-assign','dlg-maker','dlg-action','confirm-ov','more-sheet-ov','spotlight-ov'];
   return !protectedOverlays.some(id=>{
     const element=document.getElementById(id);
     /* Một số form được gắn sẵn bên trong page để dùng lại layout nên CSS của
@@ -7685,12 +8035,15 @@ function setupCloudRealtime() {
   channel.subscribe((status,error)=>handleCloudRealtimeStatus(channel,status,error));
 }
 async function loadCloudData(canCommit=()=>true) {
+  if(!canCommit())return;
+  activateCloudStorageScope();
   const localBatchBackup = [...batchReports];
   needsCloudBatchSeed=false;
   const workspace=cloudWorkspaceId(),cachedManifest=readCachedCloudManifest(workspace);
-  /* Outbox local luôn mới hơn cloud. Giữ nguyên snapshot để processCloudOutbox
-     gửi sau khi phiên sẵn sàng, không tải dữ liệu cũ về trước. */
-  if(cloudOutbox.length){migrateModelsSchema();cloudSyncedSnapshot=null;return;}
+  if(cloudOutbox.length){
+    if(!cloudSyncedSnapshot)throw Error('Thiếu mốc đối chiếu của hàng chờ. Dữ liệu vẫn được giữ trên thiết bị.');
+    migrateModelsSchema();return;
+  }
   /* Reload thường: hỏi server một manifest rất nhỏ rồi chỉ nạp những bảng đã
      đổi. Bảng không đổi tiếp tục dùng localStorage đã dựng giao diện từ frame đầu. */
   if(cachedManifest&&hasCompleteCloudCache(workspace)){
@@ -7705,10 +8058,11 @@ async function loadCloudData(canCommit=()=>true) {
         const entries=await Promise.all(changed.filter(key=>key!=='batchReports').map(key=>readCloudActivityCollection(key,workspace)));
         const batchPage=await batchPagePromise;
         if(!canCommit()||workspace!==cloudWorkspaceId())return;
-        entries.forEach(([key,rows])=>refreshRemoteCloudTable(key,rows));
+        entries.forEach(([key,rows,rawRows])=>refreshRemoteCloudTable(key,rows,rawRows));
         if(batchPage.error){batchReports=localBatchBackup;remoteRefreshTables.add('batchReports');scheduleCloudRefresh('batchReports');}
         else if(changed.includes('batchReports')){invalidateFulfillmentCloudManualReports();refreshCloudSnapshotFingerprint('batchReports');}
         migrateModelsSchema();saveLocalCollections();cloudSyncedSnapshot=cloudSnapshotFingerprints();
+        if(cloudStorageScope)saveCloudSyncBase();
         cloudRemoteRevisionWorkspace=workspace;cloudRemoteRevisions.clear();remoteManifest.revisions.forEach(([key,revision])=>cloudRemoteRevisions.set(key,revision));
         writeCachedCloudManifest(workspace,remoteManifest.revisions);markCloudCacheScope(workspace);
         return;
@@ -7723,6 +8077,7 @@ async function loadCloudData(canCommit=()=>true) {
   const remote = Object.fromEntries(entries);
   const batchPage=await batchPagePromise;
   if(!canCommit()||workspace!==cloudWorkspaceId())return;
+  for(const [key,,rawRows] of entries)rememberProductionRevisions(key,rawRows);
   /* batch_reports được nạp riêng để phân trang. Tuy vậy nó vẫn phải được tính
      khi quyết định workspace có dữ liệu hay chưa; nếu không workspace chỉ có
      ảnh báo cáo sẽ bị hiểu nhầm là trống và thư viện hiện rỗng. */
@@ -7770,6 +8125,7 @@ async function loadCloudData(canCommit=()=>true) {
   }
   if(cloudReady&&typeof announceUnseenSystemEvents==='function')announceUnseenSystemEvents();
   if(cloudReady&&typeof announceDeliveryPhotoRequests==='function')announceDeliveryPhotoRequests();
+  if(cloudStorageScope)saveCloudSyncBase();
   markCloudCacheScope(workspace);
 }
 let cloudLocalEditVersion=0;
@@ -7780,7 +8136,7 @@ function scheduleCloudSync() {
   if(!currentUser || !cloudReady || loadingCloud) return;
   cloudOutbox.push({id:uid(), createdAt:new Date().toISOString(), attempts:0});
   saveLocalValue(K.syncOutbox, cloudOutbox);
-  wakeCloudOutbox();
+  if(!cloudSyncConflict)wakeCloudOutbox();
 }
 function wakeCloudOutbox(){
   clearTimeout(cloudSyncTimer);
@@ -7823,7 +8179,8 @@ function cloudSnapshot() {
   return JSON.parse(JSON.stringify(getCloudCollections()));
 }
 function cloudRecordFingerprint(record){
-  const text=JSON.stringify(record);let first=2166136261,second=0x9e3779b9;
+  const text=JSON.stringify(record,(_,value)=>value&&typeof value==='object'&&!Array.isArray(value)
+    ?Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])):value)??'null';let first=2166136261,second=0x9e3779b9;
   for(let index=0;index<text.length;index++){
     const code=text.charCodeAt(index);first=Math.imul(first^code,16777619);second=Math.imul(second^(code+index),2246822519);
   }
@@ -7863,88 +8220,100 @@ async function legacyWriteCloudSnapshot(snapshot) {
     cloudSyncing = false;
   }
 }
-async function writeCloudSnapshot(snapshot) {
+
+async function writeCloudSnapshot(snapshot,session=cloudSyncSession()) {
   cloudSyncing = true;
   setSyncState('Đang đồng bộ...');
   try {
-    for(const [key,table] of Object.entries(CLOUD_TABLES)) {
-      /* Chỉ có một trang báo cáo ở browser. Bỏ qua bảng này ở cơ chế
-         snapshot để không thể xóa nhầm các trang còn lại. */
-      if(key==='batchReports') continue;
-      const values=snapshot[key]||[];
-      const previous=cloudSyncedSnapshot?.[key]||[];
-      const before=new Map(previous.map(x=>[x.id,x.fingerprint]));
-      const now=new Map(values.map(x=>[x.id,x]));
-      const changed=values.filter(x=>before.get(x.id)!==cloudRecordFingerprint(x));
-      const deleted=previous.filter(x=>!now.has(x.id)).map(x=>x.id);
+    if(!session.current()||!cloudSyncedSnapshot)throw Error('Chưa có mốc đối chiếu của phiên hiện tại');
+    await writeProductionCloudSnapshot(snapshot,session);
+    if(!session.current())return;
+    for(const [key,table] of Object.entries(CLOUD_TABLES)){
+      if(key==='batchReports'||productionCloudTables.has(key))continue;
+      const {changed,deleted}=cloudCollectionChanges(key,snapshot);
       if(!changed.length&&!deleted.length)continue;
-      const finishTask=beginCloudActivityTask(`Đồng bộ ${cloudActivityNames[key]}`);
+      const finish=beginCloudActivityTask('Đồng bộ '+cloudActivityNames[key]);
       try{
-        if(changed.length) {
-          const stamp=new Date().toISOString();
+        if(changed.length){
           const kiot=key==='settings'?changed.find(row=>row.id==='kiotviet'):null;
-          if(kiot){await preserveLegacyKiotMappingChanges(kiot.values);const {error}=await sb.rpc('merge_kiot_settings',{p_workspace_id:cloudWorkspaceId(),p_values:kiot.values});if(error)throw error;}
-          const rows=changed.filter(data=>!kiot||data.id!=='kiotviet').map(data=>({id:data.id,user_id:cloudWorkspaceOwnerId(),workspace_id:cloudWorkspaceId(),data,updated_at:stamp}));
-          if(rows.length){const {error}=await sb.from(table).upsert(rows);if(error)throw error;}
+          if(kiot){
+            await preserveLegacyKiotMappingChanges(kiot.values);
+            if(!session.current())return;
+            const {error}=await session.client.rpc('merge_kiot_settings',{p_workspace_id:session.workspace,p_values:kiot.values});
+            if(error)throw error;
+          }
+          if(!session.current())return;
+          const rows=changed.filter(data=>!kiot||data.id!=='kiotviet').map(data=>({
+            id:data.id,user_id:session.owner,workspace_id:session.workspace,data,updated_at:new Date().toISOString()
+          }));
+          if(rows.length){
+            const {error}=await session.client.from(table).upsert(rows);
+            if(error)throw error;
+          }
         }
-        if(deleted.length) {
-          const {error}=await sb.from(table).delete().eq('workspace_id',cloudWorkspaceId()).in('id',deleted);
-          if(error) throw error;
+        if(!session.current())return;
+        if(deleted.length){
+          const {error}=await session.client.from(table).delete().eq('workspace_id',session.workspace).in('id',deleted);
+          if(error)throw error;
         }
-      }finally{finishTask();}
+        if(!session.current())return;
+        cloudSyncedSnapshot[key]=(snapshot[key]||[]).map(row=>({id:row.id,fingerprint:cloudRecordFingerprint(row)}));
+        saveCloudSyncBase();
+      }finally{finish();}
     }
-    /* ID + dấu vân tay đủ để biết bản ghi thay đổi, không cần giữ thêm cả workspace trong RAM. */
-    cloudSyncedSnapshot=cloudSnapshotFingerprints(snapshot);
-    lastCloudWriteAt=Date.now();
+    if(session.current())lastCloudWriteAt=Date.now();
   } finally { cloudSyncing=false; }
 }
+function cloudSyncSession(){
+  const scope=activeCloudStorageScope(),client=sb,workspace=cloudWorkspaceId(),owner=cloudWorkspaceOwnerId();
+  return {client,workspace,owner,current:()=>Boolean(scope&&scope===activeCloudStorageScope()&&scope===cloudStorageScope&&sb===client)};
+}
 async function processCloudOutbox() {
-  if(cloudSyncing || loadingCloud || !cloudReady || !currentUser || !cloudOutbox.length) return;
+  if(cloudSyncing||loadingCloud||!cloudReady||!currentUser||!cloudOutbox.length||cloudSyncConflict)return;
+  const session=cloudSyncSession();
+  if(!session.current())return;
   clearTimeout(cloudRetryTimer);
-  // Gộp những thao tác đang chờ thành một snapshot nhất quán. Thao tác phát sinh
-  // trong lúc gửi sẽ vẫn nằm lại trong queue và được gửi ở lượt sau.
-  const queuedCount = cloudOutbox.length;
-  const snapshot = cloudSnapshot();
+  const queuedCount=cloudOutbox.length;
   try {
-    await writeCloudSnapshot(snapshot);
-    cloudOutbox.splice(0, queuedCount);
-    saveCloudOutbox();
-    if(cloudOutbox.length) {
-      setSyncState(`Chờ đồng bộ (${cloudOutbox.length})`);
-      cloudSyncTimer = setTimeout(processCloudOutbox, 0);
-    } else {
-      setSyncState('Đã đồng bộ', 'ok');
-      /* Thay đổi vừa lưu đã có sẵn trong state hiện tại. Không nạp lại toàn
-         bộ trang sau mỗi thao tác; Realtime vẫn tự nhận thay đổi từ máy khác. */
+    await writeCloudSnapshot(cloudSnapshot(),session);
+    if(!session.current())return;
+    // ACK of an earlier retry must not discard edits made after its request was prepared.
+    if(productionSyncChanges(cloudSnapshot()).length){
+      wakeCloudOutbox();
+      return;
     }
-  } catch(error) {
-    console.error('Cloud outbox failed', error);
-    cloudOutbox.slice(0, queuedCount).forEach(job => job.attempts = (job.attempts||0)+1);
+    cloudOutbox.splice(0,queuedCount);
     saveCloudOutbox();
-    const attempts = cloudOutbox[0]?.attempts || 1;
-    const delay = Math.min(30000, 1000 * (2 ** Math.min(attempts-1, 5)));
-    setSyncState(`Chưa đồng bộ — sẽ thử lại`, 'err');
-    cloudRetryTimer = setTimeout(processCloudOutbox, delay);
-    if(attempts === 1) toast('⚠️ Chưa thể đồng bộ. Dữ liệu đã được giữ trong hàng chờ và sẽ tự thử lại.', 5000);
+    if(cloudOutbox.length)wakeCloudOutbox();
+    else{
+      setSyncState('Đã đồng bộ','ok');
+      if(remoteDataRefreshPending)scheduleDeferredRemoteRefresh();
+    }
+  }catch(error){
+    if(!session.current())return;
+    console.error('Cloud outbox failed',error);
+    if(error.code==='PT409'||error.code==='42501'){
+      cloudSyncConflict={code:error.code,message:error.message||'Không thể đồng bộ thay đổi này.',detail:error.details||error.detail||''};
+      if(cloudProductionWrite){
+        cloudProductionWrite={...cloudProductionWrite,conflict:cloudSyncConflict};
+        saveLocalValue(CLOUD_PRODUCTION_WRITE_KEY,cloudProductionWrite);
+      }
+      setSyncState('Đồng bộ cần đối chiếu','err');
+      toast(cloudSyncConflict.message,7000);
+      return;
+    }
+    cloudOutbox.slice(0,queuedCount).forEach(job=>job.attempts=(job.attempts||0)+1);
+    saveCloudOutbox();
+    const attempts=cloudOutbox[0]?.attempts||1;
+    setSyncState('Chưa đồng bộ — sẽ thử lại','err');
+    cloudRetryTimer=setTimeout(processCloudOutbox,Math.min(30000,1000*(2**Math.min(attempts-1,5))));
+    if(attempts===1)toast('Chưa thể đồng bộ. Dữ liệu đã được giữ trong hàng chờ và sẽ tự thử lại.',5000);
   }
 }
 async function syncAllCloud(force=false) {
-  if(!currentUser || (!force && (!cloudReady || loadingCloud))) return;
-  if(!force) { scheduleCloudSync(); return; }
-  if(cloudSyncing) { scheduleCloudSync(); return; }
-  try {
-    await writeCloudSnapshot(cloudSnapshot());
-    setSyncState('Đã đồng bộ', 'ok');
-    if(cloudOutbox.length && cloudReady && !loadingCloud) setTimeout(processCloudOutbox, 0);
-  } catch(error) {
-    console.error('Forced cloud sync failed', error);
-    // Lưu marker để lần online kế tiếp tự gửi lại snapshot local mới nhất.
-    cloudOutbox.push({id:uid(), createdAt:new Date().toISOString(), attempts:0});
-    saveCloudOutbox();
-    setSyncState('Chưa đồng bộ — đang chờ', 'err');
-    if(cloudReady && !loadingCloud) processCloudOutbox();
-    throw error;
-  }
+  if(!currentUser||!cloudReady||loadingCloud)return;
+  if(!cloudOutbox.length)scheduleCloudSync();
+  if(force)await processCloudOutbox();
 }
 function syncAuthUI(loggedIn) {
   document.getElementById('auth-user-btn').style.display = loggedIn ? '' : 'none';
@@ -7986,6 +8355,7 @@ async function loadCloudSession(session) {
   const startupBegan=performance.now();
   if(cloudReady && currentUser?.id === session.user.id) return;
   const generation=++cloudStartupGeneration,current=()=>generation===cloudStartupGeneration&&currentUser?.id===session.user.id;
+  if(currentUser?.id!==session.user.id)flushOpenOrderDraft();
   currentUser = session.user; cloudReady=false; loadingCloud = true; setCloudLoadingOverlay(true); setCardContentLoading(true); setSyncState('Đang tải dữ liệu...');
   try {
     if(STAFF_RECEIVING_MODE) {
@@ -8053,8 +8423,8 @@ async function loadCloudSession(session) {
       if(currentUser?.id!==sessionUser||cloudOutbox.length||cloudSyncing||!canAutoApplyRemoteRefresh())return;
       processTrashRetention({announce:false}).catch(error=>console.warn('Chưa dọn được thùng rác',error));
     },5000);
-    setSyncState('Đã đồng bộ', 'ok');
-    if(cloudOutbox.length) {
+    setSyncState(cloudSyncConflict?'Đồng bộ cần đối chiếu':'Đã đồng bộ',cloudSyncConflict?'err':'ok');
+    if(cloudOutbox.length&&!cloudSyncConflict) {
       setSyncState(`Chờ đồng bộ (${cloudOutbox.length})`);
       setTimeout(processCloudOutbox, 0);
     }
@@ -8081,7 +8451,11 @@ async function initCloudApp() {
       if(session) startCloudSession(session);
       else {
         ++cloudStartupGeneration;cloudSessionStartPromise=null;cloudSessionStartUser='';
-        currentUser=null; cloudReady=false;loadingCloud=false; cloudSyncedSnapshot=null;
+        closeOrderFormWithoutSaving();
+        clearTimeout(orderDraftCloudTimer);clearTimeout(deliveryDraftCloudTimer);
+        clearTimeout(cloudSyncTimer);clearTimeout(cloudRetryTimer);
+        currentUser=null; activeWorkspace=null; cloudReady=false;loadingCloud=false; cloudSyncedSnapshot=null;
+        cloudStorageScope='';cloudProductionWrite=null;cloudSyncConflict=null;cloudOrderPatches={};cloudOrderRestores={};cloudOutbox=[];
         if(cloudChannel){void sb.removeChannel(cloudChannel);cloudChannel=null;}
         cloudRealtimeStatus='IDLE';cloudRemoteRevisionWorkspace='';cloudRemoteRevisions.clear();
         clearTimeout(cloudRealtimeReconnectTimer);clearTimeout(cloudRemoteReconcileTimer);
@@ -12732,6 +13106,7 @@ function rebuildOrderProduction(order) {
   });
 }
 function saveEditOrder() {
+  if(!requirePermission('orders.manage','sửa đơn hàng'))return;
   const o = orders.find(x=>x.id===editingOrderId); if (!o) return;
   if (!editOrdererSel) { toast('⚠️ Chọn người đặt trước khi lưu'); return; }
   if (!editOrderItems.length) { toast('Order cần có ít nhất một model'); return; }
@@ -12743,6 +13118,7 @@ function saveEditOrder() {
   if(itemsChanged && editOrderHasProductionProgress()) {
     toast('Order đã có tiến độ in; chưa thể thay đổi sản phẩm để tránh sai số lượng trên plate.'); return;
   }
+  const before={...o};
   o.note       = document.getElementById('eo-note').value.trim();
   o.projectId  = document.getElementById('eo-proj').value || null;
   o.deliveryDate = document.getElementById('eo-delivery').value || null;
@@ -12752,6 +13128,8 @@ function saveEditOrder() {
     rebuildOrderProduction(o);
   }
   if (!o.note) o.note = autoOrderName(o.orderedBy, o.createdAt, o.items);
+  if(!itemsChanged)queueOrderFieldPatch(o,before);
+  else if(cloudOrderPatches[o.id]){delete cloudOrderPatches[o.id];saveLocalValue(CLOUD_ORDER_PATCHES_KEY,cloudOrderPatches);}
   sv(K.orders, orders);
   if(itemsChanged) { sv(K.plates, plates); sv(K.pitems, pitems); }
   closeDialog('dlg-order-edit');
@@ -17339,7 +17717,7 @@ let cart = []; // [{id, modelId, partId, qty, note}]
 const ORDER_DRAFT_LOCAL_PREFIX='ps_order_draft_v1';
 let orderDraftCloudTimer=0,orderDraftInputTimer=0,orderDraftIsFinalized=false,orderSubmitPending=false;
 function orderDraftAccountKey(){return currentUser?.id||'';}
-function orderDraftLocalKey(){return `${ORDER_DRAFT_LOCAL_PREFIX}:${orderDraftAccountKey()||'local'}`;}
+function orderDraftLocalKey(){return `${ORDER_DRAFT_LOCAL_PREFIX}:${cloudStorageScope||orderDraftAccountKey()||'local'}`;}
 function normalizeOrderDraft(raw){
   if(!raw||typeof raw!=='object')return null;
   const lines=Array.isArray(raw.cart)?raw.cart.map(line=>({id:String(line?.id||uid()),kind:line?.kind==='product'?'product':'model',productId:String(line?.productId||''),modelId:String(line?.modelId||''),partId:line?.partId||null,qty:Math.max(1,Number(line?.qty)||1),note:String(line?.note||'').slice(0,500),colorChoices:line?.colorChoices&&typeof line.colorChoices==='object'?{...line.colorChoices}:{},variantId:line?.variantId||null})).filter(line=>line.kind==='product'?line.productId:line.modelId):[];
@@ -17871,7 +18249,10 @@ async function submitOrder(){
 }
 
 function saveNewOrderLocally(changes){
-  const entries=[...changes].map(([key,value])=>({key,before:localStorage.getItem(key),after:value===null?null:JSON.stringify(lightLocalValue(key,value))}));
+  const entries=[...changes].map(([key,value])=>{
+    const storageKey=workspaceStorageKey(key);
+    return {key:storageKey,before:localStorage.getItem(storageKey),after:value===null?null:JSON.stringify(lightLocalValue(key,value))};
+  });
   const applied=[];
   try{
     for(const entry of entries){
@@ -18399,6 +18780,7 @@ function fulfillmentOrderImage(order){ const first=orderItemsRaw(order)[0]; cons
 function legacySaveOperations(){ sv(K.operations,operations); renderSb(); if(curPage==='fulfillment')renderFulfillmentPage(); if(curPage==='kiotviet')renderKiotVietPage(); if(curPage==='progress')renderQueue(); if(curPage==='orders')renderOrders(); if(typeof renderDashboard==='function')renderDashboard(); }
 function confirmDeleteFulfillmentOrder(orderId){
   const order=rawOrder(orderId);if(!order)return;
+  if(openCustomOrderForDeletion(order))return;
   const itemCount=orderItemsRaw(order).length;
   showActionDialog({
     title:'Xóa đơn khỏi hệ thống?',icon:'🗑️',
@@ -18409,7 +18791,9 @@ function confirmDeleteFulfillmentOrder(orderId){
   });
 }
 function deleteFulfillmentOrderConfirmed(orderId){
+  if(!requirePermission('orders.manage','xóa đơn hàng'))return;
   const order=rawOrder(orderId);if(!order)return;
+  if(openCustomOrderForDeletion(order))return;
   orders=orders.filter(o=>o.id!==orderId);
   pitems=pitems.filter(item=>item.orderId!==orderId);
   sv(K.orders,orders);sv(K.pitems,pitems);closeActionDialog();
@@ -19025,7 +19409,7 @@ function saveNightPlanEditor(){
   if(hasManualDraft&&!confirm('Phần nhập tay chưa được thêm vào plate. Lưu các mục đã thêm và giữ phần đang soạn làm nháp?'))return;
   const prior=plan.machines[state.machineId].plate;
   plan.machines[state.machineId].plate={...prior,id:prior?.id||uid(),source:'manual',items:state.items.map(item=>({...item,qty:Math.min(99999,Math.max(1,Math.floor(Number(item.qty)||1)))})),createdAt:prior?.createdAt||new Date().toISOString()};
-  try{localStorage.setItem(K.operations,JSON.stringify(operations));}catch{plan.machines[state.machineId].plate=prior;nightPlanFeedback('Chưa lưu được plate trên thiết bị. Bản nháp và file vẫn giữ nguyên; hãy thử lại.');return;}
+  try{localStorage.setItem(workspaceStorageKey(K.operations),JSON.stringify(operations));}catch{plan.machines[state.machineId].plate=prior;nightPlanFeedback('Chưa lưu được plate trên thiết bị. Bản nháp và file vẫn giữ nguyên; hãy thử lại.');return;}
   savePrintPlan(plan);
   if(hasManualDraft||state.conflicts?.length){state.basePlate=JSON.stringify(plan.machines[state.machineId].plate);persistNightPlanDraft();}else localStorage.removeItem(nightPlanDraftKey());
   _closeDialogBase('dlg-mv');toast('Đã lưu plate trên thiết bị · cloud đồng bộ nền.');
@@ -20211,8 +20595,8 @@ function normalizeDeliveryWorkspaceDraft(draft){
   if(!draft||typeof draft!=='object')return null;const base=emptyDeliveryWorkspaceState();
   return {...base,...draft,step:['products','info','photos'].includes(draft.step)?draft.step:'products',selected:{...(draft.selected||{})},non3dSelected:{...(draft.non3dSelected||{})},unreconciledSelected:{...(draft.unreconciledSelected||{})},unreconciledVariants:{...(draft.unreconciledVariants||{})},unreconciledVariantSelected:{...(draft.unreconciledVariantSelected||{})},pendingKiot:Array.isArray(draft.pendingKiot)?draft.pendingKiot:[],openingSelected:{...(draft.openingSelected||{})},form:{...(draft.form||{})}};
 }
-function deliveryWorkspaceLocalKey(){return `${DELIVERY_CART_DRAFT_KEY}:${currentUser?.id||'local'}`;}
-function loadDeliveryWorkspaceDraft(){try{const raw=localStorage.getItem(deliveryWorkspaceLocalKey())||localStorage.getItem(DELIVERY_CART_DRAFT_KEY)||'null',draft=normalizeDeliveryWorkspaceDraft(JSON.parse(raw));if(draft?.accountId&&currentUser?.id&&draft.accountId!==currentUser.id)return null;return draft;}catch(_){return null;}}
+function deliveryWorkspaceLocalKey(){return `${DELIVERY_CART_DRAFT_KEY}:${cloudStorageScope||currentUser?.id||'local'}`;}
+function loadDeliveryWorkspaceDraft(){try{const raw=localStorage.getItem(deliveryWorkspaceLocalKey())||(!cloudStorageScope&&!initialLegacyWorkspace&&localStorage.getItem(DELIVERY_CART_DRAFT_KEY))||'null',draft=normalizeDeliveryWorkspaceDraft(JSON.parse(raw));if(draft?.accountId&&currentUser?.id&&draft.accountId!==currentUser.id)return null;return draft;}catch(_){return null;}}
 let deliveryDraftCloudTimer=0;
 function deliveryDraftAccountKey(){return currentUser?.id||'';}
 function queueDeliveryWorkspaceCloudSave(){
@@ -20900,7 +21284,7 @@ async function preserveLegacyKiotMappingChanges(values){
   for(const row of candidates){
     const actual={mapping:(remote.mappings||[]).find(mapping=>mapping.sku===row.sku)||null,skipped:(remote.skippedSkus||[]).find(skipped=>skipped.sku===row.sku)||null},desired={mapping:row.mapping,skipped:row.skipped};
     if(canonical(actual)===canonical(desired))continue;
-    let cachedScope;try{cachedScope=JSON.parse(localStorage.getItem(CLOUD_CACHE_SCOPE_KEY)||'null');}catch(_){}
+    let cachedScope;try{cachedScope=JSON.parse(localStorage.getItem(workspaceStorageKey(CLOUD_CACHE_SCOPE_KEY))||'null');}catch(_){}
     if(cachedScope?.workspace!==cloudWorkspaceId())throw new Error('Bản ghép cũ chưa rõ xưởng sở hữu; giữ hàng chờ, hãy mở đúng sản phẩm và lưu lại.');
     // An unknown baseline never overwrites an existing server link; it becomes a reviewable conflict.
     const saved=await window.KiotMappingSync.save(row.sku,desired,{mapping:null,skipped:null,revision:null});if(saved.scopeChanged)throw new Error('Xưởng đã đổi; bản ghép cũ vẫn được giữ.');
@@ -22947,8 +23331,14 @@ function celebrateIfReady(order) {
   if (p.pct >= 100) toast(`🎉 Đơn "${order.note||'Đơn'}" đã in xong toàn bộ — sẵn sàng giao xưởng!`);
 }
 
+function openCustomOrderForDeletion(order){
+  if(!cloudReady||order?.kind!=='custom')return false;
+  location.href='custom-orders.html?order='+encodeURIComponent(order.id);
+  return true;
+}
 function deleteOrder(orderId, fromProjectDetail) {
   if(!requirePermission('orders.manage','xoá đơn hàng'))return;
+  if(openCustomOrderForDeletion(rawOrder(orderId)))return;
   if (!confirm('Xoá toàn bộ đơn này? Các part đã phân bổ vào plate cũng sẽ bị xoá.')) return;
   orders = orders.filter(o => o.id !== orderId);
   pitems = pitems.filter(pi => pi.orderId !== orderId);
