@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
 import { chromium } from 'playwright-core';
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 const base = 'https://staff-password.test/';
 const root = resolve('.');
+const evidence = resolve('qa-results/access-directory');
+mkdirSync(evidence, { recursive: true });
 const workspaceId = '11111111-1111-4111-8111-111111111111';
 const ownerId = '22222222-2222-4222-8222-222222222222';
 const staffId = '33333333-3333-4333-8333-333333333333';
@@ -13,14 +15,15 @@ const inviteId = '44444444-4444-4444-8444-444444444444';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml' };
 const rows = [
   { user_id: ownerId, name: 'Chủ xưởng', email: 'admin@example.com', status: 'member', role: 'owner', is_owner: true },
-  { user_id: staffId, name: 'Linh', email: 'linh@example.com', status: 'member', is_owner: false },
+  { user_id: staffId, name: 'Linh Đỗ', email: 'linh@example.com', status: 'member', is_owner: false },
   { user_id: inviteId, name: 'Đang mời', email: 'invite@example.com', status: 'invited', is_owner: false },
 ];
 
 try {
-  for (const viewport of [{ width: 320, height: 640 }, { width: 1440, height: 900 }]) {
+  for (const [viewport, theme] of [[{ width: 320, height: 640 }, 'dark'], [{ width: 1440, height: 900 }, 'light']]) {
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce', serviceWorkers: 'block' });
     const page = await context.newPage();
+    await page.addInitScript(value => localStorage.setItem('ps_theme', value), theme);
     await page.route('**/*', (route) => {
       const url = new URL(route.request().url());
       if (url.origin !== new URL(base).origin) return route.abort();
@@ -48,20 +51,50 @@ try {
       await loadWorkspaceAccessRows();
       goPage('access');
     }, { workspaceId, ownerId, rows });
+    const cards = page.locator('[data-access-member]');
+    const staff = cards.filter({ hasText: 'linh@example.com' });
+    const invited = cards.filter({ hasText: 'invite@example.com' });
+    const search = page.getByRole('searchbox', { name: 'Tìm tài khoản' });
+    assert.equal(await page.locator('[data-permission]').count(), 0, 'Closed records do not render permission controls');
+    await search.fill('Linh Do');
+    await page.getByText('1 tài khoản', { exact: true }).waitFor();
+    assert.equal(await staff.isVisible(), true);
+    assert.equal(await invited.isVisible(), false);
+    await search.fill('khong co tai khoan nay');
+    await page.getByText('Không tìm thấy tài khoản phù hợp.').waitFor();
+    await search.clear();
+    const filter = page.getByLabel('Lọc theo trạng thái');
+    await filter.selectOption('invited');
+    assert.equal(await staff.isVisible(), false);
+    assert.equal(await invited.isVisible(), true);
+    await filter.selectOption('all');
+    await page.screenshot({ path: resolve(evidence, `directory-${viewport.width}-${theme}.png`) });
+    await staff.locator('summary').press('Enter');
+    await staff.getByText('Sản xuất', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Đặt mật khẩu mới' }).count(), 0, 'Owner needs the server-assigned grant');
     await page.evaluate(id => {
       currentUser.app_metadata.staff_password_workspace_id = id;
       renderAccessPage();
     }, workspaceId);
     const action = page.getByRole('button', { name: 'Đặt mật khẩu mới' });
+    await action.waitFor();
     assert.equal(await action.count(), 1, 'Only a staff member can be selected');
+    const editedName=staff.getByLabel('Tên hiển thị');
+    await editedName.fill('Nháp tên nhân viên');
+    await staff.getByLabel('Mẫu vai trò').selectOption('workshop');
+    assert.equal(await editedName.inputValue(), 'Nháp tên nhân viên');
+    assert.equal(await staff.locator('[data-permission="batches.report"] input').isChecked(), true);
+    await invited.locator('summary').click();
+    assert.equal(await staff.getAttribute('open'), null);
+    await staff.locator('summary').click();
+    assert.equal(await editedName.inputValue(), 'Nháp tên nhân viên');
     await page.locator(`#access-email-cloud-${staffId}`).fill('unsaved-edit@example.com');
     await action.click();
     const dialog = page.getByRole('dialog', { name: 'Đặt mật khẩu mới cho nhân viên' });
     const password = dialog.getByLabel('Mật khẩu mới', { exact: true });
     const confirmation = dialog.getByLabel('Xác nhận mật khẩu mới');
     const save = dialog.getByRole('button', { name: 'Lưu mật khẩu mới' });
-    await dialog.getByText('Linh (linh@example.com)').waitFor();
+    await dialog.getByText('Linh Đỗ (linh@example.com)').waitFor();
     await page.waitForFunction(() => document.activeElement.id === 'staff-new-password');
     const buttonSize = await save.evaluate(el => ({ actual: el.getBoundingClientRect().height, minimum: getComputedStyle(el).minHeight }));
     assert.ok(buttonSize.actual >= 44, `Save touch target: ${JSON.stringify(buttonSize)}`);

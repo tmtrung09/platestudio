@@ -15,7 +15,7 @@
     if(item.url)URL.revokeObjectURL(item.url);
   }
   function stop(){cancel();active=null;notice='';paint();}
-  function valid(){return !!active&&allowed&&!document.hidden&&active.scope===scope&&active.isCurrent();}
+  function valid(){return !!active&&allowed&&active.scope===scope&&active.isCurrent();}
   function wasHeard(key){if(heard.has(scope+':'+key))return true;try{return JSON.parse(localStorage.getItem(history())||'[]').includes(key);}catch{return false;}}
   function remember(key){heard.add(scope+':'+key);try{const rows=JSON.parse(localStorage.getItem(history())||'[]');localStorage.setItem(history(),JSON.stringify([...new Set([...rows,key])].slice(-120)));}catch{}}
   async function audioBlob(target,signal){
@@ -41,11 +41,11 @@
     return blob;
   }
   async function speak({isPreview=false,manual=false,livePreview=false}={}){
-    if(!supported||!allowed||document.hidden||!isPreview&&!valid())return false;
+    if(!supported||!allowed||(isPreview?document.hidden:!valid()))return false;
     if(!activated&&!manual){notice='Chạm Đọc thông báo để phát giọng Enya.';paint();return false;}
-    cancel();const target=isPreview?null:active,owner=scope,item={abort:new AbortController(),audio:null,url:null,timer:0,gapTimer:0,stage:'intro'};playback=item;
+    cancel();const target=isPreview?null:active,owner=scope,item={abort:new AbortController(),audio:null,url:null,timer:0,gapTimer:0,stage:'intro',isPreview};playback=item;
     notice=isPreview?'Đang mở bản nghe thử Enya…':'Đang chuẩn bị giọng Enya…';paint();
-    const current=()=>playback===item&&owner===scope&&allowed&&!document.hidden&&(!target||active===target&&valid());
+    const current=()=>playback===item&&owner===scope&&allowed&&(isPreview?!document.hidden:active===target&&valid());
     const retire=()=>{if(playback===item){cancel();notice='';paint();}};
     item.timer=setTimeout(()=>{if(!current())return;cancel();notice='Giọng Enya đang tải chậm. Chọn Đọc thông báo để thử lại.';paint();},85000);
     try{
@@ -97,7 +97,7 @@
     const started=attempt();paint();return started;
   }
   function update(data){if(!active)return;if(!allowed||active.scope!==scope||!active.isCurrent()){stop();return;}if(textFor(active)!==textFor({...active,...data})){cancel();notice='Nội dung đã cập nhật. Chọn Đọc thông báo để nghe.';active.attempted=true;}Object.assign(active,data);paint();}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancel();notice='';paint();}});window.addEventListener('pagehide',stop);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&playback?.isPreview){cancel();notice='';paint();}});window.addEventListener('pagehide',stop);
   window.addEventListener('storage',event=>{if(event.key!==preference())return;try{enabled=localStorage.getItem(preference())==='1';}catch{enabled=false;}if(!enabled){cancel();notice='';}paint();});
   const activate=event=>{if(event.isTrusted)activated=true;};window.addEventListener('pointerdown',activate,{passive:true});window.addEventListener('keydown',activate);
   window.PlatePrinterVoice={mount,present,update,stop,configure,textFor};

@@ -227,7 +227,7 @@
     const release=alertRelease;alertRelease=null;release?.();
   }
   function alertBlocked() {
-    return [...document.querySelectorAll('.dlg-ov,[aria-modal="true"],.auth-ov,#ov-order-form,#ov-project-detail,#ov-batch-report,#confirm-ov,.cloud-loading-ov,.guide-tour-ov')].some(node=>{
+    return [...document.querySelectorAll('.dlg-ov,dialog[open],[aria-modal="true"],.auth-ov,#ov-order-form,#ov-project-detail,#ov-batch-report,#confirm-ov,.cloud-loading-ov,.guide-tour-ov')].some(node=>{
       if(node.closest('#printer-required-alert'))return false;
       const style=getComputedStyle(node);
       return node.getClientRects().length&&style.visibility!=='hidden'&&node.getAttribute('aria-hidden')!=='true';
@@ -293,14 +293,14 @@
     document.body.append(overlay);alertOverlay=overlay;
     for(const node of document.body.children)if(node!==overlay){alertInert.set(node,node.inert);node.inert=true;}
     if(row.durable===false)setText(overlay.querySelector('.pm-alert-status'),'Chưa lưu được thông báo trên thiết bị. Đừng tải lại trang trước khi xác nhận.');
-    overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});
+    if(!document.hidden)overlay.querySelector('[data-alert-ack]').focus({preventScroll:true});
     const spoken=window.PlatePrinterVoice?.present({requestAudio:requestVoiceAudio,scope,event,issues:row.issues,name:aliases[device?.id]||device?.name,key:row.confirmationKey||event.id,card:overlay.querySelector('.pm-alert-card'),isCurrent:()=>{const ctx=context();return alertOverlay===overlay&&ctx.allowed&&scope===ctx.workspace+':'+ctx.user&&alertAssessment(row.event).status==='active';}});
     if(!spoken)playNotificationSound();
   }
   function pumpRequiredAlerts() {
     const ctx=context(),valid=ctx.allowed&&scope===ctx.workspace+':'+ctx.user;
     window.PlatePrinterVoice?.configure(valid?scope:'',valid);
-    if(!valid||document.hidden){closeRequiredAlert();return;}
+    if(!valid){closeRequiredAlert({restoreFocus:!document.hidden});return;}
     syncRequiredAlerts();reconcileRequiredAlerts();
     if(alertOverlay&&(!requiredAlerts.has(alertOverlay.dataset.eventId)||alertAssessment(requiredAlerts.get(alertOverlay.dataset.eventId).event).status!=='active'))closeRequiredAlert();
     if(alertOverlay) {
@@ -313,7 +313,7 @@
       setText(alertOverlay.querySelector('.pm-alert-queue'),count>1?`${count} thông báo · hiển thị lần lượt`:'');return;
     }
     if(alertBusy||alertLockPending||!requiredAlerts.size||alertBlocked())return;
-    const present=()=>{if(context().allowed&&!document.hidden&&!alertBlocked()){syncRequiredAlerts();reconcileRequiredAlerts();const row=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').sort((a,b)=>Date.parse(a.event.createdAt)-Date.parse(b.event.createdAt))[0];if(row)showRequiredAlert(row);}};
+    const present=()=>{if(context().allowed&&!alertBlocked()){syncRequiredAlerts();reconcileRequiredAlerts();const row=[...requiredAlerts.values()].filter(row=>alertAssessment(row.event).status==='active').sort((a,b)=>Date.parse(a.event.createdAt)-Date.parse(b.event.createdAt))[0];if(row)showRequiredAlert(row);}};
     if(!navigator.locks){present();return;}
     alertLockPending=true;const gen=generation;
     void navigator.locks.request('ps-printer-alert-presenter:'+scope,{ifAvailable:true},async lock=>{
@@ -1302,6 +1302,7 @@
     if (!document.hidden) {
       lastPoll = 0;
       tick();
+      if(alertOverlay&&!alertOverlay.contains(document.activeElement))alertOverlay.querySelector('[data-alert-ack]')?.focus({preventScroll:true});
     }
   });
   window.addEventListener("pagehide", () => {abort?.abort();closeRequiredAlert({restoreFocus:false});});

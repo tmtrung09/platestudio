@@ -141,19 +141,29 @@ try{
    await page.keyboard.press('Escape');await alert(page).waitFor({state:'detached'});await page.evaluate(()=>{tts.introError=false;tts.holdChime=true;});await send(page,'printer_finished',{runId:'chime-resume-run'});await alert(page).waitFor();await page.waitForFunction(()=>tts.chimes===4);
    await send(page,'printer_resumed');await alert(page).waitFor({state:'detached'});await page.evaluate(()=>tts.endChime());await page.waitForTimeout(250);assert.equal((await calls(page)).length,2,'Machine resume cancels both intro and queued voice');
    await send(page,'printer_finished',{runId:'chime-gap-run'});await alert(page).waitFor();await page.waitForFunction(()=>tts.chimes===5);
-   await page.evaluate(()=>{tts.endChime();Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});await page.waitForTimeout(250);assert.equal((await calls(page)).length,2,'Hiding during the gap cancels the scheduled voice');
+   await page.evaluate(()=>{tts.endChime();Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+   await page.waitForFunction(()=>tts.calls.length===3&&tts.speaking);
+   assert.equal(await alert(page).isVisible(),true,'Switching tabs during the chime gap retains the pending announcement');
+   await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+   assert.equal(await page.evaluate(()=>tts.speaking),false,'Leaving the page cancels speech');
   }else{
-   await settings.locator('[data-voice-toggle]').click();await page.waitForFunction(()=>tts.speaking);await page.evaluate(()=>{tts.finish();tts.hold=true;closeSystemNotifications(false);});
+   await settings.locator('[data-voice-toggle]').click();await page.waitForFunction(()=>tts.speaking);
+   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+   assert.equal(await page.evaluate(()=>tts.speaking),false,'A preview stops when the tab is hidden');
+   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));tts.hold=true;closeSystemNotifications(false);});
    const chimesBefore=await page.evaluate(()=>tts.chimes);
    await send(page,'printer_paused',{issues:[fault]});await alert(page).waitFor();await page.waitForFunction(()=>!!tts.release);
    assert.equal(await page.evaluate(()=>tts.chimes),chimesBefore,'No chime while the actual sentence is still loading');
    const count=(await calls(page)).length;await send(page,'printer_resumed');await alert(page).waitFor({state:'detached'});await page.evaluate(()=>tts.release());await page.waitForTimeout(100);assert.equal((await calls(page)).length,count,'A late audio response cannot speak an obsolete notice');
-   await page.evaluate(()=>{tts.hold=false;});await send(page,'printer_finished');await alert(page).waitFor();await page.waitForFunction(()=>speechSynthesis.speaking);
-   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.evaluate(()=>speechSynthesis.speaking),false,'Hidden page cancels speech');
+   await page.evaluate(()=>{tts.hold=false;Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+   await send(page,'printer_finished');await page.waitForFunction(()=>tts.speaking&&tts.calls.length===2);
+   assert.equal(await alert(page).evaluate(panel=>panel.contains(document.activeElement)),false,'A new background announcement does not move focus');
    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+   assert.equal(await page.evaluate(()=>tts.speaking),true,'Returning to the tab keeps the in-progress announcement');
+   await page.evaluate(()=>tts.finish());
    await alert(page).getByRole('button',{name:'Đọc lại',exact:true}).click();await page.waitForFunction(()=>tts.speaking);assert.equal(await page.evaluate(()=>speechSynthesis.speaking),true,'Returning to the page retains manual replay of a valid notice');
   }
   await context.close();
  }
- console.log('PASS printer voice: 6 layouts/themes; chime then pause then Enya; cancellation during intro/gap/voice; missing cue fallback; queue, causes, retry, reload, slow audio and permissions. Playback mocked; real media verified by printer-chime-qa.');
+ console.log('PASS printer voice: 6 layouts/themes; background delivery and focus; chime then pause then Enya; cancellation during intro/gap/voice; retry, permissions and preview. Playback mocked; real media verified by printer-chime-qa.');
 }finally{await browser.close();}

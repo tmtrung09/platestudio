@@ -224,6 +224,10 @@
   Form hiện danh tính và yêu cầu xác nhận mật khẩu mới; giữ nháp khi lỗi, xóa
   khi đóng, chỉ báo thành công sau xác nhận Auth. Không lưu hoặc ghi log mật khẩu.
   Guard: `tools/staff-password-admin-api-qa.mjs`, `tools/staff-password-admin-ui-qa.mjs`.
+- Phân quyền mở bằng danh sách tài khoản gọn, có tìm không dấu theo tên, email,
+  vai trò và lọc theo trạng thái thành viên. Một lần chỉ bung chi tiết một tài
+  khoản. Nhóm quyền theo nghiệp vụ; tìm/lọc và đổi vai trò giữ ô đang nhập.
+  Giữ thao tác đặt mật khẩu trên đúng thẻ thành viên đủ quyền.
 
 - Màn đăng nhập dùng nền xanh lá liền mạch giữa phần nhận diện và form; lời chào
   dùng kiểu chữ nhẹ, có đoạn nhấn nghiêng và diễn đạt đúng việc đăng nhập/tạo tài
@@ -472,7 +476,7 @@
 - Trước mỗi lần đọc thông báo máy bằng Enya, phát tiếng hiệu ngắn kiểu thông báo
   sân bay rồi ngắt nhẹ trước giọng nói; không phát chồng hai phần hoặc phát trước
   khi câu đọc đã sẵn sàng. Nghe thử gồm cùng trình tự. Tiếng hiệu không đánh dấu
-  đã đọc; đóng/hủy/đổi trạng thái/mất quyền/ẩn trang phải dừng cả tiếng hiệu,
+  đã đọc; đóng/hủy/đổi trạng thái/mất quyền/rời trang phải dừng cả tiếng hiệu,
   khoảng chờ và giọng đọc, không để câu cũ phát muộn.
 
 - Giọng đọc thông báo máy dùng giọng AI Enya đã duyệt; dùng âm thanh tạo sẵn/lưu
@@ -485,8 +489,10 @@
   vì lỗi; đọc tên máy và trạng thái/nguyên nhân đã xác định, không suy nguyên
   nhân từ mã chưa hiểu. Theo hàng chờ và khóa trình bày chung, không đọc chồng
   hoặc tự lặp cùng lần chuyển trạng thái qua reload/nhiều tab. Đóng thông báo,
-  máy in tiếp/đổi mẻ, mất quyền/đổi xưởng hoặc ẩn trang thì dừng giọng; giữ nguyên
-  xác nhận, lịch sử, dữ liệu và âm chụp. Guard: tools/printer-voice-qa.mjs.
+  máy in tiếp/đổi mẻ, mất quyền/đổi xưởng hoặc rời trang thì dừng giọng. Khi tab
+  chuyển xuống nền, thông báo máy hợp lệ vẫn phát nếu trình duyệt cho phép và
+  trang còn chạy; không lấy focus. Bản nghe thử dừng khi ẩn tab. Giữ xác nhận,
+  lịch sử, dữ liệu và âm chụp. Guard: `tools/printer-voice-qa.mjs`.
 
 - Thông báo máy có đồ họa riêng theo loại trạng thái và dòng máy thực tế (A1,
   P1S, P2S, H2S), mô tả được trạng thái bằng hình dáng/chi tiết, không chỉ đổi
