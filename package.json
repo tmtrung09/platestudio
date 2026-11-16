@@ -23,7 +23,8 @@
     "qa:order-stepper": "node tools/order-stepper-qa.mjs",
     "qa:filament-palette": "node tools/filament-palette-sql-qa.mjs && node tools/filament-palette-ui-qa.mjs",
     "qa:care": "node tools/customer-care-sql-qa.mjs && node tools/customer-care-notifications-qa.mjs && node tools/customer-care-ui-qa.mjs",
-    "qa:care-api": "npx --yes deno@2.7.10 test --frozen --node-modules-dir=none --allow-env tools/customer-care-api-qa.ts"
+    "qa:care-api": "npx --yes deno@2.7.10 test --frozen --node-modules-dir=none --allow-env tools/customer-care-api-qa.ts",
+    "qa:staff-password": "node tools/staff-password-admin-api-qa.mjs && node tools/staff-password-admin-ui-qa.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

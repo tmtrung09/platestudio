@@ -213,6 +213,18 @@
 
 ## Khởi động, đồng bộ và camera
 
+- Link đặt lại mật khẩu từ email mở form nhập và xác nhận mật khẩu mới cho mọi
+  tài khoản. Dùng phiên khôi phục riêng, chỉ vào xưởng qua luồng đăng nhập thông
+  thường; link hết hạn hoặc đã dùng hướng dẫn yêu cầu email mới. Lỗi lưu giữ
+  nội dung để thử lại; chỉ báo đã đổi sau xác nhận server. Guard:
+  `tools/password-recovery-qa.mjs`.
+- Trong Phân quyền, admin được cấp quyền đặt mật khẩu cho thành viên của đúng
+  xưởng được cấp trên Supabase. Server xác minh phiên, quyền admin theo xưởng và
+  thành viên theo UUID mỗi lần lưu. Chặn tài khoản admin và tài khoản ngoài xưởng.
+  Form hiện danh tính và yêu cầu xác nhận mật khẩu mới; giữ nháp khi lỗi, xóa
+  khi đóng, chỉ báo thành công sau xác nhận Auth. Không lưu hoặc ghi log mật khẩu.
+  Guard: `tools/staff-password-admin-api-qa.mjs`, `tools/staff-password-admin-ui-qa.mjs`.
+
 - Màn đăng nhập dùng nền xanh lá liền mạch giữa phần nhận diện và form; lời chào
   dùng kiểu chữ nhẹ, có đoạn nhấn nghiêng và diễn đạt đúng việc đăng nhập/tạo tài
   khoản. Điện thoại bỏ mô tả khẩu hiệu và dòng tên không gian làm việc; đồ họa máy

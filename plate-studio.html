@@ -17,6 +17,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <script>try{if(localStorage.getItem('ps_theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
+<script>
+const passwordRecovery = (() => {
+  const url = new URL(location.href);
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  const fromRecovery = fragment.get('type') === 'recovery';
+  const linkError = fragment.get('error_code') || url.searchParams.get('error_code');
+  if (!fromRecovery && linkError !== 'otp_expired' && url.searchParams.get('password-recovery') !== '1') return null;
+
+  // Clear credentials before startup code or navigation can reuse this URL.
+  url.hash = '';
+  for (const key of ['error', 'error_code', 'error_description']) url.searchParams.delete(key);
+  url.searchParams.set('password-recovery', '1');
+  history.replaceState(history.state, '', url);
+  return {
+    accessToken: fromRecovery && !linkError ? fragment.get('access_token') : null,
+    refreshToken: fromRecovery && !linkError ? fragment.get('refresh_token') : null
+  };
+})();
+</script>
 <style id="platedio-startup-style">
 /* Startup styles and SVG are inline so opening the app needs no decorative request. */
 #platedio-startup{--accent:#b6a1ff;--loader:#111017;--muted:#a6a1b5;--word:#fff;--shadow:#0008;position:fixed;z-index:100000;inset:0;display:none;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 43%,#b6a1ff12,transparent 56%),var(--loader);color:var(--word);font-family:Arial,Helvetica,sans-serif;clip-path:polygon(0 0,115% 0,100% 100%,0 100%)}
@@ -114,7 +133,7 @@ html[data-platedio-background] #platedio-startup .moving{animation-play-state:pa
    placeholder and never make a network request. */
 (()=>{
   const release=document.documentElement.dataset.plateRelease||'';
-  if(!/^[a-f0-9]{7,40}$/i.test(release)||location.protocol==='file:')return;
+  if(passwordRecovery||!/^[a-f0-9]{7,40}$/i.test(release)||location.protocol==='file:')return;
   const check=async()=>{
     try{
       const response=await fetch(new URL('release.json',document.baseURI),{cache:'no-store'});
@@ -2348,6 +2367,12 @@ html[data-theme="light"] .more-sheet-footer .more-item{background:transparent}
 .la-row-between{ display:flex; align-items:center; justify-content:flex-end; margin-bottom:20px }
 .la-forgot{ font-size:12.5px; color:var(--la-accent); font-weight:600; text-decoration:none; cursor:pointer }
 .la-forgot:hover{ text-decoration:underline }
+#auth-ov[data-password-recovery] :is(#la-segmented,#la-auth-form,#la-switch-line,.la-divider){display:none}
+#la-recovery-form[hidden],#la-recovery-form [hidden]{display:none!important}
+#la-recovery-message{font-size:14px;line-height:1.45;text-align:left;color:var(--la-text);overflow-wrap:anywhere}
+#la-recovery-message:not(:empty){margin:0 0 14px}
+#la-recovery-submit:disabled{cursor:wait}
+.la-recovery-back{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:6px}
 
 /* ── form message ─────────────────────── */
 .la-form-msg{
@@ -2849,6 +2874,18 @@ html[data-theme="light"] .batch-ai-stamp.reviewed{background:linear-gradient(110
 .access-member-card .form-grid .field>span{font-size:12px;font-weight:750;line-height:1.2;color:var(--t2)}
 .access-member-card .form-grid .field>input,.access-member-card .form-grid .field>select{width:100%;min-width:0;margin:0}
 .access-member-card .access-permission-grid{margin-top:16px}
+.access-member-actions [data-staff-password-target][hidden]{display:none!important}
+.access-member-actions [data-staff-password-target],#staff-password-dialog .btn{min-height:44px!important}
+#staff-password-dialog{position:fixed;inset:0;margin:auto;width:min(440px,calc(100vw - 28px));max-height:calc(100dvh - 32px);color:var(--t)}
+#staff-password-dialog:not([open]){display:none!important}
+#staff-password-dialog::backdrop{background:#0009}
+#staff-password-dialog .dlg-actions{flex-wrap:wrap}
+#staff-password-dialog .field input{width:100%}
+#staff-password-account{font-size:14px;line-height:1.45;margin-bottom:14px;overflow-wrap:anywhere}
+#staff-password-message{font-size:13px;line-height:1.45;color:var(--t2)}
+#staff-password-message:empty{margin:0}
+@media(max-width:860px){#staff-password-dialog .field input{font-size:16px}}
+@media(prefers-reduced-motion:reduce){#staff-password-dialog{animation:none}}
 .access-permission[data-permission="batches.report"]{box-shadow:inset 3px 0 0 #57d8ff}.access-permission[data-permission="batches.report"] b{color:color-mix(in srgb,var(--t) 52%,#57d8ff)}
 .access-permission[data-permission="batches.describe"]{box-shadow:inset 3px 0 0 #70d8a4}.access-permission[data-permission="batches.describe"] b{color:color-mix(in srgb,var(--t) 52%,#70d8a4)}
 .access-permission[data-permission="batches.manage"]{box-shadow:inset 3px 0 0 #b981ff}.access-permission[data-permission="batches.manage"] b{color:color-mix(in srgb,var(--t) 52%,#b981ff)}
@@ -5381,6 +5418,21 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
   </form>
 
   <p class="la-switch-line" id="la-switch-line">Chưa có tài khoản? <button id="la-switch-btn" type="button">Tạo tài khoản</button></p>
+  <form id="la-recovery-form" hidden novalidate>
+    <div id="la-recovery-fields" hidden>
+      <div class="field">
+        <label for="la-recovery-password">Mật khẩu mới</label>
+        <input id="la-recovery-password" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+      <div class="field">
+        <label for="la-recovery-confirm">Xác nhận mật khẩu mới</label>
+        <input id="la-recovery-confirm" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+    </div>
+    <p id="la-recovery-message" role="status" aria-live="polite"></p>
+    <button id="la-recovery-submit" class="la-cta" type="submit" hidden>Lưu mật khẩu mới</button>
+    <a href="./" class="la-forgot la-recovery-back">Về Plate Studio</a>
+  </form>
 <p class="la-legal">Mỗi người một tài khoản, đúng phần việc của mình.</p></main></section></div>
 
 </div>
@@ -5806,6 +5858,19 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 <div id="dlg-plate"    class="dlg-ov" style="display:none"></div>
 <div id="dlg-fil"      class="dlg-ov" style="display:none"></div>
 <div id="dlg-mv"       class="dlg-ov" style="display:none"></div>
+<dialog id="staff-password-dialog" class="dlg" aria-labelledby="staff-password-title" aria-describedby="staff-password-account">
+  <h2 id="staff-password-title" class="dlg-title">Đặt mật khẩu mới cho nhân viên</h2>
+  <p id="staff-password-account"></p>
+  <form novalidate>
+    <div class="field"><label for="staff-new-password">Mật khẩu mới</label><input id="staff-new-password" type="password" autocomplete="new-password" minlength="6" required autofocus></div>
+    <div class="field"><label for="staff-confirm-password">Xác nhận mật khẩu mới</label><input id="staff-confirm-password" type="password" autocomplete="new-password" minlength="6" required></div>
+    <p id="staff-password-message" role="status"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-ghost" type="button">Hủy</button>
+      <button class="btn btn-ac" type="submit">Lưu mật khẩu mới</button>
+    </div>
+  </form>
+</dialog>
 <div id="dlg-model-history" class="dlg-ov" style="display:none"></div>
 <div id="dlg-category-assign" class="dlg-ov" style="display:none"></div>
 <div id="dlg-maker"    class="dlg-ov" style="display:none"></div>
@@ -5837,7 +5902,19 @@ body.staff-report-mode .platedio-mobile-brand{display:none!important}
 
 
 <!-- Supabase bắt đầu tải song song với mã ứng dụng, không chặn việc dựng khung đầu trang. -->
-<script>window.__psSupabaseReady=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('Không tải được thư viện kết nối.'));document.head.appendChild(s);});</script>
+<script>
+function loadCloudAuthLibrary() {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = passwordRecovery ? 'assets/custom-orders/supabase.js?v=__DEPLOY_REVISION__' : 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => { script.remove(); reject(new Error('Không tải được thư viện kết nối.')); };
+    document.head.appendChild(script);
+  });
+}
+window.__psSupabaseReady = loadCloudAuthLibrary();
+</script>
 <script>
 /* ═══════════════════════════════════════
    STORAGE KEYS
@@ -6753,7 +6830,7 @@ const CLOUD_TABLES = {
   plates: 'plates', pitems: 'plate_items', settings: 'settings', batchReports: 'batch_reports'
 };
 let activeWorkspace = null;
-let workspaceAccessRows = [];
+let workspaceAccessRows = [], workspaceAccessScope = '';
 function cloudWorkspaceId(){return activeWorkspace?.workspace_id||'';}
 function cloudWorkspaceOwnerId(){return activeWorkspace?.owner_user_id||currentUser?.id||'';}
 async function ensureCloudWorkspace(canCommit=()=>true){
@@ -6767,15 +6844,19 @@ async function ensureCloudWorkspace(canCommit=()=>true){
   activeWorkspace=row;return row;
 }
 async function registerWorkspaceProfile(){if(!sb||!currentUser)return;const {error}=await sb.rpc('register_app_profile');if(error)console.warn('Không ghi nhận danh bạ account',error);}
-async function loadWorkspaceAccessRows(){
-  if(!sb||!activeWorkspace||activeWorkspace.owner_user_id!==currentUser?.id){workspaceAccessRows=[];return [];}
+async function loadWorkspaceAccessRows(updateControls=true){
+  if(!sb||!activeWorkspace||activeWorkspace.owner_user_id!==currentUser?.id){workspaceAccessRows=[];workspaceAccessScope='';return [];}
   const owner=currentUser.id,workspace=cloudWorkspaceId();
   const {data,error}=await sb.rpc('list_workspace_access',{p_workspace_id:workspace});
   if(currentUser?.id!==owner||cloudWorkspaceId()!==workspace)return [];
   if(error){console.warn('Không tải được danh sách phân quyền',error);return workspaceAccessRows;}
   workspaceAccessRows=Array.isArray(data)?data:[];
-  const control=ensureAccessControl();control.ownerUserId=activeWorkspace.owner_user_id;
-  control.members=workspaceAccessRows.map(row=>({id:`cloud-${row.user_id}`,userId:row.user_id,name:row.name||row.email?.split('@')[0]||'Tài khoản',email:row.email||'',role:row.role||'custom',permissions:Array.isArray(row.permissions)?row.permissions:[],status:row.status||'available'}));
+  workspaceAccessScope=workspace;
+  if(updateControls){
+    const control=ensureAccessControl();control.ownerUserId=activeWorkspace.owner_user_id;
+    control.members=workspaceAccessRows.map(row=>({id:`cloud-${row.user_id}`,userId:row.user_id,name:row.name||row.email?.split('@')[0]||'Tài khoản',email:row.email||'',role:row.role||'custom',permissions:Array.isArray(row.permissions)?row.permissions:[],status:row.status||'available'}));
+  }
+  refreshStaffPasswordActions();
   return workspaceAccessRows;
 }
 const MEDIA_BUCKET = 'plate-media';
@@ -7202,6 +7283,113 @@ async function resetPasswordCloud() {
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: APP_URL });
   if (error) { authMessage(error.message); return; }
   authMessage('Đã gửi email đặt lại mật khẩu. Kiểm tra hộp thư của bạn.', false);
+}
+function openPasswordRecovery() {
+  const overlay = document.getElementById('auth-ov');
+  const title = document.getElementById('la-title');
+  const subtitle = document.getElementById('la-subtitle');
+  const form = document.getElementById('la-recovery-form');
+  const fields = document.getElementById('la-recovery-fields');
+  const password = document.getElementById('la-recovery-password');
+  const confirm = document.getElementById('la-recovery-confirm');
+  const submit = document.getElementById('la-recovery-submit');
+  const message = document.getElementById('la-recovery-message');
+  const back = form.querySelector('a');
+  const saveLabel = 'Lưu mật khẩu mới';
+  let auth;
+  let busy = false;
+
+  title.textContent = 'Đặt lại mật khẩu';
+  subtitle.textContent = 'Chọn mật khẩu mới để đăng nhập Plate Studio.';
+  overlay.dataset.passwordRecovery = '';
+  overlay.style.display = 'flex';
+  form.hidden = false;
+  const focus = (element) => PlatedioStartup.afterReady(() => element.focus());
+  const closeForm = (text) => {
+    password.value = confirm.value = '';
+    fields.hidden = submit.hidden = true;
+    message.textContent = text;
+    focus(back);
+  };
+  const invalidLink = () => closeForm('Liên kết xác thực đã hết hạn hoặc không còn hiệu lực. Hãy quay lại và yêu cầu email mới.');
+  const expired = (error) => error?.status === 401 || error?.status === 403 ||
+    ['bad_jwt', 'jwt_expired', 'session_not_found', 'session_expired', 'refresh_token_not_found',
+      'refresh_token_already_used', 'otp_expired'].includes(error?.code) || error?.name === 'AuthSessionMissingError';
+
+  async function verifyLink() {
+    if (!passwordRecovery.accessToken || !passwordRecovery.refreshToken) {
+      void window.__psSupabaseReady?.catch(() => {});
+      invalidLink();
+      return;
+    }
+    message.textContent = 'Đang xác thực liên kết…';
+    submit.hidden = true;
+    try {
+      await window.__psSupabaseReady;
+      // Keep this session separate from regular sign-in and workspace startup.
+      auth ??= window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { storageKey: 'ps-password-recovery', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      }).auth;
+      const { data, error } = await auth.setSession({ access_token: passwordRecovery.accessToken, refresh_token: passwordRecovery.refreshToken });
+      if (error) throw error;
+      if (!data?.session) { invalidLink(); return; }
+      passwordRecovery.accessToken = passwordRecovery.refreshToken = null;
+      message.textContent = '';
+      fields.hidden = submit.hidden = false;
+      submit.textContent = saveLabel;
+      focus(password);
+    } catch (error) {
+      auth = null;
+      if (expired(error) || error?.name === 'AuthInvalidJwtError') { invalidLink(); return; }
+      message.textContent = 'Chưa xác thực được liên kết. Hãy kiểm tra kết nối rồi thử lại.';
+      submit.textContent = 'Thử lại';
+      submit.hidden = false;
+      focus(submit);
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy || submit.hidden) return;
+    if (fields.hidden) {
+      if (!window.supabase?.createClient) window.__psSupabaseReady = loadCloudAuthLibrary();
+      await verifyLink();
+      return;
+    }
+    if (password.value.length < 6 || password.value !== confirm.value) {
+      const tooShort = password.value.length < 6;
+      message.textContent = tooShort ? 'Mật khẩu mới cần ít nhất 6 ký tự.' : 'Hai mật khẩu chưa khớp.';
+      (tooShort ? password : confirm).focus();
+      return;
+    }
+
+    busy = submit.disabled = password.readOnly = confirm.readOnly = true;
+    submit.textContent = 'Đang lưu…';
+    message.textContent = 'Đang cập nhật mật khẩu mới…';
+    try {
+      const { error } = await auth.updateUser({ password: password.value });
+      if (error) throw error;
+      closeForm('Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.');
+      void auth.signOut({ scope: 'local' }).catch(() => {});
+    } catch (error) {
+      if (expired(error)) { invalidLink(); return; }
+      message.textContent = error?.code === 'same_password' ? 'Hãy chọn mật khẩu khác mật khẩu hiện tại.' :
+        error?.code === 'weak_password' ? 'Mật khẩu chưa đủ mạnh. Hãy chọn mật khẩu dài hơn và khó đoán hơn.' :
+          'Chưa lưu được mật khẩu mới. Hãy thử lại.';
+      focus(password);
+    } finally {
+      busy = submit.disabled = password.readOnly = confirm.readOnly = false;
+      submit.textContent = saveLabel;
+    }
+  });
+
+  // Replace this entry so Back does not reopen the one-time recovery link.
+  back.addEventListener('click', (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    location.replace(back.href);
+  });
+  void verifyLink();
 }
 async function signOutCloud() {
   if(!sb)return;
@@ -8448,6 +8636,7 @@ async function initCloudApp() {
       if(error) { setSyncState('Không thể mở chế độ nhân viên','err'); toast('Chế độ nhân viên chưa được bật trên Supabase: '+error.message,6000); }
     } else showAuth();
     sb.auth.onAuthStateChange((_event, session) => {
+      if(session?.user.id!==currentUser?.id) closeStaffPasswordDialog();
       if(session) startCloudSession(session);
       else {
         ++cloudStartupGeneration;cloudSessionStartPromise=null;cloudSessionStartUser='';
@@ -17334,7 +17523,10 @@ recordPerformanceMetric('localShellReadyMs',performance.now());
    chớp lên rồi mới vào ứng dụng sau khi getSession() hoàn tất. */
 /* Thư viện kết nối đã được tải song song lúc parser còn đọc app. Chỉ bắt đầu
    phiên cloud khi nó sẵn sàng, thay vì giữ parser đứng tại thẻ script ngoài. */
-setTimeout(()=>{(window.__psSupabaseReady||Promise.resolve()).then(()=>initCloudApp(),()=>initCloudApp());},0);
+setTimeout(()=>{
+  if(passwordRecovery) openPasswordRecovery();
+  else (window.__psSupabaseReady||Promise.resolve()).then(()=>initCloudApp(),()=>initCloudApp());
+},0);
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('push-sw.js',{scope:'./'}).catch(error=>console.warn('Chưa cache được app shell',error));
 setTimeout(()=>{const focus=()=>{if(getComputedStyle(document.getElementById('auth-ov')).display==='none')document.getElementById('dash-search')?.focus({preventScroll:true});};if(window.PlatedioStartup)PlatedioStartup.afterReady(focus);else focus();},200);
 
@@ -23679,8 +23871,97 @@ function renderAccessPage(){
   const host=document.getElementById('access-page');if(!host)return;
   if(!isWorkspaceOwner()){host.innerHTML='<div class="empty">Chỉ chủ xưởng mới có thể quản lý phân quyền.</div>';return;}
   const control=ensureAccessControl();
-  const cards=control.members.map(member=>{const grants=new Set(member.permissions||[]);return `<article class="access-member-card"><div class="access-member-head"><div><b>${esc(member.name||'Chưa đặt tên')}</b><small>${esc(member.email||'Chưa gắn tài khoản')}</small></div><span class="badge">${esc(ACCESS_ROLE_TEMPLATES[member.role]?.label||'Tuỳ chỉnh')}</span></div><div class="form-grid"><label class="field"><span>Tên hiển thị</span><input id="access-name-${member.id}" value="${esc(member.name||'')}"></label><label class="field"><span>Email / mã tài khoản</span><input id="access-email-${member.id}" value="${esc(member.email||'')}" ${member.userId===control.ownerUserId?'disabled':''}></label><label class="field"><span>Mẫu vai trò</span><select onchange="applyAccessRole('${member.id}',this.value)">${accessRoleOptions(member.role||'workshop')}</select></label></div><div class="access-permission-grid">${ACCESS_PERMISSION_LIST.map(([id,title,detail])=>`<label class="access-permission" data-permission="${id}"><input type="checkbox" ${grants.has(id)?'checked':''} ${member.userId===control.ownerUserId?'disabled':''} onchange="toggleAccessPermission('${member.id}','${id}',this.checked)"><span><b>${title}</b><small>${detail}</small></span></label>`).join('')}</div><div class="access-member-actions"><button class="btn btn-ghost btn-sm" onclick="saveAccessMember('${member.id}')">Lưu thay đổi</button>${member.userId===control.ownerUserId?'':'<button class="btn btn-danger btn-sm" onclick="removeAccessMember(\''+member.id+'\')">Xoá người này</button>'}</div></article>`;}).join('');
+  const cards=control.members.map(member=>{const grants=new Set(member.permissions||[]);return `<article class="access-member-card"><div class="access-member-head"><div><b>${esc(member.name||'Chưa đặt tên')}</b><small>${esc(member.email||'Chưa gắn tài khoản')}</small></div><span class="badge">${esc(ACCESS_ROLE_TEMPLATES[member.role]?.label||'Tuỳ chỉnh')}</span></div><div class="form-grid"><label class="field"><span>Tên hiển thị</span><input id="access-name-${member.id}" value="${esc(member.name||'')}"></label><label class="field"><span>Email / mã tài khoản</span><input id="access-email-${member.id}" value="${esc(member.email||'')}" ${member.userId===control.ownerUserId?'disabled':''}></label><label class="field"><span>Mẫu vai trò</span><select onchange="applyAccessRole('${member.id}',this.value)">${accessRoleOptions(member.role||'workshop')}</select></label></div><div class="access-permission-grid">${ACCESS_PERMISSION_LIST.map(([id,title,detail])=>`<label class="access-permission" data-permission="${id}"><input type="checkbox" ${grants.has(id)?'checked':''} ${member.userId===control.ownerUserId?'disabled':''} onchange="toggleAccessPermission('${member.id}','${id}',this.checked)"><span><b>${title}</b><small>${detail}</small></span></label>`).join('')}</div><div class="access-member-actions"><button class="btn btn-ghost btn-sm" onclick="saveAccessMember('${member.id}')">Lưu thay đổi</button><button type="button" data-staff-password-target="${esc(member.userId||'')}" class="btn btn-ghost btn-sm" onclick="openStaffPasswordDialog(this)" hidden>Đặt mật khẩu mới</button>${member.userId===control.ownerUserId?'':'<button class="btn btn-danger btn-sm" onclick="removeAccessMember(\''+member.id+'\')">Xoá người này</button>'}</div></article>`;}).join('');
   host.innerHTML=`<section class="access-page"><div class="access-intro"><div><div class="eyebrow">QUYỀN THEO TỪNG THAO TÁC</div><h2>Ai được làm gì trong Plate Studio?</h2><p>Quyền chụp ảnh và quyền chỉnh sửa báo cáo mẻ được cấp độc lập. Người chỉ được chụp có thể gửi ảnh nhưng không thay đổi thông tin ảnh đã gửi.</p></div><button class="btn btn-ac" onclick="openAccessMemberDialog()">+ Thêm người dùng</button></div><div class="access-note">🔐 Chỉ chủ xưởng quản lý quyền này.</div><div class="access-member-list">${cards}</div></section>`;
+  refreshStaffPasswordActions();
+}
+function staffPasswordAdminContext(){
+  const workspaceId=cloudWorkspaceId(),actorId=currentUser?.id;
+  if(!sb||!cloudReady||loadingCloud||!workspaceId||!actorId||activeWorkspace?.owner_user_id!==actorId||
+     currentUser.app_metadata?.staff_password_workspace_id!==workspaceId)return null;
+  return {workspaceId,actorId};
+}
+function staffPasswordTarget(context,userId){
+  if(!context||workspaceAccessScope!==context.workspaceId||!userId||userId===context.actorId)return null;
+  return workspaceAccessRows.find(row=>row.user_id===userId&&row.status==='member'&&!row.is_owner&&row.email)||null;
+}
+function refreshStaffPasswordActions(){
+  const context=staffPasswordAdminContext();
+  for(const button of document.querySelectorAll('[data-staff-password-target]')){
+    button.hidden=!staffPasswordTarget(context,button.dataset.staffPasswordTarget);
+  }
+}
+function closeStaffPasswordDialog(){
+  const dialog=document.getElementById('staff-password-dialog');
+  if(!dialog?.open)return;
+  dialog.querySelector('form').reset();
+  dialog.close();
+}
+function openStaffPasswordDialog(button){
+  const context=staffPasswordAdminContext(),target=staffPasswordTarget(context,button.dataset.staffPasswordTarget);
+  if(!target)return;
+  const dialog=document.getElementById('staff-password-dialog');
+  if(dialog.open)return;
+  const form=dialog.querySelector('form'),save=form.querySelector('[type="submit"]'),cancel=form.querySelector('[type="button"]');
+  const password=document.getElementById('staff-new-password'),confirmation=document.getElementById('staff-confirm-password');
+  const message=document.getElementById('staff-password-message');
+  const current=()=>{
+    const live=staffPasswordAdminContext();
+    return dialog.open&&form.onsubmit===submit&&live?.actorId===context.actorId&&live.workspaceId===context.workspaceId;
+  };
+  document.getElementById('staff-password-account').textContent=target.name&&target.name!==target.email
+    ? `${target.name} (${target.email})` : target.email;
+  form.reset();
+  message.textContent='';
+  save.textContent='Lưu mật khẩu mới';
+  save.disabled=cancel.disabled=password.readOnly=confirmation.readOnly=false;
+  const discard=()=>!save.disabled&&((!password.value&&!confirmation.value)||window.confirm('Bỏ mật khẩu mới chưa lưu?'));
+  cancel.onclick=()=>{if(discard())closeStaffPasswordDialog();};
+  dialog.oncancel=event=>{event.preventDefault();if(discard())closeStaffPasswordDialog();};
+  async function submit(event){
+    event.preventDefault();
+    if(save.disabled)return;
+    if(!current()||!staffPasswordTarget(context,target.user_id)){closeStaffPasswordDialog();return;}
+    if(password.value.length<6||password.value!==confirmation.value){
+      const tooShort=password.value.length<6;
+      message.textContent=tooShort?'Mật khẩu mới cần ít nhất 6 ký tự.':'Hai mật khẩu chưa khớp.';
+      (tooShort?password:confirmation).focus();
+      return;
+    }
+    save.disabled=cancel.disabled=password.readOnly=confirmation.readOnly=true;
+    save.textContent='Đang lưu…';
+    message.textContent='Đang cập nhật mật khẩu của nhân viên…';
+    try{
+      const {data,error}=await sb.functions.invoke('staff-password-admin',{
+        body:{workspaceId:context.workspaceId,targetUserId:target.user_id,password:password.value}
+      });
+      if(!current())return;
+      if(!error&&data?.saved===true){
+        closeStaffPasswordDialog();
+        toast('Đã đặt mật khẩu mới cho tài khoản nhân viên.');
+        return;
+      }
+      const response=error?.context instanceof Response?await error.context.json().catch(()=>null):null;
+      if(!current())return;
+      const errors={
+        invalid_session:'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
+        forbidden:'Quyền quản trị hoặc tư cách thành viên của tài khoản đã thay đổi.',
+        invalid_password:'Mật khẩu mới chưa đạt yêu cầu. Hãy chọn mật khẩu mạnh hơn.',
+        same_password:'Hãy chọn mật khẩu khác mật khẩu hiện tại.',
+        retry_later:'Đã có nhiều yêu cầu. Hãy đợi một lúc rồi thử lại.'
+      };
+      message.textContent=Object.hasOwn(errors,response?.error)?errors[response.error]:'Chưa lưu được mật khẩu mới. Hãy thử lại.';
+    }catch{
+      if(current())message.textContent='Chưa lưu được mật khẩu mới. Hãy thử lại.';
+    }finally{
+      if(current()){
+        save.disabled=cancel.disabled=password.readOnly=confirmation.readOnly=false;
+        save.textContent='Lưu mật khẩu mới';
+      }
+    }
+  }
+  form.onsubmit=submit;
+  dialog.showModal();
 }
 function openAccessMemberDialog(){
   const ov=document.getElementById('dlg-mv');ov.innerHTML=`<div class="dlg" onclick="event.stopPropagation()"><div class="dlg-title">Thêm người dùng</div><p style="color:var(--t2);line-height:1.5;font-size:13px">Nhập email hoặc mã tài khoản.</p><div class="field"><label>Tên hiển thị</label><input id="new-access-name" placeholder="Ví dụ: Linh"></div><div class="field"><label>Email / mã tài khoản</label><input id="new-access-email" placeholder="linh@example.com"></div><div class="field"><label>Mẫu vai trò</label><select id="new-access-role">${accessRoleOptions('workshop')}</select></div><div class="dlg-actions"><button class="btn btn-ghost" onclick="closeDialog('dlg-mv')">Huỷ</button><button class="btn btn-ac" onclick="createAccessMember()">Thêm người dùng</button></div></div>`;ov.style.display='flex';
@@ -23696,6 +23977,8 @@ async function syncWorkspaceMember(member){
   if(!sb||!currentUser||!activeWorkspace||member.userId===activeWorkspace.owner_user_id)return;
   const {error}=await sb.rpc('invite_workspace_member',{p_workspace_id:cloudWorkspaceId(),p_name:member.name||'',p_email:member.email||'',p_role:member.role||'custom',p_permissions:member.permissions||[]});
   if(error)throw error;
+  const context=staffPasswordAdminContext();
+  if(context&&!staffPasswordTarget(context,member.userId))void loadWorkspaceAccessRows(false);
 }
 async function syncLocalAccessControlToWorkspace(){
   if(!isWorkspaceOwner()||!activeWorkspace)return;

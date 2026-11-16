@@ -30,3 +30,6 @@ verify_jwt = false
 
 [functions.photo-album]
 verify_jwt = false
+
+[functions.staff-password-admin]
+verify_jwt = false
